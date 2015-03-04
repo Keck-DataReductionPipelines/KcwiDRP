@@ -1,0 +1,32 @@
+This program is used to support the collection of astrometric observations
+of asteroids with a particular emphasis on Trans-Neptunian and Centaurs.
+The internal help files provide information and strategies on use of the
+program.  For help on invoking the program in the first place, try:
+
+doc_library,'tnorecov'
+
+This program shows a plot of airmass versus hour angle for selected targets
+from the master list in the input file.  Only those objects that meet the
+acceptance criteria will be shown.  Typically, the input file contains far
+more objects than are of interest but this tool lets you pare down the list
+to a more reasonable set.  It is also assumed that a "valid" observation of
+any target come from a pair of images separated by some critical time.
+
+The basic use of this tool is to use it to decide which object to do next.
+When the observation begins, click the "UT1" button to record the time of
+the first observation.  This object now is tagged as being "in progress".
+Once enough time has passed that the object has moved more than "MinSep"
+arcsec, the plot will change to reflect its new status.  At the second
+observation, click "UT2" to record the second observation.  After the second
+observation completes, it is removed from the candidate list.
+
+Your progress in working through the list of objects is saved into a file
+named with the same filename root as the object list but with a suffix of
+.tim.  For instance, if you loaded 010309.dat, the time file is 010309.tim
+and is written your current directory.  When working a set of objects during
+a continuous observing run, you will most likely want to use the same list
+and thus the same time file throughout.
+
+This tool permits viewing the objects from any observatory with a standard MPC
+code.  You can also fiddle with the time for the plot with the "Tools-->Delta T'
+option.  If you are not plotting at the current time, the offset is shown.

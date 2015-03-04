@@ -1,0 +1,314 @@
+# $Id: RELEASE_NOTES,v 1.79 2015/02/27 23:51:41 neill Exp $
+# Copyright (c) 2013, California Institute of Technology, all rights reserved
+
+2015-FEB-27: v0.2.9 - Tenth beta release
+
+- Performing the profile correction in stage 5 is now optional for input
+	to stage 6 (relative response).
+
+- Added a keyword switch to give dome flats priority over twilight flats,
+	overriding the default behaviour which is to give the reverse priority.
+
+- Added quick start instructions to AAAREADME.
+
+- Now cwi_format_info.pro errors out if allhdr.txt not found.
+
+- Copied legend.pro to kcwi_legend.pro to avoid conflict with IDL v8.x.
+
+
+2015-JAN-16: v0.2.8 - Ninth beta release
+
+- Now give priority to twilight flats for relative response correction.
+
+- Now query user for good twilight flats in cwi_format_info.pro.
+
+- Implemented IFU position, set to 1 (Large) for CWI data.
+
+- Replace calls to mean and stddev with a single call to moment in order to
+	accommodate IDL v8.4.
+
+- Rename standard calibration files from *_std.fits to *_invsens.fits.
+
+- Made kcwi_quick.pro more robust based on at-telescope testing.
+
+
+2014-NOV-14: v0.2.7 - Eighth beta release
+
+- Made standard star calibration more robust: smoothing kernel limits and
+	comparing calibration and object wavelength scales before application.
+
+- Added verbose and display keywords to each stage procedure allowing the user
+	to override the values in the ppar file.
+
+- Put calculation of geometry stats (rms) after all tweaking and cleaning
+	of coefficients are completed.
+
+- Now kcwi_prep automatically associates standard star observations as long
+	as they are named like the reference files in !KCWI_STDS/stds
+
+- Improved CR/ghost rejection in kcwi_fit_flat: reject on initial fit
+	residuals with 5 sigma threshhold.
+
+- Altered fit plotting method in kcwi_fit_flat: now can select column to plot.
+
+- Changed sigma clip values for cosmic ray rejection: now uses different
+	values for cflat images and for short exposures to avoid bad clipping.
+
+- Added plot of spectral line residuals to diagnostic plots output during
+	geometry/wavelength solution generation.
+
+- Changed overscan subtraction to subtract fit of column-collapsed row vector 
+	instead of row-by-row mean subtraction, added diagnostic plots.
+
+- Changed /skip1bias keyword to /cwi which also implements associations that
+	attempt to account for flexure.
+
+- Improved diagnostic outputs to kcwi_stage6rr.pro.
+
+- Fixed WCS keywords in relative response (stage6) and std response 
+	(stage7) images.
+
+- Fixed bug in variance calculations for stages 1, 2, and 6.
+
+- Added update keywords to cwi_format_info.pro and cwi_fix_headers.pro to
+	allow easier use for at-telescope reductions.
+
+- Various minor bug fixes.
+
+
+2014-OCT-07: v0.2.6 - Seventh beta release
+
+- Changed rotation angle in WCS CD matrix calculation to be -ROTPA and
+	verified orientations with cluster field (M34).
+
+- Added ROTPA to KCWI_CFG struct and image summary printout.
+
+- Added kcwi_quick.pro that allows for quick-look processing of a single
+	object including the option to display the data cube in ds9.
+
+- Added infrastructure to allow selected processing of images for each stage.
+
+- Modularization of kcwi_stage4geom.pro and many changes to improve
+	robustness of wavelength fits.
+
+- kcwi_stage7std.pro now applies extinction correction to data before
+	calculating response function.
+
+- cwi_format_info.pro now queries user for IR filter image range.
+
+- Calculates 'middle' wavelength; plots it along with calculated central
+	wavelength and adds header keyword WAVEMID to data cubes.
+
+- N&S wavelength solution now produces rms fit diagnostics.
+
+- Now trims data cubes correctly according to wavelength solution.
+
+- Made wavelength solutions robust for negative and/or larger dispersions.
+
+- Calibrated CWI MEDREZ grating and populated variables in routines with
+	measured values.
+
+- Added diagnostic output for wavelength solutions obtained by setting
+	ppar.display = 3.
+
+- Added status of geometric/wavelength fit preventing cubes from being
+	written when solution is bad: status number indicates failure mode.
+
+- Prevent infinite loop in splinefit.pro (called by kcwi_fit_flat.pro) when
+	CHISQR value is a NaN.
+
+- Modified kcwi_fit_flat.pro to handle NaN's returned by splinefit.pro
+	handle residual cosmic rays.
+
+- Improved robustness of wavelength solution
+
+- Added diagnostic output when configurations do not match up
+
+
+2014-AUG-25: v0.1.5 - Sixth beta release
+
+- Bug fix in kcwi_group_geom.pro where non-standard calibration sequences
+	could cause the routine to crash.
+
+- Calibrated CWI YELLOW grating and populated variables in routines with
+	measured values.
+
+
+2014-AUG-20: v0.1.4 - Fifth beta release
+
+- Prints DRP version in all log files.
+
+- Uses fiducial wavelength to set zeropoint allowing easier coaddition 
+	of data cubes: (3000A)+N*dw (N-integer, dw-disp in A/px).
+
+- Added variables for CWI YELLOW grating.
+
+- Now populates grating tilt anomoly keyword to derive more robust
+	preliminary estimates of the central dispersion.
+
+
+2014-JUL-30: v0.1.3 - Fourth beta release
+
+- No longer scale FITS images into two-byte integer pixels.
+
+- Now scale the stepsize for tracing bars by binning.
+
+- Fixed truncation of long integer numbers (int to longint).
+
+- Now uses first image of group as master cal image number.
+
+- Changed associations to be more sophistocated.
+
+
+2014-JUN-04: v0.1.2 - Third beta release
+
+- Changed handling of default directories and changed output default from 
+	'Redux' to 'redux'.
+
+- Derives image number digits automatically from fits files in input dir if
+	not set with keyword parameter.
+
+- Now takes image name prefix and the number of digits in the image number
+	as keyword parameters to KCWI_PREP.
+
+
+2014-MAY-23: v0.1.1 - Second beta release
+
+- Handles nod-and-shuffle observations that were stopped before completion.
+
+- Now correctly accounts for exposure times in standard star calibration.
+
+- Adds calibration image numbers to output fits headers.
+
+
+2014-APR-25: v0.1.0 - First beta release
+
+- Added kcwi_stage7std.pro routine to use standard star observation to
+	generate a calibration for object data cubes.
+
+- Apply profile, relative resp. corrections to nod-and-shuffle sky and
+	object image cubes.
+
+- Create mask and variance images for all image types.
+
+- Reworked linking and ppar paradigm to use one master for each: 
+	kcwi.ppar, kcwi.link.
+
+- Now write out master flats, profile, and relative response images as 
+	floats to avoid dynamic range truncation.
+
+- Added diagnostic plots to kcwi_fit_flat.pro, adjusted N&S fitting limits.
+
+- Now processes all calibration frames through.
+
+- Now checks initial reference bar for scattered light and subtracts if
+	needed before cross-correlation to determine initial offset.
+
+- Added option to find central cross-correlation peak when doing initial
+	wavelength solution.
+
+- Fixed typo in deriving isolated reference peaks.
+
+
+2014-MAR-21: v0.0.7 - Seventh alpha release
+
+- Added routine to clean errant bars in wavelength solution coefficients.
+
+- Updated KCWI_PPAR struct definition to include switch for cleaning
+	coefficients: CLEANCOEFFS, defaults to 1 - "ON", but can turn off 
+	by setting to 0.
+
+- Added flag in KCWI_PREP to turn off coefficient cleaning: /NOCLEANCOEFFS.
+
+- Made wavelength solutions more robust by adjusting line-matching threshhold
+	when no matches are found regardless of iteration number (previously
+	only adjust on first iteration only).
+
+- Handle failure to trace continuum bars and generate geometry.
+
+- Account for scattered light background in continuum bars images.
+
+
+2013-DEC-20: v0.0.6 - Sixth alpha release
+
+- Wavelength solution now uses cross-correlation and is automated (thanks to MM!).
+
+- DISPLAY ppar variable now controls level of interaction: values above 1 are
+	interactive, values of 1 show plots, but don't require input (batch),
+	values of 0 don't show any plots.
+
+- Updated cwi_format_info.pro to handle dflat (dome flat) image type.
+
+
+2013-NOV-22: v0.0.5 - Fifth alpha release
+
+- Data cubes now have 3-D WCS that is readable by ds9 and QFitsView.
+
+- Changed data cube orientation to accommodate WCS: spatial axis is now x:RA,
+	slice axis is now y:DEC, wavelength axis is still z:LAMBDA.
+
+- Change profile image orientation to accommodate data cube re-orientation.
+
+- Added kcwi_stage6rr, which accounts for slice-to-slice response variation.
+
+- Many logging and plotting changes and enhancements.
+
+
+2013-OCT-01: v0.0.4 - Fourth alpha release
+
+- Added nod-and-shuffle region keywords and made them 1-biased in header,
+	but 0-biased in the pipeline.
+
+- Updated 'allhdr.txt' and 'hdrfix_example.txt' files to include the
+	nod-and-shuffle region keywords.
+
+- Continued to experiment with WCS keywords using testwcs.pro.
+
+
+2013-SEP-26: v0.0.3 - Third alpha release
+
+- Added slice profile correction and crude WCS to profile images in stage 5.
+
+- Uses the reference slice (defined by setting the reference bar) to determine
+	the average bar spacing and enforce this on all slices.
+
+- Added pixel-to-pixel response function correction using continuum flats in
+	stage 3.
+
+- Added dark frame substraction stage in stage 2.
+
+- Added verification routines and printing/logging routines.
+
+- Allow grouping by object/configuration to allow use of same output wavelength
+	solution.
+
+- Can now set output wavelength parameters in ppar file to override defaults.
+
+- Fixed a bug in the association of 'cbars' files to observations.
+
+- Added padding at both ends of slices.
+
+
+2013-AUG-08: v0.0.2 - Second alpha release
+
+- Fixed associations to be based on configuration first, then on nearest in 
+	time.
+
+- Outputs image*_sky.fits and image*_scube.fits for nod-and-shuffle 
+	observations.
+
+- Uses a standard dispersion for each blue or red grating image that accounts
+	for binning.
+
+- Added new routine, cwi_format_info.pro, to use the *.info files that are 
+	output for each CWI image for populating the image headers.
+
+- Many tweaks of plotting and outputs.
+
+
+2013-AUG-02: v0.0.1 - Initial alpha release
+
+- This is based on work with CWI data and reduces both RED and BLUE 
+	grating data.
+
+- Handles Nod-and-shuffle sky subtraction.

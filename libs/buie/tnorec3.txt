@@ -1,0 +1,43 @@
+Most of the controls of this tool should be fairly obvious from the elements
+of the GUI.  For all of the editable entry boxes, you must hit "enter" after
+making any changes so that the new material is recognized.  All of the fields
+in the lower left part of the tool allow you control which objects are
+selected for display.
+
+The group of three button below the time controls the plotting restrictions to
+all objects, just those for which pass 1 could be done and those needing
+pass 2.
+
+MinSep is the distance that you want to have the object move before you
+observe it again.  Overhead is the amount of deadtime between successive
+exposures.  MinErr and MaxErr define the range of current positional
+uncertainty that are interesting to you.  Your field of view will basically
+determine MaxErr.  The uncertainties in the support file are supposed to be
+1-sigma errors.  If your field of view is 6 arc-minutes, then an object with
+an error of 1 arcminute would have to have an error worse than 3-sigma to be
+missed.  You should set MaxErr to a sigma level that you are comfortable
+with.  MinErr should be set to the largest value that gives you enough
+objects to fill the available time.  You do the most good for an orbit by
+measuring an object with a non-zero error.  The larger the error at the time
+of observation, the more improvement you make for a given observation.
+
+The bottom row of entries comprise the exposure time calculator.  The program
+has defaults appropriate for the KPNO/CTIO 4-m telescopes.  Given a limiting
+magnitude for a given exposure time and seeing, the program will compute a
+predicted exposure time needed based on the target brightness and the current
+seeing.
+
+The plot window is active for target selection.  Clicking in the window will
+select the object in the plot window that is nearest to where you clicked.
+Only those objects being plotted can be selected by clicking.  To select
+another object, you must enter the object name directly or pick from the list
+(Tools --> Select Object).
+
+The "Field" button will select the westernmost target that is ready for its
+second image (pass 2).  If there are no objects ready for pass 2, nothing will
+be selected.
+
+The "UT1" and "UT2" buttons will insert the current system time into the
+editable field and save it for the current object.  Even if the time is not
+quite right, you can still click one of the buttons and then edit the time
+shown (hit enter to save).

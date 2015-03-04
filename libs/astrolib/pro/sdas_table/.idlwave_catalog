@@ -1,0 +1,32 @@
+;;
+;; IDLWAVE catalog for library Astrolib
+;; Automatically Generated -- do not edit.
+;; Created by idlwave_catalog on Fri Feb 15 11:24:11 2008
+;;
+(setq idlwave-library-catalog-libname "Astrolib")
+(setq idlwave-library-catalog-routines
+ '(("tab_addcol" pro nil (lib "tab_addcol.pro" nil "Astrolib") "%s, name, data, tcb, tab" (nil))
+   ("tab_col" pro nil (lib "tab_col.pro" nil "Astrolib") "%s, tcb, column, offset, width, datatype, name, units, format" (nil))
+   ("tab_create" pro nil (lib "tab_create.pro" nil "Astrolib") "%s, tcb, tab, maxcol, maxrows, row_len, tb_type" (nil))
+   ("tab_del" pro nil (lib "tab_del.pro" nil "Astrolib") "%s, tcb, tab, rows" (nil))
+   ("tab_expand" pro nil (lib "tab_expand.pro" nil "Astrolib") "%s, tcb, tab, maxcol, maxrow, rowlen" (nil))
+   ("tab_fortospp" pro nil (lib "tab_fortospp.pro" nil "Astrolib") "%s, format, sppformat" (nil))
+   ("tab_modcol" pro nil (lib "tab_modcol.pro" nil "Astrolib") "%s, tcb, column, units, format, newname" (nil))
+   ("tab_null" fun nil (lib "tab_null.pro" nil "Astrolib") "Result = %s(values)" (nil))
+   ("tab_nullrow" pro nil (lib "tab_nullrow.pro" nil "Astrolib") "%s, tcb, tab, row1, row2" (nil))
+   ("tab_print" pro nil (lib "tab_print.pro" nil "Astrolib") "%s, tcb, tab, columns, row1, row2" (nil))
+   ("tab_put" pro nil (lib "tab_put.pro" nil "Astrolib") "%s, column, values, tcb, tab, row" (nil))
+   ("tab_read" pro nil (lib "tab_read.pro" nil "Astrolib") "%s, name, tcb, table, header" (nil))
+   ("tab_size" pro nil (lib "tab_size.pro" nil "Astrolib") "%s, tcb, nrows, ncols, maxrows, maxcols, rowlen, max_rowlen" (nil))
+   ("tab_sort" pro nil (lib "tab_sort.pro" nil "Astrolib") "%s, column, tcb, tab" (nil))
+   ("tab_spptofor" pro nil (lib "tab_spptofor.pro" nil "Astrolib") "%s, sppformat, format, width" (nil))
+   ("tab_val" fun nil (lib "tab_val.pro" nil "Astrolib") "Result = %s(tcb, table, column, rows)" (nil))
+   ("tab_write" pro nil (lib "tab_write.pro" nil "Astrolib") "%s, name, tcb, tab, header" (nil))
+   ("table_append" pro nil (lib "table_append.pro" nil "Astrolib") "%s, list, name" (nil))
+   ("table_calc" pro nil (lib "table_calc.pro" nil "Astrolib") "%s, table, expression, table_out" (nil))
+   ("table_delete" pro nil (lib "table_delete.pro" nil "Astrolib") "%s, name, rows, outname" (nil))
+   ("table_ext" pro nil (lib "table_ext.pro" nil "Astrolib") "%s, name, columns, v1, v2, v3, v4, v5, v6, v7, v8, v9" (nil))
+   ("table_help" pro nil (lib "table_help.pro" nil "Astrolib") "%s, tcb, header" (nil))
+   ("table_list" pro nil (lib "table_list.pro" nil "Astrolib") "%s, name, row1, row2" (nil ("header") ("textout")))
+   ("table_print" pro nil (lib "table_print.pro" nil "Astrolib") "%s, name, columns, row1, row2" (nil))
+   ("table_sort" pro nil (lib "table_sort.pro" nil "Astrolib") "%s, name, column, name_out" (nil))))

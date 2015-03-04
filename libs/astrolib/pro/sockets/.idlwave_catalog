@@ -1,0 +1,13 @@
+;;
+;; IDLWAVE catalog for library Astrolib
+;; Automatically Generated -- do not edit.
+;; Created by idlwave_catalog on Fri Feb 15 11:24:11 2008
+;;
+(setq idlwave-library-catalog-libname "Astrolib")
+(setq idlwave-library-catalog-routines
+ '(("QueryDSS" pro nil (lib "querydss.pro" nil "Astrolib") "%s, target, Image, Header" (nil ("ESO") ("IMSIZE") ("NED") ("OUTFILE") ("STSCI") ("SURVEY")))
+   ("Querygsc" fun nil (lib "querygsc.pro" nil "Astrolib") "Result = %s(target, dis)" (nil ("BOX") ("HOURS") ("magrange") ("VERBOSE")))
+   ("QuerySimbad" pro nil (lib "querysimbad.pro" nil "Astrolib") "%s, name, ra, de, id" (nil ("CADC") ("ERRMSG") ("Found") ("NED") ("Verbose")))
+   ("Queryvizier" fun nil (lib "queryvizier.pro" nil "Astrolib") "Result = %s(catalog, target, dis)" (nil ("ALLCOLUMNS") ("CANADA") ("CONSTRAINT") ("VERBOSE")))
+   ("MimeType" pro nil (lib "webget.pro" nil "Astrolib") "%s, Header, Class, Type, Length" (nil))
+   ("webget" fun nil (lib "webget.pro" nil "Astrolib") "Result = %s(url)" (nil ("COPYFILE") ("HTTP10") ("POST") ("SILENT")))))

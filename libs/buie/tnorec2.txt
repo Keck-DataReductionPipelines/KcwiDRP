@@ -1,0 +1,45 @@
+The plot shows the airmass of all candidate objects as a function of
+hour angle and updates automatically every 15 seconds.  For reference,
+the right ascension is also plotted on the top.  The plot axes are color
+coded by time of day.  If the sun is above the horizon, the plot axes
+are yellow.  You also see the time to sunset display in the box just below
+the time.  The time of sunset should be good to a few minutes.  The axes
+are light brown during civil twilight (CT).  The axes switch to light
+purple during nautical twilight (NT).  Then, during astronomical twilight
+the axes are a darker purple.  During the night, the axes plot as white.
+If either the sun or moon are high enough in the sky, they will appear on
+the plot as a large yellow and white filled circle, respectively.  The altitude
+of the sun an moon are shown in the box below the time along with the phase
+of the moon on its line.
+
+In the middle of the night you will see three vertical lines on the plot.
+The lines are dark cyan on the left and right with a purple line in the middle.
+The purple line denotes the locate in the sky that is directly opposite of
+the Sun, or the opposition point.  The rates of motion for the objects will
+be highest when they are near this line.  The cyan lines marked the location
+30 degrees ahead and behine the opposition point.  If you wish to combine
+search observations with recovery operations, you must work between these two
+lines.  The yellow arcing line on the plot shows the ecliptic.
+
+The objects are plotted with various symbols and colors.  The objects shown
+complement the information in the top right information box.  Total fields
+are the total number that satisfy the selection criteria.  Any candidate object
+that has not yet been observed plots as a white hollow diamond.  Some objects
+are shown as hollow purple diamons.  These objects are valid to observe but the
+rate of motion is slow enough that you must wait for the next night to do the
+second image.  Clearly, if you have a one-night observing run these objects are
+not really useful candidates.  The sum of white and purple diamonds are counted
+for the "Available Fields" number.
+
+Objects that have been done once are plotted as blue triangles.  These are
+counted as "In Progress Fields".  This type of object also shows the distance
+it has moved since the first frame in the box with the RA, DEC, and HA.
+Once the object has moved farther than "MinSep", it plots with a small red
+dot in the center.  This provides a visual clue that the object is ready
+for the second pass.  Note that if you click the "Field" button, the program
+will automatically select the western-most object that is ready for pass 2.
+If there are no such objects to select, the selection is not changed.
+
+Note that if you select "Pass 1", you only see those objects tagged as
+"available".  If you select "Pass 2", you only see those objects that have
+been observed once.  Selecting "All" lets you see both at the same time.

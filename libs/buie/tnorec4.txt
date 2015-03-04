@@ -1,0 +1,30 @@
+There are three files of concern to TNORECOV.  One is the list of
+observatories.  The default file is obscode.dat which resides in the
+Buie IDL library directory.  You can override the default by using the
+OBSFILE keyword, or, you can explictly load a copy of this file through
+the File-->Get Obsfile menu item.
+
+The main input file is the list of predicted positions and astrometric
+errors.  A current copy of this file can be found at
+
+ftp://ftp.lowell.edu/pub/buie/kbo/recov
+
+Look for files of the form YYMMDD.dat where YYMMDD is the UT date.  These
+files are generated each day for 0h UT on the date of the file.  This file
+lists all TNO and Centaurs whether numbered or not.  This file contains
+all the information used to fill up the display of this program.  If you need
+to understand the file format, you'll have to look in the source code for
+this program (look for tnorec_loadobs).
+
+The output file which tracks the observations done thus far looks like this:
+
+00CQ114 2001/03/13_07:47:49 [[noobs]]
+00CQ110 2001/03/13_07:00:10 2001/03/13_09:00:30
+
+Each line shows one object.  [[noobs]] is a special flag that indicates the
+object was not yet measured a second time (or first).  The first column is
+the object name, second column is the time of first observation, third column
+is the time of second observation.  Note that each column is separated by
+blanks and there are no blanks within a column (notice the underscore).
+This is a simple text file and you can edit it (when tnorecov is NOT running)
+if you wish.  Just be mindful of the format.

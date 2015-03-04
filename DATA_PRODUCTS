@@ -1,0 +1,47 @@
+$Id: DATA_PRODUCTS,v 1.2 2014/10/02 19:54:19 neill Exp $
+
+KCWI Data Reduxtion Pipeline Data Products Table
+
+KCWI raw data filenames are constructed as follows:
+
+<froot><imgnum>.fits 	and contain raw CCD data numbers.
+
+KCWI reduced data filenames are constructed as follows:
+
+<froot><imngnum>_<ext>.fits
+
+With:
+
+<froot>		defaults to 'image', but can be modified
+<imgnum>	a zero-filled integer of consistent width
+<ext>		specifies the specific product and is tabulated below
+
+ext		data units		Stage	notes
+---------------	-----------------------	-----	------------------------
+int		e-/px			1	reduced output intensity
+var		e-^2/px			1	variance
+msk		flag			1	cosmic ray pixels flagged with 1
+
+intd		e-/px			2	dark current removed
+vard		e-^2/px			2	variance + dark image variance
+mskd		flag			2	same
+
+intf		e-/px			3	pixel-to-pixel variation removed
+varf		e-^2/px			3	variance + flat image variance
+mskf		flag			3	same
+
+icube		e-/px			4	geometrically corrected data cube
+vcube		e-^2/px			4	variance data cube
+mcube		flag			4	mask data cube
+
+icubep		e-/px			5	slice profile corrected data cube
+vcubep		e-^2/px			5	variance + profile variance
+mcubep		flag			5	same
+
+icuber		e-/px			6	slice-to-slice response corrected data cube
+vcuber		e-^2/px			6	variance + relative response variance
+mcuber		flag			6	same
+
+icubes		flux/px			7	std star calibrated data cube
+vcubes		flux^2/px		7	variance in flux units
+mcubes		flag			7	same

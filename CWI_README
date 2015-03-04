@@ -1,0 +1,269 @@
+$Id: CWI_README,v 1.26 2015/02/28 00:16:03 neill Exp $
+
+Copyright (c) 2014, California Institute of Technology.  All rights reserved.
+
+
+        KCWI Data Extraction and Reduction Pipeline (KDERP) CWI_README
+
+
+Tenth Beta release; Version: 0.2.9 Date: 2015/02/27
+
+NOTE: See '---NEW---' note below on using CWI data with kcwi_quick.pro.
+
+These notes are instructions for how to create KCWI-like headers in CWI
+images so they will work in the KCWI pipeline.
+
+The basic outline of the procedure is to create a file called hdrfix.txt in
+the raw image directory (or, better still in a directory with a copy of the
+raw data) which is read in by CWI_FIX_HEADERS in IDL.  This program uses
+the mapping specified in hdrfix.txt to update or create the keywords in the
+headers of each image.  The images are specified as a list of image numbers
+and the image file specifications are assumed to be of the form
+imageXXXXX.fits, where the XXXXX is replaced with the five digit zero padded
+image sequence number.
+
+This process has been greatly automated by the latest CWI observing scripts
+which write out a *.info file for each image (except for bias images).
+There is a new routine called CWI_FORMAT_INFO that will read in the *.info
+files and generate the header modification input file required by
+CWI_FIX_HEADERS.  Not all the required data are available in the *.info
+files, so the user will be queried for information and an ancillary file
+called allhdr.txt will be included.  There may still be some editing of the
+output hdrfix.txt required, but it has been greatly reduced by the use of
+the *.info files and the CWI_FORMAT_INFO routine.  The description below
+gives the basic procedures for modifying the headers.
+
+First let's start with gathering the keyword information.  After this we'll
+describe how to create the hdrfix.txt file.
+
+1. Gather header keyword values for each image:
+
+Very important: Take good observing notes!
+
+In order to associate calibration images with object images, certain basic
+configuration keywords must appear in the image headers.  To make this
+happen, there must be a record of the configuration settings for each
+image.  This has been mostly automated by using the *.info files, but it is
+still a good idea to take accurate notes just in case.
+
+In particular, it is important to log which image numbers correspond to sky
+observations.  It is also very important to log the final outcome of any
+nod-and-shuffle scripts that were executed.  You'll need to specify which
+image numbers correspond to aborted nod-and-shuffle observation in order to
+recover any useful data from them.  If any of the scripts were aborted
+while observing the sky portion of the script, this must be noted.  These
+type of aborted nod-and-shuffle observation have the sky and object frames
+in a different, non-standard location and this must be flagged in order for
+the pipeline to handle these correctly.
+
+Now we list individual keywords and what they mean.
+
+The first set of keywords that must be set are the CCD geometry keywords.
+Typically, these will be the same for a given run, or at least the same for
+a given night.  The image section keywords all assume a 1-bias, like IRAF,
+not like IDL with assumes a 0-bias.  All the KCWI software accounts for
+this difference, so don't make these values below 0-biased.  There is one
+set of these per amplifier with the number at the end of the keyword
+corresponding to the specific amplifier.  The amplifiers are numbered 1 to
+4 in a counterclockwise order starting from the lower left corner of the
+CCD.
+
+ASECn		the image section that was read out with Amp n
+		this includes overscan and should already be set for CWI
+BSECn		the image section for calculating the overscan bias
+CSECn		the image section for the active CCD region
+TSECn		the image section to trim to (same as CSEC1)
+GAINn		the gain in electrons/DN for Amp n
+
+Another set of keywords that are very important for nod-and-shuffle
+observations define the science and background regions on the CCD.
+Remember, make these keywords 1-biased as they will be converted to
+0-biased by the pipeline which assumes they are 1-biased.  It is OK to set
+these for all images.  They will be ignored for non nod-and-shuffle
+observations.  Canonical values for these keywords are given in
+'hdrfix_example.txt' and 'allhdr.txt'.
+
+NSSKYR0		the beginning row for the sky portion of the CCD
+NSSKYR1		the ending row for the sky portion of the CCD
+NSOBJR0		the beginning row for the object portion of the CCD
+NSOBJR1		the ending row for the sky portion of the CCD
+
+The next set also impact the basic reductions and should be the same
+for an entire run, or at least for a given night.
+
+NVIDINP		this is a Keck standard and is the number of amps used to
+		read out the image
+CCDSUM		this is the binning of the image encoded as a string with
+		the x-binning and the y-binning separated by an underscore:
+		e.g. '2_2' indicates two by two binning.
+
+These will be the same for a given run and are already included in
+allhdr.txt.  You will be prompted to change the OBSERVER value to your name.
+
+OBSERVER	your name (prompted)
+TELESCOPE	Hale5m
+INSTRUME	CWI
+
+The next set may change for each observation and are not recorded in the
+*.info files.  You will be prompted for the image range designating the
+following types of images: 1) images taken with the nod-and-shuffle mask 
+deployed, and 2) sky observations
+
+NASMASK		T or F: was the nod-and-shuffle mask deployed?
+
+SHFFSTAT	0 (OK) or 1 (ABORTED): the nod-and-shuffle exposure status.
+		This is checked by the DRP and appropriate action will be
+		taken.
+
+SKYOBS		T or F: was this a sky observation?  This will be important
+		for doing non nod-and-shuffle sky subtraction.
+
+The next set are derived in the CWI_FORMAT_INFO procedure so you don't need
+to edit them, but they should be spot-checked for accuracy.
+
+IMGTYPE  	must be one of: object, bias, dark, cbars, arc, cflat, arcbars,
+		or dflat.  'test' or 'image' is used to designate focus 
+		images or other images that are ordinarily not processed.
+
+IMGNUM		the image number (actually set by CWI_FIX_HEADERS).
+
+MMPPOS		the encoder position for the periscope
+FOCPOS		the encoder position for the focus stage
+FM4POS		the encoder position for the FM4 fold mirror
+GRATPOS		the encoder position for the grating stage
+CAMPOS		the encoder position for the camera stage
+
+SHUFFMOD	T or F: was charge shuffled during the exposure?
+
+OBJECT		the name of the object being observed.  This is important
+		for labeling and should be set for object images.  Not
+		required for calibration images (except sky images).
+
+TARGRA,TARGDEC	telescope coords in decimal degress of science target for 
+		nod-and-shuffle observations
+BACKRA,BACKDEC	telescope coords in decimal degress of background field for
+		nod-and-shuffle observations
+RA,DEC		telescope coords in decimal degrees for normal observations
+ROTPA		the cassegraine rotator position angle
+
+EXPTIME		exposure time in seconds.  This is only needed for 
+		nod-and-shuffle observations.  For other CWI images, 
+		it will already be correct in the image header.
+
+DATE		the UT date of the observation.  This is already set for
+		CWI data
+
+Derived keywords are below:
+
+GRATID		the grating id, either RED or BLUE (calculated from FM4POS)
+FILTER		the filter id, either RED or BLUE (calculated from FM4POS)
+
+CWAVE		this is calculated in CWI_FIX_HEADERS with 
+		CWI_CENTRAL_WAVE from the grating ID and the CAMPOS value 
+		and is very useful during the wavelength solution
+		derivation.  Be sure to check the GRATID for each observation
+		before running CWI_FIX_HEADERS.
+
+
+2. Creating hdrfix.txt:
+
+Now, one simply changes directory into the raw data dir and runs IDL and
+executes the CWI_FORMAT_INFO program:
+
+> cd raw/
+> idl
+IDL> cwi_format_info
+
+This program will ask you to enter the observer's last name (no spaces).
+
+If the file 'allhdr.txt' from the kderp distribution can be found (see
+!CWI_DATA section of AAAREADME), it is included automatically at the
+beginning and includes all the CCD geometry and basic run keywords.  If it
+can't find 'allhdr.txt', it will warn you and you can add it by hand.
+Modify these keyword values to suit your individual case (different
+binning, different CCD geometry, etc.).
+
+The program will then ask you to specify image number ranges for the sky
+observations.  This is where good logs will be helpful.  Next it will ask
+for the image numbers for good twilight flats, to be used for relative
+response calibration.  Don't include weak twilight flats: only the ones you
+think have good signal.  Dome flats can also be used for this calibration,
+so don't worry if you don't have any good twilight flats.  Next it will ask
+for the number range for the nod-and-shuffle mask.  Give the image number
+range for when the nod-and-shuffle mask is in place, regardless of any
+charge shuffling (the keyword for which is set automatically).  If the
+nod-and-shuffle mask was used, it will then ask for the image number range
+specifying any nod-and-shuffle observations that were aborted during the
+script.  In turn, if there were any aborted, it will then ask for the image
+number range of any that aborted while observing the sky.  These conditions
+require special processing.
+
+This will generate a hdrfix.txt file in the current directory that is the
+starting point for creating the final, master version.
+
+The hdrfix.txt file that is read in by CWI_FIX_HEADERS has five columns:
+
+Column 1: KEYWORD	this is the header keyword to update or add
+Column 2: VALUE		this is the value for the keyword in column 1
+Column 3: TYPE		this is the IDL type code for the input:
+			1 - for bytes
+			2 - for integers
+			3 - for long integers
+			4 - for reals
+			5 - for doubles
+			7 - for strings
+			other types are illegal
+Column 4: AFTER		the keyword after which to insert a new keyword
+			must set to '-' if location not specified
+Column 5: IMGNOS	the range list of image numbers, examples are:
+			6972-7083
+			7040,7046,7055,7057,7069,7071
+			*
+			Any mix of ranges using a dash in between and
+			individual images using a comma in between
+			The '*' means apply to all images
+			IMPORTANT: use no spaces in these lists!
+
+Most of the required keywords will be generated from the *.info files by
+CWI_FORMAT_INFO.
+
+Once the hdrfix.txt file is correct and you have double-checked it, you can
+run idl and start the program that modifies the headers.  If no file is
+specified, it will ask for you to enter the hdrfix.txt filename.  You can
+also set the /verbose keyword to get extra output:
+
+> idl
+IDL> cwi_fix_headers,'hdrfix.txt',/verbose
+
+If all goes well, you should be able to run the KCWI pipeline on these
+images.  To allow recovery, it is good idea to copy the raw images to a
+working directory and alter the headers there.  That way if something goes
+wrong, you can just re-copy over the images and start again.
+
+---NEW---
+
+In order to facilitate the new kcwi_quick.pro procedure, there have been some
+changes made to CWI_FORMAT_INFO and CWI_FIX_HEADERS that make incremental
+updating of the headers more reasonable.  In summary, the CWI_FORMAT_INFO has
+an 'update' keyword that allows you to re-use the 'hdrfix.txt' file and just
+add records for new images.  The CWI_FIX_HEADERS procedure will now only
+apply changes to new images, unless overridden by its new 'update' keyword.
+
+Therefore, at the telescope you can copy the current set of images (and
+their associated *.info files) and run CWI_FORMAT_INFO to generate a new
+'hdrfix.txt' file.  You can run CWI_FIX_HEADERS normally to update these
+images with keywords that allow you to reduce the images with the KCWI
+DRP.  After you have taken more images, you can re-run CWI_FORMAT_INFO with
+the 'update' keyword set, which will re-use the 'hdrfix.txt' file you already
+generated and just add header keyword update records for the new images.  It
+will ask you questions about each new image that determine the configuration
+and processing and indicate if the image was a sky observation, if the N&S
+mask was in, if it was a N&S observation, was it aborted and if it was
+aborted, was it aborted while observing the sky.  When this is done and you
+run CWI_FIX_HEADERS, it will only update the new image headers.
+
+Alternately, you can just generate a fresh 'hdrfix.txt' file each time by
+leaving off the 'update' keyword from the call to CWI_FORMAT_INFO.
+
+For more information on the kcwi_quick.pro routine see the AAAREADME file
+under section 4, "NEW FEATURES".

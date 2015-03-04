@@ -1,0 +1,612 @@
+$Id: AAAREADME,v 1.27 2015/02/27 23:51:41 neill Exp $
+
+Copyright (c) 2015, California Institute of Technology.  All rights reserved.
+
+
+        KCWI Data Extraction and Reduction Pipeline (KDERP) README
+
+
+Tenth beta release; Version: 0.2.9 Date: 2015/02/27
+
+New routine: kcwi_quick.pro for at-telescope reductions.  See NEW FEATURES
+(section 4) below.
+
+Caveat Emptor!  Use at your own risk!  In active development!
+
+**CONTENTS**
+
+0. QUICK START
+1. INSTALLATTION
+2. RUNNING THE PIPELINE
+3. ANCILLARY UTILITIES
+4. NEW FEATURES
+5. TROUBLESHOOTING
+6. TODO
+
+
+0. QUICK START:
+
+Follow these instructions and you'll be up and running quickly.  For details
+see the full installation instructions below.
+
+Substitute the real version number for <ver> and real paths for
+'/Path/to/package' and '/Path/to/tarball'.  Trailing slashes are
+significant in step e.  NOTE: It is very important to put the kderp
+package path at the head of the list of paths in the IDL_PATH
+environment variable.
+
+a. mkdir /Path/to/package
+b. cd /Path/to/package
+c. tar -xvzf /Path/to/tarball/kderp-<ver>.tar.gz
+d. setenv IDL_PATH "+/Path/to/package/kderp-<ver>:<IDL_DEFAULT>"
+e. edit /Path/to/package/kderp-<ver>/startup.pro
+	I. point !KCWI_DATA to /Path/to/package/kderp-<ver>/data/
+	II. point !CWI_DATA to /Path/to/package/kderp-<ver>/cwi/
+f. setenv IDL_STARTUP /Path/to/package/kderp-<ver>/startup.pro
+
+
+1. INSTALLATION:
+
+Installation requires four steps.  In all steps below replace the string
+<ver> with the DRP version string, e.g., "0.1.2" (not including the
+quotes).
+
+
+A. Unpack the tarball:
+
+All of the code is written in IDL.  As such, you can integrate the package
+within a directory structure that is already in your IDL_PATH, or it can be
+installed in a stand-alone mode.  Decide where you would like to put the
+package, cd into that directory and issue this command:
+
+> tar -xvzf /Path/to/tarball/kderp-<ver>.tar.gz
+
+Specifying the real path, of course.  The tarball will extract into the
+directory 'kderp-<ver>'.
+
+
+B. Adjust IDL_PATH environment variable:
+
+If you decide to make it stand-alone, then you must set your IDL_PATH
+environment variable to point to the top-level directory, something like
+this:
+
+> setenv IDL_PATH "+/Path/to/package/kderp-<ver>:<IDL_DEFAULT>"
+
+The "+" at the beginning ensures that IDL searches the entire directory
+tree below the top level for all the code.
+
+**** NOTE ****: It is very important that you put the kderp package
+directory at the head of the list of paths in the IDL_PATH environment
+variable.  IDL has a flat name-space and this avoids collisions with
+routines with the same names in other packages.
+
+
+C. Point !KCWI_DATA to correct directory:
+
+The file 'startup.pro' at the top level of the package contains the
+definition of an IDL system variable called !KCWI_DATA.  This must point to
+the correct directory in order for the pipeline to function.  It should
+point to the subdirectory 'data' within the package and should look like
+this:
+
+defsysv,'!KCWI_DATA','/Path/to/package/kderp-<ver>/data/'
+
+Be sure to include the trailing '/'.  
+
+
+Ca. Point !CWI_DATA to the correct directory:
+
+If you are reducing Palomar CWI data, then you will also need this IDL
+system variable to point at the correct directory.  This is used by
+cwi_format_info.pro to add the general header keywords to CWI images.
+It should point to the subdirectory 'cwi' within the package and should
+look like this:
+
+defsysv,'!CWI_DATA','/Path/to/package/kderp-<ver>/cwi/'
+
+The other lines in the file should be left alone.
+
+
+D. Adjust the IDL_STARTUP environment variable or file:
+
+The file 'startup.pro' must be either pointed to by the environment
+variable IDL_STARTUP, or it must be edited into your existing IDL startup
+file.  If you are running the pipeline stand-alone then do this:
+
+> setenv IDL_STARTUP /Path/to/package/kderp-<ver>/startup.pro
+
+If you are integrating the pipeline with other IDL software, then you must
+add the system variable definitions from 'startup.pro' into the file that
+your current environment variable IDL_STARTUP points to.
+
+
+Once you have verified that all the paths are correct, you may wish to add
+the environment variable definitions for IDL_PATH and IDL_STARTUP to your
+shell startup script so you don't have to enter them each time you run the
+pipeline.
+
+
+2. RUNNING THE PIPELINE:
+
+All commands are issued at the IDL prompt.  It is probably simplest to cd
+into the directory with the raw data.  No raw data files are overwritten.
+Output files all have altered names to avoid clobbering raw data.
+
+The pipeline has 7 stages:
+
+Stage 1 takes raw images and performs a basic CCD reduction to produce bias
+and overscan subtracted, gain-corrected, trimmed and cosmic ray removed
+images.  For nod-and-shuffle observations, the sky will also be subtracted.
+The major output is an 'intensity' image in units of electrons.  For object
+images, a variance image and a mask image are also produced.
+
+Stage 2 is an optional dark subtraction step.  If you are doing nod-and-
+shuffle, this is not needed.  Check the file 'kcwi.link' in the output
+directory for the list of what images will have the dark subtracted.
+
+Stage 3 is an optional flat field correction step.  This will use the
+continuum flat images to determine the pixel-to-pixel variation in the
+ccd response and correct for it.
+
+Stage 4 uses a corresponding 'cbars' and an 'arc' image to define the
+geometric transformations required to generate a rectified object data
+cube.  It applies this transformation to the object intensity, variance and
+mask images output from stage 1.
+
+Stage 5 uses sky images or the sky panels from the nod-and-shuffle observations
+to calculate the slice profile response function and writes out a corresponding
+'*_prof.fits' image.  This is then divided out of each slice to produce a
+'*_icubep.fits', profile-corrected data cube.  The variance and mask cubes
+'*_vcubep.fits' and '*_mcubep.fits' are written out as well.
+
+Stage 6 uses dome flats to derive a slice-to-slice correction relative to
+a reference slice (defaults to slice 11, or the twelfth slice from the left).
+It writes out the relative response functions for each slice in a '*_rr.fits'
+image.  This is then divided out of each spatial column of each slice to
+produce a '*_icuber.fits', response-corrected data cube along with the
+corresponding '*_vcuber.fits' and '*_mcuber.fits' variance and mask cubes.
+
+Stage 7 uses a standard star observation to generate an inverse sensitivity
+curve which is applied to the corresponding observations to flux calibrate
+them.
+
+Each step is controlled by the master 'link' file which defaults to
+kcwi.link.  and a corresponding 'ppar' file which defaults to kcwi.ppar.
+These are generated by running the KCWI_PREP program with the appropriate
+options for your needs.  Run KCWI_PREP with the /help keyword set and it
+will print all the available options for you.
+
+The link file allows you to see the automatic associations that are made and 
+to adjust which images are processed.  The ppar file allows you to adjust the
+pipeline parameters for each stage.
+
+Stage 0 - preparation:
+
+Here you choose several options for processing.  To see the
+parameters and keywords that are available, issue the command with the /help
+keyword set:
+
+IDL> kcwi_prep,/help
+
+These are the parameters:
+
+Indir		- Input directory, location of raw images, defaults to current.
+Outdir		- Output directory, defaults to ./redux/
+Datdir		- Data directory, defaults to IDL system variable !KCWI_DATA
+
+These are the keywords:
+
+/CWI		- skip initial bias image and apply CWI associations (for CWI)
+/NOCRREJECT	- turn off CR rejection (good for quick look)
+/NONASSUB	- turn off nod-and-shuffle subtraction (why?)
+/SAVEINTIMS	- save intermediate images (takes a lot of disk space)
+/INCLUDETEST	- includes images of type 'test' (focus images, etc.)
+/DOMEPRIORITY	- set to give priority to dome flats over twilight flats
+/CLOBBER	- set to overwrite output files (otherwise it won't)
+/NOCLEANCOEFFS	- turn off cleaning the wavelength coefficients of errant bars
+/HELP		- print the command usage info
+
+VERBOSE		- verbosity level for extra diagnostic output (1 is recommended)
+DISPLAY		- display level for extra diagnostic plots:
+			0 - display no plots
+			1 - display some plots, non-interactive
+			2 - display more plots, interactive
+			3 - display even more plots, interactive
+		NOTE: These can be overridden for each stage on the IDL
+		command line by using verbose and display keywords in the
+		stage invocation (see below).
+
+MINGROUPBIAS	- minimum required number of bias frames to combine
+			this defaults to 5
+MINGROUPDARK	- minimum required number of dark frames to combine
+			this defaults to 3
+MINOSCANPIX	- minimum number of overscan pixels in a given row
+			this defaults to 70
+FILESPEC	- string overriding default file spec ('image????.fit*')
+FROOT		- string overriding default file root ('image')
+FDIGITS		- integer overriding the default image number digits (4)
+
+PKSIG		- significance of peaks found for wavelength soln. (1.5)
+PKDEL		- arc line matching threshold in Ang (0.75)
+PKISO		- atlas line isolation window in Ang (2.0)
+
+Once you have decided on the options just execute it. For example:
+
+IDL> kcwi_prep,/skip1bias,/verbose,display=2
+
+This will run very quickly.  It will prompt you to create the output
+directory if it doesn't exist.  Exit IDL and look in the output directory
+(redux is the default):
+
+> cd redux
+> ls
+
+You'll see all the files that specify Master calibration file generation
+(specific ppar files), as well as a log file.  Look at the kcwi.link file.
+This shows the automatically generated linking between the master
+calibrations and the other images.  The first entry on each line is the
+image number being operated on.  This is followed by the automatic
+associations to master (combined) files or individual image numbers.  The
+first is the master bias file number, followed by the master dark file
+number, the master flat file number, the continuum bars image number, the
+arc image number, the profile correction image number, the sky image
+number, the relative response image number, and the standard star image
+number.  After this is configuration information that allows you to assess
+the correctness of the association.
+
+This file is read in by all subsequent stages so you can control which
+images are processed by commenting out any you don't want run through the
+pipeline.  Do this by inserting the '#' character at the beginning of the
+line.  This will ensure that the line gets skipped by all subsequent
+processing.  NB: be careful of the flow-down effect of not processing any
+of the calibration images like arcs that need to be processed for
+subsequent calibration.  You can also change which master file or other
+standard image number is applied to each object image by editing this file.
+Do this with caution as incorrect associations can result in pipeline
+failures or unpredictable results.
+
+You can also edit the kcwi.ppar file and change some of the processing
+options.  You can turn on or off verbose output for example.  The most
+likely change you'll want to make is adjusting the DISPLAY parameter (see
+the description above).  It's a good idea to run the pipeline first with
+DISPLAY set to 2 or more so you can see the details of what is going on.
+After that, if you have a lot of images to process, you'll want to make the
+pipeline less interactive by setting DISPLAY to 1 or less.  If you set the
+keywords properly on the command line, it is unlikely you will want to edit
+this file.
+
+
+Stage 1 - basic image reduction:
+
+Once you are happy with the files, go back to the raw directory and start
+IDL again:
+
+> cd ..
+> idl
+
+Now you just run stage1:
+
+IDL> kcwi_stage1
+
+You can override the verbosity and display levels set in the kcwi.ppar file
+(as set by running kcwi_prep.pro) for this (and any subsequent stage) on the
+IDL command line with keywords, so you can also type:
+
+IDL> kcwi_stage1,verbose=2,display=3
+
+This will take longer to run, especially if you kept cosmic ray removal
+'on'.  On a macbook pro with a 2.2 GHz Intel Core i7 processor and 8 GB of
+RAM, it takes roughly 30s just to do the cosmic ray removal on one image.
+Typical total run times for a night's worth of images can vary from 10 to
+30 minutes.
+
+Exit IDL again and examine the log file in the output directory.
+
+> more redux/kcwi_stage1.log
+
+This keeps track of the parameters that were used to derive the intensity
+images.  It logs the number of cosmic rays removed, for example.
+
+The output images for this stage all have the same prefix as the input
+raw image, but different suffixes that indicate what kind of image they
+are: '_int.fits' for the intensity images, '_var.fits' for the variance
+images, and '_msk.fits' for the mask images.  If you had nod-and-shuffle
+observations, then there will also be '_obj.fits' and '_sky.fits' images
+containing just the object window and just the sky window respectively of
+the nod-and-shuffle segments.
+
+
+Stage 2 - dark subtraction:
+
+The input and output directories default to './redux'.  You can run the
+command from the raw directory and it will find the files you already
+processed in stage1.  You can control which master dark is used and which
+observations are dark subtracted using the 'kcwi.link' file in the output
+directory specified when you ran KCWI_PREP.
+
+This step is run as follows:
+
+IDL> kcwi_stage2dark
+
+The log for this stage is in the output directory and is called
+kcwi_stag2dark.log.  Here the outputs will be the same as for the
+stage1 outputs, but will have a 'd' appended as such: '_intd.fits',
+'_vard.fits', and '_mskd.fits'.
+
+NB: this stage is optional and no harm will come from skipping it, if your
+science does not require it.
+
+
+Stage 3 - flat field correction:
+
+You can control which master flat is used and which observations are flat
+corrected using the 'kcwi.link' file in the output directory specified when 
+you ran KCWI_PREP.
+
+This step is run as follows:
+
+IDL> kcwi_stage3flat
+
+The log for this stage is in the output directory and is called
+kcwi_stag3flat.log.  Here the outputs will be the same as for the
+stage2 outputs, but will have an 'f' appended as such: '_intf.fits',
+'_varf.fits', and '_mskf.fits'.
+
+
+Stage 4 - geometric solution and data cube generation:
+
+Once you are happy with the kcwi.link and kcwi.ppar files, just execute
+stage4.  By default it looks for the kcwi.ppar file in './redux/', but you
+can specify it on the command line.
+
+IDL> kcwi_stage4geom,'./kcwi.ppar'
+
+The first step will be to trace the bars in the 'cbars' image.  If you set
+DISPLAY=2, you will see a plot for the middle row of each bar.  You can
+enter 'q' at the prompt to turn off plotting (there are 120 bars).  The
+program will then proceed without plotting until the next step.  You will
+next be shown a plot of the control points for the entire image.  Just hit
+return to proceed (assuming everything looks OK).
+
+Next the DRP will extract the arc spectrum along each bar.  It will
+cross-correlate each spectrum with the reference bar (defaults to center
+bar of slice 11, bar 57) and display a plot (if DISPLAY=2, otherwise
+nothing).  Here again, you can enter 'q' to skip the plots and proceed.
+
+Each bar spectrum is then cross-correlated with a ThAr atlas spectrum using
+a central window about equal to the nod-and-shuffle mask (central third).
+This provides a preliminary wavelength solution that is accurate over the
+central third of the wavelength range for each bar.  This is sufficient for
+nod-and-shuffle observations.  For full-frame observations the window is
+successively widened and individual lines are fit for revised wavelength
+coefficients in each of 5 iterations.  If you kept the coefficient cleaning
+'on' (CLEANCOEFFS=1), the DRP will print a list of coefficients that have
+been fixed and, if you have DISPLAY set to 2 or more, a plot of each slice
+showing the original and fixed coefficient.  Cleaning is done after the
+initial solution is found and after each iteration for the full-frame
+observations.
+
+If you are reducing full-frame observations and you set DISPLAY=2, you will
+next see a plot of the residuals between the arc bar spectrum and the ThAr
+atlas.  Good fits will have residuals of smaller than 0.05 Angstroms, but
+acceptable results can be obtained with even larger residuals.  In this
+case, you will have to hit enter to display the next plot or enter 'q' to
+skip the plotting of the remaining bars.
+
+Once the wavelengths are solved, a diagnostic plot will be displayed (if
+DISPLAY is >= 1) and the geometry values are calculated and applied to the
+relevant images.
+
+Regardless of if you are reducing nod-and-shuffle or full-frame
+observations a diagnostic plot set is output in the redux directory that
+will allow you to assess the quality of wavelength solution for each bar.
+This file starts with 'wave_' and the remainder of the filename
+incorporates the bar spectrum image number and the arc spectrum image
+number, e.g.:  'wave_cb1234_arc1232.ps'.  This will contain plots of the
+coefficients as a function of bar number and a set of plots of each bar
+compared to the atlas spectrum.  Problems can be identified in the
+coeficient versus bar plots and then verified by looking at the specific
+bars.  The specific bar plots will show problems if there is an obvious
+discrepancy between the atlas spectrum and the bar arc spectrum.
+
+If you have trouble finding a good solution for a particular bar or set of
+bars, you can tweak some of the wavelength solution parameters in the
+kcwi.ppar file and re-run stage 4.  Currently the most productive tweaking
+is of the PKISO parameter which currently defaults to 2.0.  Problems occur
+sometimes with over-crowded regions of the atlas spectrum.  These can be
+occasionally mitigated by expanding the PKISO from 2.0 to 2.5.  You must
+delete the the old geometry files from stage 4 or they will just be
+re-used.  You can delete the old data-cube files or just set the CLOBBER
+parameter to 1 to allow new data-cubes to be generated.  You may want to
+move or rename the diagnostic 'wave_*.ps' files to compare with the newest
+run to see if your tweaking has improved things or not.  If they are not
+moved or renamed, they will just be overwritten.
+
+The outputs from stage4 are the wave plot files, geometry save files, the
+data cubes and the kcwi_stage4geom.log file.  The geometry save files are
+named after the 'cbars' image that was used to trace the bars and will end
+in '_geom.save'.  If you re-run the stage4 pipeline without deleting these,
+they are just re-used.  The data cubes are an intensity cube '_icube.fits',
+a variance cube '_vcube.fits' and a mask cube '_mcube.fits'.  If you had
+nod-and-shuffle observations, there will also be an object cube
+'_ocube.fits' and a sky cube '_scube.fits'.  These are useful for
+diagnostics.
+
+
+Stage 5 - profile correction:
+
+You can control which profile image is used and which observations are
+profile corrected using the 'kcwi.link' file in the output directory
+specified when you ran KCWI_PREP.
+
+This step is run as follows:
+
+IDL> kcwi_stage5prof
+
+The log for this stage is in the output directory and is called
+kcwi_stag5prof.log.  Here the outputs will be the profile images,
+'_prof.fits', and the profile corrected data cubes, '_icubep.fits',
+'_vcubep.fits', and '_mcubep.fits'.
+
+As a diagnostic, you can display the profile images with ds9 to see if any
+contaminating source was in the sky observation.  If you find some
+contamination, you can edit the kcwi.link file and use a different profile
+image number.  Just be careful because the flexure in CWI moves the profile
+image around a bit.
+
+NB: this stage is optional and no harm will come from skipping it, if your
+science does not require it.
+
+
+Stage 6 - slice to slice, or relative response correction:
+
+You can control which relative response (dflat) image is used and which
+observations are rr corrected using the 'kcwi.link' file in the output
+directory specified when you ran KCWI_PREP.
+
+This step is run as follows:
+
+IDL> kcwi_stage6rr
+
+The log for this stage is in the output directory and is called
+kcwi_stag6rr.log.  Here the outputs will be the relative response images,
+'_rr.fits', and the response corrected data cubes, '_icuber.fits',
+'_vcuber.fits', and '_mcuber.fits'.
+
+As a diagnostic, you can display the response images with ds9 to see if
+any of the response fits have gone drastically wrong.  You can modify the
+kcwi.link file, but be careful to account for the configuration and any
+time-dependent flexure when re-assigning relative response images.
+
+
+Stage 7 - standard star calibration:
+
+The kcwi_prep.pro run will attempt to associate any standard observations
+you have with the appropriate object observations by comparing the object
+name with the list of standard star files in the directory pointed to by
+!KCWI_DATA+'stds/'.  This comparision is case-insensitive.
+
+You can control which standard star image numbers are used and which
+observations are standard star corrected using the 'kcwi.link' file in the
+output directory specified when you ran KCWI_PREP.  Currently the standard
+star library is extremely limited.  Currently the airmass corrections are
+applied, but are only relevant for Palomar Observatory.  These issues will
+be alleviated in the future releases.  
+
+This step is run as follows:
+
+IDL> kcwi_stage7std
+
+If you have the DISPLAY parameter in kcwi.ppar set to 2 or greater, you
+will see plots of the sky spectra used to sky-subtract the standard star
+observations, as well as a final inverse sensitivity curve.  This curve
+will be applied to each observation you have associated the standard with.
+The inverse sensitivity curve will be output using the same image number
+as the standard star observation but with a '_std.fits' suffix.  The object
+files that have had the inverse sensitivity applied will also be output
+with the following suffixes: '_icubes.fits' for intensity, '_vcubes.fits'
+for variance, and '_mcubes.fits' for the mask data cube.
+
+As a diagnostic, you can look at the inverse sensitivity curve.
+
+
+3. ANCILLARY UTILITIES:
+
+There are two useful utilities that might be of use to observers:
+
+KCWI_READ_CFGS, and KCWI_PRINT_CFGS:
+
+KCWI_READ_CFGS is a function that returns the KCWI_CFG struct for each
+image in a directory so you can examine the configurations of your images
+with KCWI_PRINT_CFGS.  You can specify input file specs to limit your
+search:
+
+> cd 130405
+> idl
+IDL> kcfg = kcwi_read_cfgs('./',filespec='image504?.fit*')
+IDL> kcwi_print_cfgs,kcfg,/header
+
+This will print a list of settings for the set of images matching the file
+spec 'image504?.fit*' (with a header to identify the columns).  If you've
+done stage1 already you can get the results as follows:
+
+> cd 130405/redux
+> idl
+IDL> kcfg = kcwi_read_cfgs(/stage1)
+IDL> kcwi_print_cfgs,kcfg,/header
+
+This will read the configurations of all the *_int.fits images and print
+them out.  There is a similar keyword for stage2 output:
+
+IDL> kcfg = kcwi_read_cfgs(/stage2)
+IDL> kcwi_print_cfgs,kcfg,/header
+
+
+4. NEW FEATURES:
+
+Quick Look Pipeline
+
+For at-telescope reductions there is a new routine: kcwi_quick.pro.  This
+routine will process a single targeted image, or if no target is specified,
+it will process the most recent image with imgtype of 'object'.  It has the
+same parameters as kcwi_prep.pro (see above) with the addition of the
+keyword IMGTARG which can be set to a target image number.
+
+This routine will process the target image and the needed calibration images
+as far forward as possible based on what calibrations are available.  For CWI
+users, be sure to run the header fixing routines first (see CWI_README).
+
+Standard Star Associations
+
+The prep routine, kcwi_prep.pro now attempts an automatic association
+between standard star image numbers and target image numbers.  This is done
+in a very simple-minded fashion by comparing the object name with the list
+of standard star calibration files in !KCWI_DATA+'stds/'.  The comparison
+is case-insensitive and the list of standard is fairly small.  The airmass
+correction is now included in the calibration using the Palomar Observatory
+coefficients.
+
+Profile Correction Optional
+
+The profile correction stage (kcwi_stage5prof) is now optional in the
+pipeline and can be skipped if you are concerned that this stage is adding
+noise to your data cubes.  The relative response corrction (kcwi_stage6rr)
+can now take a data cube or a profile corrected data cube as input.
+
+
+5. TROUBLESHOOTING:
+
+1. No mouse reaction during kcwi_stage4geom:
+	If the mouse seems to not be read by the program, check the X windows
+	configuration and either set 'Focus Follows Mouse' or 'Click-through
+	Inactive Windows'.
+
+2. Missing variable or routine:
+	If the pipeline stops and complains about an unknown variable or a
+	missing routine, please contact Don Neill: neill@srl.caltech.edu with
+	the details of the error message.
+
+3. Bad wavelength solution:
+	As stated above, three parameters are available to tweak the
+	wavelength solution: PKISO, PKDEL, and PKSIG.  The recommended
+	first tweak is to expand PKISO from 2 to 2.5.  There may also be
+	good results from tweaking the others, but we recommend very small
+	adjustments.
+
+
+6. TODO:
+
+This is a beta release, so there is still much to do:
+
+-. Implement saveplots option
+-. Implement nod-and-shuffle scattered light fitting/removal
+-. Combine a group of skys to improve profile s/n
+-. Clean up data structures to remove extraneous or repeated items
+-. Implement an iterative wavelength solution for each bar
+-. Implement non-nod-and-shuffle sky subtraction
+-. Implement all configuration modes of KCWI
+-. Install a library of calibration images and geometry solutions
+-. Install a library of reference spectra for wavelength solutions
+-. Refine flat field fitting to better handle fringing in the red
+-. Keep refining calibration file associations
