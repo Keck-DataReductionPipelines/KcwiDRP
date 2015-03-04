@@ -51,7 +51,7 @@ if kcwi_verify_ppar(ppar) ne 0 then $
 	ppar = { kcwi_ppar }
 ;
 ; log
-kcwi_print_info,ppar,pre,version
+kcwi_print_info,ppar,pre,systime(0)
 ;
 ; check inputs
 csz = size(coeffs,/dim)

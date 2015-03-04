@@ -57,7 +57,7 @@ pro kcwi_print_cfgs,kcfg,imsum,header=header,silent=silent,outfile=outfile
 	if keyword_set(outfile) then begin
 		filestamp,outfile,/arch
 		openw,ol,outfile,/get_lun
-		printf,ol,'# '+pre+'  '+version
+		printf,ol,'# '+pre+'  '+systime(0)
 		printf,ol,'# SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes'
 		printf,ol,'#  #/   N Bin AMPS SSM GRAT FILT   FM4pos    GRpos   CAMpos   FOCpos   Cwave JDobs         Expt Type     Imno   RA          Dec             PA    Object'
 	endif

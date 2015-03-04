@@ -62,7 +62,7 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 	if kcwi_verify_ppar(ppar,/init) ne 0 then return
 	;
 	; log
-	kcwi_print_info,ppar,pre,version
+	kcwi_print_info,ppar,pre,systime(0)
 	;
 	; is this a sky ? (add check for dome flat later)
 	if kcfg.skyobs eq 0 and kcfg.shuffmod eq 0 then begin
@@ -233,7 +233,7 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 	endfor	; loop over 24 slices
 	;
 	; update profile image header
-	sxaddpar,hdr,'COMMENT','  '+pre+' '+version
+	sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
 	sxaddpar,hdr,'SLPROF','T',' Slice profile image?'
 	sxaddpar,hdr,'SLPROFY0',y0,' low wave pixel for profile'
 	sxaddpar,hdr,'SLPROFY1',y3,' high wave pixel for profile'

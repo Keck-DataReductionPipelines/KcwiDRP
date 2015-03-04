@@ -246,7 +246,7 @@ sxaddpar,chdr,'CD3_3',kgeom.dwout,' Wavelength Angstroms per pixel'
 sxaddpar,chdr,'LONPOLE',180.0,' Native longitude of Celestial pole'
 sxaddpar,chdr,'LATPOLE',0.0,' Celestial latitude of native pole'
 sxaddpar,chdr,'COMMENT','  '+kgeom.progid
-sxaddpar,chdr,'COMMENT','  '+pre+' '+version
+sxaddpar,chdr,'COMMENT','  '+pre+' '+systime(0)
 ;
 return
 end

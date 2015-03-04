@@ -43,7 +43,7 @@ version = repstr('$Revision: 1.7 $ $Date: 2015/01/24 01:08:31 $','$','')
 q=''
 ;
 ; log info
-kcwi_print_info,ppar,pre,version,/info
+kcwi_print_info,ppar,pre,systime(0)
 ;
 ; do we want to display stuff? 
 display = (ppar.display ge 2)

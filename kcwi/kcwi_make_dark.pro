@@ -48,7 +48,7 @@ pro kcwi_make_dark,ppar
 	if kcwi_verify_ppar(ppar,/init) ne 0 then return
 	;
 	; log
-	kcwi_print_info,ppar,pre,version
+	kcwi_print_info,ppar,pre,systime(0)
 	;
 	; are there darks listed?
 	if strlen(ppar.darks) le 0 then begin
@@ -190,7 +190,7 @@ pro kcwi_make_dark,ppar
 			mmsk[xi,yi] = (total(mstack[*,xi,yi]) gt mskthr) ? 1 : 0
 		;
 		; update master flat header
-		sxaddpar,hdr,'COMMENT','  '+pre+' '+version
+		sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
 		sxaddpar,hdr,'NMEDIAN',nd, $
 			' number of images used for stack'
 		sxaddpar,hdr,'MASTDARK','T',' master dark image?'
@@ -201,7 +201,7 @@ pro kcwi_make_dark,ppar
 		kcwi_write_image,mdark,hdr,ppar.masterdark,ppar
 		;
 		; update master variance header
-		sxaddpar,varhdr,'COMMENT','  '+pre+' '+version
+		sxaddpar,varhdr,'COMMENT','  '+pre+' '+systime(0)
 		sxaddpar,varhdr,'NMEDIAN',nd, $
 			' number of images used for stack'
 		sxaddpar,varhdr,'MASTDARK','T',' master dark image?'
@@ -216,7 +216,7 @@ pro kcwi_make_dark,ppar
 		kcwi_write_image,mvar,varhdr,mastervar,ppar
 		;
 		; update master mask header
-		sxaddpar,mskhdr,'COMMENT','  '+pre+' '+version
+		sxaddpar,mskhdr,'COMMENT','  '+pre+' '+systime(0)
 		sxaddpar,mskhdr,'NMEDIAN',nd, $
 			' number of images used for stack'
 		sxaddpar,mskhdr,'MASTDARK','T',' master dark image?'

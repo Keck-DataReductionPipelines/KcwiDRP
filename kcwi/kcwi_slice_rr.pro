@@ -57,7 +57,7 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 	if kcwi_verify_ppar(ppar,/init) ne 0 then return
 	;
 	; log
-	kcwi_print_info,ppar,pre,version
+	kcwi_print_info,ppar,pre,systime(0)
 	;
 	; is this a dome flat or twilight flat?
 	if strmatch(strtrim(kcfg.imgtype,2),'dflat') eq 0 and $
@@ -215,7 +215,7 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 	endfor
 	;
 	; update rr image header
-	sxaddpar,hdr,'COMMENT','  '+pre+' '+version
+	sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
 	sxaddpar,hdr,'SLRR','T',' Slice rr image?'
 	sxaddpar,hdr,'SLRRY0',y0,' low wave pixel for rr'
 	sxaddpar,hdr,'SLRRY1',y1,' high wave pixel for rr'

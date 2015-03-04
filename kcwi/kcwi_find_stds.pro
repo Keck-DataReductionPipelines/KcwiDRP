@@ -58,7 +58,7 @@ function kcwi_find_stds,kcfg,ppar,nstds
 	if kcwi_verify_ppar(ppar,/init) ne 0 then return,stds
 	;
 	; log
-	kcwi_print_info,ppar,pre,version
+	kcwi_print_info,ppar,pre,systime(0)
 	;
 	; directories
 	if kcwi_verify_dirs(ppar,rawdir,reddir,cdir,ddir) ne 0 then begin

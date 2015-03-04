@@ -99,7 +99,7 @@ cwvl = kgeom.cwave
 resolution = kgeom.resolution
 ;
 ; log info
-kcwi_print_info,ppar,pre,version,/info
+kcwi_print_info,ppar,pre,systime(0)
 kcwi_print_info,ppar,pre,'img, grat, filt, nasmsk, cwave', $
 	imgnum,grating,filter,nasmask,cwvl, $
 	format='(a,i6,2x,a-8,2x,a-8,i4,f12.3)'
@@ -745,7 +745,7 @@ for b=0,119 do begin
 endfor			; b
 ;
 ; stamp the KCWI_GEOM struct
-kgeom.progid = pre + ' ' + version
+kgeom.progid = pre
 ;
 ; now let's make some plots!
 ;

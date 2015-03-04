@@ -134,7 +134,7 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 				;
 				; status
 				pp.initialized		= 1
-				pp.progid		= pre+': '+version
+				pp.progid		= pre
 				bcfg[g].initialized	= 1
 				;
 				; write out ppar file

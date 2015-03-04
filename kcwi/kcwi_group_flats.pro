@@ -135,7 +135,7 @@ pro kcwi_group_flats, kcfg, ppar, fcfg
 			;
 			; status
 			pp.initialized		= 1
-			pp.progid		= pre+': '+version
+			pp.progid		= pre
 			fcfg[i].initialized	= 1
 			;
 			; write out ppar file

@@ -126,7 +126,6 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 	openw,ll,lgfil,/get_lun
 	ppar.loglun = ll
 	printf,ll,'Log file for run of '+pre+' on '+systime(0)
-	printf,ll,'Version: '+version
 	printf,ll,'DRP Ver: '+kcwi_drp_version()
 	printf,ll,'Raw dir: '+rawdir
 	printf,ll,'Reduced dir: '+reddir
@@ -294,7 +293,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						; object image
 						img = mrdfits(obfil,0,hdr,/fscale,/silent)
 						;
-						sxaddpar,hdr, 'COMMENT','  '+pre+' '+version
+						sxaddpar,hdr, 'COMMENT','  '+pre+' '+systime(0)
 						;
 						kcwi_apply_geom,img,hdr,kgeom,ppar,cube,chdr
 						;
@@ -307,7 +306,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(vfil,/read) then begin
 							var = mrdfits(vfil,0,varhdr,/fscale,/silent)
 							;
-							sxaddpar,varhdr,'COMMENT','  '+pre+' '+version
+							sxaddpar,varhdr,'COMMENT','  '+pre+' '+systime(0)
 							;
 							kcwi_apply_geom,var,varhdr,kgeom,ppar,vcub,vchdr
 							;
@@ -322,7 +321,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(mfil,/read) then begin
 							msk = float(mrdfits(mfil,0,mskhdr,/silent))
 							;
-							sxaddpar,mskhdr,'COMMENT','  '+pre+' '+version
+							sxaddpar,mskhdr,'COMMENT','  '+pre+' '+systime(0)
 							;
 							kcwi_apply_geom,msk,mskhdr,kgeom,ppar,mcub,mchdr
 							;
@@ -337,7 +336,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(sfil,/read) then begin
 							sky = mrdfits(sfil,0,skyhdr,/fscale,/silent)
 							;
-							sxaddpar,skyhdr,'COMMENT','  '+pre+' '+version
+							sxaddpar,skyhdr,'COMMENT','  '+pre+' '+systime(0)
 							;
 							kcwi_apply_geom,sky,skyhdr,kgeom,ppar,scub,schdr
 							;
@@ -351,7 +350,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(nfil,/read) then begin
 							obj = mrdfits(nfil,0,objhdr,/fscale,/silent)
 							;
-							sxaddpar,objhdr,'COMMENT','  '+pre+' '+version
+							sxaddpar,objhdr,'COMMENT','  '+pre+' '+systime(0)
 							;
 							kcwi_apply_geom,obj,objhdr,kgeom,ppar,ocub,ochdr
 							;

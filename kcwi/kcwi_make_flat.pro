@@ -55,7 +55,7 @@ pro kcwi_make_flat,ppar
 	if kcwi_verify_ppar(ppar,/init) ne 0 then return
 	;
 	; log
-	kcwi_print_info,ppar,pre,version
+	kcwi_print_info,ppar,pre,systime(0)
 	;
 	; are there flats listed?
 	if strlen(ppar.cflats) le 0 then begin
@@ -162,7 +162,7 @@ pro kcwi_make_flat,ppar
 	kcwi_fit_flat,mflat,hdr,ppar,flato
 	;
 	; update master flat header
-	sxaddpar,hdr,'COMMENT','  '+pre+' '+version
+	sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
 	sxaddpar,hdr,'NMEDIAN',nf, $
 		' number of images used for stack'
 	sxaddpar,hdr,'MASTFLAT','T',' master flat image?'

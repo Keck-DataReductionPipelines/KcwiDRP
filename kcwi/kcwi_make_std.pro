@@ -62,7 +62,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	if kcwi_verify_ppar(ppar,/init) ne 0 then return
 	;
 	; log
-	kcwi_print_info,ppar,pre,version
+	kcwi_print_info,ppar,pre,systime(0)
 	;
 	; is this a standard star object observation?
 	if strmatch(strtrim(kcfg.imgtype,2),'object') eq 0 then begin
@@ -337,7 +337,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; write out effective inverse sensitivity
 	;
 	; update invsens header
-	sxaddpar,hdr,'COMMENT','  '+pre+' '+version
+	sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
 	sxaddpar,hdr,'INVSENS','T',' effective inv. sens. spectrum?'
 	sxaddpar,hdr,'INVSY0',y0,' low wave pixel for eff inv. sens.'
 	sxaddpar,hdr,'INVSY1',y1,' high wave pixel for eff inv. sens.'

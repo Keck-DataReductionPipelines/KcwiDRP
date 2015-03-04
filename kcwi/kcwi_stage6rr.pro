@@ -125,7 +125,6 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 	openw,ll,lgfil,/get_lun
 	ppar.loglun = ll
 	printf,ll,'Log file for run of '+pre+' on '+systime(0)
-	printf,ll,'Version: '+version
 	printf,ll,'DRP Ver: '+kcwi_drp_version()
 	printf,ll,'Raw dir: '+rawdir
 	printf,ll,'Reduced dir: '+reddir
@@ -342,7 +341,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 					endfor
 					;
 					; update header
-					sxaddpar,mskhdr,'COMMENT','  '+pre+' '+version
+					sxaddpar,mskhdr,'COMMENT','  '+pre+' '+systime(0)
 					sxaddpar,mskhdr,'RRCOR','T',' rr corrected?'
 					sxaddpar,mskhdr,'MRFILE',mrfile,' master rr file applied'
 					sxaddpar,mskhdr,'MRIMNO',mrimgno,' master rr image number'
@@ -352,7 +351,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 					kcwi_write_image,msk,mskhdr,ofil,ppar
 					;
 					; update header
-					sxaddpar,varhdr,'COMMENT','  '+pre+' '+version
+					sxaddpar,varhdr,'COMMENT','  '+pre+' '+systime(0)
 					sxaddpar,varhdr,'RRCOR','T',' rr corrected?'
 					sxaddpar,varhdr,'MRFILE',mrfile,' master rr file applied'
 					sxaddpar,varhdr,'MRIMNO',mrimgno,' master rr image number'
@@ -362,7 +361,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 					kcwi_write_image,var,varhdr,ofil,ppar
 					;
 					; update header
-					sxaddpar,hdr,'COMMENT','  '+pre+' '+version
+					sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
 					sxaddpar,hdr,'RRCOR','T',' rr corrected?'
 					sxaddpar,hdr,'MRFILE',mrfile,' master rr file applied'
 					sxaddpar,hdr,'MRIMNO',mrimgno,' master rr image number'
@@ -381,7 +380,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 							sky[ix,is,*] = sky[ix,is,*] / rrob[is,*]
 						;
 						; update header
-						sxaddpar,skyhdr,'COMMENT','  '+pre+' '+version
+						sxaddpar,skyhdr,'COMMENT','  '+pre+' '+systime(0)
 						sxaddpar,skyhdr,'RRCOR','T',' rr corrected?'
 						sxaddpar,skyhdr,'MRFILE',mrfile,' master rr file applied'
 						sxaddpar,skyhdr,'MRIMNO',mrimgno,' master rr image number'
@@ -401,7 +400,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 							obj[ix,is,*] = obj[ix,is,*] / rrob[is,*]
 						;
 						; update header
-						sxaddpar,objhdr,'COMMENT','  '+pre+' '+version
+						sxaddpar,objhdr,'COMMENT','  '+pre+' '+systime(0)
 						sxaddpar,objhdr,'RRCOR','T',' rr corrected?'
 						sxaddpar,objhdr,'MRFILE',mrfile,' master rr file applied'
 						sxaddpar,objhdr,'MRIMNO',mrimgno,' master rr image number'

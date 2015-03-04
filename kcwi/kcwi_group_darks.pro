@@ -129,7 +129,7 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 				;
 				; status
 				pp.initialized		= 1
-				pp.progid		= pre+': '+version
+				pp.progid		= pre
 				dcfg[g].initialized	= 1
 				;
 				; write out ppar file

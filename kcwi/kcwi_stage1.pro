@@ -144,7 +144,6 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 	openw,ll,lgfil,/get_lun
 	ppar.loglun = ll
 	printf,ll,'Log file for run of '+pre+' on '+systime(0)
-	printf,ll,'Version: '+version
 	printf,ll,'DRP Ver: '+kcwi_drp_version()
 	printf,ll,'Raw dir: '+rawdir
 	printf,ll,'Reduced dir: '+reddir
@@ -504,7 +503,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			;
 			; update header
 			sxaddpar,hdr,'COMMENT','  '+kcwi_drp_version()
-			sxaddpar,hdr,'COMMENT','  '+pre+' '+version
+			sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
 			sxaddpar,hdr,'GAINCOR','T',' gain corrected?'
 			sxaddpar,hdr,'BUNIT','electrons',' brightness units'
 			;
@@ -549,12 +548,12 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 				;
 				; call kcwi_la_cosmic
 				kcwi_la_cosmic,img,ppar,crmsk,readn=avrn,gain=1.,objlim=4.,sigclip=sigclip, $
-					ntcosmicray=ncrs,version=laver
+					ntcosmicray=ncrs
 				;
 				; update main header
 				sxaddpar,hdr,'CRCLEAN','T',' cleaned cosmic rays?'
 				sxaddpar,hdr,'NCRCLEAN',ncrs,' number of cosmic rays cleaned'
-				sxaddpar,hdr,'COMMENT','  KCWI_LA_COSMIC '+laver
+				sxaddpar,hdr,'COMMENT','  KCWI_LA_COSMIC '+systime(0)
 				;
 				; write out cleaned object image
 				if ppar.saveintims eq 1 then begin

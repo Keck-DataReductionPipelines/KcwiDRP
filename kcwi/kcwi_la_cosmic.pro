@@ -159,7 +159,7 @@ if ppar.verbose ge 1 then begin
 	print, " L.A. Cosmic: Laplacian cosmic ray removal by Pieter van Dokkum"
 	print, " IDL version by Josh Bloom, KCWI version by Don Neill"
 endif
-kcwi_print_info,ppar,pre,version
+kcwi_print_info,ppar,pre,systime(0)
 kcwi_print_info,ppar,pre,'initial gain, readnoise: ' + $
 		strtrim(string(gain),2)+', '+strtrim(string(readn),2)
 kcwi_print_info,ppar,pre,'Obj thresh, sigma clip : ' + $

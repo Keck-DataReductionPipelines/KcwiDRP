@@ -90,7 +90,7 @@ for ix=0,sz[0]-1l do for iy=0,sz[1]-1l do $
 flrmo = moment(flxr)
 ;
 ; update header
-sxaddpar,hdr,'COMMENT','  '+pre+' '+version
+sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
 sxaddpar,hdr,'EXTCOR','T',' extinction corrected?'
 sxaddpar,hdr,'AVEXCOR',flrmo[0],' average extin. correction (flux ratio)'
 ;

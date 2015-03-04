@@ -53,7 +53,7 @@ pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
 	q = ''
 	;
 	; log
-	kcwi_print_info,ppar,pre,version
+	kcwi_print_info,ppar,pre,systime(0)
 	;
 	; plotting?
 	do_plot = (ppar.display ge 2)
@@ -160,7 +160,7 @@ pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
 	print,' '
 	;
 	; update header
-	sxaddpar,hdr,'COMMENT','  '+pre+' '+version
+	sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
 	sxaddpar,hdr,'FFITSPO',splo,' spline order for flat fit'
 	;
 	; plot specific columns

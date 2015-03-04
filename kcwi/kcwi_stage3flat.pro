@@ -126,7 +126,6 @@ pro kcwi_stage3flat,ppfname,linkfname,help=help,select=select, $
 	openw,ll,lgfil,/get_lun
 	ppar.loglun = ll
 	printf,ll,'Log file for run of '+pre+' on '+systime(0)
-	printf,ll,'Version: '+version
 	printf,ll,'DRP Ver: '+kcwi_drp_version()
 	printf,ll,'Raw dir: '+rawdir
 	printf,ll,'Reduced dir: '+reddir
@@ -262,7 +261,7 @@ pro kcwi_stage3flat,ppfname,linkfname,help=help,select=select, $
 					var = var * mflat^2
 					;
 					; update header
-					sxaddpar,mskhdr,'COMMENT','  '+pre+' '+version
+					sxaddpar,mskhdr,'COMMENT','  '+pre+' '+systime(0)
 					sxaddpar,mskhdr,'FLATCOR','T',' flat corrected?'
 					sxaddpar,mskhdr,'MFFILE',mffile,' master flat file applied'
 					;
@@ -271,7 +270,7 @@ pro kcwi_stage3flat,ppfname,linkfname,help=help,select=select, $
 					kcwi_write_image,msk,mskhdr,ofil,ppar
 					;
 					; update header
-					sxaddpar,varhdr,'COMMENT','  '+pre+' '+version
+					sxaddpar,varhdr,'COMMENT','  '+pre+' '+systime(0)
 					sxaddpar,varhdr,'FLATCOR','T',' flat corrected?'
 					sxaddpar,varhdr,'MFFILE',mffile,' master flat file applied'
 					;
@@ -280,7 +279,7 @@ pro kcwi_stage3flat,ppfname,linkfname,help=help,select=select, $
 					kcwi_write_image,var,varhdr,ofil,ppar
 					;
 					; update header
-					sxaddpar,hdr,'COMMENT','  '+pre+' '+version
+					sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
 					sxaddpar,hdr,'FLATCOR','T',' flat corrected?'
 					sxaddpar,hdr,'MFFILE',mffile,' master flat file applied'
 					;
