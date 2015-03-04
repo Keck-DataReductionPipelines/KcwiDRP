@@ -1,4 +1,4 @@
-; $Id: kcwi_slice_prof.pro,v 1.27 2015/02/21 00:18:37 neill Exp $
+; $Id: kcwi_slice_prof.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -55,7 +55,6 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 	;
 	; setup
 	pre = 'KCWI_SLICE_PROF'
-	version = repstr('$Revision: 1.27 $ $Date: 2015/02/21 00:18:37 $','$','')
 	;
 	; check inputs
 	if kcwi_verify_cfg(kcfg,/init) ne 0 then return

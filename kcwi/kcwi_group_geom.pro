@@ -1,4 +1,4 @@
-; $Id: kcwi_group_geom.pro,v 1.7 2014/10/29 23:30:31 neill Exp $
+; $Id: kcwi_group_geom.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -44,7 +44,6 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg, ngeom
 	;
 	; setup
 	pre = 'KCWI_GROUP_GEOM'
-	version = repstr('$Revision: 1.7 $ $Date: 2014/10/29 23:30:31 $','$','')
 	;
 	; check input
 	if kcwi_verify_cfg(kcfg) ne 0 then return

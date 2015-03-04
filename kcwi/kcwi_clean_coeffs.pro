@@ -1,4 +1,4 @@
-; $Id: kcwi_clean_coeffs.pro,v 1.11 2015/01/24 01:08:31 neill Exp $
+; $Id: kcwi_clean_coeffs.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -43,7 +43,6 @@ pro kcwi_clean_coeffs,coeffs,forder,ppar,plot=plot
 ;
 ; startup
 pre = 'KCWI_CLEAN_COEFFS'
-version = repstr('$Revision: 1.11 $ $Date: 2015/01/24 01:08:31 $','$','')
 q = ''
 ;
 ; check pipeline params

@@ -1,4 +1,4 @@
-; $Id: kcwi_make_flat.pro,v 1.21 2015/02/21 00:18:39 neill Exp $
+; $Id: kcwi_make_flat.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -44,9 +44,6 @@
 ;	2013-SEP-16	use ppar to pass pipeline params
 ;-
 pro kcwi_make_flat,ppar
-	;
-	; version
-	version = repstr('$Revision: 1.21 $ $Date: 2015/02/21 00:18:39 $','$','')
 	;
 	; initialize
 	pre = 'KCWI_MAKE_FLAT'

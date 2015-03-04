@@ -1,4 +1,4 @@
-; $Id: kcwi_apply_geom.pro,v 1.39 2014/11/06 19:42:51 neill Exp $
+; $Id: kcwi_apply_geom.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -47,7 +47,6 @@ pro kcwi_apply_geom,img,hdr,kgeom,ppar,cube,chdr, $
 ;
 ; startup
 pre = 'KCWI_APPLY_GEOM'
-version = repstr('$Revision: 1.39 $ $Date: 2014/11/06 19:42:51 $','$','')
 q = ''
 ;
 ; Check structs

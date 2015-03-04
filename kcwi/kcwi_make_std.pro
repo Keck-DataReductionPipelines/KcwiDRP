@@ -1,4 +1,4 @@
-; $Id: kcwi_make_std.pro,v 1.23 2015/02/21 00:18:38 neill Exp $
+; $Id: kcwi_make_std.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -54,7 +54,6 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	;
 	; setup
 	pre = 'KCWI_MAKE_STD'
-	version = repstr('$Revision: 1.23 $ $Date: 2015/02/21 00:18:38 $','$','')
 	q=''
 	;
 	; check inputs

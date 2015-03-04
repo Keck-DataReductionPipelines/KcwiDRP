@@ -1,4 +1,4 @@
-; $Id: kcwi_set_geom.pro,v 1.30 2015/02/21 00:18:38 neill Exp $
+; $Id: kcwi_set_geom.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -43,7 +43,6 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	;
 	; setup
 	pre = 'KCWI_SET_GEOM'
-	version = repstr('$Revision: 1.30 $ $Date: 2015/02/21 00:18:38 $','$','')
 	;
 	; help request
 	if keyword_set(help) then begin

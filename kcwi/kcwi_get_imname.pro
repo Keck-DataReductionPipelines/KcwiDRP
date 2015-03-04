@@ -1,11 +1,10 @@
-; $Id: kcwi_get_imname.pro,v 1.5 2015/02/21 00:18:36 neill Exp $
+; $Id: kcwi_get_imname.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 function kcwi_get_imname,ppar,imgnum,tail, $
 	nodir = nodir, calib = calib, raw = raw, reduced = reduced, $
 	master = master, help = help
 	;
 	; setup
 	pre = 'KCWI_GET_IMNAME'
-	version = repstr('$Revision: 1.5 $ $Date: 2015/02/21 00:18:36 $','$','')
 	;
 	; help request
 	if n_params(0) lt 2 or keyword_set(help) then begin

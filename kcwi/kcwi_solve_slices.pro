@@ -1,4 +1,4 @@
-; $Id: kcwi_solve_slices.pro,v 1.12 2014/10/01 22:42:59 neill Exp $
+; $Id: kcwi_solve_slices.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -54,7 +54,6 @@ pro kcwi_solve_slices,ppar,kgeom, help=help
 ;
 ; setup
 pre = 'KCWI_SOLVE_SLICES'
-version = repstr('$Revision: 1.12 $ $Date: 2014/10/01 22:42:59 $','$','')
 q = ''
 ;
 ; check inputs

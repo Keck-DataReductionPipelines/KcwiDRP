@@ -1,4 +1,4 @@
-; $Id: kcwi_correct_extin.pro,v 1.2 2015/02/07 17:05:04 neill Exp $
+; $Id: kcwi_correct_extin.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -43,7 +43,6 @@ pro kcwi_correct_extin,img,hdr,ppar
 ;
 ; setup
 pre = 'KCWI_CORRECT_EXTIN'
-version = repstr('$Revision: 1.2 $ $Date: 2015/02/07 17:05:04 $','$','')
 ;
 ; get airmass
 air = sxpar(hdr,'airmass')

@@ -1,4 +1,4 @@
-; $Id: kcwi_apply_coeffs.pro,v 1.11 2014/09/22 16:58:21 neill Exp $
+; $Id: kcwi_apply_coeffs.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -58,7 +58,6 @@ pro kcwi_apply_coeffs,kgeom,barno,coeffs, $
 ;
 ; startup
 pre = 'KCWI_APPLY_COEFFS'
-version = repstr('$Revision: 1.11 $ $Date: 2014/09/22 16:58:21 $','$','')
 q = ''
 ;
 ; check inputs

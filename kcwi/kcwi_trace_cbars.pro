@@ -1,4 +1,4 @@
-; $Id: kcwi_trace_cbars.pro,v 1.32 2014/10/31 23:56:44 neill Exp $
+; $Id: kcwi_trace_cbars.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -86,7 +86,6 @@ pro kcwi_trace_cbars, img, kgeom, ppar, $
 ;
 ; init
 pre = 'KCWI_TRACE_CBARS'
-version = repstr('$Revision: 1.32 $ $Date: 2014/10/31 23:56:44 $','$','')
 q=''
 status = -1
 ;

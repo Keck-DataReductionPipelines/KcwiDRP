@@ -1,4 +1,4 @@
-; $Id: kcwi_fit_center.pro,v 1.7 2015/01/24 01:08:31 neill Exp $
+; $Id: kcwi_fit_center.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -39,7 +39,6 @@
 pro kcwi_fit_center, specs, kgeom, ppar, centcoeff
 
 pre = 'KCWI_FIT_CENTER'
-version = repstr('$Revision: 1.7 $ $Date: 2015/01/24 01:08:31 $','$','')
 q=''
 ;
 ; log info

@@ -1,4 +1,4 @@
-; $Id: kcwi_fit_flat.pro,v 1.16 2015/01/24 01:08:31 neill Exp $
+; $Id: kcwi_fit_flat.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -44,9 +44,6 @@
 ;	2014-NOV-03	Removed CR rejection, now plots selected column
 ;-
 pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
-	;
-	; version
-	version = repstr('$Revision: 1.16 $ $Date: 2015/01/24 01:08:31 $','$','')
 	;
 	; initialize
 	pre = 'KCWI_FIT_FLAT'

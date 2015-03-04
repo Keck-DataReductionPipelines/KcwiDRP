@@ -1,4 +1,4 @@
-; $Id: kcwi_stage5prof.pro,v 1.27 2015/02/25 19:16:46 neill Exp $
+; $Id: kcwi_stage5prof.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -64,7 +64,6 @@ pro kcwi_stage5prof,ppfname,linkfname,help=help,select=select, $
 	;
 	; setup
 	pre = 'KCWI_STAGE5PROF'
-	version = repstr('$Revision: 1.27 $ $Date: 2015/02/25 19:16:46 $','$','')
 	startime=systime(1)
 	q = ''	; for queries
 	;

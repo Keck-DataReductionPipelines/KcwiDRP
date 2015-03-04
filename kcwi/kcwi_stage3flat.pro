@@ -1,4 +1,4 @@
-; $Id: kcwi_stage3flat.pro,v 1.26 2015/02/25 19:16:47 neill Exp $
+; $Id: kcwi_stage3flat.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -66,7 +66,6 @@ pro kcwi_stage3flat,ppfname,linkfname,help=help,select=select, $
 	;
 	; setup
 	pre = 'KCWI_STAGE3FLAT'
-	version = repstr('$Revision: 1.26 $ $Date: 2015/02/25 19:16:47 $','$','')
 	startime=systime(1)
 	q = ''	; for queries
 	;

@@ -1,4 +1,4 @@
-; $Id: kcwi_group_flats.pro,v 1.14 2015/02/21 00:18:37 neill Exp $
+; $Id: kcwi_group_flats.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -50,7 +50,6 @@ pro kcwi_group_flats, kcfg, ppar, fcfg
 	;
 	; setup
 	pre = 'KCWI_GROUP_FLATS'
-	version = repstr('$Revision: 1.14 $ $Date: 2015/02/21 00:18:37 $','$','')
 	;
 	; instantiate and init a KCWI_CFG struct for the flat groups
 	F = {kcwi_cfg}

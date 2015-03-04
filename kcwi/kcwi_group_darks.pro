@@ -1,4 +1,4 @@
-; $Id: kcwi_group_darks.pro,v 1.19 2015/02/21 00:18:36 neill Exp $
+; $Id: kcwi_group_darks.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -50,7 +50,6 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 	;
 	; setup
 	pre = 'KCWI_GROUP_DARKS'
-	version = repstr('$Revision: 1.19 $ $Date: 2015/02/21 00:18:36 $','$','')
 	;
 	; instantiate and init a KCWI_CFG struct for the dark groups
 	D = {kcwi_cfg}

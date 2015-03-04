@@ -1,4 +1,4 @@
-; $Id: kcwi_make_bias.pro,v 1.26 2014/10/29 17:06:51 neill Exp $
+; $Id: kcwi_make_bias.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -41,9 +41,6 @@
 ;	2013-SEP-14	use ppar to pass loglun
 ;-
 pro kcwi_make_bias,ppar
-	;
-	; version
-	version = repstr('$Revision: 1.26 $ $Date: 2014/10/29 17:06:51 $','$','')
 	;
 	; initialize
 	pre = 'KCWI_MAKE_BIAS'

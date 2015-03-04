@@ -1,5 +1,5 @@
 ;------------------------------------------------------------------------------
-; $Id: kcwi_la_cosmic.pro,v 1.17 2014/10/30 18:39:27 neill Exp $
+; $Id: kcwi_la_cosmic.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ;+
 ; NAME:
@@ -35,7 +35,6 @@
 ;   blocksize   Size of working blocks.  Keep in integer multiples of 512
 ;   isbig       Tell the routine to chop up the images in to more
 ;                manageable sections of size blocksize x blocksize
-;   version	output containing version of kcwi_la_cosmic.pro
 ;   ntcosmicray output containing the total number of cosmic rays found
 ; OUTPUTS:
 ;	mask	byte 2-d array with value of 1 for CR pixels, 0 otherwise
@@ -125,12 +124,10 @@ pro kcwi_la_cosmic, img, ppar, mask, sigclip=sigclip, $
                niter=niter,sigfrac=sigfrac, $
                statsec=statsec,zeroindexed=zeroindexed,$
                isbig=isbig, blocksize=blocksize, $
-	       version=version, $
 	       ntcosmicray=ntcosmicray
 
 ;; set some sensible defaults
 pre = 'KCWI_LA_COSMIC'
-version = repstr('$Revision: 1.17 $ $Date: 2014/10/30 18:39:27 $','$','')
 if not keyword_set(gain)	then gain	= -1.0
 if not keyword_set(readn)	then readn	= 0.0
 if not keyword_set(skyval)	then skyval	= 0.0

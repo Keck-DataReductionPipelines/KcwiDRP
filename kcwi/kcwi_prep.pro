@@ -1,4 +1,4 @@
-; $Id: kcwi_prep.pro,v 1.64 2015/02/25 19:16:47 neill Exp $
+; $Id: kcwi_prep.pro | Tue Mar 3 16:21:42 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -106,7 +106,6 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	;
 	; setup
 	pre = 'KCWI_PREP'
-	version = repstr('$Revision: 1.64 $ $Date: 2015/02/25 19:16:47 $','$','')
 	startime=systime(1)
 	q = ''	; for queries
 	;

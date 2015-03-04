@@ -1,4 +1,4 @@
-; $Id: kcwi_read_ppar.pro,v 1.3 2015/02/21 00:18:38 neill Exp $
+; $Id: kcwi_read_ppar.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -64,7 +64,6 @@ function kcwi_read_ppar,ppfname,verbose=verbose
 ;
 ; initialize
 	pre = 'KCWI_READ_PPAR'
-	version = repstr('$Revision: 1.3 $ $Date: 2015/02/21 00:18:38 $','$','')
 
 	A = {kcwi_ppar}		; get blank parameter struct
 	ppar = struct_init(A)	; initialize it

@@ -1,4 +1,4 @@
-; $Id: kcwi_print_cfgs.pro,v 1.15 2014/10/28 16:44:34 neill Exp $
+; $Id: kcwi_print_cfgs.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -47,7 +47,6 @@ pro kcwi_print_cfgs,kcfg,imsum,header=header,silent=silent,outfile=outfile
 	;
 	; setup
 	pre = 'KCWI_PRINT_CFGS'
-	version = repstr('$Revision: 1.15 $ $Date: 2014/10/28 16:44:34 $','$','')
 	imsum = ''
 	;
 	; check inputs

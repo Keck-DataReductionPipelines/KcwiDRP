@@ -1,5 +1,5 @@
 ;-
-; $Id: kcwi_geom_resid.pro,v 1.1 2014/10/01 19:14:37 neill Exp $
+; $Id: kcwi_geom_resid.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -45,7 +45,6 @@ pro kcwi_geom_resid,xi,yi,xw,yw,degree,kwx,kwy,xrsd,yrsd
 ;
 ; setup
 pre = 'KCWI_GEOM_RESID'
-version = repstr('$Revision: 1.1 $ $Date: 2014/10/01 19:14:37 $','$','')
 xrsd = -1.
 yrsd = -1.
 ;

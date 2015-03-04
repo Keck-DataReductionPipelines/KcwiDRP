@@ -1,4 +1,4 @@
-; $Id: kcwi_find_stds.pro,v 1.2 2015/02/21 00:18:36 neill Exp $
+; $Id: kcwi_find_stds.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -48,7 +48,6 @@ function kcwi_find_stds,kcfg,ppar,nstds
 	;
 	; setup
 	pre = 'KCWI_FIND_STDS'
-	version = repstr('$Revision: 1.2 $ $Date: 2015/02/21 00:18:36 $','$','')
 	q=''
 	nstds = 0
 	stds = -1

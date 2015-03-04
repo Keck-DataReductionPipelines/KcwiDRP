@@ -1,4 +1,4 @@
-; $Id: kcwi_extract_arcs.pro,v 1.25 2015/01/24 01:08:31 neill Exp $
+; $Id: kcwi_extract_arcs.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -64,7 +64,6 @@ pro kcwi_extract_arcs,img,kgeom,spec,ppar, $
 ;
 ; startup
 pre = 'KCWI_EXTRACT_ARCS'
-version = repstr('$Revision: 1.25 $ $Date: 2015/01/24 01:08:31 $','$','')
 q = ''
 ;
 ; check inputs

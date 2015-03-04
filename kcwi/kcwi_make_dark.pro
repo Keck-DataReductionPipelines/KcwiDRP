@@ -1,4 +1,4 @@
-; $Id: kcwi_make_dark.pro,v 1.15 2015/02/21 00:18:37 neill Exp $
+; $Id: kcwi_make_dark.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -37,9 +37,6 @@
 ;	2013-SEP-14	Use ppar to pass params, added var and msk image creation
 ;-
 pro kcwi_make_dark,ppar
-	;
-	; version
-	version = repstr('$Revision: 1.15 $ $Date: 2015/02/21 00:18:37 $','$','')
 	;
 	; initialize
 	pre = 'KCWI_MAKE_DARK'

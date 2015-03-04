@@ -1,4 +1,4 @@
-; $Id: kcwi_plot_arcfits.pro,v 1.14 2015/01/24 01:08:30 neill Exp $
+; $Id: kcwi_plot_arcfits.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -45,7 +45,6 @@ pro kcwi_plot_arcfits, specs, kgeom, ppar, cntcoeff, fincoeff, sigmas, $
 	tweak=tweak, plot_file=plot_file
 
 pre = 'KCWI_PLOT_ARCFITS'
-version = repstr('$Revision: 1.14 $ $Date: 2015/01/24 01:08:30 $','$','')
 q=''
 ;
 ; do we want to display stuff? 

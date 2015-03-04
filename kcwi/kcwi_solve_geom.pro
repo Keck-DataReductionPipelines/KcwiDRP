@@ -1,4 +1,4 @@
-; $Id: kcwi_solve_geom.pro,v 1.4 2015/02/21 00:18:36 neill Exp $
+; $Id: kcwi_solve_geom.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -53,7 +53,6 @@ pro kcwi_solve_geom,spec,kgeom,ppar, fitdisp=fitdisp, help=help
 ;
 ; startup
 pre = 'KCWI_SOLVE_GEOM'
-version = repstr('$Revision: 1.4 $ $Date: 2015/02/21 00:18:36 $','$','')
 q = ''
 ;
 ; check inputs
