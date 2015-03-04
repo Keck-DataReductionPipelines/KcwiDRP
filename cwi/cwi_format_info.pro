@@ -144,8 +144,7 @@ endif else begin
 	filestamp,fnam,/arch
 	openw,ol,fnam,/get_lun
 endelse
-printf,ol,'# '+pre+' '+version
-printf,ol,'# Run on '+systime(0)
+printf,ol,'# '+pre+' '+systime(0)
 ;
 ; Keyword processing info (see CWI_FIX_HEADERS.PRO for details)
 printf,ol,'#KEYWRD  VALUE   TYPE    AFTER    RANGE'

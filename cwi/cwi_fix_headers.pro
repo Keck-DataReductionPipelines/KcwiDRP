@@ -234,7 +234,6 @@ for j=0,nf-1 do begin
 				nfix += 1L
 				;
 				; log modification
-				sxaddpar,h,'HFIXVER',version,' program version'
 				sxaddpar,h,'HFIXFILE',hmf,' file used to modify header'
 				sxaddpar,h,'HFIXDATE',systime(0),' header modify date'
 				;
