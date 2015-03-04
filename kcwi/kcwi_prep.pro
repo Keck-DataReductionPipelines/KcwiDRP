@@ -126,7 +126,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	;
 	; set initialized and version
 	ppar.initialized = 1
-	ppar.progid = pre+': '+version
+	ppar.progid = pre
 	;
 	; set from keyword values
 	if n_elements(verbose) eq 0 then verbose = 1
@@ -278,7 +278,6 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	openw,ll,lgfil,/get_lun
 	ppar.loglun = ll
 	printf,ll,'Log file for run of '+pre+' on '+systime(0)
-	printf,ll,'Version: '+version
 	printf,ll,'DRP Ver: '+kcwi_drp_version()
 	printf,ll,'Raw dir: '+indir
 	printf,ll,'Reduced dir: '+odir
