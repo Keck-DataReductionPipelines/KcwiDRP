@@ -1,0 +1,50 @@
+more control of la_cosmic parameters to the user?
+add annotation for wave_*.ps plots for central and limit wavelengths
+implement saveplots option & date-stamping plots
+implement nod-and-shuffle scattered light fitting/removal
+add option to re-scale the sky for aborted nod-and-shuffel obs
+propogate missing geom cal files foward into prof and rr links
+fix bright line at end of slice issue
+look into flat fitting algorithm: seeing striations in self-flatted cflats
+set header params for trough limits during profile correction
+think about the impact of flexure correction on the slicex0 and slicex1 params
+#25-FEB-2015 DONE be able to run from the raw dir or the redux dir
+#18-FEB-2015 DONE make profile correction optional
+#08-FEB-2015 DONE fill out standard star library
+#20-JAN-2015 DONE check twilight flats as relative response calibrators
+#13-JAN-2015 DONE make twilight flat rr priority more sophisticated
+#12-JAN-2015 DONE include slicer position in headers
+#18-NOV-2014 DONErename standard calibration files from *_std.fits to *_invsens.fits
+#12-NOV-2014 DONE more robust smoothing of gaussfold for std star response calc
+#07-NOV-2014 DONE should be able to override display, verbose on command line and for master make
+#05-NOV-2014 DONE add automatic associations for standard stars
+#27-OCT-2014 DONE make associations more sophistocated: check 130807 associations
+#06-OCT-2014 DONE refine WCS spatial zero points
+#NO CAN DO (flexure) look into using dome flats for profile corrections
+#24-SEP-2014 DONE put in option and parameters for IR filter (CWI)
+#23-SEP-2014 DONE apply airmass correction in stage7
+#22-SEP-2014 DONE allow bar-by-bar status of fits
+#21-SEP-2014 DONE set spatial zero point x0out in kcwi_set_geom.pro
+#16-SEP-2014 DONE implement calculating RMS of initial fits of wavelength solution (non-tweaked)
+#15-SEP-2014 DONE understand and implement wavelength ranges, padding, trimming
+#14-SEP-2014 DONE check logic for when geom fails: write no image?
+#11-SEP-2014 DONE put cc window for each grating
+#27-AUG-2014 DONE improve robustness of initial cross-correlation to determine pixel offsets
+#26-AUG-2014 DONE improve kcwi_match_cfg error message to include more diagnostics
+#13-MAY-2014 DONE put calibration image numbers in headers in addition to filenames
+#12-MAY-2014 DONE calibration should account for exposure times
+#07-APR-2014 DONE check profile images and relative response images for zeros
+#06-APR-2014 DONE put RMS of wavelength solution in header
+#05-APR-2014 DONE process all calibration images by default
+#05-APR-2014 DONE make management of which images are processed more flexible: master controls?
+#21-MAR-2014 DONE make kcwi_solve_thar more robust
+#19-DEC-2013 DONE include fit sigmas on tweaked plots
+#05-DEC-2013 DONE replace do_plots check logic with display level variable logic
+#13-DEC-2013 DONE plot error bars on final dispersion diag. plot
+#21-NOV-2013 DONE include info level in log output so user can choose verbose level
+#21-NOV-2013 DONE put image number in header
+#15-NOV-2013 DONE make sure each step is recorded in the header as a comment
+#14-NOV-2013 DONE bump up display threshhold for bar offset plot to 2
+#14-NOV-2013 DONE plot reference bar number in kcwi_init_dispersion
+#14-NOV-2013 DONE plot slice boundaries on final dispersion diag. plot and set better y limits
+#14-NOV-2013 DONE set better y limits in kcwi_slice_prof
