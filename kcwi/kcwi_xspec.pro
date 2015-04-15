@@ -93,8 +93,8 @@ if keyword_set(median) then begin
 endif				; median
 
 if keyword_set(min) then begin
-	min0 = min(spec0)
-	min1 = min(spec1)
+	min0 = min(spec0) > 0.
+	min1 = min(spec1) > 0.
 	spec0 = spec0 - min0
 	spec1 = spec1 - min1
 endif				; min
@@ -140,8 +140,6 @@ if keyword_set(central) then begin
 	if npk lt 0 then begin
 		;
 		; this isn't good
-		kcwi_print_info,ppar,pre, $
-			'no 3-sigma peaks in cross-correlation',/warning
 		status = 1
 		;
 		; just take peak cross-correlation value
@@ -158,8 +156,6 @@ if keyword_set(central) then begin
 		if ncpks le 0 then begin
 			;
 			; this isn't good
-			kcwi_print_info,ppar,pre, $
-				'no central peaks in cross-correlation',/warning
 			status = 1
 			;
 			; just take peak cross-correlation value
@@ -207,7 +203,8 @@ if keyword_set(plot) and ppar.display ge 3 then begin
 	plot,xcor,charsi=1.5,charthi=2,thick=2, $
 		xthick=2,xtitle='PIX',/xs, $
 		ythick=2,ytitle='CCOR',/ylog, $
-		title='Offset = '+string(offset,format='(f9.3)')
+		title='Offset = '+strtrim(string(offset,format='(f9.3)'),2) + $
+		', Peak = '+strtrim(string(value,format='(g13.3)'),2)
 	oplot,[mi,mi],10.^!y.crange
 	read,'Next? (Q-quit plotting, <cr> - next): ',q
 	if strupcase(strmid(q,0,1)) eq 'Q' then plot = (1 eq 0)

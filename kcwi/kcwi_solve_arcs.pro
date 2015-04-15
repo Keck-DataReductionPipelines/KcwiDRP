@@ -257,9 +257,10 @@ if keyword_set(tweak) then begin
 	;
 	; let's find the peaks in the reference spectrum.
 	; adjust pksig to get more atlas lines
+	refmode = (mode(twk_reference_spectrum))[0]
 	twk_ref_cent = clnpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
-		(resolution*2.)/refdisp,pkiso/refdisp,pksig*0.1,count=twk_ref_npks, $
-		 estimate=resolution)
+		resolution/refdisp,resolution/refdisp,pksig,count=twk_ref_npks, $
+		level=refmode,estimate=resolution)
 	;
 	if twk_ref_npks eq 0 then begin
 		kcwi_print_info,ppar,pre,'No good atlas points found',/error
@@ -461,6 +462,7 @@ if keyword_set(tweak) then begin
 			endif
 			;
 			if nmatchedpeaks le 2 then begin
+				print,' '
 				kcwi_print_info,ppar,pre,'Not enough peaks matched in Bar # '+strn(b)+': '+strn(nmatchedpeaks),/warning
 				barstat[b]=9
 				goto, errbar
@@ -591,7 +593,7 @@ if keyword_set(tweak) then begin
 				if strupcase(strmid(q,0,1)) eq 'Q' then display = (1 eq 0)
 			endif	; display
 		endif	else $	; nmatchedpeaks gt 2
-			kcwi_print_info,ppar,pre,'not enough matched peaks',nmatchedpeaks,/error
+			kcwi_print_info,ppar,pre,'Not enough matched peaks for bar',b,nmatchedpeaks,/error
 	endfor	; loop over bars to get final stats
 endif	; have we done any tweaking?
 ;

@@ -195,7 +195,7 @@ pro kcwi_stage7std,ppfname,linkfname,help=help,select=select, $
 					endif else begin
 						;
 						; does input std image exist?
-						sinfile = kcwi_get_imname(ppar,snums[i],'_icubep',/reduced)
+						sinfile = kcwi_get_imname(ppar,snums[i],'_icuber',/reduced)
 						if file_test(sinfile) then begin
 							do_std = (1 eq 1)
 							kcwi_print_info,ppar,pre,'building std file = '+msfile

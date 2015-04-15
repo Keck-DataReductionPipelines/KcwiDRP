@@ -44,7 +44,7 @@
 ;    peaks which are NSIG above the sigma of all peaks are selected.
 ; 
 ; MODIFICATION HISTORY:
-; $Id: clnpeaks.pro,v 1.2 2014/03/29 00:07:59 neill Exp $
+; $Id: clnpeaks.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;	2014-MAR-28	Added /ESTIMATE keyword
 ;
 ;-

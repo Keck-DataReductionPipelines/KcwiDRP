@@ -115,8 +115,10 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	ppar.progid = pre
 	;
 	; set from keyword values
-	ppar.verbose = verbose
-	ppar.display = display
+	if n_elements(verbose) eq 1 then $
+		ppar.verbose = verbose
+	if n_elements(display) eq 1 then $
+		ppar.display = display
 	;
 	; check directory inputs
 	if n_elements(rawdir) le 0 then $
@@ -148,7 +150,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		q = strupcase(strtrim(q,2))
 		if strmid(q,0,1) ne 'N' then begin
 			file_mkdir,odir,/noexpand
-			if verbose ge 1 then $
+			if ppar.verbose ge 1 then $
 				print,pre+': Info - created directory: ',odir
 		endif else begin
 			print,pre+': Error - no output dir, returning'
@@ -315,8 +317,8 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		printf,ll,'Including test images in processing'
 	if keyword_set(clobber) then $
 		printf,ll,'Clobbering existing files'
-	printf,ll,'Verbosity level   : ',verbose
-	printf,ll,'Plot display level: ',display
+	printf,ll,'Verbosity level   : ',ppar.verbose
+	printf,ll,'Plot display level: ',ppar.display
 	if keyword_set(saveplots) then $
 		printf,ll,'Saving plots'
 	kcwi_print_info,ppar,pre,'Number of input images',nf
@@ -496,7 +498,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		printf,ll,""
 		printf,ll,imsumo
 		flush,ll
-		if verbose ge 1 then $
+		if ppar.verbose ge 1 then $
 			print,imsumo
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
