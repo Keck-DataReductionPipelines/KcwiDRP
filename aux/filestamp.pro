@@ -10,9 +10,17 @@ pro filestamp,lfile,verbose=verbose,archdir=archdir
 fdecomp,lfile,disk,idir,file,ext
 ;
 ; check for error condition
-if strlen(file) le 0 then begin
+if strlen(file) le 0 and strlen(idir) le 0 then begin
 	print,'FILESTAMP: Error - no file or directory to stamp, nothing done.'
 	return
+endif
+;
+; if file is empty then we are stamping the bottom-most directory
+if strlen(file) le 0 then begin
+	sta=strsplit(idir,'/',/extract,count=nd)
+	file = sta[nd-1]
+	idir = ''
+	for i=0,nd-2 do idir = idir + sta[i] + '/'
 endif
 ;
 ; find out where to put the new file if needed
