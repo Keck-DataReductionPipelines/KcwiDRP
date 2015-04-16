@@ -44,7 +44,7 @@
 ; IDL> oplot,pk,y[pk],ps=2
 ;
 ; MODIFICATION HISTORY:
-; $Id: isopeaks.pro,v 1.1 2014/03/25 23:19:35 neill Exp $
+; $Id: isopeaks.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ;-
 function isopeaks,y,pkgap,nsig,level=level,count=npk

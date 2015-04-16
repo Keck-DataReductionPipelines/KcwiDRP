@@ -49,7 +49,7 @@
 ;
 ;-
 function clnpeaks,x,y,del,pkgap,nsig, $
-	level=level,count=npk,ncleaned=ncln,estimate=estimate
+	level=level,count=npk,ncleaned=ncln,estimate=estimate,nofit=nofit
 on_error,2
 ;
 cen = -1.
@@ -71,8 +71,16 @@ else	esw = 1.d
 ; get isolated peaks
 pks = isopeaks(y,pkgap,nsig,level=level,count=npk)
 ;
-; do we have peaks to fit?
+; do we have peaks?
 if npk gt 0 then begin
+    ;
+    ; not fitting?
+    if keyword_set(nofit) then begin
+	cen = x[pks]
+	ncln = 0
+    ;
+    ; we are fitting
+    endif else begin
 	;
 	; centroid and width
 	cen = dblarr(npk)
@@ -107,6 +115,7 @@ if npk gt 0 then begin
 		npk = 0
 		cen = -1.
 	endelse
+    endelse	; we are fitting
 endif
 ;
 return,cen

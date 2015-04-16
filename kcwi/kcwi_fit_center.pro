@@ -119,7 +119,7 @@ prelim_disp = cos(prelim_beta)/rho/fcam*(pix*ybin)*1e4
 if strtrim(strupcase(grating),2) eq 'MEDREZ' then begin
 	; preliminary beta
 	prelim_alpha = -((-264500.0)-kgeom.gratpos)/2000.0
-	prelim_beta = 60. - prelim_alpha
+	prelim_beta = 61. - prelim_alpha
 	prelim_disp = ((-cos(prelim_beta/!radeg)) / $
 		(rho * fcam ) ) * (pix*ybin)*1e4
 endif
@@ -199,15 +199,20 @@ kcwi_xspec,prelim_intspec,prelim_refspec,ppar,prelim_offset,prelim_value, $
 	/min,/shift,/plot,label='Obj(0) vs Atlas(1)'
 ;
 if ppar.display ge 2 then begin
-	plot,prelim_subwvl,prelim_spec/max(prelim_spec),charsi=si,charthi=th,thick=th, $
+	q='test'
+	while strlen(q) gt 0 do begin
+	    plot,prelim_subwvl,prelim_spec/max(prelim_spec),charsi=si,charthi=th,thick=th, $
 		xthick=th,xtitle='Wave(A)', $
 		ythick=th,ytitle='Rel. Flux',title=imglab+', Offset = ' + $
 		strtrim(string(prelim_offset,form='(f9.3)'),2)+' px',/xs
-	oplot,prelim_refwvl+prelim_offset*refdisp,prelim_refspec/max(prelim_refspec), $
+	    oplot,prelim_refwvl+prelim_offset*refdisp,prelim_refspec/max(prelim_refspec), $
 		color=colordex('red'),thick=th
-	kcwi_legend,['Ref Bar ('+strn(refbar)+')','Atlas'],linesty=[0,0],thick=[th,th],box=0, $
+	    kcwi_legend,['Ref Bar ('+strn(refbar)+')','Atlas'],linesty=[0,0],thick=[th,th],box=0, $
 		color=[colordex('black'),colordex('red')],charsi=si,charthi=th
-	read,'next: ',q
+	    read,'Enter: <cr> - next, new offset (px): ',q
+	    if strlen(q) gt 0 then $
+		    prelim_offset = float(q)
+	endwhile
 endif
 ;
 ; At this point we have the offsets between bars and the approximate offset from
@@ -223,8 +228,9 @@ p0 = cwvl + kgeom.baroff*prelim_disp - prelim_offset * refdisp
 ;we will try nn values
 ;max_ddisp = 0.025d	; fraction (0.05 equiv to 5%)
 max_ddisp = 0.05d	; fraction (0.05 equiv to 5%)
-nn = (fix((1+max_ddisp)*max_ddisp*abs(prelim_disp)/refdisp*(maxrow-minrow)/2.0))>10<25
-delta = (nn/10)<3>2	; may want to adjust this more?
+;nn = (fix((1+max_ddisp)*max_ddisp*abs(prelim_disp)/refdisp*(maxrow-minrow)/2.0))>10<25
+nn = (fix(max_ddisp*abs(prelim_disp)/refdisp*(maxrow-minrow)/3.0))>10;<25
+delta = (nn/10)>2;<3	; may want to adjust this more?
 kcwi_print_info,ppar,pre,'N disp. samples: ',nn
 ;
 ; which are:

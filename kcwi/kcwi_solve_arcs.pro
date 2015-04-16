@@ -260,7 +260,7 @@ if keyword_set(tweak) then begin
 	refmode = (mode(twk_reference_spectrum))[0]
 	twk_ref_cent = clnpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
 		resolution/refdisp,resolution/refdisp,pksig,count=twk_ref_npks, $
-		level=refmode,estimate=resolution)
+		level=refmode+0.1*refmode,/nofit);estimate=resolution)
 	;
 	if twk_ref_npks eq 0 then begin
 		kcwi_print_info,ppar,pre,'No good atlas points found',/error
