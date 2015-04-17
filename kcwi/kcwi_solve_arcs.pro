@@ -257,10 +257,13 @@ if keyword_set(tweak) then begin
 	;
 	; let's find the peaks in the reference spectrum.
 	; adjust pksig to get more atlas lines
-	refmode = (mode(twk_reference_spectrum))[0]
-	twk_ref_cent = clnpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
-		resolution/refdisp,resolution/refdisp,pksig,count=twk_ref_npks, $
-		level=refmode+0.1*refmode,/nofit);estimate=resolution)
+	;refmode = (mode(twk_reference_spectrum))[0]
+	twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
+			0.9*(resolution/refdisp),0.003,0.,5,count=twk_ref_npks)
+	;		level=refmode+0.1*refmode,/nofit);estimate=resolution)
+	;twk_ref_cent = clnpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
+	;		resolution/refdisp,resolution/refdisp,pksig,count=twk_ref_npks, $
+	;		level=refmode+0.1*refmode,/nofit);estimate=resolution)
 	;
 	if twk_ref_npks eq 0 then begin
 		kcwi_print_info,ppar,pre,'No good atlas points found',/error
