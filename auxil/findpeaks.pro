@@ -21,7 +21,9 @@ for i=pkg,nx-(pkg+1) do begin
 		xx = x[(i-pkg):(i+pkg)]
 		yy = y[(i-pkg):(i+pkg)]
 		; gaussian fit
+		!quiet = 1	; supress curvefit error messages
 		res = gaussfit(xx,yy,a,nterms=3)
+		!quiet = 0	; turn error messages back on
 		; check results
 		if finite(a[1]) then begin
 		    ; check offset of fit from initial peak
