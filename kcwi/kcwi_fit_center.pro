@@ -1,4 +1,4 @@
-; $Id: kcwi_fit_center.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id: kcwi_fit_center.pro | Thu Apr 16 04:02:00 2015 -0700 | Don Neill  $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -229,7 +229,7 @@ p0 = cwvl + kgeom.baroff*prelim_disp - prelim_offset * refdisp
 ;max_ddisp = 0.025d	; fraction (0.05 equiv to 5%)
 max_ddisp = 0.05d	; fraction (0.05 equiv to 5%)
 ;nn = (fix((1+max_ddisp)*max_ddisp*abs(prelim_disp)/refdisp*(maxrow-minrow)/2.0))>10<25
-nn = (fix(max_ddisp*abs(prelim_disp)/refdisp*(maxrow-minrow)/3.0))>10;<25
+nn = (fix(max_ddisp*abs(prelim_disp)/refdisp*(maxrow-minrow)/3.0))>10<25
 delta = (nn/10)>2;<3	; may want to adjust this more?
 kcwi_print_info,ppar,pre,'N disp. samples: ',nn
 ;

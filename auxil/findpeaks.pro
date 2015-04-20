@@ -9,7 +9,8 @@ pks = [-1.0]
 npks = 0l
 ;
 ; loop over spectrum
-for i=fix(wid),nx-fix(wid) do begin
+; limits to avoid edges, given pkg
+for i=pkg,nx-(pkg+1) do begin
     ; find zero-crossings
     if sign(d[i]) gt sign(d[i+1]) then begin
 	; pass slope threshhold?

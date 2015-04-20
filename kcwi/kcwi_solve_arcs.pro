@@ -1,4 +1,4 @@
-; $Id: kcwi_solve_arcs.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id: kcwi_solve_arcs.pro | Fri Apr 17 14:46:03 2015 -0700 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -138,12 +138,12 @@ sigmas = dblarr(120)
 barstat = intarr(120)
 ;
 ; keep track of observed versus atlas comparison
-fwaves = fltarr(120,100)
-dwaves = fltarr(120,100)
+fwaves = fltarr(120,1000)
+dwaves = fltarr(120,1000)
 ;
 ; keep track of reference wavelengths and matched pixel positions
-rwaves = fltarr(120,100)
-xcents = fltarr(120,100)
+rwaves = fltarr(120,1000)
+xcents = fltarr(120,1000)
 ;
 ; for tweaking: array of border fractions to ignore.
 if nasmask then begin
@@ -256,14 +256,8 @@ if keyword_set(tweak) then begin
 	endif
 	;
 	; let's find the peaks in the reference spectrum.
-	; adjust pksig to get more atlas lines
-	;refmode = (mode(twk_reference_spectrum))[0]
 	twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
 			0.9*(resolution/refdisp),0.003,0.,5,count=twk_ref_npks)
-	;		level=refmode+0.1*refmode,/nofit);estimate=resolution)
-	;twk_ref_cent = clnpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
-	;		resolution/refdisp,resolution/refdisp,pksig,count=twk_ref_npks, $
-	;		level=refmode+0.1*refmode,/nofit);estimate=resolution)
 	;
 	if twk_ref_npks eq 0 then begin
 		kcwi_print_info,ppar,pre,'No good atlas points found',/error
@@ -324,80 +318,9 @@ if keyword_set(tweak) then begin
 					yrange=[min(subyvals)>1.,max(subyvals)+0.05*max(subyvals)],/ys,/ylog
 			endif
 			;
-			; JDN (2014-MAR-28) sez:
-			; You might be tempted to replace this section with
-			; the modular routine clnpeaks.pro, but this will
-			; slow things down considerably, so don't.
-			twk_spec_pks = peaks(subyvals,pksig,count=twk_spec_npks)
-			if twk_spec_npks le 0 then begin
-				kcwi_print_info,ppar,pre,'Not enough spec peaks for bar ',b, $
-					format='(a,i6)',/warning
-				barstat[b]=7
-				goto, errbar
-			endif
-			if ddisplay and iter eq 0 then $
-				oplot,subwvals[twk_spec_pks],subyvals[twk_spec_pks],psym=6,symsi=2.5
-			;
-			twk_spec_valid = bytarr(twk_spec_npks)+1b
-			npksig = twk_spec_npks
-			;
-			; find peaks that are too close to other peaks. 
-			one = fltarr(twk_spec_npks)+1.0
-			rows = one##subwvals[twk_spec_pks]
-			cols = subwvals[twk_spec_pks]##one
-			diff = abs(rows-cols)
-			badpks = where(diff lt pkiso and diff gt 0, nbadpks)
-			if nbadpks gt 0 then twk_spec_valid[badpks mod twk_spec_npks] = 0b
-			; and reject the peaks that are too close.
-			qgoodpks = where(twk_spec_valid eq 1, ngoodpeaks)
-			if ngoodpeaks eq 0 then begin
-				kcwi_print_info,ppar,pre,'Not enough good spec peaks for bar ',b, $
-					format='(a,i6)',/warning
-				barstat[b]=7
-				goto, errbar
-			endif
-			twk_spec_npks = ngoodpeaks
-			twk_spec_pks = twk_spec_pks[qgoodpks]
-			twk_spec_valid = twk_spec_valid[qgoodpks]
-			if ddisplay and iter eq 0 then $
-				oplot,subwvals[twk_spec_pks],subyvals[twk_spec_pks],psym=4,symsi=2.0
-			;
-			; set up variables
-			twk_spec_cent = dblarr(ngoodpeaks)
-			twk_spec_width = dblarr(ngoodpeaks)
-			delta = abs(fix(2.5*kgeom.resolution/twkcoeff[1,b]))
-			; now loop over the peaks that are good and fit them
-			for pk=0,ngoodpeaks-1 do begin
-				subspec = subyvals[twk_spec_pks[pk]-delta>0:twk_spec_pks[pk]+delta<nrows-1]
-				subwave = subwvals[twk_spec_pks[pk]-delta>0:twk_spec_pks[pk]+delta<nrows-1]
-				res = mpfitpeak(subwave,subspec,a,nterms=5,estimate=[subyvals[twk_spec_pks[pk]], $
-						subwvals[twk_spec_pks[pk]],0.6], /silent)
-				twk_spec_cent[pk] = a[1]
-				twk_spec_width[pk] = a[2]
-			endfor				; pk
-			;
-			; keep lines with widths within one sigma of average
-			twk_spec_moment = moment(twk_spec_width)
-			sigmawid = abs(twk_spec_width-twk_spec_moment[0])/sqrt(twk_spec_moment[1])
-			goodsigma = where(sigmawid lt 1.0, ngoodsigma)
-			;
-			; is anyone left?
-			if ngoodsigma eq 0 then begin
-				kcwi_print_info,ppar,pre,'No good spec points for bar ',b, $
-					format='(a,i6)',/warning
-				barstat[b]=8
-				goto, errbar
-			endif
-			;
-			if ddisplay and iter eq 0 then begin
-				;print,'n, width, sigwid, cwave'
-				;forprint,indgen(n_elements(twk_spec_width)),twk_spec_width,sigmawid,twk_spec_cent,format='(i4,3f9.3)'
-				oplot,subwvals[twk_spec_pks[goodsigma]],subyvals[twk_spec_pks[goodsigma]],psym=2,symsi=1.5
-			endif
-			twk_spec_npks = ngoodsigma
-			twk_spec_pks = twk_spec_pks[goodsigma]
-			twk_spec_cent = twk_spec_cent[goodsigma]
-			twk_spec_width = twk_spec_width[goodsigma]
+			; find good peaks in object spectrum
+			twk_spec_cent = findpeaks(subwvals,subyvals,0.9*abs(kgeom.resolution/twkcoeff[1,b]), $
+					0.003,0.,5,count=twk_spec_npks)
 			;
 			; at this point we have the catalog of good reference points (from
 			; before) and list of good points in this bar. We have to associate
@@ -451,14 +374,8 @@ if keyword_set(tweak) then begin
 				for pp = 0,nmatchedpeaks-1 do $
 					oplot,[twk_spec_cent[matchedpeaks[pp]],twk_spec_cent[matchedpeaks[pp]]], $
 						10.^!y.crange,color=colordex('G')
-				kcwi_legend,['PkSig','PkIso','Wid'],psym=[6,4,2],symsi=[2.5,2.0,1.5], $
-					charthi=th,charsi=si,box=0
 				kcwi_legend,['PkDel','Fail'],linesty=[0,0],/bottom,/clear, $
 					color=[colordex('G'),colordex('R')],charthi=th,charsi=si
-				kcwi_legend,['NPkSig: '+strn(npksig),'NPkDel: '+strn(nmatchedpeaks)],/right, $
-					charthi=th,charsi=si,/bottom,/clear
-				;print,'n, del, cwave'
-				;forprint,indgen(n_elements(mn)),mn,twk_spec_cent,form='(i4,2x,2f9.3)'
 				print,''
 				read,'Next? (Q - quit plotting, <cr> - next): ',q
 				if strupcase(strmid(q,0,1)) eq 'Q' then ddisplay = (1 eq 0)
