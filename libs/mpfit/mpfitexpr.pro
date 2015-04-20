@@ -545,7 +545,7 @@
 ;     27 May 2007
 ;   Add COMPATIBILITY section, CM, 13 Dec 2007
 ;
-;  $Id: mpfitexpr.pro,v 1.15 2007/12/15 14:28:27 craigm Exp $
+;  $Id: mpfitexpr.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;-
 ; Copyright (C) 1997-2001, 2002, 2003, 2004, 2007, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

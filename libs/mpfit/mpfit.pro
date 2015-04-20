@@ -1296,7 +1296,7 @@
 ;          CM, 2010-10-27
 ;   1.79 - Documentation corrections.  CM, 2011-08-26
 ;
-;  $Id: mpfit.pro,v 1.79 2011/12/08 17:50:32 cmarkwar Exp $
+;  $Id: mpfit.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;-
 ; Original MINPACK by More' Garbow and Hillstrom, translated with permission
 ; Modifications and enhancements are:
@@ -2576,7 +2576,7 @@ end
 ;; Parse the RCSID revision number
 function mpfit_revision
   ;; NOTE: this string is changed every time an RCS check-in occurs
-  revision = '$Revision: 1.79 $'
+  revision = '$Revision: 5a6680d $'
 
   ;; Parse just the version number portion
   revision = stregex(revision,'\$'+'Revision: *([0-9.]+) *'+'\$',/extract,/sub)

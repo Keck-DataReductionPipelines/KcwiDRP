@@ -1,4 +1,4 @@
-; $Id: startup.pro,v 1.10 2014/01/09 17:32:47 neill Exp $
+; $Id: startup.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; KCWI DRP IDL startup file
 ;
