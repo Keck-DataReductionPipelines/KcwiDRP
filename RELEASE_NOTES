@@ -1,5 +1,11 @@
-# $Id: RELEASE_NOTES,v 1.79 2015/02/27 23:51:41 neill Exp $
+# $Id: RELEASE_NOTES | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 # Copyright (c) 2013, California Institute of Technology, all rights reserved
+
+2015-APR-21: v0.2.10 - Eleventh beta release
+
+- Replaced clnpeaks routine with findpeaks that produces a more robust list
+	of significant, isolated lines in kcwi_solve_arcs.pro.
+
 
 2015-FEB-27: v0.2.9 - Tenth beta release
 

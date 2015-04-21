@@ -1,13 +1,16 @@
+; sth is pixel slope
 function findpeaks,x,y,wid,sth,ath,pkg,verbose=verbose,count=npks
 ;
 ; smooth derivative
 d = smooth(deriv(y),wid)
 nx = n_elements(x)
-if n_elements(pkg) ne 1 then pkg = 3
+;
+; set up windowing
+if n_elements(pkg) ne 1 then pkg = wid
 hgrp = fix(pkg/2)
 ;
-pks = [-1.0]
-sgs = [-1.0]
+pks = [-1.0]	; x values of peaks
+sgs = [-1.0]	; Gaussian widths
 npks = 0l
 ;
 ; loop over spectrum
@@ -19,7 +22,7 @@ for i=pkg,nx-(pkg+1) do begin
 	if (d[i]-d[i+1]) gt sth*y[i] then begin
 	    ; pass amplitude threshhold?
 	    if y[i] gt ath or y[i+1] gt ath then begin
-		; get subvectors around peak
+		; get subvectors around peak in window
 		xx = x[(i-hgrp):(i+hgrp)]
 		yy = y[(i-hgrp):(i+hgrp)]
 		; gaussian fit
@@ -41,13 +44,13 @@ for i=pkg,nx-(pkg+1) do begin
 			sgs = [sgs,a[2]]
 			npks += 1
 		    endelse
-		endif
-	    endif
-	endif
-    endif
-endfor
+	    	endif	; a[1] finite?
+	    endif	; pass amplitude threshhold?
+	endif		; pass slope threshhold?
+    endif		; at zero-crossing?
+endfor			; loop over spectrum
 ;
-; clean outlying Gaussian widths
+; clean 3-sigma outlying Gaussian widths
 if npks gt 0 then begin
 	pks = pks[1:*]
 	sgs = sgs[1:*]

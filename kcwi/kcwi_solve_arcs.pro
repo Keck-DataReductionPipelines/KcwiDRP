@@ -256,8 +256,11 @@ if keyword_set(tweak) then begin
 	endif
 	;
 	; let's find the peaks in the reference spectrum.
+	smooth_width = fix(resolution/refdisp)		; in pixels
+	slope_thresh = 0.003
+	ampl_thresh  = 0.
 	twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
-			resolution/refdisp,0.003,0.,fix(resolution/refdisp),count=twk_ref_npks)
+			smooth_width,slope_thresh,ampl_thresh,count=twk_ref_npks)
 	;
 	if twk_ref_npks eq 0 then begin
 		kcwi_print_info,ppar,pre,'No good atlas points found',/error
@@ -319,8 +322,14 @@ if keyword_set(tweak) then begin
 			endif
 			;
 			; find good peaks in object spectrum
-			twk_spec_cent = findpeaks(subwvals,subyvals,abs(resolution/twkcoeff[1,b]), $
-					0.003,0.,fix(1.5*abs(resolution/twkcoeff[1,b])),count=twk_spec_npks)
+			smooth_width = fix(resolution/abs(twkcoeff[1,b]))	; in pixels
+			peak_width   = fix(smooth_width*1.5)			; for fitting peaks
+			slope_thresh = 0.7*smooth_width/2./100.0		; more severe for object
+			ampl_thresh  = kgeom.rdnoise * 30.
+			;print,'sl th: ',slope_thresh
+			;print,'am th: ',ampl_thresh
+			twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
+				ampl_thresh,peak_width,count=twk_spec_npks)
 			;
 			; at this point we have the catalog of good reference points (from
 			; before) and list of good points in this bar. We have to associate

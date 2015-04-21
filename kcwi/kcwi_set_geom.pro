@@ -121,6 +121,21 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 		kgeom.ypad = 0
 	endif
 	;
+	; get noise model
+	rdnoise = 0.
+	;
+	; sum over amp inputs
+	switch kcfg.nvidinp of
+		4: rdnoise = rdnoise + kcfg.biasrn4
+		3: rdnoise = rdnoise + kcfg.biasrn3
+		2: rdnoise = rdnoise + kcfg.biasrn2
+		1: rdnoise = rdnoise + kcfg.biasrn1
+	endswitch
+	;
+	; take average
+	rdnoise /= float(kcfg.nvidinp)
+	kgeom.rdnoise = rdnoise
+	;
 	; wavelength numbers default from header
 	kgeom.cwave = kcfg.cwave
 	kgeom.wave0out = kcfg.wave0	
