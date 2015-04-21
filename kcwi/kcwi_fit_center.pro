@@ -210,6 +210,8 @@ if ppar.display ge 2 then begin
 	    kcwi_legend,['Ref Bar ('+strn(refbar)+')','Atlas'],linesty=[0,0],thick=[th,th],box=0, $
 		color=[colordex('black'),colordex('red')],charsi=si,charthi=th
 	    read,'Enter: <cr> - next, new offset (px): ',q
+	    if strupcase(strmid(q,0,1)) eq 'Q' then $	; just in case user enters 'q'
+		    q = ''
 	    if strlen(q) gt 0 then $
 		    prelim_offset = float(q)
 	endwhile
