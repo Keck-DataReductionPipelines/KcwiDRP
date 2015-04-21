@@ -257,7 +257,7 @@ if keyword_set(tweak) then begin
 	;
 	; let's find the peaks in the reference spectrum.
 	twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
-			0.9*(resolution/refdisp),0.003,0.,5,count=twk_ref_npks)
+			resolution/refdisp,0.003,0.,fix(resolution/refdisp),count=twk_ref_npks)
 	;
 	if twk_ref_npks eq 0 then begin
 		kcwi_print_info,ppar,pre,'No good atlas points found',/error
@@ -319,8 +319,8 @@ if keyword_set(tweak) then begin
 			endif
 			;
 			; find good peaks in object spectrum
-			twk_spec_cent = findpeaks(subwvals,subyvals,0.9*abs(kgeom.resolution/twkcoeff[1,b]), $
-					0.003,0.,5,count=twk_spec_npks)
+			twk_spec_cent = findpeaks(subwvals,subyvals,abs(resolution/twkcoeff[1,b]), $
+					0.003,0.,fix(1.5*abs(resolution/twkcoeff[1,b])),count=twk_spec_npks)
 			;
 			; at this point we have the catalog of good reference points (from
 			; before) and list of good points in this bar. We have to associate
@@ -374,11 +374,8 @@ if keyword_set(tweak) then begin
 				for pp = 0,nmatchedpeaks-1 do $
 					oplot,[twk_spec_cent[matchedpeaks[pp]],twk_spec_cent[matchedpeaks[pp]]], $
 						10.^!y.crange,color=colordex('G')
-				kcwi_legend,['PkDel','Fail'],linesty=[0,0],/bottom,/clear, $
-					color=[colordex('G'),colordex('R')],charthi=th,charsi=si
-				print,''
-				read,'Next? (Q - quit plotting, <cr> - next): ',q
-				if strupcase(strmid(q,0,1)) eq 'Q' then ddisplay = (1 eq 0)
+				kcwi_legend,['Good','NoAtl','Rej'],linesty=[0,0,0],/bottom,/clear, $
+					color=[colordex('G'),colordex('R'),colordex('B')],charthi=th,charsi=si
 			endif
 			;
 			if nmatchedpeaks le 2 then begin
@@ -394,13 +391,63 @@ if keyword_set(tweak) then begin
 			targetw = twk_ref_cent[twk_ref_idx]
 			initx = cspline(subwvals,subxvals,twk_spec_cent[twk_spec_idx])
 			;
+			; we need reverse coefficients.
+			fitdegree = degree < (nmatchedpeaks-1)
+			newcoeff = poly_fit(initx,targetw,fitdegree,yfit=fitw)
+			;
+			; get residual stats
+			ims,(targetw - fitw),rmn,rsg,rwgt
+			bad = where(rwgt le 0, nbad)
+			;
+			; reject baddies
+			nrej = 0
+			while nbad gt 0 do begin
+				;
+				; count the bad guys
+				nrej += nbad
+				;
+				; overplot them if we are displaying
+				if ddisplay and iter eq 0 then begin
+					for pp = 0,nbad-1 do $
+						oplot,[targetw[bad[pp]],targetw[bad[pp]]], $
+							10.^!y.crange,color=colordex('B')
+					print,''
+					read,'Next? (Q - quit plotting, <cr> - next): ',q
+					if strupcase(strmid(q,0,1)) eq 'Q' then ddisplay = (1 eq 0)
+				endif
+				;
+				; get the good guys
+				good = where(rwgt eq 1, nmatchedpeaks)
+				;
+				; check to be sure we have some left
+				if nmatchedpeaks le 0 then begin
+					kcwi_print_info,ppar,pre,'All points rejected',/error
+					barstat[b]=10
+					goto, errbar
+				endif
+				;
+				; clean fit data
+				initx = initx[good]
+				targetw = targetw[good]
+				;
+				; re-fit
+				fitdegree = degree < (nmatchedpeaks-1)
+				newcoeff = poly_fit(initx,targetw,fitdegree,yfit=fitw)
+				;
+				; check for more baddies
+				ims,(targetw - fitw),rmn,rsg,rwgt
+				bad = where(rwgt le 0, nbad)
+			endwhile
+			;
+			; record rejections
+			if nrej gt 0 then begin
+				if ppar.verbose ge 2 then print,''
+				kcwi_print_info,ppar,pre,'number rejected',nrej,info=2
+			endif
+			;
 			; store for later
 			rwaves[b,0:(nmatchedpeaks-1)] = targetw
 			xcents[b,0:(nmatchedpeaks-1)] = initx
-			;
-			; we need reverse coefficients.
-			fitdegree = degree < (nmatchedpeaks-1)
-			newcoeff = poly_fit(initx,targetw,fitdegree)
 			;
 			if nmatchedpeaks ge degree+2 then begin
 				twkcoeff[*,b] = 0

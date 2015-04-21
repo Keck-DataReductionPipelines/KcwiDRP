@@ -3,9 +3,11 @@ function findpeaks,x,y,wid,sth,ath,pkg,verbose=verbose,count=npks
 ; smooth derivative
 d = smooth(deriv(y),wid)
 nx = n_elements(x)
-if n_elements(pkg) ne 1 then pkg = 1
+if n_elements(pkg) ne 1 then pkg = 3
+hgrp = fix(pkg/2)
 ;
 pks = [-1.0]
+sgs = [-1.0]
 npks = 0l
 ;
 ; loop over spectrum
@@ -18,8 +20,8 @@ for i=pkg,nx-(pkg+1) do begin
 	    ; pass amplitude threshhold?
 	    if y[i] gt ath or y[i+1] gt ath then begin
 		; get subvectors around peak
-		xx = x[(i-pkg):(i+pkg)]
-		yy = y[(i-pkg):(i+pkg)]
+		xx = x[(i-hgrp):(i+hgrp)]
+		yy = y[(i-hgrp):(i+hgrp)]
 		; gaussian fit
 		!quiet = 1	; supress curvefit error messages
 		res = gaussfit(xx,yy,a,nterms=3)
@@ -36,6 +38,7 @@ for i=pkg,nx-(pkg+1) do begin
 		    ; we're good!
 		    endif else begin
 		    	pks = [pks,a[1]]
+			sgs = [sgs,a[2]]
 			npks += 1
 		    endelse
 		endif
@@ -44,6 +47,15 @@ for i=pkg,nx-(pkg+1) do begin
     endif
 endfor
 ;
-if npks gt 0 then pks = pks[1:*]
+; clean outlying Gaussian widths
+if npks gt 0 then begin
+	pks = pks[1:*]
+	sgs = sgs[1:*]
+	mo = moment(sgs)
+	ul = mo[0] + 3.*sqrt(mo[1])
+	ll = mo[0] - 3.*sqrt(mo[1])
+	good = where(sgs le ul and sgs ge ll, npks)
+	pks = pks[good]
+endif
 return,pks
 end
