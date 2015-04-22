@@ -377,7 +377,10 @@ for b = 0,119 do begin
 		if ppar.display ge 3 then $
 			read,'Next? (Q - quit plotting, D - diagnostic plots, <cr> - next): ',q $
 		else	read,'Next? (Q - quit plotting, <cr> - next): ',q
-		if strupcase(strmid(q,0,1)) eq 'Q' then display = (1 eq 0)
+		if strupcase(strmid(q,0,1)) eq 'Q' then begin
+			display = (1 eq 0)
+			ddisplay = (1 eq 0)
+		endif
 		if strupcase(strmid(q,0,1)) eq 'D' then ddisplay = (1 eq 1)
 	endif
 endfor	; b

@@ -1,4 +1,4 @@
-; $Id: kcwi_ppar__define.pro,v 1.51 2015/02/21 00:18:39 neill Exp $
+; $Id: kcwi_ppar__define.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -126,9 +126,7 @@ tmp = { kcwi_ppar, $
 	narcs:0, $		; number of arc images
 	arcs:'', $		; List of arc images (rangelist)
 	arcbars:'', $		; List of arc bars images (rangelist)
-	pksig:1.5, $		; significance of peaks to find in atlas
-	pkdel:0.75, $		; how close to match arc and atlas lines (Ang)
-	pkiso:2.5, $		; isolation of peaks in arcs (Ang)
+	pkdel:0.75, $		; match thresh in fraction of resolution
 	atlas:'thar.fits', $	; wavelength atlas
 	atlasname:'ThAr', $	; wavelength atlas name
 	linelist:'thar_list.txt', $	; wavelength line list

@@ -39,10 +39,6 @@
 ;
 ; EXAMPLE:
 ;
-; TODO:
-;	modularize ref line finding so program can tweak pkiso if resid large
-;	get sigma of non-tweaked solution with ref lines
-;
 ; MODIFICATION HISTORY:
 ;	Written by:	Matt Matuszewski
 ;	2013-DEC-10	Initial Revision
@@ -57,6 +53,7 @@
 ;	2014-SEP-11	Converted function to pro with status in kgeom.status
 ;	2014-SEP-16	Single iteration mode for assessing rms of fits (N&S)
 ;	2014-NOV-06	Put stats (rms) after all tweaking done
+;	2015-APR-22	Rework of peak finding
 ;-
 ;
 pro kcwi_solve_arcs, specs, kgeom, ppar, tweak=tweak, plot_file=plot_file
@@ -94,7 +91,7 @@ nasmask = kgeom.nasmask
 ; central wavelength?
 cwvl = kgeom.cwave
 ;
-; canonical resolution?
+; canonical resolution in Angstroms?
 resolution = kgeom.resolution
 ;
 ; log info
@@ -214,11 +211,8 @@ if keyword_set(tweak) then begin
 		kcwi_print_info,ppar,pre,'using '+strn(niter)+' iteration to measure RMS of initial central fit' $
 	else	kcwi_print_info,ppar,pre,'using '+strn(niter)+' iterations to tweak higher order terms'
 	;
-	pksig = ppar.pksig		; which peaks to find? 
-	pkdel = ppar.pkdel*resolution	; peak matching delta required in Angstroms
-	pkiso = ppar.pkiso*resolution	; isolation gap between peaks required in Angstroms
-	kcwi_print_info,ppar,pre,'Spectral line finding/matching params: PkSig, PkDel, PkIso', $
-		pksig,pkdel,pkiso,format='(a,2x,3f7.3)'
+	kcwi_print_info,ppar,pre,'Spectral line finding/matching thresh (frac. of res.): PkDel', $
+		ppar.pkdel,format='(a,2x,f7.3)'
 	;
 	; start with central fit coefficients
 	twkcoeff = cntcoeff
@@ -342,26 +336,28 @@ if keyword_set(tweak) then begin
 			mn = min(diff,dim=1,mi)
 			;
 			; here we match the peaks to one another. 
-			pkm = pkdel
+			pkd = ppar.pkdel
+			pkm = pkd*resolution	; match thresh in Angstroms
 			matchedpeaks = where(mn lt pkm, nmatchedpeaks)
 			;
 			; for first iteration, make sure we have enough peaks
-			; also if we have no matched peaks
+			; also handle if we have no matched peaks
 			if iter eq 0 or nmatchedpeaks eq 0 then begin
 				orig_nmp = nmatchedpeaks
-				while nmatchedpeaks lt 5 and pkm lt pkiso do begin
+				while nmatchedpeaks lt 5 and pkd lt 2. do begin
 					;
 					; open up the match criterion
-					pkm = pkm + 0.25
+					pkd += 0.25
 					;
 					; try again
+					pkm = pkd*resolution
 					matchedpeaks = where(mn lt pkm, nmatchedpeaks)
 				endwhile
 				;
 				; report any adjustments
-				if pkm ne pkdel then begin
+				if pkd ne ppar.pkdel then begin
 					print,''
-					print,'Bar: ',b,', pkdel updated to ',pkm, '; ',orig_nmp, $
+					print,'Bar: ',b,', pkdel updated to ',pkd, '; ',orig_nmp, $
 						' --> ',nmatchedpeaks,' peaks', $
 						format='(a,i3,a,f5.2,a,i2,a,i3,a)'
 				endif
@@ -383,8 +379,6 @@ if keyword_set(tweak) then begin
 				for pp = 0,nmatchedpeaks-1 do $
 					oplot,[twk_spec_cent[matchedpeaks[pp]],twk_spec_cent[matchedpeaks[pp]]], $
 						10.^!y.crange,color=colordex('G')
-				kcwi_legend,['Good','NoAtl','Rej'],linesty=[0,0,0],/bottom,/clear, $
-					color=[colordex('G'),colordex('R'),colordex('B')],charthi=th,charsi=si
 			endif
 			;
 			if nmatchedpeaks le 2 then begin
@@ -420,6 +414,9 @@ if keyword_set(tweak) then begin
 					for pp = 0,nbad-1 do $
 						oplot,[targetw[bad[pp]],targetw[bad[pp]]], $
 							10.^!y.crange,color=colordex('B')
+					kcwi_legend,['Good','NoAtlas','Reject'],linesty=[0,0,0], $
+						/bottom,/clear, charthi=th,charsi=si, $
+						color=[colordex('G'),colordex('R'),colordex('B')]
 					print,''
 					read,'Next? (Q - quit plotting, <cr> - next): ',q
 					if strupcase(strmid(q,0,1)) eq 'Q' then ddisplay = (1 eq 0)
@@ -694,7 +691,7 @@ if keyword_set(tweak) then begin
 	kcwi_print_info,ppar,pre,'min/max bar wavelength sigma (Ang)',minmax(sigmas[bargood]), $
 		format='(a,f7.3,2x,f7.3)'
 	if noutliers gt 0 then $
-		kcwi_print_info,ppar,pre,'> 3sig outlier bars present, may want to tweak ppar.pkiso: Imgnum, Bars', $
+		kcwi_print_info,ppar,pre,'> 3sig outlier bars present, may want to tweak ppar.pkdel: Imgnum, Bars', $
 			imgnum,outliers,format='(a,i7,2x,'+strn(noutliers)+'i5)',/warning
 endif
 ;
