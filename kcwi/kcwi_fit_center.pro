@@ -252,8 +252,46 @@ barstat = intarr(120)
 ; data coefficients 
 coeff = dblarr(9)
 ;
+; x values for central fit
+subxvals = xvals[minrow:maxrow]
+;
 ; loop over bars
 for b = 0,119 do begin
+	;
+	; get sub spectrum for this bar
+	subspec = reform(specs[minrow:maxrow,b])
+	if display then begin
+		deepcolor
+		!p.background=colordex('white')
+		!p.color=colordex('black')
+		plot,subspec
+	endif
+	;
+	; we all have peaks and valleys
+	vals = findvalleys(subspec,fix(resolution/prelim_disp),0.003,count=nval)
+	pks =  findpeaks(findgen(n_elements(subspec)),subspec, $
+		fix(resolution/prelim_disp),0.003,30.*kgeom.rdnoise,5,count=npks)
+	;
+	; trim first peak
+	z = where(vals gt pks[0], nz)	; first valley after first peak
+	if nz gt 0 then begin
+		z = min(vals[z])
+		if z gt 0 and z lt n_elements(subspec)/10 then $
+			subspec[0:z] = 0.
+	endif
+	;
+	; trim last peak
+	z = where(vals lt pks[n_elements(pks)-1], nz)
+	if nz gt 0 then begin
+		z = max(vals[z])
+		if z lt n_elements(subspec) and z gt n_elements(subspec)*0.9 then $
+			subspec[z:*] = 0.
+	endif
+	if display then begin
+		oplot,subspec,color=colordex('G')
+		read,'Next? <cr> - next: ',q
+		;if strupcase(strmid(q,0,1)) eq 'Q' then ddisplay = (1 eq 0)
+	endif
 	;
 	; now loop over the dispersions...
 	for d = 0, nn do begin
@@ -268,8 +306,6 @@ for b = 0,119 do begin
 		;
 		; what are the minimum and maximum wavelengths to consider 
 		; for the bar?
-		subxvals = xvals[minrow:maxrow]
-		subspec = reform(specs[minrow:maxrow,b])
 		;
 		minwvl = min( [poly(xvals[minrow],coeff), poly(xvals[maxrow],coeff)] )
 		maxwvl = max( [poly(xvals[minrow],coeff), poly(xvals[maxrow],coeff)] )
@@ -326,11 +362,20 @@ for b = 0,119 do begin
 	;
 	; check for more than one local maximum
 	if nzeros gt 1 then begin
+		;
+		; get offset from center
 		diff = abs(pkd - (n_elements(maxima)-1)/2.)
 		;
-		; pick most central maximum
-		gpkd = where(diff eq min(diff))
-		pkd = pkd[gpkd]
+		; pick maxima within central quartile
+		gpkd = where(diff le (n_elements(maxima)-1)/4.,ngpkd)
+		if ngpkd gt 0 then begin
+			pkd = pkd[gpkd]
+			;
+			; now get biggest one
+			pkval = maxima[fix(pkd)]
+			gpkd = where(pkval eq max(pkval))
+			pkd = pkd[gpkd]
+		endif else pkd = pk	; use parabola fit in this case
 	endif else if nzeros eq 1 then $
 		pkd = pkd[0] $
 	else	pkd = pk	; use parabola fit when nzeros eq 0

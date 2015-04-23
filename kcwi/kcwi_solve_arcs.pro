@@ -414,12 +414,6 @@ if keyword_set(tweak) then begin
 					for pp = 0,nbad-1 do $
 						oplot,[targetw[bad[pp]],targetw[bad[pp]]], $
 							10.^!y.crange,color=colordex('B')
-					kcwi_legend,['Good','NoAtlas','Reject'],linesty=[0,0,0], $
-						/bottom,/clear, charthi=th,charsi=si, $
-						color=[colordex('G'),colordex('R'),colordex('B')]
-					print,''
-					read,'Next? (Q - quit plotting, <cr> - next): ',q
-					if strupcase(strmid(q,0,1)) eq 'Q' then ddisplay = (1 eq 0)
 				endif
 				;
 				; get the good guys
@@ -449,6 +443,16 @@ if keyword_set(tweak) then begin
 			if nrej gt 0 then begin
 				if ppar.verbose ge 2 then print,''
 				kcwi_print_info,ppar,pre,'number rejected',nrej,info=2
+			endif
+			;
+			; plot legend and query user
+			if ddisplay and iter eq 0 then begin
+				kcwi_legend,['Good','NoAtlas','Reject'],linesty=[0,0,0], $
+					/bottom,/clear, charthi=th,charsi=si, $
+					color=[colordex('G'),colordex('R'),colordex('B')]
+				print,''
+				read,'Next? (Q - quit plotting, <cr> - next): ',q
+				if strupcase(strmid(q,0,1)) eq 'Q' then ddisplay = (1 eq 0)
 			endif
 			;
 			; store for later

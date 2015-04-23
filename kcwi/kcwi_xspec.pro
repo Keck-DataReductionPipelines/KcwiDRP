@@ -1,4 +1,4 @@
-; $Id: kcwi_xspec.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+; $Id: kcwi_xspec.pro | Wed Apr 15 04:39:29 2015 -0700 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -111,9 +111,9 @@ if keyword_set(neighborhood) then $
 else	neigh = 5		; neighborhood
 if neigh lt 2 then neigh = 5
   
-if n_elements(shift) eq 0 then $
-	shift = 0 $
-else	shift = nsp/2		; shift
+if keyword_set(shift) then $
+	shift = nsp/2 $
+else	shift = 0		; shift
 
 if keyword_set(central) then begin
 	if central gt 1 then $	; central search window
