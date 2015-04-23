@@ -90,10 +90,13 @@ refbar = kgeom.refbar
 ;
 ; we will be using a third degree fit here
 degree = 4
-kcwi_print_info,ppar,pre,'Using polynomial approximation of degree',degree,/info
+kcwi_print_info,ppar,pre,'Using polynomial approximation of degree',degree, $
+	format='(a,i5)'
 ;
 ; report taper fraction
-kcwi_print_info,ppar,pre,'Using cross-correlation bell cosine taper fraction of',ppar.taperfrac,/info
+kcwi_print_info,ppar,pre, $
+	'Using cross-correlation bell cosine taper fraction of',ppar.taperfrac,$
+	format='(a,f9.3)'
 ;
 ; load the reference atlas spectrum.
 kcwi_read_atlas,kgeom,ppar,refspec,refwvl,refdisp
