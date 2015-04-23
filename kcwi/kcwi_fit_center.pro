@@ -34,6 +34,7 @@
 ; MODIFICATION HISTORY:
 ;	Written by:	Matt Matuszewski
 ;	2014-SEP-18	Initial Revision
+;	2015-APR-23	JDN: added cosine bell taper to minimize edge effects
 ;-
 ;
 pro kcwi_fit_center, specs, kgeom, ppar, centcoeff
@@ -90,6 +91,9 @@ refbar = kgeom.refbar
 ; we will be using a third degree fit here
 degree = 4
 kcwi_print_info,ppar,pre,'Using polynomial approximation of degree',degree,/info
+;
+; report taper fraction
+kcwi_print_info,ppar,pre,'Using cross-correlation bell cosine taper fraction of',ppar.taperfrac,/info
 ;
 ; load the reference atlas spectrum.
 kcwi_read_atlas,kgeom,ppar,refspec,refwvl,refdisp
@@ -193,6 +197,10 @@ if ppar.display ge 2 then begin
 	read,'next: ',q
 endif
 ;
+; let's apply cosine bell taper to both
+prelim_intspec = prelim_intspec * tukeywgt(n_elements(prelim_intspec),ppar.taperfrac)
+prelim_refspec = prelim_refspec * tukeywgt(n_elements(prelim_refspec),ppar.taperfrac)
+;
 ; now we have two spectra we can try to cross-correlate
 ; (prelim_intspec and prelim_refspec), so let's do that:
 kcwi_xspec,prelim_intspec,prelim_refspec,ppar,prelim_offset,prelim_value, $
@@ -228,7 +236,6 @@ p0 = cwvl + kgeom.baroff*prelim_disp - prelim_offset * refdisp
 ; dispersion for a better solution. We will wander 5% away from it. 
 ;
 ;we will try nn values
-;max_ddisp = 0.025d	; fraction (0.05 equiv to 5%)
 max_ddisp = 0.05d	; fraction (0.05 equiv to 5%)
 ;nn = (fix((1+max_ddisp)*max_ddisp*abs(prelim_disp)/refdisp*(maxrow-minrow)/2.0))>10<25
 nn = (fix(max_ddisp*abs(prelim_disp)/refdisp*(maxrow-minrow)/3.0))>10<25
@@ -260,38 +267,6 @@ for b = 0,119 do begin
 	;
 	; get sub spectrum for this bar
 	subspec = reform(specs[minrow:maxrow,b])
-	if display then begin
-		deepcolor
-		!p.background=colordex('white')
-		!p.color=colordex('black')
-		plot,subspec
-	endif
-	;
-	; we all have peaks and valleys
-	vals = findvalleys(subspec,fix(resolution/prelim_disp),0.003,count=nval)
-	pks =  findpeaks(findgen(n_elements(subspec)),subspec, $
-		fix(resolution/prelim_disp),0.003,30.*kgeom.rdnoise,5,count=npks)
-	;
-	; trim first peak
-	z = where(vals gt pks[0], nz)	; first valley after first peak
-	if nz gt 0 then begin
-		z = min(vals[z])
-		if z gt 0 and z lt n_elements(subspec)/10 then $
-			subspec[0:z] = 0.
-	endif
-	;
-	; trim last peak
-	z = where(vals lt pks[n_elements(pks)-1], nz)
-	if nz gt 0 then begin
-		z = max(vals[z])
-		if z lt n_elements(subspec) and z gt n_elements(subspec)*0.9 then $
-			subspec[z:*] = 0.
-	endif
-	if display then begin
-		oplot,subspec,color=colordex('G')
-		read,'Next? <cr> - next: ',q
-		;if strupcase(strmid(q,0,1)) eq 'Q' then ddisplay = (1 eq 0)
-	endif
 	;
 	; now loop over the dispersions...
 	for d = 0, nn do begin
@@ -321,11 +296,20 @@ for b = 0,119 do begin
 		subrefwvl = refwvl[qwvl]
 		subrefspec = refspec[qwvl]
 		;
+		; get bell cosine taper to avoid nasty edge effects
+		tkwgt = tukeywgt(n_elements(subrefspec), ppar.taperfrac)
+		;
+		; apply taper to atlas spectrum
+		subrefspec = subrefspec * tkwgt
+		;
 		; adjust the spectra
 		waves = poly(subxvals,coeff)
 		;
 		; interpolate the bar spectrum
-		intspec = interpol(subspec,waves,subrefwvl,/spline)
+		intspec = interpol(subspec,waves,subrefwvl,/spline) * prelim_disp/disps[d]
+		;
+		; apply taper to bar spectrum
+		intspec = intspec * tkwgt
 		;
 		; get a label
 		xslab = 'Bar '+strn(b)+', '+strn(d)+'/'+strn(nn)+', Dsp = '+string(disps[d],form='(f6.3)')

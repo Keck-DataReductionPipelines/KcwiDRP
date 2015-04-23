@@ -88,7 +88,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	mingroupbias=mingroupbias, $
 	mingroupdark=mingroupdark, $
 	minoscanpix=minoscanpix, $
-	pkdel=pkdel, $
+	taperfrac=taperfrac, pkdel=pkdel, $
 	cwi=cwi, $
 	nocrreject=nocrreject, $
 	nonassub=nonassub, $
@@ -111,7 +111,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	if keyword_set(help) then begin
 		print,pre+': Info - Usage: '+pre+', RawDir, ReducedDir, CalibDir, DataDir'
 		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, MINGROUPBIAS=N, MINOSCANPIX=N'
-		print,pre+': Info - Wl Fit Keywords: PKDEL=<match_delta>'
+		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
 		print,pre+': Info - Switch Keywords: /CWI, /NOCRREJECT, /NONASSUB, /NOCLEANCOEFFS, /DOMEPRIORITY'
 		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /HELP'
 		return
@@ -238,6 +238,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		ppar.mingroupdark = mingroupdark
 	if keyword_set(minoscanpix) then $
 		ppar.minoscanpix = minoscanpix
+	if keyword_set(taperfrac) then $
+		ppar.taperfrac = taperfrac
 	if keyword_set(pkdel) then $
 		ppar.pkdel = pkdel
 	if keyword_set(cwi) then $
@@ -281,6 +283,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	printf,ll,'Filedigits: '+strn(ppar.fdigits)
 	printf,ll,'Min Grp Bias: ',ppar.mingroupbias
 	printf,ll,'Min Grp Dark: ',ppar.mingroupdark
+	printf,ll,'Wl TaperFrac: ',ppar.taperfrac
 	printf,ll,'Wl Fit PkDel: ',ppar.pkdel
 	if keyword_set(cwi) then $
 		printf,ll,'CWI data    : skipping first bias in each group, CWI associations'
