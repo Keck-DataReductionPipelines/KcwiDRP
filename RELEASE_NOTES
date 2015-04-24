@@ -3,6 +3,15 @@
 
 2015-APR-21: v0.2.10 - Eleventh beta release
 
+- Removed obsolete wavelength fitting parameters pkiso and pksig, and
+	implemented pkdel as fraction of spectral resolution in Angstroms.
+
+- Added taperfrac as a wavelength fitting parameter to allow user to handle
+	severe edge problems caused by very bright arc lines near edges.
+
+- Added cosine bell taper to spectra prior to cross-correlations to minimize
+	edge effects in kcwi_fit_center.pro.
+
 - Replaced clnpeaks routine with findpeaks that produces a more robust list
 	of significant, isolated lines in kcwi_solve_arcs.pro.
 

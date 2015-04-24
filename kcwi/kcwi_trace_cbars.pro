@@ -1,4 +1,4 @@
-; $Id: kcwi_trace_cbars.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+; $Id: kcwi_trace_cbars.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -114,6 +114,7 @@ do_plots = ppar.display
 ;
 ; prepare plots, if needed
 if do_plots ge 1 then begin
+	window,0,title='kcwi_trace_cbars'
 	deepcolor
 	!p.background=colordex('white')
 	!p.color=colordex('black')

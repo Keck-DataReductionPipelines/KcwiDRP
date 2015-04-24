@@ -1,4 +1,4 @@
-; $Id: kcwi_stage4geom.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id: kcwi_stage4geom.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -146,6 +146,10 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 	printf,ll,'Plot display level: ',ppar.display
 	if ppar.saveplots eq 1 then $
 		printf,ll,'Saving plots'
+	;
+	; set up plot window
+	if ppar.display ge 1 then $
+		window,0,title='kcwi_stage4geom'
 	;
 	; gather configuration data on each observation in reddir
 	kcwi_print_info,ppar,pre,'Number of input images',nproc

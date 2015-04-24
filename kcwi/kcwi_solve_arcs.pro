@@ -65,6 +65,7 @@ q=''
 display = (ppar.display ge 2)
 ;
 if ppar.display ge 1 then begin
+	window,0,title='kcwi_solve_arcs'
 	deepcolor
 	!p.multi=0
 	!p.background=colordex('white')
@@ -133,6 +134,7 @@ sigmas = dblarr(120)
 ;
 ; keep track of individual bar fits
 barstat = intarr(120)
+barrej  = intarr(120)
 ;
 ; keep track of observed versus atlas comparison
 fwaves = fltarr(120,1000)
@@ -233,15 +235,18 @@ if keyword_set(tweak) then begin
 	twk_reference_wavelengths = twk_reference_wavelengths[qwvs]
 	;
 	; plot if requested
-	if ppar.display ge 2 then begin
+	if ppar.display ge 3 then begin
+		window,0,title='kcwi_solve_arcs'
 		xarng = get_plotlims([minwav,maxwav],pad=0.2)
 		;
 		; if plotting diagnostics, just focus on first iteration (central third)
 		if ppar.display ge 3 then begin
 			dwav = (maxwav - minwav)/3.
 			xarng = get_plotlims([minwav+dwav,maxwav-dwav],pad=0.3)
-		endif
-		plot,twk_reference_wavelengths,twk_reference_spectrum, title='Atlas Spectrum Lines', $
+			atitle = 'Atlas Spectrum Lines (Central 3rd)'
+		endif else $
+			atitle = 'Atlas Spectrum Lines'
+		plot,twk_reference_wavelengths,twk_reference_spectrum, title=atitle, $
 			thick=th,charsi=si,charthi=th, $
 			xthick=th,xtitle='Wave(A)',xrange=xarng,/xs, $
 			ythick=th,ytitle='Flux', $
@@ -264,7 +269,7 @@ if keyword_set(tweak) then begin
 	kcwi_print_info,ppar,pre,'Number of clean atlas lines found',twk_ref_npks,$
 		format='(a,i4)'
 	;
-	if ppar.display ge 2 then begin
+	if ppar.display ge 3 then begin
 		for j=0,twk_ref_npks-1 do begin
 			oplot,[twk_ref_cent[j],twk_ref_cent[j]],10.^!y.crange,color=colordex('blue'),thick=1.0
 		endfor
@@ -279,7 +284,7 @@ if keyword_set(tweak) then begin
 	; now pop up a diagnostic window if requested
 	ddisplay = (ppar.display ge 3)
 	if ddisplay then $
-		window,1,title='Object Spectrum'
+		window,1,title='kcwi_solve_arcs(2)'
 	;
 	; now loop over the iterations and over the bars
 	;
@@ -308,7 +313,7 @@ if keyword_set(tweak) then begin
 			; plot if needed
 			if ddisplay and iter eq 0 then begin
 				wset,1
-				plot,subwvals,subyvals, title='Object Spectrum Lines: Bar '+strn(b), $
+				plot,subwvals,subyvals, title='Object Spectrum Lines (Central 3rd): Bar '+strn(b), $
 					thick=th,charsi=si,charthi=th, $
 					xthick=th,xtitle='Wave(A)',xrange=xarng,/xs, $
 					ythick=th,ytitle='Flux', $
@@ -368,8 +373,6 @@ if keyword_set(tweak) then begin
 				barstat[b]=9
 				goto, errbar
 			endif
-			print,string(13B),iter+1,niter,b,nmatchedpeaks, $
-				format='($,a1,"Iteration: ",i2," of ",i2," Bar:",i3,"  Valid peaks:",i3)'
 			;
 			; plot matches, if requested
 			if ddisplay and iter eq 0 then begin
@@ -439,11 +442,9 @@ if keyword_set(tweak) then begin
 				bad = where(rwgt le 0, nbad)
 			endwhile
 			;
-			; record rejections
-			if nrej gt 0 then begin
-				if ppar.verbose ge 2 then print,''
-				kcwi_print_info,ppar,pre,'number rejected',nrej,info=2
-			endif
+			; record results
+			print,string(13B),iter+1,niter,b,nmatchedpeaks,nrej, $
+				format='($,a1,"Iteration: ",i2," of ",i2," Bar:",i3,"  Valid peaks:",i3,"  Rejected peaks:",i3)'
 			;
 			; plot legend and query user
 			if ddisplay and iter eq 0 then begin
@@ -466,6 +467,7 @@ if keyword_set(tweak) then begin
 			;
 			; if we get here, bar fit was good
 			barstat[b] = 0
+			barrej[b] = nrej
 			;
 			; target for bars with problems
 			errbar:
@@ -473,7 +475,8 @@ if keyword_set(tweak) then begin
 		;
 		; report iteration
 		print,string(13B),format='($,a1)'
-		kcwi_print_info,ppar,pre,"Iteration "+string(iter+1,"(i2)")+" of "+ string(niter,"(i2)")+" done."
+		kcwi_print_info,ppar,pre,"Iteration "+string(iter+1,"(i2)")+" of "+ $
+			string(niter,"(i2)")+" done.          "
 		;
 		; now clean each slice of outlying bars
 		; don't bother for a single iteration
@@ -483,7 +486,7 @@ if keyword_set(tweak) then begin
 			if iter lt niter-1 then $
 				clnplot = 0 $
 			else	clnplot = 1
-			wset,0
+			if ppar.display ge 1 then wset,0
 			kcwi_clean_coeffs,twkcoeff,degree,ppar,plot=clnplot
 		endif
 	endfor; iter
@@ -545,7 +548,7 @@ if keyword_set(tweak) then begin
 			if display then begin
 				;
 				; back to main plot window
-				wset,0
+				window,0,title='kcwi_solve_arcs'
 				if nasmask then begin
 					dwav = (maxwav - minwav)/3.
 					xrng = get_plotlims([minwav+dwav,maxwav-dwav],pad=0.3)
@@ -564,8 +567,10 @@ if keyword_set(tweak) then begin
 					linesty=1,color=colordex('blue')
 				oplot,!x.crange,-[sigmas[b],sigmas[b]], $
 					linesty=1,color=colordex('blue')
-				kcwi_legend,["RMS = "+string(sigmas[b],form='(f7.3)')+' Ang'], $
-					charsi=si,charthi=th
+				kcwi_legend,["RMS = "+string(sigmas[b],form='(f7.3)')+' Ang', $
+					     'NMatch = '+strn(nmatchedpeaks), $
+					     'NRej = '+strn(barrej[b])], $
+					     charsi=si,charthi=th
 				read,'Next? (Q - quit plotting, <cr> - next): ',q
 				if strupcase(strmid(q,0,1)) eq 'Q' then display = (1 eq 0)
 			endif	; display

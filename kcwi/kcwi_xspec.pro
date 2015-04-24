@@ -189,6 +189,7 @@ offset = -coef[1]/2.0d/coef[2]-shift
 ;
 ; plot
 if keyword_set(plot) and ppar.display ge 3 then begin
+	window,0,title='kcwi_xspec'
 	deepcolor
 	!p.background=colordex('white')
 	!p.color=colordex('black')

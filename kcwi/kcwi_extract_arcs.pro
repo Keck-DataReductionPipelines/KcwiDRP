@@ -1,4 +1,4 @@
-; $Id: kcwi_extract_arcs.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+; $Id: kcwi_extract_arcs.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -128,6 +128,7 @@ endfor
 ;
 ; setup for display (if requested)
 if do_plots ge 2 then begin
+	window,0,title='kcwi_extract_arcs'
 	deepcolor
 	!p.background=colordex('white')
 	!p.color=colordex('black')

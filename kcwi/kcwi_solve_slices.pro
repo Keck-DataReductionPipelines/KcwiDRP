@@ -1,4 +1,4 @@
-; $Id: kcwi_solve_slices.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+; $Id: kcwi_solve_slices.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -73,9 +73,11 @@ if kgeom.status ne 0 then begin
 endif
 ;
 ; diagnostic plots
-display = (ppar.display ge 3)
-if display then $
+display = (ppar.display ge 4)
+if display then begin
+	window,0,title='kcwi_solve_slices'
 	!p.multi=[0,1,2]
+endif
 ;
 ; degree
 if kgeom.nasmask eq 1 then $
@@ -154,7 +156,7 @@ endfor
 ; Kgeom timestamp
 kgeom.timestamp = systime(1)
 ;
-if ppar.display ge 3 then $
+if ppar.display ge 4 then $
 	!p.multi=0
 ;
 return

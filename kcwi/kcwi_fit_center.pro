@@ -50,6 +50,7 @@ display = (ppar.display ge 2)
 ddisplay = (ppar.display ge 3)
 
 if ppar.display ge 1 then begin
+	window,0,title='kcwi_fit_center'
 	deepcolor
 	!p.multi=0
 	!p.background=colordex('white')
@@ -195,8 +196,10 @@ if ppar.display ge 2 then begin
 		xthick=th, xtitle='Wave(A)', $
 		ythick=th, ytitle='Rel. Flux',title=imglab+', No Offset',/xs
 	oplot,prelim_refwvl,prelim_refspec/max(prelim_refspec),color=colordex('red'),thick=th
-	kcwi_legend,['Ref Bar ('+strn(refbar)+')','Atlas'],linesty=[0,0],thick=[3,3],box=0, $
-		color=[colordex('black'),colordex('red')],charsi=si,charthi=th
+	oplot,[cwvl,cwvl],!y.crange,color=colordex('green'),thick=th,linesty=2
+	kcwi_legend,['Ref Bar ('+strn(refbar)+')','Atlas','CWAVE'],linesty=[0,0,2], $
+		thick=[th,th,th],box=0,charsi=si,charthi=th, $
+		color=[colordex('black'),colordex('red'),colordex('green')]
 	read,'next: ',q
 endif
 ;
@@ -210,6 +213,7 @@ kcwi_xspec,prelim_intspec,prelim_refspec,ppar,prelim_offset,prelim_value, $
 	/min,/shift,/plot,label='Obj(0) vs Atlas(1)'
 ;
 if ppar.display ge 2 then begin
+	window,0,title='kcwi_fit_center'
 	q='test'
 	while strlen(q) gt 0 do begin
 	    plot,prelim_subwvl,prelim_spec/max(prelim_spec),charsi=si,charthi=th,thick=th, $
@@ -218,8 +222,10 @@ if ppar.display ge 2 then begin
 		strtrim(string(prelim_offset,form='(f9.3)'),2)+' px',/xs
 	    oplot,prelim_refwvl+prelim_offset*refdisp,prelim_refspec/max(prelim_refspec), $
 		color=colordex('red'),thick=th
-	    kcwi_legend,['Ref Bar ('+strn(refbar)+')','Atlas'],linesty=[0,0],thick=[th,th],box=0, $
-		color=[colordex('black'),colordex('red')],charsi=si,charthi=th
+	    oplot,[cwvl,cwvl],!y.crange,color=colordex('green'),thick=th,linesty=2
+	    kcwi_legend,['Ref Bar ('+strn(refbar)+')','Atlas','CWAVE'],linesty=[0,0,2], $
+		thick=[th,th,th],box=0,charsi=si,charthi=th, $
+		color=[colordex('black'),colordex('red'),colordex('green')]
 	    read,'Enter: <cr> - next, new offset (px): ',q
 	    if strupcase(strmid(q,0,1)) eq 'Q' then $	; just in case user enters 'q'
 		    q = ''
@@ -390,6 +396,7 @@ for b = 0,119 do begin
 		format='(a,i4,2x,f8.4,f9.2,f8.4,2g13.5)'
 	;
 	if display then begin
+		window,0,title='kcwi_fit_center'
 		yrng = get_plotlims(maxima)
 		plot,disps,maxima,psym=-4,charsi=si,charthi=th,thick=th, $
 			xthick=th,xtitle='Central Dispersion',/xs, $
@@ -427,6 +434,28 @@ if total(barstat) gt n_elements(barstat)/2 then begin
 		fix(total(barstat)),/error
 	kgeom.status = 4
 endif else	kgeom.status = 0
+;
+; plot results
+if ppar.display ge 1 then begin
+	!p.multi=[0,1,2]
+	si = 1.5
+	ys = reform(centcoeff[0,*])
+	yrng = get_plotlims(ys)
+	plot,centcoeff[0,*],psym=4,charsi=si,charthi=th,thick=th, $
+		title = imglab+' Central Wavelength', $
+		xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
+		ythick=th,ytitle='Ang',yrange=yrng,/ys
+	kcwi_oplot_slices
+	ys = reform(centcoeff[1,*])
+	yrng = get_plotlims(ys)
+	plot,centcoeff[1,*],psym=4,charsi=si,charthi=th,thick=th, $
+		title = imglab+' Central Dispersion', $
+		xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
+		ythick=th,ytitle='Ang/px',yrange=yrng,/ys
+	kcwi_oplot_slices
+	if ppar.display ge 2 then read,'next: ',q
+	!p.multi=0
+endif
 ;
 return
 end		; kcwi_fit_center

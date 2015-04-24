@@ -1,4 +1,4 @@
-; $Id: kcwi_plot_arcfits.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+; $Id: kcwi_plot_arcfits.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -76,7 +76,7 @@ xxvals = dindgen(specsz[0])
 xvals = xxvals-x0
 ;
 ; now let's make some plots!
-wset,0
+if ppar.display ge 1 then wset,0
 !p.multi=0
 if keyword_set(plot_file) then begin
 	psfile,plot_file
