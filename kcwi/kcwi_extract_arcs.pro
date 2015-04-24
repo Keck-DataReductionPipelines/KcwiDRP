@@ -187,5 +187,8 @@ kgeom.baroff = boff
 ; Kgeom timestamp
 kgeom.timestamp = systime(1)
 ;
+; clean up
+if ppar.display ge 2 then wdelete,0
+;
 return
 end

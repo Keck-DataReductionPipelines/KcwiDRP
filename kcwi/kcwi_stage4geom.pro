@@ -147,10 +147,6 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 	if ppar.saveplots eq 1 then $
 		printf,ll,'Saving plots'
 	;
-	; set up plot window
-	if ppar.display ge 1 then $
-		window,0,title='kcwi_stage4geom'
-	;
 	; gather configuration data on each observation in reddir
 	kcwi_print_info,ppar,pre,'Number of input images',nproc
 	;

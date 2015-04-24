@@ -49,7 +49,7 @@ kcwi_print_info,ppar,pre,systime(0)
 display = (ppar.display ge 2)
 ddisplay = (ppar.display ge 3)
 
-if ppar.display ge 1 then begin
+if ppar.display ge 2 then begin
 	window,0,title='kcwi_fit_center'
 	deepcolor
 	!p.multi=0
@@ -209,11 +209,12 @@ prelim_refspec = prelim_refspec * tukeywgt(n_elements(prelim_refspec),ppar.taper
 ;
 ; now we have two spectra we can try to cross-correlate
 ; (prelim_intspec and prelim_refspec), so let's do that:
+if ddisplay then window,1,title='kcwi_xspec'
 kcwi_xspec,prelim_intspec,prelim_refspec,ppar,prelim_offset,prelim_value, $
 	/min,/shift,/plot,label='Obj(0) vs Atlas(1)'
+if ddisplay then wset,0
 ;
 if ppar.display ge 2 then begin
-	window,0,title='kcwi_fit_center'
 	q='test'
 	while strlen(q) gt 0 do begin
 	    plot,prelim_subwvl,prelim_spec/max(prelim_spec),charsi=si,charthi=th,thick=th, $
@@ -324,8 +325,10 @@ for b = 0,119 do begin
 		xslab = 'Bar '+strn(b)+', '+strn(d)+'/'+strn(nn)+', Dsp = '+string(disps[d],form='(f6.3)')
 		; 
 		; cross correlate the interpolated spectrum with the atlas spectrum
+		if ddisplay then wset,1
 		kcwi_xspec,intspec,subrefspec,ppar,soffset,svalue,status=status, $
 			/min,/shift,/pad,/central,plot=ddisplay,label=xslab
+		if ppar.display ge 3 then wset,0
 		;
 		maxima[d] = double(svalue)/total(subrefspec)/total(intspec)
 		shifts[d] = soffset
@@ -396,7 +399,6 @@ for b = 0,119 do begin
 		format='(a,i4,2x,f8.4,f9.2,f8.4,2g13.5)'
 	;
 	if display then begin
-		window,0,title='kcwi_fit_center'
 		yrng = get_plotlims(maxima)
 		plot,disps,maxima,psym=-4,charsi=si,charthi=th,thick=th, $
 			xthick=th,xtitle='Central Dispersion',/xs, $
@@ -418,11 +420,17 @@ for b = 0,119 do begin
 		else	read,'Next? (Q - quit plotting, <cr> - next): ',q
 		if strupcase(strmid(q,0,1)) eq 'Q' then begin
 			display = (1 eq 0)
-			ddisplay = (1 eq 0)
+			if ppar.display ge 3 then begin
+				ddisplay = (1 eq 0)
+				wdelete,1
+			endif
 		endif
 		if strupcase(strmid(q,0,1)) eq 'D' then ddisplay = (1 eq 1)
 	endif
 endfor	; b
+;
+; clean up
+if ddisplay then wdelete,1
 ;
 ; now clean each slice of outlying bars
 if ppar.cleancoeffs then $
@@ -434,28 +442,6 @@ if total(barstat) gt n_elements(barstat)/2 then begin
 		fix(total(barstat)),/error
 	kgeom.status = 4
 endif else	kgeom.status = 0
-;
-; plot results
-if ppar.display ge 1 then begin
-	!p.multi=[0,1,2]
-	si = 1.5
-	ys = reform(centcoeff[0,*])
-	yrng = get_plotlims(ys)
-	plot,centcoeff[0,*],psym=4,charsi=si,charthi=th,thick=th, $
-		title = imglab+' Central Wavelength', $
-		xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
-		ythick=th,ytitle='Ang',yrange=yrng,/ys
-	kcwi_oplot_slices
-	ys = reform(centcoeff[1,*])
-	yrng = get_plotlims(ys)
-	plot,centcoeff[1,*],psym=4,charsi=si,charthi=th,thick=th, $
-		title = imglab+' Central Dispersion', $
-		xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
-		ythick=th,ytitle='Ang/px',yrange=yrng,/ys
-	kcwi_oplot_slices
-	if ppar.display ge 2 then read,'next: ',q
-	!p.multi=0
-endif
 ;
 return
 end		; kcwi_fit_center

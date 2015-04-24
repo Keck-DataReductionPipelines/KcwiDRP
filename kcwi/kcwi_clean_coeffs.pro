@@ -87,7 +87,6 @@ modified = ( 1 eq 0 )	; did we do anything?
 ;
 ; display?
 display = (ppar.display ge 4 and keyword_set(plot))
-if display then window,0,title='kcwi_clean_coeffs'
 ;
 ; loop over slices
 for sl = 0,23 do begin

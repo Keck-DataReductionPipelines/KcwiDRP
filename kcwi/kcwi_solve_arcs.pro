@@ -65,7 +65,6 @@ q=''
 display = (ppar.display ge 2)
 ;
 if ppar.display ge 1 then begin
-	window,0,title='kcwi_solve_arcs'
 	deepcolor
 	!p.multi=0
 	!p.background=colordex('white')
@@ -108,6 +107,30 @@ kcwi_fit_center,specs,kgeom,ppar,cntcoeff
 if kgeom.status gt 0 then begin
 	kcwi_print_info,ppar,pre,'Cannot solve arcs',/error
 	return
+endif
+;
+; plot results
+if ppar.display ge 1 then begin
+	window,0,title='kcwi_solve_arcs'
+	!p.multi=[0,1,2]
+	si = 1.5
+	ys = reform(cntcoeff[0,*])
+	yrng = get_plotlims(ys)
+	plot,cntcoeff[0,*],psym=4,charsi=si,charthi=th,thick=th, $
+		title = imglab+' Central Fit Coef0', $
+		xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
+		ythick=th,ytitle='Ang',yrange=yrng,/ys
+	kcwi_oplot_slices
+	ys = reform(cntcoeff[1,*])
+	yrng = get_plotlims(ys)
+	plot,cntcoeff[1,*],psym=4,charsi=si,charthi=th,thick=th, $
+		title = imglab+' Central Fit Coef1', $
+		xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
+		ythick=th,ytitle='Ang/px',yrange=yrng,/ys
+	kcwi_oplot_slices
+	if ppar.display ge 3 or (ppar.display ge 2 and nasmask) then $
+		read,'next: ',q
+	!p.multi=0
 endif
 ;
 ; we will be initially using a third degree fit to the peak positions:
@@ -236,7 +259,6 @@ if keyword_set(tweak) then begin
 	;
 	; plot if requested
 	if ppar.display ge 3 then begin
-		window,0,title='kcwi_solve_arcs'
 		xarng = get_plotlims([minwav,maxwav],pad=0.2)
 		;
 		; if plotting diagnostics, just focus on first iteration (central third)
@@ -486,8 +508,11 @@ if keyword_set(tweak) then begin
 			if iter lt niter-1 then $
 				clnplot = 0 $
 			else	clnplot = 1
-			if ppar.display ge 1 then wset,0
+			if ppar.display ge 3 and clnplot then $
+				window,2,title='kcwi_clean_coeffs'
 			kcwi_clean_coeffs,twkcoeff,degree,ppar,plot=clnplot
+			if ppar.display ge 3 and clnplot then $
+				wdelete,2
 		endif
 	endfor; iter
 	;
@@ -548,7 +573,7 @@ if keyword_set(tweak) then begin
 			if display then begin
 				;
 				; back to main plot window
-				window,0,title='kcwi_solve_arcs'
+				wset,0
 				if nasmask then begin
 					dwav = (maxwav - minwav)/3.
 					xrng = get_plotlims([minwav+dwav,maxwav-dwav],pad=0.3)
@@ -578,6 +603,9 @@ if keyword_set(tweak) then begin
 			kcwi_print_info,ppar,pre,'Not enough matched peaks for bar',b,nmatchedpeaks,/error
 	endfor	; loop over bars to get final stats
 endif	; have we done any tweaking?
+;
+; clean up
+if ppar.display ge 3 then wdelete,1
 ;
 ; our final coefficients
 fincoeff = dblarr(9,120)
