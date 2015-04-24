@@ -1,7 +1,7 @@
-# $Id: RELEASE_NOTES | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+# $Id: RELEASE_NOTES | Fri Apr 24 12:15:57 2015 -0700 | Don Neill  $
 # Copyright (c) 2013, California Institute of Technology, all rights reserved
 
-2015-APR-21: v0.2.10 - Eleventh beta release
+2015-APR-24: v0.2.10 - Eleventh beta release
 
 - Removed obsolete wavelength fitting parameters pkiso and pksig, and
 	implemented pkdel as fraction of spectral resolution in Angstroms.

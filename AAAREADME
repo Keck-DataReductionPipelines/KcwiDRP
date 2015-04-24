@@ -1,4 +1,4 @@
-$Id: AAAREADME,v 1.27 2015/02/27 23:51:41 neill Exp $
+$Id: AAAREADME | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 
 Copyright (c) 2015, California Institute of Technology.  All rights reserved.
 
@@ -6,7 +6,7 @@ Copyright (c) 2015, California Institute of Technology.  All rights reserved.
         KCWI Data Extraction and Reduction Pipeline (KDERP) README
 
 
-Tenth beta release; Version: 0.2.9 Date: 2015/02/27
+Eleventh beta release; Version: 0.2.10 Date: 2015/04/24
 
 New routine: kcwi_quick.pro for at-telescope reductions.  See NEW FEATURES
 (section 4) below.
@@ -227,9 +227,8 @@ FILESPEC	- string overriding default file spec ('image????.fit*')
 FROOT		- string overriding default file root ('image')
 FDIGITS		- integer overriding the default image number digits (4)
 
-PKSIG		- significance of peaks found for wavelength soln. (1.5)
-PKDEL		- arc line matching threshold in Ang (0.75)
-PKISO		- atlas line isolation window in Ang (2.0)
+TAPERFRAC	- taper fraction for cross-correlation (0.2)
+PKDEL		- arc line matching threshold in fraction of resolution (0.75)
 
 Once you have decided on the options just execute it. For example:
 
@@ -412,16 +411,18 @@ discrepancy between the atlas spectrum and the bar arc spectrum.
 
 If you have trouble finding a good solution for a particular bar or set of
 bars, you can tweak some of the wavelength solution parameters in the
-kcwi.ppar file and re-run stage 4.  Currently the most productive tweaking
-is of the PKISO parameter which currently defaults to 2.0.  Problems occur
-sometimes with over-crowded regions of the atlas spectrum.  These can be
-occasionally mitigated by expanding the PKISO from 2.0 to 2.5.  You must
-delete the the old geometry files from stage 4 or they will just be
-re-used.  You can delete the old data-cube files or just set the CLOBBER
-parameter to 1 to allow new data-cubes to be generated.  You may want to
-move or rename the diagnostic 'wave_*.ps' files to compare with the newest
-run to see if your tweaking has improved things or not.  If they are not
-moved or renamed, they will just be overwritten.
+kcwi.ppar file and re-run stage 4.  Increasing the taper fraction
+(TAPERFRAC) parameter helps with edge effects produced by strong arc lines
+near the edges of the wavelength window.  The line-matching parameter
+(PKDEL) will automatically be adjusted upwards from its default of 0.75 in
+0.25 increments until at least five peaks are matched.  You may want to
+start out with a larger fraction of the resolution.  You must delete the
+the old geometry files from stage 4 or they will just be re-used.  You can
+delete the old data-cube files or just set the CLOBBER parameter to 1 to
+allow new data-cubes to be generated.  You may want to move or rename the
+diagnostic 'wave_*.ps' files to compare with the newest run to see if your
+tweaking has improved things or not.  If they are not moved or renamed,
+they will just be overwritten.
 
 The outputs from stage4 are the wave plot files, geometry save files, the
 data cubes and the kcwi_stage4geom.log file.  The geometry save files are
@@ -588,10 +589,10 @@ can now take a data cube or a profile corrected data cube as input.
 	the details of the error message.
 
 3. Bad wavelength solution:
-	As stated above, three parameters are available to tweak the
-	wavelength solution: PKISO, PKDEL, and PKSIG.  The recommended
-	first tweak is to expand PKISO from 2 to 2.5.  There may also be
-	good results from tweaking the others, but we recommend very small
+	As stated above, two parameters are available to tweak the
+	wavelength solution: TAPERFRAC, and PKDEL.  The recommended
+	first tweak is to increase TAPERFRAC from 0.2 to 0.5.  There may 
+	also be good results from tweaking PKDEL, but we recommend very small
 	adjustments.
 
 
@@ -603,7 +604,6 @@ This is a beta release, so there is still much to do:
 -. Implement nod-and-shuffle scattered light fitting/removal
 -. Combine a group of skys to improve profile s/n
 -. Clean up data structures to remove extraneous or repeated items
--. Implement an iterative wavelength solution for each bar
 -. Implement non-nod-and-shuffle sky subtraction
 -. Implement all configuration modes of KCWI
 -. Install a library of calibration images and geometry solutions

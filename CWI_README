@@ -1,12 +1,12 @@
-$Id: CWI_README,v 1.26 2015/02/28 00:16:03 neill Exp $
+$Id: CWI_README | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 
-Copyright (c) 2014, California Institute of Technology.  All rights reserved.
+Copyright (c) 2015, California Institute of Technology.  All rights reserved.
 
 
         KCWI Data Extraction and Reduction Pipeline (KDERP) CWI_README
 
 
-Tenth Beta release; Version: 0.2.9 Date: 2015/02/27
+Eleventh Beta release; Version: 0.2.10 Date: 2015/04/24
 
 NOTE: See '---NEW---' note below on using CWI data with kcwi_quick.pro.
 
