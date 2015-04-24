@@ -1,4 +1,4 @@
-; $Id: kcwi_geom__define.pro,v 1.37 2014/10/01 19:15:28 neill Exp $
+; $Id: kcwi_geom__define.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -96,6 +96,9 @@ tmp = { kcwi_geom, $
 ; CCD size
 	nx:0, $			; number of x pixels in image
 	ny:0, $			; number of y pixels in image
+;
+; CCD readnoise
+	rdnoise:3., $		; e-/pixel
 ;
 ; Y ranges
 	goody0:0, $		; lowest good y pixel in spectrum

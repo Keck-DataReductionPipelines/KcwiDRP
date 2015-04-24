@@ -1,4 +1,4 @@
-; $Id: kcwi_set_geom.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+; $Id: kcwi_set_geom.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -121,6 +121,21 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 		kgeom.ypad = 0
 	endif
 	;
+	; get noise model
+	rdnoise = 0.
+	;
+	; sum over amp inputs
+	switch kcfg.nvidinp of
+		4: rdnoise = rdnoise + kcfg.biasrn4
+		3: rdnoise = rdnoise + kcfg.biasrn3
+		2: rdnoise = rdnoise + kcfg.biasrn2
+		1: rdnoise = rdnoise + kcfg.biasrn1
+	endswitch
+	;
+	; take average
+	rdnoise /= float(kcfg.nvidinp)
+	kgeom.rdnoise = rdnoise
+	;
 	; wavelength numbers default from header
 	kgeom.cwave = kcfg.cwave
 	kgeom.wave0out = kcfg.wave0	
@@ -140,9 +155,9 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 		;
 		; check resolution and dispersion
 		if strtrim(kcfg.gratid,2) eq 'RED' then begin
-			kgeom.resolution = 1.16
-			kgeom.wavran = 740.
-			kgeom.ccwn = 260./kgeom.ybinsize
+			kgeom.resolution = 1.16	; Angstroms
+			kgeom.wavran = 740.	; Angstroms
+			kgeom.ccwn = 260./kgeom.ybinsize	; Pixels
 			kgeom.rho = 2.1730d
 			kgeom.slant = -1.0d
 			kgeom.lastdegree = 4
@@ -150,9 +165,9 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 			; output disperison
 			kgeom.dwout = 0.11 * float(kcfg.ybinsize)
 		endif else if strtrim(kcfg.gratid,2) eq 'YELLOW' then begin
-			kgeom.resolution = 0.82
-			kgeom.wavran = 570
-			kgeom.ccwn = 260./kgeom.ybinsize
+			kgeom.resolution = 0.82	; Angstroms
+			kgeom.wavran = 570	; Angstroms
+			kgeom.ccwn = 260./kgeom.ybinsize	; Pixels
 			kgeom.rho = 2.5300d
 			kgeom.slant = -1.1d
 			kgeom.lastdegree = 4
@@ -160,9 +175,9 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 			; output disperison
 			kgeom.dwout = 0.137 * float(kcfg.ybinsize)
 		endif else if strtrim(kcfg.gratid,2) eq 'BLUE' then begin
-			kgeom.resolution = 0.98
-			kgeom.wavran = 440.
-			kgeom.ccwn = 260./kgeom.ybinsize
+			kgeom.resolution = 0.98	; Angstroms
+			kgeom.wavran = 440.	; Angstroms
+			kgeom.ccwn = 260./kgeom.ybinsize	; Pixels
 			kgeom.rho = 3.050d
 			kgeom.slant = 0.50d
 			kgeom.lastdegree = 4
@@ -177,9 +192,9 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 				   0., -167.,    3., -166.,    3., -156., $
 				   5., -173.,  -20., -225.,  -44., -226.]
 			kgeom.ccoff = offs
-			kgeom.resolution = 2.50
-			kgeom.wavran = 1310.
-			kgeom.ccwn = 80./kgeom.ybinsize
+			kgeom.resolution = 2.50	; Angstroms
+			kgeom.wavran = 1310.	; Angstroms
+			kgeom.ccwn = 80./kgeom.ybinsize	; Pixels
 			kgeom.rho = 1.20d
 			kgeom.slant = 0.0d
 			kgeom.lastdegree = 5

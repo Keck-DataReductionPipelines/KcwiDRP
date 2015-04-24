@@ -1,4 +1,4 @@
-; $Id: kcwi_solve_arcs.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id: kcwi_solve_arcs.pro | Fri Apr 17 14:46:03 2015 -0700 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -39,10 +39,6 @@
 ;
 ; EXAMPLE:
 ;
-; TODO:
-;	modularize ref line finding so program can tweak pkiso if resid large
-;	get sigma of non-tweaked solution with ref lines
-;
 ; MODIFICATION HISTORY:
 ;	Written by:	Matt Matuszewski
 ;	2013-DEC-10	Initial Revision
@@ -57,6 +53,7 @@
 ;	2014-SEP-11	Converted function to pro with status in kgeom.status
 ;	2014-SEP-16	Single iteration mode for assessing rms of fits (N&S)
 ;	2014-NOV-06	Put stats (rms) after all tweaking done
+;	2015-APR-22	Rework of peak finding
 ;-
 ;
 pro kcwi_solve_arcs, specs, kgeom, ppar, tweak=tweak, plot_file=plot_file
@@ -94,7 +91,7 @@ nasmask = kgeom.nasmask
 ; central wavelength?
 cwvl = kgeom.cwave
 ;
-; canonical resolution?
+; canonical resolution in Angstroms?
 resolution = kgeom.resolution
 ;
 ; log info
@@ -110,6 +107,30 @@ kcwi_fit_center,specs,kgeom,ppar,cntcoeff
 if kgeom.status gt 0 then begin
 	kcwi_print_info,ppar,pre,'Cannot solve arcs',/error
 	return
+endif
+;
+; plot results
+if ppar.display ge 1 then begin
+	window,0,title='kcwi_solve_arcs'
+	!p.multi=[0,1,2]
+	si = 1.5
+	ys = reform(cntcoeff[0,*])
+	yrng = get_plotlims(ys)
+	plot,cntcoeff[0,*],psym=4,charsi=si,charthi=th,thick=th, $
+		title = imglab+' Central Fit Coef0', $
+		xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
+		ythick=th,ytitle='Ang',yrange=yrng,/ys
+	kcwi_oplot_slices
+	ys = reform(cntcoeff[1,*])
+	yrng = get_plotlims(ys)
+	plot,cntcoeff[1,*],psym=4,charsi=si,charthi=th,thick=th, $
+		title = imglab+' Central Fit Coef1', $
+		xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
+		ythick=th,ytitle='Ang/px',yrange=yrng,/ys
+	kcwi_oplot_slices
+	if ppar.display ge 3 or (ppar.display ge 2 and nasmask) then $
+		read,'next: ',q
+	!p.multi=0
 endif
 ;
 ; we will be initially using a third degree fit to the peak positions:
@@ -136,14 +157,15 @@ sigmas = dblarr(120)
 ;
 ; keep track of individual bar fits
 barstat = intarr(120)
+barrej  = intarr(120)
 ;
 ; keep track of observed versus atlas comparison
-fwaves = fltarr(120,100)
-dwaves = fltarr(120,100)
+fwaves = fltarr(120,1000)
+dwaves = fltarr(120,1000)
 ;
 ; keep track of reference wavelengths and matched pixel positions
-rwaves = fltarr(120,100)
-xcents = fltarr(120,100)
+rwaves = fltarr(120,1000)
+xcents = fltarr(120,1000)
 ;
 ; for tweaking: array of border fractions to ignore.
 if nasmask then begin
@@ -214,11 +236,8 @@ if keyword_set(tweak) then begin
 		kcwi_print_info,ppar,pre,'using '+strn(niter)+' iteration to measure RMS of initial central fit' $
 	else	kcwi_print_info,ppar,pre,'using '+strn(niter)+' iterations to tweak higher order terms'
 	;
-	pksig = ppar.pksig		; which peaks to find? 
-	pkdel = ppar.pkdel*resolution	; peak matching delta required in Angstroms
-	pkiso = ppar.pkiso*resolution	; isolation gap between peaks required in Angstroms
-	kcwi_print_info,ppar,pre,'Spectral line finding/matching params: PkSig, PkDel, PkIso', $
-		pksig,pkdel,pkiso,format='(a,2x,3f7.3)'
+	kcwi_print_info,ppar,pre,'Spectral line finding/matching thresh (frac. of res.): PkDel', $
+		ppar.pkdel,format='(a,2x,f7.3)'
 	;
 	; start with central fit coefficients
 	twkcoeff = cntcoeff
@@ -239,15 +258,17 @@ if keyword_set(tweak) then begin
 	twk_reference_wavelengths = twk_reference_wavelengths[qwvs]
 	;
 	; plot if requested
-	if ppar.display ge 2 then begin
+	if ppar.display ge 3 then begin
 		xarng = get_plotlims([minwav,maxwav],pad=0.2)
 		;
 		; if plotting diagnostics, just focus on first iteration (central third)
 		if ppar.display ge 3 then begin
 			dwav = (maxwav - minwav)/3.
 			xarng = get_plotlims([minwav+dwav,maxwav-dwav],pad=0.3)
-		endif
-		plot,twk_reference_wavelengths,twk_reference_spectrum, title='Atlas Spectrum Lines', $
+			atitle = 'Atlas Spectrum Lines (Central 3rd)'
+		endif else $
+			atitle = 'Atlas Spectrum Lines'
+		plot,twk_reference_wavelengths,twk_reference_spectrum, title=atitle, $
 			thick=th,charsi=si,charthi=th, $
 			xthick=th,xtitle='Wave(A)',xrange=xarng,/xs, $
 			ythick=th,ytitle='Flux', $
@@ -256,14 +277,11 @@ if keyword_set(tweak) then begin
 	endif
 	;
 	; let's find the peaks in the reference spectrum.
-	; adjust pksig to get more atlas lines
-	;refmode = (mode(twk_reference_spectrum))[0]
+	smooth_width = fix(resolution/refdisp)		; in pixels
+	slope_thresh = 0.003
+	ampl_thresh  = 0.
 	twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
-			0.9*(resolution/refdisp),0.003,0.,5,count=twk_ref_npks)
-	;		level=refmode+0.1*refmode,/nofit);estimate=resolution)
-	;twk_ref_cent = clnpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
-	;		resolution/refdisp,resolution/refdisp,pksig,count=twk_ref_npks, $
-	;		level=refmode+0.1*refmode,/nofit);estimate=resolution)
+			smooth_width,slope_thresh,ampl_thresh,count=twk_ref_npks)
 	;
 	if twk_ref_npks eq 0 then begin
 		kcwi_print_info,ppar,pre,'No good atlas points found',/error
@@ -273,7 +291,7 @@ if keyword_set(tweak) then begin
 	kcwi_print_info,ppar,pre,'Number of clean atlas lines found',twk_ref_npks,$
 		format='(a,i4)'
 	;
-	if ppar.display ge 2 then begin
+	if ppar.display ge 3 then begin
 		for j=0,twk_ref_npks-1 do begin
 			oplot,[twk_ref_cent[j],twk_ref_cent[j]],10.^!y.crange,color=colordex('blue'),thick=1.0
 		endfor
@@ -288,7 +306,7 @@ if keyword_set(tweak) then begin
 	; now pop up a diagnostic window if requested
 	ddisplay = (ppar.display ge 3)
 	if ddisplay then $
-		window,1,title='Object Spectrum'
+		window,1,title='kcwi_solve_arcs(2)'
 	;
 	; now loop over the iterations and over the bars
 	;
@@ -317,87 +335,22 @@ if keyword_set(tweak) then begin
 			; plot if needed
 			if ddisplay and iter eq 0 then begin
 				wset,1
-				plot,subwvals,subyvals, title='Object Spectrum Lines: Bar '+strn(b), $
+				plot,subwvals,subyvals, title='Object Spectrum Lines (Central 3rd): Bar '+strn(b), $
 					thick=th,charsi=si,charthi=th, $
 					xthick=th,xtitle='Wave(A)',xrange=xarng,/xs, $
 					ythick=th,ytitle='Flux', $
 					yrange=[min(subyvals)>1.,max(subyvals)+0.05*max(subyvals)],/ys,/ylog
 			endif
 			;
-			; JDN (2014-MAR-28) sez:
-			; You might be tempted to replace this section with
-			; the modular routine clnpeaks.pro, but this will
-			; slow things down considerably, so don't.
-			twk_spec_pks = peaks(subyvals,pksig,count=twk_spec_npks)
-			if twk_spec_npks le 0 then begin
-				kcwi_print_info,ppar,pre,'Not enough spec peaks for bar ',b, $
-					format='(a,i6)',/warning
-				barstat[b]=7
-				goto, errbar
-			endif
-			if ddisplay and iter eq 0 then $
-				oplot,subwvals[twk_spec_pks],subyvals[twk_spec_pks],psym=6,symsi=2.5
-			;
-			twk_spec_valid = bytarr(twk_spec_npks)+1b
-			npksig = twk_spec_npks
-			;
-			; find peaks that are too close to other peaks. 
-			one = fltarr(twk_spec_npks)+1.0
-			rows = one##subwvals[twk_spec_pks]
-			cols = subwvals[twk_spec_pks]##one
-			diff = abs(rows-cols)
-			badpks = where(diff lt pkiso and diff gt 0, nbadpks)
-			if nbadpks gt 0 then twk_spec_valid[badpks mod twk_spec_npks] = 0b
-			; and reject the peaks that are too close.
-			qgoodpks = where(twk_spec_valid eq 1, ngoodpeaks)
-			if ngoodpeaks eq 0 then begin
-				kcwi_print_info,ppar,pre,'Not enough good spec peaks for bar ',b, $
-					format='(a,i6)',/warning
-				barstat[b]=7
-				goto, errbar
-			endif
-			twk_spec_npks = ngoodpeaks
-			twk_spec_pks = twk_spec_pks[qgoodpks]
-			twk_spec_valid = twk_spec_valid[qgoodpks]
-			if ddisplay and iter eq 0 then $
-				oplot,subwvals[twk_spec_pks],subyvals[twk_spec_pks],psym=4,symsi=2.0
-			;
-			; set up variables
-			twk_spec_cent = dblarr(ngoodpeaks)
-			twk_spec_width = dblarr(ngoodpeaks)
-			delta = abs(fix(2.5*kgeom.resolution/twkcoeff[1,b]))
-			; now loop over the peaks that are good and fit them
-			for pk=0,ngoodpeaks-1 do begin
-				subspec = subyvals[twk_spec_pks[pk]-delta>0:twk_spec_pks[pk]+delta<nrows-1]
-				subwave = subwvals[twk_spec_pks[pk]-delta>0:twk_spec_pks[pk]+delta<nrows-1]
-				res = mpfitpeak(subwave,subspec,a,nterms=5,estimate=[subyvals[twk_spec_pks[pk]], $
-						subwvals[twk_spec_pks[pk]],0.6], /silent)
-				twk_spec_cent[pk] = a[1]
-				twk_spec_width[pk] = a[2]
-			endfor				; pk
-			;
-			; keep lines with widths within one sigma of average
-			twk_spec_moment = moment(twk_spec_width)
-			sigmawid = abs(twk_spec_width-twk_spec_moment[0])/sqrt(twk_spec_moment[1])
-			goodsigma = where(sigmawid lt 1.0, ngoodsigma)
-			;
-			; is anyone left?
-			if ngoodsigma eq 0 then begin
-				kcwi_print_info,ppar,pre,'No good spec points for bar ',b, $
-					format='(a,i6)',/warning
-				barstat[b]=8
-				goto, errbar
-			endif
-			;
-			if ddisplay and iter eq 0 then begin
-				;print,'n, width, sigwid, cwave'
-				;forprint,indgen(n_elements(twk_spec_width)),twk_spec_width,sigmawid,twk_spec_cent,format='(i4,3f9.3)'
-				oplot,subwvals[twk_spec_pks[goodsigma]],subyvals[twk_spec_pks[goodsigma]],psym=2,symsi=1.5
-			endif
-			twk_spec_npks = ngoodsigma
-			twk_spec_pks = twk_spec_pks[goodsigma]
-			twk_spec_cent = twk_spec_cent[goodsigma]
-			twk_spec_width = twk_spec_width[goodsigma]
+			; find good peaks in object spectrum
+			smooth_width = fix(resolution/abs(twkcoeff[1,b]))	; in pixels
+			peak_width   = fix(smooth_width*1.5)			; for fitting peaks
+			slope_thresh = 0.7*smooth_width/2./100.0		; more severe for object
+			ampl_thresh  = kgeom.rdnoise * 30.
+			;print,'sl th: ',slope_thresh
+			;print,'am th: ',ampl_thresh
+			twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
+				ampl_thresh,peak_width,count=twk_spec_npks)
 			;
 			; at this point we have the catalog of good reference points (from
 			; before) and list of good points in this bar. We have to associate
@@ -410,26 +363,28 @@ if keyword_set(tweak) then begin
 			mn = min(diff,dim=1,mi)
 			;
 			; here we match the peaks to one another. 
-			pkm = pkdel
+			pkd = ppar.pkdel
+			pkm = pkd*resolution	; match thresh in Angstroms
 			matchedpeaks = where(mn lt pkm, nmatchedpeaks)
 			;
 			; for first iteration, make sure we have enough peaks
-			; also if we have no matched peaks
+			; also handle if we have no matched peaks
 			if iter eq 0 or nmatchedpeaks eq 0 then begin
 				orig_nmp = nmatchedpeaks
-				while nmatchedpeaks lt 5 and pkm lt pkiso do begin
+				while nmatchedpeaks lt 5 and pkd lt 2. do begin
 					;
 					; open up the match criterion
-					pkm = pkm + 0.25
+					pkd += 0.25
 					;
 					; try again
+					pkm = pkd*resolution
 					matchedpeaks = where(mn lt pkm, nmatchedpeaks)
 				endwhile
 				;
 				; report any adjustments
-				if pkm ne pkdel then begin
+				if pkd ne ppar.pkdel then begin
 					print,''
-					print,'Bar: ',b,', pkdel updated to ',pkm, '; ',orig_nmp, $
+					print,'Bar: ',b,', pkdel updated to ',pkd, '; ',orig_nmp, $
 						' --> ',nmatchedpeaks,' peaks', $
 						format='(a,i3,a,f5.2,a,i2,a,i3,a)'
 				endif
@@ -440,8 +395,6 @@ if keyword_set(tweak) then begin
 				barstat[b]=9
 				goto, errbar
 			endif
-			print,string(13B),iter+1,niter,b,nmatchedpeaks, $
-				format='($,a1,"Iteration: ",i2," of ",i2," Bar:",i3,"  Valid peaks:",i3)'
 			;
 			; plot matches, if requested
 			if ddisplay and iter eq 0 then begin
@@ -451,17 +404,6 @@ if keyword_set(tweak) then begin
 				for pp = 0,nmatchedpeaks-1 do $
 					oplot,[twk_spec_cent[matchedpeaks[pp]],twk_spec_cent[matchedpeaks[pp]]], $
 						10.^!y.crange,color=colordex('G')
-				kcwi_legend,['PkSig','PkIso','Wid'],psym=[6,4,2],symsi=[2.5,2.0,1.5], $
-					charthi=th,charsi=si,box=0
-				kcwi_legend,['PkDel','Fail'],linesty=[0,0],/bottom,/clear, $
-					color=[colordex('G'),colordex('R')],charthi=th,charsi=si
-				kcwi_legend,['NPkSig: '+strn(npksig),'NPkDel: '+strn(nmatchedpeaks)],/right, $
-					charthi=th,charsi=si,/bottom,/clear
-				;print,'n, del, cwave'
-				;forprint,indgen(n_elements(mn)),mn,twk_spec_cent,form='(i4,2x,2f9.3)'
-				print,''
-				read,'Next? (Q - quit plotting, <cr> - next): ',q
-				if strupcase(strmid(q,0,1)) eq 'Q' then ddisplay = (1 eq 0)
 			endif
 			;
 			if nmatchedpeaks le 2 then begin
@@ -477,13 +419,68 @@ if keyword_set(tweak) then begin
 			targetw = twk_ref_cent[twk_ref_idx]
 			initx = cspline(subwvals,subxvals,twk_spec_cent[twk_spec_idx])
 			;
+			; we need reverse coefficients.
+			fitdegree = degree < (nmatchedpeaks-1)
+			newcoeff = poly_fit(initx,targetw,fitdegree,yfit=fitw)
+			;
+			; get residual stats
+			ims,(targetw - fitw),rmn,rsg,rwgt
+			bad = where(rwgt le 0, nbad)
+			;
+			; reject baddies
+			nrej = 0
+			while nbad gt 0 do begin
+				;
+				; count the bad guys
+				nrej += nbad
+				;
+				; overplot them if we are displaying
+				if ddisplay and iter eq 0 then begin
+					for pp = 0,nbad-1 do $
+						oplot,[targetw[bad[pp]],targetw[bad[pp]]], $
+							10.^!y.crange,color=colordex('B')
+				endif
+				;
+				; get the good guys
+				good = where(rwgt eq 1, nmatchedpeaks)
+				;
+				; check to be sure we have some left
+				if nmatchedpeaks le 0 then begin
+					kcwi_print_info,ppar,pre,'All points rejected',/error
+					barstat[b]=10
+					goto, errbar
+				endif
+				;
+				; clean fit data
+				initx = initx[good]
+				targetw = targetw[good]
+				;
+				; re-fit
+				fitdegree = degree < (nmatchedpeaks-1)
+				newcoeff = poly_fit(initx,targetw,fitdegree,yfit=fitw)
+				;
+				; check for more baddies
+				ims,(targetw - fitw),rmn,rsg,rwgt
+				bad = where(rwgt le 0, nbad)
+			endwhile
+			;
+			; record results
+			print,string(13B),iter+1,niter,b,nmatchedpeaks,nrej, $
+				format='($,a1,"Iteration: ",i2," of ",i2," Bar:",i3,"  Valid peaks:",i3,"  Rejected peaks:",i3)'
+			;
+			; plot legend and query user
+			if ddisplay and iter eq 0 then begin
+				kcwi_legend,['Good','NoAtlas','Reject'],linesty=[0,0,0], $
+					/bottom,/clear, charthi=th,charsi=si, $
+					color=[colordex('G'),colordex('R'),colordex('B')]
+				print,''
+				read,'Next? (Q - quit plotting, <cr> - next): ',q
+				if strupcase(strmid(q,0,1)) eq 'Q' then ddisplay = (1 eq 0)
+			endif
+			;
 			; store for later
 			rwaves[b,0:(nmatchedpeaks-1)] = targetw
 			xcents[b,0:(nmatchedpeaks-1)] = initx
-			;
-			; we need reverse coefficients.
-			fitdegree = degree < (nmatchedpeaks-1)
-			newcoeff = poly_fit(initx,targetw,fitdegree)
 			;
 			if nmatchedpeaks ge degree+2 then begin
 				twkcoeff[*,b] = 0
@@ -492,6 +489,7 @@ if keyword_set(tweak) then begin
 			;
 			; if we get here, bar fit was good
 			barstat[b] = 0
+			barrej[b] = nrej
 			;
 			; target for bars with problems
 			errbar:
@@ -499,7 +497,8 @@ if keyword_set(tweak) then begin
 		;
 		; report iteration
 		print,string(13B),format='($,a1)'
-		kcwi_print_info,ppar,pre,"Iteration "+string(iter+1,"(i2)")+" of "+ string(niter,"(i2)")+" done."
+		kcwi_print_info,ppar,pre,"Iteration "+string(iter+1,"(i2)")+" of "+ $
+			string(niter,"(i2)")+" done.          "
 		;
 		; now clean each slice of outlying bars
 		; don't bother for a single iteration
@@ -509,8 +508,11 @@ if keyword_set(tweak) then begin
 			if iter lt niter-1 then $
 				clnplot = 0 $
 			else	clnplot = 1
-			wset,0
+			if ppar.display ge 3 and clnplot then $
+				window,2,title='kcwi_clean_coeffs'
 			kcwi_clean_coeffs,twkcoeff,degree,ppar,plot=clnplot
+			if ppar.display ge 3 and clnplot then $
+				wdelete,2
 		endif
 	endfor; iter
 	;
@@ -590,8 +592,10 @@ if keyword_set(tweak) then begin
 					linesty=1,color=colordex('blue')
 				oplot,!x.crange,-[sigmas[b],sigmas[b]], $
 					linesty=1,color=colordex('blue')
-				kcwi_legend,["RMS = "+string(sigmas[b],form='(f7.3)')+' Ang'], $
-					charsi=si,charthi=th
+				kcwi_legend,["RMS = "+string(sigmas[b],form='(f7.3)')+' Ang', $
+					     'NMatch = '+strn(nmatchedpeaks), $
+					     'NRej = '+strn(barrej[b])], $
+					     charsi=si,charthi=th
 				read,'Next? (Q - quit plotting, <cr> - next): ',q
 				if strupcase(strmid(q,0,1)) eq 'Q' then display = (1 eq 0)
 			endif	; display
@@ -599,6 +603,9 @@ if keyword_set(tweak) then begin
 			kcwi_print_info,ppar,pre,'Not enough matched peaks for bar',b,nmatchedpeaks,/error
 	endfor	; loop over bars to get final stats
 endif	; have we done any tweaking?
+;
+; clean up
+if ppar.display ge 3 then wdelete,1
 ;
 ; our final coefficients
 fincoeff = dblarr(9,120)
@@ -721,7 +728,7 @@ if keyword_set(tweak) then begin
 	kcwi_print_info,ppar,pre,'min/max bar wavelength sigma (Ang)',minmax(sigmas[bargood]), $
 		format='(a,f7.3,2x,f7.3)'
 	if noutliers gt 0 then $
-		kcwi_print_info,ppar,pre,'> 3sig outlier bars present, may want to tweak ppar.pkiso: Imgnum, Bars', $
+		kcwi_print_info,ppar,pre,'> 3sig outlier bars present, may want to tweak ppar.pkdel: Imgnum, Bars', $
 			imgnum,outliers,format='(a,i7,2x,'+strn(noutliers)+'i5)',/warning
 endif
 ;

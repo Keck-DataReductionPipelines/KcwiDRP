@@ -605,7 +605,7 @@
 ;     update some documentation that had become stale, CM, 2010-10-28
 ;   Documentation corrections, CM, 2011-08-26
 ;
-;  $Id: mpfitfun.pro,v 1.18 2011/12/08 17:43:34 cmarkwar Exp $
+;  $Id: mpfitfun.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;-
 ; Copyright (C) 1997-2002, 2003, 2006, 2007, 2009, 2010, 2011, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

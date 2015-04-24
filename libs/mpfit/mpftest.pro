@@ -147,7 +147,7 @@
 ;   Move STRICTARR compile option inside each function/procedure, 9 Oct 2006
 ;   Usage message with /CONTINUE, 23 Sep 2009, CM
 ;
-;  $Id: mpftest.pro,v 1.10 2009/09/23 20:12:46 craigm Exp $
+;  $Id: mpftest.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;-
 ; Copyright (C) 1999,2001,2002,2003,2009, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

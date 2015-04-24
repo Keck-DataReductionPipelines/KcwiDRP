@@ -1,4 +1,4 @@
-; $Id: kcwi_clean_coeffs.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id: kcwi_clean_coeffs.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -86,7 +86,7 @@ fcoeffs = coeffs
 modified = ( 1 eq 0 )	; did we do anything?
 ;
 ; display?
-display = (ppar.display ge 2 and keyword_set(plot))
+display = (ppar.display ge 4 and keyword_set(plot))
 ;
 ; loop over slices
 for sl = 0,23 do begin

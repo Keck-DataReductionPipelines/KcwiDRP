@@ -244,7 +244,7 @@
 ;   Clarify documentation regarding what happens when ESTIMATES is not
 ;     set, CM, 14 Dec 2008
 ;
-;  $Id: mpfit2dpeak.pro,v 1.10 2008/12/14 20:05:44 craigm Exp $
+;  $Id: mpfit2dpeak.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;-
 ; Copyright (C) 1997-2000, 2002, 2003, 2005, 2006, 2007, 2008 Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

@@ -80,7 +80,7 @@
 ;   Add usage message, 24 Nov 2006, CM
 ;   Usage message with /CONTINUE, 23 Sep 2009, CM
 ;
-;  $Id: mpnormtest.pro,v 1.9 2009/09/23 20:12:46 craigm Exp $
+;  $Id: mpnormtest.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;-
 ; Copyright (C) 1997-2001, 2003, 2009, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

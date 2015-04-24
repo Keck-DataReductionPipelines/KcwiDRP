@@ -1,4 +1,4 @@
-; $Id: kcwi_prep.pro | Tue Mar 3 16:21:42 2015 -0800 | Don Neill  $
+; $Id: kcwi_prep.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -30,9 +30,7 @@
 ;	MINGROUPDARK	- minimum number of dark images per group (def: 3)
 ;	MINOSCANPIX	- minimum number of overscan pixels for subtraction (def: 70)
 ; Wavelength fitting params (only relevant for full-ccd images)
-;	PKSIG		- significance of peaks to find (def:1.5)
-;	PKDEL		- matching thresshold in Ang (def: 0.75)
-;	PKISO		- isolation of peaks in Ang (def: 2.0)
+;	PKDEL		- matching thresh in frac. of resolution (def: 0.75)
 ; Switches
 ;	CWI		- set for CWI data: skip first bias image, 
 ;				use CWI associations (def: NO)
@@ -90,7 +88,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	mingroupbias=mingroupbias, $
 	mingroupdark=mingroupdark, $
 	minoscanpix=minoscanpix, $
-	pksig=pksig, pkdel=pkdel, pkiso=pkiso, $
+	taperfrac=taperfrac, pkdel=pkdel, $
 	cwi=cwi, $
 	nocrreject=nocrreject, $
 	nonassub=nonassub, $
@@ -113,7 +111,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	if keyword_set(help) then begin
 		print,pre+': Info - Usage: '+pre+', RawDir, ReducedDir, CalibDir, DataDir'
 		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, MINGROUPBIAS=N, MINOSCANPIX=N'
-		print,pre+': Info - Wl Fit Keywords: PKSIG=<sigma_significance>, PKDEL=<match_delta>, PKISO=<peak_isolation>'
+		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
 		print,pre+': Info - Switch Keywords: /CWI, /NOCRREJECT, /NONASSUB, /NOCLEANCOEFFS, /DOMEPRIORITY'
 		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /HELP'
 		return
@@ -240,12 +238,10 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		ppar.mingroupdark = mingroupdark
 	if keyword_set(minoscanpix) then $
 		ppar.minoscanpix = minoscanpix
-	if keyword_set(pksig) then $
-		ppar.pksig = pksig
+	if keyword_set(taperfrac) then $
+		ppar.taperfrac = taperfrac
 	if keyword_set(pkdel) then $
 		ppar.pkdel = pkdel
-	if keyword_set(pkiso) then $
-		ppar.pkiso = pkiso
 	if keyword_set(cwi) then $
 		ppar.biasskip1 = 1 $
 	else	ppar.biasskip1 = 0
@@ -287,9 +283,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	printf,ll,'Filedigits: '+strn(ppar.fdigits)
 	printf,ll,'Min Grp Bias: ',ppar.mingroupbias
 	printf,ll,'Min Grp Dark: ',ppar.mingroupdark
-	printf,ll,'Wl Fit PkSig: ',ppar.pksig
+	printf,ll,'Wl TaperFrac: ',ppar.taperfrac
 	printf,ll,'Wl Fit PkDel: ',ppar.pkdel
-	printf,ll,'Wl Fit PkIso: ',ppar.pkiso
 	if keyword_set(cwi) then $
 		printf,ll,'CWI data    : skipping first bias in each group, CWI associations'
 	if keyword_set(nocrreject) then $
