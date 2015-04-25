@@ -1,4 +1,4 @@
-; $Id: kcwi_xspec.pro | Wed Apr 15 04:39:29 2015 -0700 | Don Neill  $
+; $Id: kcwi_xspec.pro | Fri Apr 24 15:25:00 2015 -0700 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -196,7 +196,7 @@ if keyword_set(plot) and ppar.display ge 3 then begin
 	plot,spec0/max(spec0),charsi=1.5,charthi=2,thick=2,title=label, $
 		xthick=2,/xs, $
 		ythick=2,ytitle='SPEC'
-	legend,['Spec0','Spec1'],charsi=1.5,charthi=2,thick=[2,2], $
+	kcwi_legend,['Spec0','Spec1'],charsi=1.5,charthi=2,thick=[2,2], $
 		color=[colordex('black'),colordex('blue')], $
 		linesty=[0,0],box=0,/clear,clr_color=!p.background
 	oplot,spec1/max(spec1),color=colordex('blue'),thick=2
