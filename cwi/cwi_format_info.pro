@@ -1,4 +1,4 @@
-; $Id: cwi_format_info.pro,v 1.38 2015/01/26 18:29:15 neill Exp $
+; $Id: cwi_format_info.pro | Tue Mar 3 16:45:54 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology.  All rights reserved
 ;+
@@ -55,7 +55,7 @@ pro cwi_format_info,froot=froot,fdigits=fdigits,update=update
 ;
 ; setup
 pre = 'CWI_FORMAT_INFO'
-version = repstr('$Revision: 1.38 $ $Date: 2015/01/26 18:29:15 $','$','')
+version = repstr('$Revision: ca58c78 $ $Date: Tue Mar 3 16:45:54 2015 -0800 $','$','')
 q = ''
 ;
 ; check allhdr.txt
@@ -741,6 +741,9 @@ for i=istart,nf-1 do begin
 			if abs(gratpos) gt 50000L then begin
 				grat = 'MEDREZ'
 				filt = 'NONE'
+				;
+				; calculate central wavelength
+				cwave = cwi_cwave_medrez(campos,gratpos)
 			endif else begin
 				if fm4pos lt 275 and fm4pos gt -500 then begin
 					grat = 'BLUE'
@@ -754,13 +757,21 @@ for i=istart,nf-1 do begin
 					redgratcount += 1
 					redgrat = (1 eq 1)
 				endelse
+				;
+				; calculate central wavelength
+				cwave = cwi_central_wave(grat,campos,gratpos)
 			endelse
+			;
+			; calculate grating anomoly
+			gratanom = cwi_gratanom(grat,gratpos,cwave)
+			;
 			valfmtlen = strlen(grat)>10
 			spc = (14 - valfmtlen)>1
 			fmt = '(a-8,1x,a-'+strn(valfmtlen)+',i2,'+strn(spc)+'x,a-8,1x,i)'
 			key = 'GRATID'
 			after = 'IMGTYPE'
 			printf,ol,key,grat,ityp,after,imgno,format=fmt
+			;
 			valfmtlen = strlen(filt)>10
 			spc = (14 - valfmtlen)>1
 			fmt = '(a-8,1x,a-'+strn(valfmtlen)+',i2,'+strn(spc)+'x,a-8,1x,i)'
@@ -768,8 +779,6 @@ for i=istart,nf-1 do begin
 			after = 'GRATID'
 			printf,ol,key,filt,ityp,after,imgno,format=fmt
 			;
-			; calculate central wavelength
-			cwave = cwi_central_wave(grat,campos,gratpos)
 			ityp = 5
 			val = strtrim(string(cwave,format='(f9.2)'),2)
 			valfmtlen = strlen(val)>10
@@ -779,8 +788,6 @@ for i=istart,nf-1 do begin
 			after = 'IMGTYPE'
 			printf,ol,key,val,ityp,after,imgno,format=fmt
 			;
-			; calculate grating anomoly
-			gratanom = cwi_gratanom(grat,gratpos,cwave)
 			val = strtrim(string(gratanom,format='(f9.3)'),2)
 			valfmtlen = strlen(val)>10
 			spc = (14 - valfmtlen)>1
