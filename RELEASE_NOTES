@@ -15,6 +15,10 @@
 - Removed obsolete wavelength fitting parameters pkiso and pksig, and
 	implemented pkdel as fraction of spectral resolution in Angstroms.
 
+- Improved robustness of central wavelength calculation for CWI MEDREZ grating.
+
+- Refined wavelength solution diagnostic plots.
+
 
 2015-FEB-27: v0.2.9 - Tenth beta release
 
