@@ -215,8 +215,17 @@ for b=0,119 do begin
 		endelse
 		tlab = imglab + ', Bar = '+string(b,"(i03)") + $
 			', Slice = '+string(fix(b/5),"(i02)")
-		if keyword_set(tweak) and sigmas[b] gt 0 then $
-			tlab = tlab + ', RMS = '+string(sigmas[b],"(f5.3)")
+		if keyword_set(tweak) and sigmas[b] gt 0 then begin
+			ddwaves = reform(dwaves[b,*])
+			ffwaves = reform(fwaves[b,*])
+			li = where(ffwaves gt 0, nli)
+			if nli gt 0 then begin
+				ffwaves = ffwaves[li]
+				ddwaves = ddwaves[li]
+			endif else nli = 0
+			tlab = tlab + ', RMS = '+string(sigmas[b],"(f5.3)") + $
+				', N = '+strn(nli)
+		endif else nli = 0
 		plot,refwvl,refspec/fac,thick=th,charthi=th, title=tlab, $
 			xthick=th,xtitle='Wavelength (A)',xrange=[minwav,maxwav],/xs, $
 			ythick=th,ytitle='Flux',yrange=yrng,/ys
@@ -229,17 +238,12 @@ for b=0,119 do begin
 		oplot,[cwave,cwave],!y.crange,color=colordex('black'),linesty=1,thick=th
 		;
 		; plot lines used for RMS calc
-		if keyword_set(tweak) then begin
-			ddwaves = reform(dwaves[b,*])
-			ffwaves = reform(fwaves[b,*])
-			li = where(ffwaves gt 0, nli)
-			if nli gt 0 then begin
-				ffwaves = ffwaves[li]
-				ddwaves = ddwaves[li]
-				for i=0,nli-1 do $
-					oplot,[ffwaves[i],ffwaves[i]],!y.crange,color=rcolor
-			endif
-		endif else nli = 0
+		if keyword_set(tweak) and nli gt 0 then begin
+			ffwaves = ffwaves[li]
+			ddwaves = ddwaves[li]
+			for i=0,nli-1 do $
+				oplot,[ffwaves[i],ffwaves[i]],!y.crange,color=rcolor
+		endif
 		kcwi_legend,[atnam+' Atlas',fittype+' Arc Fit'],linesty=[0,0],charthi=th, $
 			color=[colordex('black'),pcolor], $
 			thick=[th,th],/clear,clr_color=!p.background
