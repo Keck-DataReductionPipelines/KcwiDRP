@@ -100,6 +100,9 @@ bargood = where(sigmas ge 0., nbargood)
 ; bad bars
 barbad = where(sigmas lt 0., nbarbad)
 ;
+; number of comparison lines
+nlines = intarr(120)
+;
 ; first plot sigmas
 if keyword_set(tweak) then begin 
 	;
@@ -117,6 +120,36 @@ if keyword_set(tweak) then begin
 	plot,sigmas,psym=4,title=tlab, $
 		xtitle='Bar #',xrange=[-1,120],/xs, $
 		ytitle='RMS (Ang)',yrange=yrng,/ys
+	oplot,!x.crange,[mom[0],mom[0]],linesty=5,thick=th
+	oplot,!x.crange,[mom[0]+sqrt(mom[1]),mom[0]+sqrt(mom[1])],linesty=1,thick=th
+	oplot,!x.crange,[mom[0]-sqrt(mom[1]),mom[0]-sqrt(mom[1])],linesty=1,thick=th
+	if nbarbad gt 0 then $
+		oplot,barbad,replicate(mom[0],nbarbad),psym=7,thick=th
+	kcwi_oplot_slices
+	;
+	; next
+	if not keyword_set(plot_file) then $
+		read,'next: ',q
+	;
+	; plot number of lines
+	for b = 0,119 do begin
+		ffwaves = reform(fwaves[b,*])
+		li = where(ffwaves gt 0, nli)
+		nlines[b] = nli
+	endfor
+	mom = moment(nlines)
+	fitnlslab = strtrim(string(mom[0],format='(f9.1)'),2) + ' +- ' + $
+	      strtrim(string(sqrt(mom[1]),format='(f9.1)'),2)
+	;
+	; set title
+	tlab=imglab+', '+fittype+' Fit <N Lines>: ' + fitnlslab
+	;
+	; plot range
+	yrng = get_plotlims(nlines)
+	;
+	plot,nlines,psym=4,title=tlab, $
+		xtitle='Bar #',xrange=[-1,120],/xs, $
+		ytitle='N Lines',yrange=yrng,/ys
 	oplot,!x.crange,[mom[0],mom[0]],linesty=5,thick=th
 	oplot,!x.crange,[mom[0]+sqrt(mom[1]),mom[0]+sqrt(mom[1])],linesty=1,thick=th
 	oplot,!x.crange,[mom[0]-sqrt(mom[1]),mom[0]-sqrt(mom[1])],linesty=1,thick=th
