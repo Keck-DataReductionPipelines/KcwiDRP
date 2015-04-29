@@ -1,4 +1,4 @@
-; $Id$
+; $Id: kcwi_solve_arcs.pro | Fri Apr 24 15:25:00 2015 -0700 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
