@@ -41,9 +41,12 @@
 ;	2013-JUL-31	Initial Revision
 ;	2013-AUG-07	Added padding of input image to extend output slices
 ;	2013-OCT-02	Re-ordered output cube axes and added WCS
+;       2015-APR-25     Added CWI flexure hooks (MM)
 ;-
+; CWI FLEX CHANGE ++
 pro kcwi_apply_geom,img,hdr,kgeom,ppar,cube,chdr, $
-	diag_cube=diag_cube
+	diag_cube=diag_cube, flex=flex
+; CWI FLEX CHANGE --
 ;
 ; startup
 pre = 'KCWI_APPLY_GEOM'
@@ -54,6 +57,13 @@ if kcwi_verify_geom(kgeom,/init) ne 0 then return
 if kcwi_verify_ppar(ppar) ne 0 then begin
 	ppar = {kcwi_ppar}
 endif
+;
+; CWI FLEX ADDITION +++
+doflex = 0
+if size(flex, /type) eq 8 then begin
+   if flex.computed eq 1 then doflex = 1 else doflex = 0
+endif else doflex = 0  
+; CWI FLEX ADDITION ---
 ;
 ; get image original size
 sz = size(img,/dim)
@@ -95,6 +105,18 @@ kcwi_print_info,ppar,pre,'Slicing and dicing image '+strn(imgnum)+': '+object+'.
 ; loop over slices
 for i=0,23 do begin
 	sli = where(kgeom.slice eq i)
+        ;
+        ; CWI FLEX ADDITION +++
+        if doflex then begin
+           kwx = flex.kwx_new[*,*,i]
+           kwy = flex.kwy_new[*,*,i]
+        endif else begin
+           kwx = kgeom.kwx[*,*,i]
+           kwy = kgeom.kwy[*,*,i]
+        endelse; kgeom.kw(x/y)
+        warp = poly_2d(pimg,kwx,kwy,2,cubic=-0.5)
+        ; CWI FLEX ADDITION ---
+        ;
 	warp = poly_2d(pimg,kgeom.kwx[*,*,i],kgeom.kwy[*,*,i],2,cubic=-0.5)
 	;
 	; check dimensions

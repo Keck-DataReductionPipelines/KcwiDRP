@@ -1,0 +1,105 @@
+M. Matuszewski
+Januar 23, 2015.
+
+CWI experiences flexure due to being a Cass mount instrument.  As the
+telescope tracks the object across the sky, there are minor changes in
+the mirror, grating, and camera positions that lead to shifts of the
+spectrum on the CCD.  
+
+The changes in the spectra are predominantly a shift in the spectral
+direction, a slight shift in the spatial direction, and, possibly, a
+small rotation of the entire image.  There may be a negligible amount
+of focus change/scaling.
+
+The flexure-correcting code here can apply one of two algorithms to
+the data.
+
+
+CWI Flexure Correction Requirements, Comments, and Procedure
+------------------------------------------------------------
+The data must contain features that make it possible to correct for
+flexure; i.e., it must have well defined sky lines. 
+The correction might not always work and the user is advised to always
+inspect the data.
+
+1. Process your data like you usually would through stages 1, 2, and 3
+of the KCWI data pipeline.
+
+2. Select a data reference image that will be used as a template for
+flexure correction.  It is better if this is a sky image (in
+nod-and-shuffle we will use the sky panel anyhow), and it should be an
+image that is taken immediately before or after a calibration
+set that the reference image is associated with. Make a note of the
+image numbers for the arc flat, cont flat, and cont bars in this
+calibration set.  
+
+3. Make a list of the images that you want to correct the flexure for.
+
+4. Go into the kcwi.link file and change the calibration file
+associations for the files listed in 3. to the calibration image
+numbers from 2.
+
+5. Run cwi_flex_prep,method=1/2, ref=reference_number, imno=[list, of,
+image, numbers, to, correct], tmpl=[list,of,template,numbers,to,use],
+wavemask=[[list,of],[wavelength,intervals],[to,mask]] 
+(see the program for an explanation of the parameters).
+
+6. Method 1 will take the wavemask array and automatically create a mask image
+to be used for all files to be flexed (_refmask). The code creates a
+_wavemap along the way.
+You may generate an additional mask image, if you want to mask off
+additional features in individual frames, you can create a _flexmask image.  
+
+7. Run stage 4 of the KCWI pipeline as before. 
+   -- if you chose method 1, each image will take a long time (10-15
+   minutes?) but once it is finished, you should be done. 
+   -- if you chose method 2, stage 4 will complete, but you will need
+   to run it a second time for the computed geometrical correction to
+   be applied.  
+
+8. Look at the images. Compare the imageXXXX_flexcor.fits with the
+reference _sky/_int.fits image if using method 1. Compare the final
+_icube images when using method 2.  
+
+
+Desctiption of Methods
+----------------------
+
+1. Method 1
+-----------
+This is the preferred method, but it may not always work and is SLOW.
+It uses a full 2D cross correlalation, via auto_align_images
+This method uses an _int image cross-correlation to first
+generate a mapping from the reference image to the flexure affected
+image. 
+ This cross-correlation produces a coordiante mapping (fx, fy). 
+ 
+                         fx, fy
+ (reference image)   ------------->  (flexed image)
+ 
+ The cornerstone of the KCWI geometrical solution is a mapping (kwx,
+ kwy) from a set of anchor points (xi, yi) to (xw, yw).
+ 
+ The mapping (kfx, kfy), which is image specific, does the following:
+ 
+               fx, fy 
+ (xi, yi)  --------------> (xf, yf)
+
+ The new anchor points, (xf, yf) are used to find another mapping to
+ replace (kwx, kwy) using POLYWARP, although this step happens in
+ CWI_APPLY_FLEX:
+ 
+             kfwx, kfwy    
+ (xf, yf) ----------------> (xw, yw)
+ This last mapping is used to generate the slices and cube in place of
+ (kwx,kwy) 
+
+
+2. Method 2
+-----------
+This method uses cross correlation on the already created data cubes
+to generate x and y offset corrections, adjusts the originally 
+computed warp coefficients and those are applied the second time 
+stage4geom is ran.
+
+

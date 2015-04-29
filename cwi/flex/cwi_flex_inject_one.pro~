@@ -1,0 +1,177 @@
+; CWI_FLEX_INJECT_ONE,ppar,kgeom,flexpar
+;
+; At the moment, this does very little error checking of the
+; structures that are passed.
+;
+; What this code does: 
+; if method 2 was chosen, this code fills the the kw?_old structure
+;elements, writes out flexpar again, and exits.
+; 
+; If method 1 was chosen, the code loads the reference and template
+;images, checks for the existence of a mask image, and checks if the
+;images are nod-and-shuffle.  It then performs a cross-correlation of
+;the reference and template images (which might take some time,
+;perhaps close to 10 minutes).  
+; Once the cross-correlation matrices are found, the program uses them
+;to generate a new set of anchor points in the original image, and,
+;finally, uses those to generate a new geometry transformation
+;matrix.
+; When that is done, it flips the .computed flag, which means the
+;flexure geometry will be used when kcwi_apply_geom is called. 
+;                                                      
+pro cwi_flex_inject_one,ppar, kgeom, flexpar
+;
+; if flexpar is not defined, do absolutely NOTHING.
+  if size(flexpar,/type) ne 8 then return   ;
+;
+if flexpar.method eq 2 then begin 
+   ; fill in kwx and kwy _old structures, write flexpar and exit
+   flexpar.kwx_old = kgeom.kwx
+   flexpar.kwy_old = kgeom.kwy
+   flexpar_fname = kcwi_get_imname(ppar, flexpar.imno,"_flexpar",/output)
+   mwrfits,flexpar,flexpar_fname,/create
+endif else begin
+   ; method 1!
+   if flexpar.computed eq 0 then begin 
+      ; populate old structures
+      flexpar.kwx_old = kgeom.kwx
+      flexpar.kwy_old = kgeom.kwy
+      ; load in the images to be cross correlated.
+      template_fname = kcwi_get_imname(ppar,flexpar.template,"_sky",/output)
+      if file_test(template_fname) then begin
+         reference_fname = kcwi_get_imname(ppar,flexpar.reference,"_sky",/output)
+         img_template = mrdfits(template_fname,0,hdr_template,/silent,/fscale)
+         img_reference = mrdfits(reference_fname,0,hdr_reference,/silent,/fscale)
+         flex_ns = 1
+      endif else begin
+         template_fname = kcwi_get_imname(ppar,flexpar.template,"_int",/output)
+         reference_fname = kcwi_get_imname(ppar,flexpar.reference,"_int",/output)
+         img_template = mrdfits(template_fname,0,hdr_template,/silent,/fscale)
+         img_reference = mrdfits(reference_fname,0,hdr_reference,/silent,/fscale)
+         flex_ns = 0 
+      endelse ; _sky exist? 
+      ;
+      ; set up a mask image
+      flex_mask = img_reference-img_reference
+      ; mask out all but the NS region, if N+S exists.
+      if flex_ns then begin
+         y0 = sxpar("NSROW0",hdr_reference)
+         y1 = sxpar("NSROW1",hdr_reference)
+         flex_mask[0:y0-1] = 1
+         flex_mask[y1+1:*] = 1
+      endif; flex_ns
+      ; load in mask image, if it exists. 
+      mask_fname = kcwi_get_imname(ppar,flexpar.imno,"_flexmask",/output)
+      if file_test(mask_fname) then begin
+         flex_user_mask = mrdfits(mask_fname);
+         flex_mask += flex_user_mask;
+      endif; mask_fname
+      ; construct a mask arraay.
+      flex_mask_arr = where(flex_mask gt 0,nq)
+      flex_mask[*] = 1
+      ; if there is no mask, for simplicty we just mask one pixel
+      if nq eq 0 then flex_mask_arr = 1
+      flex_mask[flex_mask_arr] = 0 
+      ;
+      ; OK. We have the images, the mask, and so forth, so now
+      ; we can set up the cross correlation. 
+      ; first we do a grid cross correlation, that *should* make things
+      ; a little faster in the full xcorr.
+      flex_start_time=systime(1)
+      message,"Computing initial cross-correlation.",/info
+      flex_N = 20
+      flex_peak = fltarr(2*flex_N+1,2*flex_N+1)
+      flex_ref_mod = img_reference*flex_mask
+      flex_tmp_mod = img_template*flex_mask
+      for ix=-flex_N,flex_N do begin
+         for iy=-flex_N,flex_N do begin
+            flex_peak[ix+flex_N,iy+flex_N] = $
+               total(shift(flex_ref_mod,ix,iy)*flex_tmp_mod);
+         endfor                 ; iy
+         print,string(ix+flex_N+1)+"/"+string(2*flex_N+1,"(i)")
+      endfor                    ; ix
+     ; so, where is the maximum?
+      flex_xcorr_max = max(flex_peak, flex_xcorr_max_idx)
+      print,flex_xcorr_max_idx
+      flex_xcorr_max_dx = (flex_xcorr_max_idx mod (2*flex_N+1)) - flex_N
+      flex_xcorr_max_dy = (flex_xcorr_max_idx / (2*flex_N+1)) - flex_N
+      print,flex_xcorr_max_idx,flex_xcorr_max_dx, flex_xcorr_max_dy
+      flex_split_time=systime(1)
+      message,"Elapsed: "+string(flex_split_time-flex_start_time,"(i4)"),/info
+      message,"Computing full cross-correlation.",/info      
+      message,"Reference:  "+string(flexpar.reference),/info
+      message,"Template:  "+string(flexpar.template),/info
+      message,"IMNO:  "+string(flexpar.imno),/info
+      ; prep auto_align_images
+      fx_i = fltarr(2,2)
+      fx_i = fx_i-fx_i
+      fy_i = fx_i
+      fx_i[0,1] = 1.0
+      fy_i[1,0] = 1.0
+;      fx_i[0,0] = -1.0 * flex_xcorr_max_dx
+;      fy_i[0,0] = -1.0 * flex_xcorr_max_dy
+      fx_i[0,0] = 1.0 * flex_xcorr_max_dx
+      fy_i[0,0] = 1.0 * flex_xcorr_max_dy
+      fx = fx_i
+      fy = fy_i
+      ;
+      flex_xcorr = auto_align_images(img_template, img_reference,$
+                                           fx_i, fy_i, fx, fy,$
+                                           /double, /noplot, /powell, $
+                                           tmask = flex_mask_arr, $
+                                           rmask = flex_mask_arr) 
+      ; at this point (fx, fy) contain the transformation
+      ; that takes the reference into the template
+      ; now we need to compute the warp matrices.
+      xi = kgeom.xi
+      yi = kgeom.yi
+      xw = kgeom.xw
+      yw = kgeom.yw
+      ; apply the flexure warp to the input coefficients.
+      cwi_warp_coeffs, xi, yi, fx,fy, xo, yo
+              ;
+         ; There is some padding we will be doing. 
+         yo += kgeom.ypad
+         ;
+         ; loop over slices
+         for s = 0, 23 do begin
+            ;
+            ; select only the points that belong to the slice in question
+            
+            sli = where(kgeom.slice eq s and kgeom.xi gt 0. and $
+		    finite(kgeom.xw) and finite(kgeom.yw), nsli)
+            ;
+            degree = 3
+            ; throw a fit if no such points exist.
+            if nsli gt 0 then begin
+               ;
+               ; now adjust to left edge for relevant xw.
+;               xw0 = (min(xw[sli]) - 15. ) > 0.
+;               xw_adj = xw[sli] - xw0
+               ; 
+               ; generate transformation array
+               polywarp,xo[sli],yo[sli],xw[sli],yw[sli],3,kwx,kwy,/double
+               ;
+               ; and fill out the kgeom.kwx/y arrays.
+               flexpar.kwx_new[0:degree,0:degree,s] = kwx
+               flexpar.kwy_new[0:degree,0:degree,s] = kwy
+            endif else message,"No anchor points found."
+            
+         endfor                 ;s 
+         ; flexpar is computed
+         flexpar.computed = 1
+         ; write out the flexpar. 
+         flexpar_fname = kcwi_get_imname(ppar, flexpar.imno,"_flexpar",/output)
+         mwrfits,flexpar,flexpar_fname,/create
+         flex_end_time = systime(1)
+         message,"Total time:"+string(flex_end_time-flex_start_time,"(i5)"),/info
+         message,"Cross-correlation and warping coefficients computed.",/info
+endif else message,"FLEXPAR already computed.",/info
+   
+endelse; flexpar.method eq 1
+
+
+; get out.
+end; cwi_flex_inject_one
+
+
