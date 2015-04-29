@@ -1,5 +1,4 @@
 more control of la_cosmic parameters to the user?
-add annotation for wave_*.ps plots for central and limit wavelengths
 implement saveplots option & date-stamping plots
 implement nod-and-shuffle scattered light fitting/removal
 add option to re-scale the sky for aborted nod-and-shuffel obs
@@ -7,6 +6,7 @@ propogate missing geom cal files foward into prof and rr links
 look into flat fitting algorithm: seeing striations in self-flatted cflats
 set header params for trough limits during profile correction
 think about the impact of flexure correction on the slicex0 and slicex1 params
+#27-APR-2015 DONE add annotation for wave_*.ps plots for central and limit wavelengths
 #24-APR-2015 DONE fix bright line at end of slice issue
 #25-FEB-2015 DONE be able to run from the raw dir or the redux dir
 #18-FEB-2015 DONE make profile correction optional
