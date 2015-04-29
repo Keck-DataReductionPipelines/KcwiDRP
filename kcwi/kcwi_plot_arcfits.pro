@@ -1,4 +1,4 @@
-; $Id: kcwi_plot_arcfits.pro | Fri Apr 24 12:15:57 2015 -0700 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -48,7 +48,10 @@ pre = 'KCWI_PLOT_ARCFITS'
 q=''
 ;
 ; do we want to display stuff? 
-display = (ppar.display ge 2)
+display = (ppar.display ge 2 or keyword_set(plot_file))
+;
+; what to do if we are not plotting or displaying
+if not display then return
 ;
 ; which image number
 imgnum = kgeom.arcimgnum
@@ -80,8 +83,11 @@ x0 = specsz[0]/2
 fxvals = dindgen(specsz[0])	; fullCCD xvals
 cxvals = fxvals-x0		; central xvals
 ;
-; now let's make some plots!
-if ppar.display ge 1 then wset,0
+; if not making hardcopy, open a new window
+if not keyword_set(plot_file) then $
+	window,1,title='kcwi_plot_arcfits'
+;
+; set up plots
 !p.multi=0
 if keyword_set(plot_file) then begin
 	psfile,plot_file
@@ -164,30 +170,35 @@ endif
 ;
 ; plot each coeff
 for i=0,degree do begin
-	;
-	; set title
-	tlab = imglab + ', '+fittype+' '+strn(i)
-	;
-	; set y title
-	if i eq 0 then begin
-		ylab = 'Ang'
-	endif else if i eq 1 then begin
-		ylab = 'Ang/pix'
-	endif else begin
-		ylab = 'Ang/pix^'+strn(i)
-	endelse
-	;
-	; plot range
-	yrng = get_plotlims(fincoeff[i,*])
-	;
-	plot,fincoeff[i,*],psym=4,title=tlab, $
-		xtitle='Bar #',xrange=[-1,120],/xs, $
-		ytitle=ylab,yrange=yrng,/ys
-	if nbarbad gt 0 then $
-		oplot,barbad,fincoeff[i,barbad],psym=7,thick=th
-	kcwi_oplot_slices
-	if not keyword_set(plot_file) then $
-		read,'next: ',q
+	if display then begin
+		;
+		; set title
+		tlab = imglab + ', '+fittype+' '+strn(i)
+		;
+		; set y title
+		if i eq 0 then begin
+			ylab = 'Ang'
+		endif else if i eq 1 then begin
+			ylab = 'Ang/pix'
+		endif else begin
+			ylab = 'Ang/pix^'+strn(i)
+		endelse
+		;
+		; plot range
+		yrng = get_plotlims(fincoeff[i,*])
+		;
+		plot,fincoeff[i,*],psym=4,title=tlab, $
+			xtitle='Bar #',xrange=[-1,120],/xs, $
+			ytitle=ylab,yrange=yrng,/ys
+		if nbarbad gt 0 then $
+			oplot,barbad,fincoeff[i,barbad],psym=7,thick=th
+		kcwi_oplot_slices
+		if not keyword_set(plot_file) then begin
+			read,'Next? (Q-quit plotting, <cr> - next): ',q
+			if strupcase(strmid(q,0,1)) eq 'Q' then $
+				display = (1 eq 0)
+		endif
+	endif	; display?
 endfor
 ;
 if not keyword_set(plot_file) then $
@@ -288,7 +299,7 @@ for b=0,119 do begin
 		endif
 		;
 		; plot residuals
-		if keyword_set(tweak) then begin
+		if keyword_set(tweak) and display then begin
 			residrng = get_plotlims(ddwaves)
 			resrng = [residrng[0]<(-0.2),residrng[1]>0.2]
 			plot,ffwaves,ddwaves,psym=4,charthi=th,thick=th, $
@@ -320,9 +331,10 @@ for b=0,119 do begin
 	endif	; display or keyword_set(plot_file)
 endfor		;b
 
-if keyword_set(plot_file) then begin
-	psclose
-endif
+if keyword_set(plot_file) then $
+	psclose $
+else	wdelete,1
+;
 !p.multi=0
 ;
 return
