@@ -57,6 +57,7 @@
 ;	2014-APR-03	Use master ppar and link files
 ;	2014-MAY-13	Include calibration image numbers in headers
 ;	2014-SEP-29	Added infrastructure to handle selected processing
+;       2015-APR-25     Added CWI flexure hooks (MM)
 ;-
 pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 	proc_imgnums=proc_imgnums, proc_cbarnums=proc_cbarnums, $
@@ -172,6 +173,21 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 			; read configuration
 			kcfg = kcwi_read_cfg(obfil)
 			;
+                        ; CWI FLEX ADDITION +++
+                         if (ppar.biasskip1) then begin
+                        ; check if there is a flexpar file load if it exists
+                            flexparfil = kcwi_get_imname(ppar,imgnum[i],'_flexpar',/reduced) ;
+                            if file_test(flexparfil) then begin
+                               message,"Loaded: "+flexparfil,/info
+                               flexpar = mrdfits(flexparfil,1) 
+                               if flexpar.refmask then flexparmask = mrdfits(flexparfil, 2)
+                            endif else begin
+                               flexpar = 0
+                               message,"Flexpar file missing!",/info
+                            endelse 
+                         endif  ; biasskip1  (/CWI)
+                        ; CWI FLEX ADDITION ---
+                        ;
 			; final output file
 			ofil = kcwi_get_imname(ppar,imgnum[i],'_icube',/reduced)
 			;
@@ -293,8 +309,18 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						img = mrdfits(obfil,0,hdr,/fscale,/silent)
 						;
 						sxaddpar,hdr, 'COMMENT','  '+pre+' '+systime(0)
+                                                ;
+                                                ; CWI FLEX ADDITION/CHANGES +++
+                                                ;
+                                                if ppar.biasskip1 then begin
+                                                ; Inject flexure stuff
+                                                   cwi_flex_inject_one,ppar,kgeom, flexpar, flexparmask
+            
+                                                   kcwi_apply_geom,img,hdr,kgeom,ppar,cube,chdr,flex=flexpar
+                                                endif else $; biasskip1 (/cwi)
+                                                   kcwi_apply_geom,img,hdr,kgeom,ppar,cube,chdr                               
 						;
-						kcwi_apply_geom,img,hdr,kgeom,ppar,cube,chdr
+                                                ; CWI FLEX ADDITION/CHANGES ---
 						;
 						; write out intensity cube
 						ofil = kcwi_get_imname(ppar,imgnum[i],'_icube',/nodir)
@@ -306,8 +332,12 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 							var = mrdfits(vfil,0,varhdr,/fscale,/silent)
 							;
 							sxaddpar,varhdr,'COMMENT','  '+pre+' '+systime(0)
-							;
-							kcwi_apply_geom,var,varhdr,kgeom,ppar,vcub,vchdr
+                                ;
+                                ; CWI FLEX ADDITIONS + CHANGES +++
+ if ppar.biasskip1 then $
+                                                           kcwi_apply_geom,var,varhdr,kgeom,ppar,vcub,vchdr,flex=flexpar else $
+                                                           kcwi_apply_geom,var,varhdr,kgeom,ppar,vcub,vchdr
+                                                        ; CWI FLEX ADDITIONS + CHANGES ---
 							;
 							; write out variance cube
 							ofil = kcwi_get_imname(ppar,imgnum[i],'_vcube',/nodir)
@@ -320,9 +350,13 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(mfil,/read) then begin
 							msk = float(mrdfits(mfil,0,mskhdr,/silent))
 							;
-							sxaddpar,mskhdr,'COMMENT','  '+pre+' '+systime(0)
-							;
-							kcwi_apply_geom,msk,mskhdr,kgeom,ppar,mcub,mchdr
+                                                        sxaddpar,mskhdr,'COMMENT','  '+pre+' '+systime(0)
+                                ; CWI FLEX ADDITIONS/CHANGES +++
+                                                        ;
+                                                        if ppar.biasskip1 then $
+                                                           kcwi_apply_geom,msk,mskhdr,kgeom,ppar,mcub,mchdr,flex=flexpar else $
+                                                              kcwi_apply_geom,msk,mskhdr,kgeom,ppar,mcub,mchdr   
+                                ; CWI FLEX ADDITIONS/CHANGES ---
 							;
 							; write out mask cube
 							ofil = kcwi_get_imname(ppar,imgnum[i],'_mcube',/nodir)
@@ -336,8 +370,13 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 							sky = mrdfits(sfil,0,skyhdr,/fscale,/silent)
 							;
 							sxaddpar,skyhdr,'COMMENT','  '+pre+' '+systime(0)
-							;
-							kcwi_apply_geom,sky,skyhdr,kgeom,ppar,scub,schdr
+                                ;
+                                ; CWI FLEX ADDITIONS/CHANGES +++
+                                                        if ppar.biasskip1 then $
+                                                           kcwi_apply_geom,sky,skyhdr,kgeom,ppar,scub,schdr,flex=flexpar else $
+                                                              kcwi_apply_geom,sky,skyhdr,kgeom,ppar,scub,schdr
+						
+                                ; CWI FLEX ADDITIONS/CHANGES ---
 							;
 							; write out sky cube
 							ofil = kcwi_get_imname(ppar,imgnum[i],'_scube',/nodir)
@@ -349,15 +388,23 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(nfil,/read) then begin
 							obj = mrdfits(nfil,0,objhdr,/fscale,/silent)
 							;
-							sxaddpar,objhdr,'COMMENT','  '+pre+' '+systime(0)
-							;
-							kcwi_apply_geom,obj,objhdr,kgeom,ppar,ocub,ochdr
+                                                        sxaddpar,objhdr,'COMMENT','  '+pre+' '+systime(0)
+                                ; CWI FLEX ADDITIONS/CHANGES +++
+                                                        if ppar.biasskip1 then $
+                                                           kcwi_apply_geom,obj,objhdr,kgeom,ppar,ocub,ochdr,flex=flexpar else $
+                                                              kcwi_apply_geom,obj,objhdr,kgeom,ppar,ocub,ochdr
+                                ; CWI FLEX ADDITIONS/CHANGES ---
 							;
 							; write out obj cube
 							ofil = kcwi_get_imname(ppar,imgnum[i],'_ocube',/nodir)
 							kcwi_write_image,ocub,ochdr,ofil,ppar
 						endif
-					;
+                                ;
+                                ; CWI FLEX ADDITION +++
+                                                if ppar.biasskip1 then $
+                                                   cwi_flex_inject_two,ppar,kgeom,flexpar, flexparmask
+                                ; CWI FLEX ADDITION ---
+                                ;
 					; end if geometry is good
 					endif else $
 						kcwi_print_info,ppar,pre,'unusable geom for: '+obfil+' type: '+kcfg.imgtype,/error
@@ -377,6 +424,11 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 		endif else $
 			kcwi_print_info,ppar,pre,'input file not found: '+obfil,/error
 	endfor	; loop over images
+        ; CWI FLEX ADDITION +++
+         if ppar.biasskip1 then $
+           cwi_flex_inject_three,ppar,kgeom,imgnum
+	;
+        ; CWI FLEX ADDITION ---
 	;
 	; report
 	eltime = systime(1) - startime
