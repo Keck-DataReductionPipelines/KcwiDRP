@@ -1,5 +1,10 @@
-# $Id: RELEASE_NOTES | Fri Apr 24 12:15:57 2015 -0700 | Don Neill  $
+# $Id$
 # Copyright (c) 2013, California Institute of Technology, all rights reserved
+
+2015-May-XX: v0.2.11 - Twelfth beta release
+
+- Added code to handle flexure in CWI data (hopefully not needed for KCWI).
+
 
 2015-APR-27: v0.2.10 - Eleventh beta release
 
