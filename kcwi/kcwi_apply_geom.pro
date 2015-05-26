@@ -117,8 +117,6 @@ for i=0,23 do begin
         warp = poly_2d(pimg,kwx,kwy,2,cubic=-0.5)
         ; CWI FLEX ADDITION ---
         ;
-	warp = poly_2d(pimg,kgeom.kwx[*,*,i],kgeom.kwy[*,*,i],2,cubic=-0.5)
-	;
 	; check dimensions
 	wsz = size(warp,/dim)
 	;
