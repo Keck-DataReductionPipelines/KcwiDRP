@@ -1,4 +1,4 @@
-; $Id: kcwi_prep.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -51,16 +51,26 @@
 ;	None
 ;
 ; SIDE EFFECTS:
-;	outputs pipeline parameter files *.ppar in ODIR with associations
-;	for running KCWI_STAGE{N}.  Master calibration image pipeline parameter 
-;	files are also generated in ODIR.  Link files are also generated 
-;	for each correction stage (bias,dark,flat,geom) listing the default 
-;	master calibration image(s) for each image to be processed.
+;	Outputs a set of files in ODIR: 
+;		1) a master pipeline parameter file, kcwi.ppar, with paramters
+;			for running the pipeline.
+;		2) a master link file, kcwi.link, with associations for running 
+;			subsequent stages of the pipeline (KCWI_STAGE{N}).
+;		3) pipeline paramter (*.ppar) files for generating master 
+;			calibration images (mbias, mdark, mflat) for each 
+;			master image set found and validated.  
+;		4) a general image log file, kcwi.imlog, that records the 
+;			configuration of each input raw image.  
+;		5) a log file, kcwi_prep.log, that logs all steps executed in 
+;			this stage and records execution time.
+; NOTE:
+;	The kcwi.link file can be edited to override the automated associations
+;	prior to running the next stage in the pipeline.
 ;
 ; PROCEDURE:
 ;	Analyzes the FITS headers of the images in InputDir to determine the 
-;	bias groups.  These are then associated with each calibration and
-;	object image based on instrument configuration and temporal proximity.
+;	processing groups.  These are then associated with calibration and
+;	object images based on instrument configuration and temporal proximity.
 ;
 ; EXAMPLE:
 ;	Prepare to perform KCWI reductions on the images in 'night1' 
@@ -417,8 +427,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	; do we have any bias groups?
 	if ppar.nbgrps le 0 then $
 		kcwi_print_info,ppar,pre,'no bias groups found',/warning
-	kcwi_print_info,ppar,pre,'number of bias groups = '+ $
-		strtrim(string(ppar.nbgrps),2)
+	kcwi_print_info,ppar,pre,'Number of bias groups', ppar.nbgrps
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP DARKS
@@ -428,8 +437,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	; do we have any dark groups?
 	if ppar.ndgrps le 0 then $
 		kcwi_print_info,ppar,pre,'no dark groups found',/warning
-	kcwi_print_info,ppar,pre,'number of dark groups = '+ $
-		strtrim(string(ppar.ndgrps),2)
+	kcwi_print_info,ppar,pre,'Number of dark groups', ppar.ndgrps
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP FLATS
@@ -439,8 +447,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	; do we have any flat groups?
 	if ppar.nfgrps le 0 then $
 		kcwi_print_info,ppar,pre,'no flat groups found',/warning
-	kcwi_print_info,ppar,pre,'number of flat groups = '+ $
-		strtrim(string(ppar.nfgrps),2)
+	kcwi_print_info,ppar,pre,'Number of flat groups', ppar.nfgrps
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP CBARS AND ARC FILES (GEOM)
@@ -448,22 +455,21 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	kcwi_group_geom,calcfg,ppar,ccfg,acfg,ngeom
 	if ppar.ncbars le 0 then $
 		kcwi_print_info,ppar,pre,'no geom groups found',/warning
-	kcwi_print_info,ppar,pre,'number of geom groups = '+ $
-		strtrim(string(ppar.ncbars),2)
+	kcwi_print_info,ppar,pre,'Number of geom groups', ppar.ncbars
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP SLICE PROFILE OBSERVATIONS
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	if nprofs gt 0 then $
 		pcfg = calcfg[profs]
-	kcwi_print_info,ppar,pre,'number of slice profile images',nprofs
+	kcwi_print_info,ppar,pre,'Number of slice profile images',nprofs
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP SKY OBSERVATIONS
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	if nskys gt 0 then $
 		scfg = kcfg[skys]
-	kcwi_print_info,ppar,pre,'number of sky images',nskys
+	kcwi_print_info,ppar,pre,'Number of sky images',nskys
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP RELATIVE RESPONSE OBSERVATIONS
@@ -472,14 +478,14 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		rtcfg = calcfg[trrs]
 	if ndrrs gt 0 then $
 		rdcfg = calcfg[drrs]
-	kcwi_print_info,ppar,pre,'number of relative response images',nrrs
+	kcwi_print_info,ppar,pre,'Number of relative response images',nrrs
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP STANDARD STAR OBSERVATIONS
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	if nstds gt 0 then $
 		stdcfg = kcfg[stds]
-	kcwi_print_info,ppar,pre,'number of standard star images',nstds
+	kcwi_print_info,ppar,pre,'Number of standard star images',nstds
 	;
 	; write out master KCWI_PPAR into file
 	ppar.ppfname = 'kcwi.ppar'
