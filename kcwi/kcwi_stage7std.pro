@@ -1,4 +1,4 @@
-; $Id: kcwi_stage7std.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -161,7 +161,7 @@ pro kcwi_stage7std,ppfname,linkfname,help=help,select=select, $
 			; trim image type
 			kcfg.imgtype = strtrim(kcfg.imgtype,2)
 			;
-			; check of output file exists already
+			; check if output file exists already
 			if ppar.clobber eq 1 or not file_test(ofil) then begin
 				;
 				; print image summary

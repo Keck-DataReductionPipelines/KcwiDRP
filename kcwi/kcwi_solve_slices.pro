@@ -1,4 +1,4 @@
-; $Id: kcwi_solve_slices.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -150,8 +150,8 @@ for i=0,23 do begin
 		oplot,!x.crange,[ymo[0]-kgeom.yrsd[i],ymo[0]-kgeom.yrsd[i]],linesty=2
 		read,'Next? (Q - quit plotting, <cr> - next): ',q
 		if strupcase(strmid(q,0,1)) eq 'Q' then display = (1 eq 0)
-	endif
-endfor
+	endif	; display
+endfor	; loop over slices
 ;
 ; Kgeom timestamp
 kgeom.timestamp = systime(1)
