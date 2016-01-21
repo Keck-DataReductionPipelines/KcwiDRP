@@ -1,4 +1,4 @@
-; $Id: kcwi_make_std.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -115,6 +115,10 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	;
 	; get exposure time
 	expt = sxpar(hdr,'EXPTIME')
+	if expt eq 0. then begin
+		kcwi_print_info,ppar,pre,'no exposure time found, setting to 1s',/warn
+		expt = 1.
+	endif
 	;
 	; get wavelength scale
 	w0 = sxpar(hdr,'CRVAL3')
