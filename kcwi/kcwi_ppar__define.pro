@@ -1,4 +1,4 @@
-; $Id: kcwi_ppar__define.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -140,6 +140,7 @@ tmp = { kcwi_ppar, $
 ; Slice profile processing
 	slicex0:15, $		; safe lower spatial limit for slices
 	slicex1:72, $		; safe upper spatial limit for slices
+	psfwid:30, $		; nominal window in unbinned pix for point src.
 	profexists:0, $		; slice profile frame exists?
 	nprofs:0, $		; number of slice profile images
 	profs:'', $		; List of slice profile images

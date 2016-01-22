@@ -1,4 +1,4 @@
-; $Id: kcwi_slice_prof.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -149,8 +149,8 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 	profs = fltarr(sz[0],24)
 	;
 	; good range
-	gx0 = ppar.slicex0
-	gx1 = ppar.slicex1
+	gx0 = ppar.slicex0/kcfg.xbinsize
+	gx1 = ppar.slicex1/kcfg.xbinsize
 	x = indgen(sz[0])
 	g = where(x ge gx0 and x le gx1)
 	;

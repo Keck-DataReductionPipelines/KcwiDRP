@@ -91,9 +91,6 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		return
 	endif
 	;
-	; apply extinction correction
-	kcwi_correct_extin, icub, hdr, ppar
-	;
 	; check standard
 	sname = strlowcase(strtrim(sxpar(hdr,'object'),2))
 	;
@@ -159,8 +156,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	w = w0 + y*dw
 	;
 	; good spatial range
-	gx0 = ppar.slicex0
-	gx1 = ppar.slicex1
+	gx0 = ppar.slicex0/kcfg.xbinsize
+	gx1 = ppar.slicex1/kcfg.xbinsize
 	x = indgen(sz[0])
 	;
 	;
@@ -189,7 +186,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	sl1 = (mxsl+3)<23
 	;
 	; get x position of std
-	cx = cntrd1d(xx,tot[*,mxsl])
+	cx = (pkfind(tot[*,mxsl],npeaks,thresh=0.99))[0] + gx0
 	;
 	; log results
 	kcwi_print_info,ppar,pre,'Std slices; max, sl0, sl1, spatial cntrd', $
@@ -200,11 +197,12 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	deepcolor
 	!p.background=colordex('white')
 	!p.color=colordex('black')
+	skywin = ppar.psfwid/kcfg.xbinsize
 	for i=sl0,sl1 do begin
 		skyspec = fltarr(sz[2])
 		for j = 0,sz[2]-1 do begin
 			skyv = reform(icub[gx0:gx1,i,j])
-			gsky = where(xx le (cx-15) or xx ge (cx+15))
+			gsky = where(xx le (cx-skywin) or xx ge (cx+skywin))
 			sky = median(skyv[gsky])
 			skyspec[j] = sky
 			scub[*,i,j] = icub[*,i,j] - sky
@@ -215,8 +213,10 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				' SKY, Img #: '+strn(kcfg.imgnum), $
 				xtitle='Wave (A)', xran=[wall0,wall1], /xs, $
 				ytitle='Sky e-', yran=yrng, /ys
-			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green')
-			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green')
+			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
+				thick=3
+			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
+				thick=3
 			read,'Next? (Q-quit plotting, <cr> - next): ',q
 			if strupcase(strmid(strtrim(q,2),0,1)) eq 'Q' then $
 				doplots = 0
@@ -225,6 +225,9 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	;
 	; recover plot status
 	doplots = (ppar.display ge 2)
+	;
+	; apply extinction correction
+	kcwi_correct_extin, scub, hdr, ppar
 	;
 	; get slice spectra
 	slspec = total(scub[gx0:gx1,*,*],1)
@@ -307,8 +310,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
 			yran=yrng,/ys,xmargin=[11,3]
 		oplot,w,finvsen,color=colordex('red')
-		oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green')
-		oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green')
+		oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
+		oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
 		read,'Next: ',q
 		;
 		; plot effective area (cm^2)
@@ -321,8 +324,10 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 				ytitle='Effective Area (cm^2/A)',ys=9, $
 				yran=yrng,xmargin=[11,8]
-			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green')
-			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green')
+			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
+				thick=3
+			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
+				thick=3
 			oplot,!x.crange,[maxea,maxea],linesty=2
 			oplot,!x.crange,[mo[0],mo[0]],linesty=3
 			axis,yaxis=1,yrange=100.*(!y.crange/area),ys=1, $
@@ -331,8 +336,10 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			plot,w,earea,title=sname+' Img #: '+strn(kcfg.imgnum), $
 				xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 				ytitle='Effective Area (cm^2/A)',yran=yrng,/ys
-			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green')
-			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green')
+			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
+				thick=3
+			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
+				thick=3
 			oplot,!x.crange,[maxea,maxea],linesty=2
 			oplot,!x.crange,[mo[0],mo[0]],linesty=3
 		endelse

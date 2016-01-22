@@ -157,7 +157,7 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 	sl1 = (mxsl+3)<23
 	;
 	; get x position of std
-	cx = cntrd1d(xx,tot[*,mxsl])
+	cx = (pkfind(tot[*,mxsl],npeaks,thresh=0.99))[0] + gx0
 	;
 	; log results
 	kcwi_print_info,ppar,pre,'Std slices; max, sl0, sl1, spatial cntrd', $
@@ -168,11 +168,12 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 	deepcolor
 	!p.background=colordex('white')
 	!p.color=colordex('black')
+	skywin = ppar.psfwid/kcfg.xbinsize
 	for i=sl0,sl1 do begin
 		skyspec = fltarr(sz[2])
 		for j = 0,sz[2]-1 do begin
 			skyv = reform(icub[gx0:gx1,i,j])
-			good = where(xx le (cx-15) or xx ge (cx+15))
+			good = where(xx le (cx-skywin) or xx ge (cx+skywin))
 			sky = median(skyv[good])
 			skyspec[j] = sky
 			scub[*,i,j] = icub[*,i,j] - sky
@@ -182,8 +183,10 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 			plot,w,skyspec,title='Slice '+strn(i), $
 				xtitle='Wave (A)', xran=[wall0,wall1], /xs, $
 				ytitle='DN', yran=yrng, /ys
-				oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green')
-				oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green')
+				oplot,[wgoo0,wgoo0],!y.crange, $
+					color=colordex('green'), thick=3
+				oplot,[wgoo1,wgoo1],!y.crange, $
+					color=colordex('green'), thick=3
 			read,'Next? (Q-quit plotting, <cr> - next): ',q
 			if strupcase(strmid(strtrim(q,2),0,1)) eq 'Q' then $
 				doplots = 0
@@ -253,8 +256,8 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 		pos=[0.15,0.30,0.95,0.95]
 	oplot,w,stdsmoo,color=colordex('blue'),thick=2
 	oplot,swl,sflx,color=colordex('red')
-	oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green')
-	oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green')
+	oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
+	oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
 	kcwi_legend,['Cal. Flux','Obs. Flux','Smoothed'],linesty=[0,0,0], $
 		color=[colordex('red'),colordex('black'),colordex('blue')], $
 		/clear,clr_color=!p.background,/bottom,/right
@@ -280,8 +283,8 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 		/noerase
 	oplot,!x.crange,[0,0]
 	oplot,w,srsd,color=colordex('blue')
-	oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green')
-	oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green')
+	oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
+	oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
 	;
 	; check for effective area curve
 	eafil = ppar.reddir + ppar.froot + $
@@ -319,8 +322,10 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 			plot,wea,ea,xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 				ytitle='!3EA (cm!U2!N)',title=tlab,ys=9, $
 				yran=yrng,xmargin=[11,8]
-			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green')
-			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green')
+			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
+				thick=3
+			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
+				thick=3
 			oplot,!x.crange,[maxea,maxea],linesty=2
 			oplot,!x.crange,[mo[0],mo[0]],linesty=3
 			axis,yaxis=1,yrange=100.*(!y.crange/area),ys=1, $
@@ -329,8 +334,10 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 			plot,wea,ea,xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 				ytitle='!3EA (cm!U2!N)', yran=yrng, /ys, $
 				title=tlab
-			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green')
-			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green')
+			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
+				thick=3
+			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
+				thick=3
 			oplot,!x.crange,[maxea,maxea],linesty=2
 			oplot,!x.crange,[mo[0],mo[0]],linesty=3
 		endelse

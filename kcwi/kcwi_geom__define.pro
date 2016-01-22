@@ -1,4 +1,4 @@
-; $Id: kcwi_geom__define.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -145,7 +145,7 @@ tmp = { kcwi_geom, $
 ; X values for bars
 	barx:fltarr(120), $	; measured in cbars image
 	refx:fltarr(120), $	; reference x for extracted arc spectra
-	x0out:15, $		; output spatial zeropoint
+	x0out:30, $		; output spatial zeropoint (unbinned pix)
 ;
 ; Y offset for each bar
 	baroff:fltarr(120), $	; pixel offset relative to refbar
