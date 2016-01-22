@@ -118,7 +118,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	if expt eq 0. then begin
 		kcwi_print_info,ppar,pre,'no exposure time found, setting to 1s',/warn
 		expt = 1.
-	endif
+	endif else $
+		kcwi_print_info,ppar,pre,'Using exposure time of',expt,/info
 	;
 	; get wavelength scale
 	w0 = sxpar(hdr,'CRVAL3')
@@ -264,8 +265,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	sflx = sflx[sroi]
 	sfw = sfw[sroi]
 	fwhm = max(sfw)
-	kcwi_print_info,ppar,pre,'reference spectrum FWHM used',fwhm, $
-		format='(a,f5.1)'
+	kcwi_print_info,ppar,pre,'reference spectrum FWHM used',fwhm,'Angstroms', $
+		format='(a,f5.1,1x,a)'
 	;
 	; smooth to this resolution
 	obsspec = gaussfold(w,obsspec,fwhm,lammin=wgoo0,lammax=wgoo1)
@@ -287,11 +288,12 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	if nt gt 0 then begin
 		wf = w - min(w)
 		sf = invsen
-		bad = where(w lt wgoo0 and w gt wgoo1, nbad)
-		if nbad gt 0 then sf[bad] = !values.d_nan
+		wgt = (invsen - invsen) + 1.
+		bad = where(w lt wgoo0 or w gt wgoo1, nbad)
+		if nbad gt 0 then wgt[bad] = 0.
 		;
 		; polynomial fit
-		res = polyfit(wf,sf,5,yfit)
+		res = polyfit(wf,sf,5,yfit,weight=wgt)
 		finvsen = poly(wf,res)
 	endif else begin
 		kcwi_print_info,ppar,pre,'no good wavelengths to fit',/error
