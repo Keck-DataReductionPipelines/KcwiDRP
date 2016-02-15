@@ -55,7 +55,7 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 	imstr = string(imno,format='(i0'+strn(ppar.fdigits)+')')
 	;
 	; get inputs
-	fpsec = ppar.froot + imstr + '_icubes.fits'
+	fspec = ppar.froot + imstr + '_icubes.fits'
 	kcfg = kcwi_read_cfgs('./redux',filespec=fspec)
 	;
 	; check keyword overrides
@@ -127,8 +127,8 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 	w = w0 + y*dw
 	;
 	; good spatial range
-	gx0 = ppar.slicex0
-	gx1 = ppar.slicex1
+	gx0 = ppar.slicex0/kcfg.xbinsize
+	gx1 = ppar.slicex1/kcfg.xbinsize
 	x = indgen(sz[0])
 	;
 	; log results
