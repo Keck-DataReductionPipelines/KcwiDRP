@@ -1,4 +1,4 @@
-; $Id: kcwi_stage1.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -210,7 +210,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			sz = size(img,/dimension)
 			;
 			; get ccd geometry
-			kcwi_map_ccd,hdr,asec,bsec,csec,tsec,namps=namps,trimmed_size=tsz,verbose=ppar.verbose
+			kcwi_map_ccd,hdr,asec,bsec,dsec,tsec,namps=namps,trimmed_size=tsz,verbose=ppar.verbose
 			;
 			; check amps
 			if namps le 0 then begin
@@ -340,19 +340,21 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 					osx1	= bsec[ia,0,1] - ppar.oscanbuf
 					;
 					; range in x to subtract overscan from
-					asx0	= asec[ia,0,0]
-					asx1	= asec[ia,0,1]
+					dsx0	= dsec[ia,0,0]
+					dsx1	= dsec[ia,0,1]
 					;
 					; row range (y)
 					osy0	= bsec[ia,1,0]
 					osy1	= bsec[ia,1,1]
 					;
 					; collapse each row
-					osvec = total(img[osx0:osx1,osy0:osy1],1)/float(oscan_pix)
+					osvec = total(img[osx0:osx1,osy0:osy1],1)/float(osx1-osx0)
 					xx = findgen(n_elements(osvec)) + osy0
+					mo = moment(osvec)
+					yrng = [mo[0]-mo[1]*3.,mo[0]+mo[1]*3.]
 					;
 					; fit overscan vector
-					res = polyfit(xx,osvec,7,osfit)
+					res = polyfit(xx,osvec,5,osfit)
 					;
 					; plot if display set
 					if doplots then begin
@@ -365,6 +367,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 							title='Amp/Namps: '+strn(ia+1)+'/'+strn(namps)+ $
 							', Oscan Cols: '+strn(osx0)+' - '+strn(osx1)+ $
 							', Image: '+strn(imgnum[i]), $
+							yran=yrng,/ys, $
 							charth=2,charsi=1.5,xthi=2,ythi=2
 						oplot,xx,osfit,thick=2,color=colordex('green')
 						kcwi_legend,['Resid RMS: '+string(sqrt(mo[1]),form='(f5.1)')+$
@@ -384,7 +387,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 						endelse
 						;
 						; apply over entire amp range
-						img[asx0:asx1,iy] = img[asx0:asx1,iy] - osval
+						img[dsx0:dsx1,iy] = img[dsx0:dsx1,iy] - osval
 					endfor
 					;
 					; log
@@ -429,10 +432,10 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			for ia = 0, namps-1 do begin
 				;
 				; input ranges
-				xi0 = csec[ia,0,0]
-				xi1 = csec[ia,0,1]
-				yi0 = csec[ia,1,0]
-				yi1 = csec[ia,1,1]
+				xi0 = dsec[ia,0,0]
+				xi1 = dsec[ia,0,1]
+				yi0 = dsec[ia,1,0]
+				yi1 = dsec[ia,1,1]
 				;
 				; output ranges
 				xo0 = tsec[ia,0,0]
@@ -487,7 +490,18 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			for ia = 0, namps-1 do begin
 				;
 				; get gain
-				gain = sxpar(hdr,'GAIN'+strn(ia+1))
+				gain = sxpar(hdr,'GAIN'+strn(ia+1), count=ngn)
+				if ngn le 0 then begin
+					gain = sxpar(hdr,'CCDGAIN', count=ngn)
+					if ngn le 0 then begin
+						gain = 1.0
+						kcwi_print_info,ppar,pre, $
+							'no gain KW found, setting gain=1',/warning
+					endif else $
+						kcwi_print_info,ppar,pre, $
+							'using CCDGAIN KW for gain',/warning
+				endif
+
 				gainstr = gainstr + string(gain,form='(f6.3)')+' '
 				;
 				; output ranges

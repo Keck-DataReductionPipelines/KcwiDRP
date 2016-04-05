@@ -1,4 +1,4 @@
-; $Id: kcwi_group_geom.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -73,9 +73,11 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg, ngeom
 		;
 		; check configuration
 		tcfg = kcwi_match_cfg(kcfg[cg[i]],gcfg,ppar,count=nm,/silent)
+		;print,nm,kcfg[cg[i]].imgnum,gcfg.imgnum
 		;
-		; check for sequential image numbers
-		if kcfg[cg[i]].imgnum - gcfg.imgnum ne 1 or nm ne 1 then begin
+		; check for sequential image numbers (disabling for now)
+		;if kcfg[cg[i]].imgnum - gcfg.imgnum ne 1 or nm ne 1 then begin
+		if kcfg[cg[i]].imgnum - gcfg.imgnum gt 5 or nm ne 1 then begin
 			;
 			; new group
 			gind += 1

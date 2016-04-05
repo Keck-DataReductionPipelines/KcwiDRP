@@ -1,4 +1,4 @@
-; $Id: kcwi_fit_center.pro | Thu Apr 16 04:02:00 2015 -0700 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.

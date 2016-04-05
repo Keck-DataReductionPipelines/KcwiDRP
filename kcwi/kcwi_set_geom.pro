@@ -1,4 +1,4 @@
-; $Id: kcwi_set_geom.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -150,102 +150,33 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	; default to no cc offsets
 	kgeom.ccoff = fltarr(24)
 	;
-	; check for CWI data
-    	if strtrim(strupcase(kcfg.instrume),2) eq 'CWI' then begin
+	; check resolution and dispersion
+	if strtrim(kcfg.gratid,2) eq 'BH3' then begin
+		kgeom.resolution = 0.25
+		kgeom.wavran = 440.
+		kgeom.ccwn = 260./kgeom.ybinsize
+		kgeom.rho = 2.80d
+		kgeom.slant = -2.5d
+		kgeom.lastdegree = 4
 		;
-		; check resolution and dispersion
-		if strtrim(kcfg.gratid,2) eq 'RED' then begin
-			kgeom.resolution = 1.16	; Angstroms
-			kgeom.wavran = 740.	; Angstroms
-			kgeom.ccwn = 260./kgeom.ybinsize	; Pixels
-			kgeom.rho = 2.1730d
-			kgeom.slant = -1.0d
-			kgeom.lastdegree = 4
-			;
-			; output disperison
-			kgeom.dwout = 0.11 * float(kcfg.ybinsize)
-		endif else if strtrim(kcfg.gratid,2) eq 'YELLOW' then begin
-			kgeom.resolution = 0.82	; Angstroms
-			kgeom.wavran = 570	; Angstroms
-			kgeom.ccwn = 260./kgeom.ybinsize	; Pixels
-			kgeom.rho = 2.5300d
-			kgeom.slant = -1.1d
-			kgeom.lastdegree = 4
-			;
-			; output disperison
-			kgeom.dwout = 0.137 * float(kcfg.ybinsize)
-		endif else if strtrim(kcfg.gratid,2) eq 'BLUE' then begin
-			kgeom.resolution = 0.98	; Angstroms
-			kgeom.wavran = 440.	; Angstroms
-			kgeom.ccwn = 260./kgeom.ybinsize	; Pixels
-			kgeom.rho = 3.050d
-			kgeom.slant = 0.50d
-			kgeom.lastdegree = 4
-			;
-			; output disperison
-			kgeom.dwout = 0.095 * float(kcfg.ybinsize)
-		endif else if strtrim(kcfg.gratid,2) eq 'MEDREZ' then begin
-			;
-			; MEDREZ requires input offsets or bar-to-bar cc will fail
-			offs = [-278.,  -59., -237.,  -32., -216.,  -37., $
-				-197.,  -15., -190.,  -20., -175.,    0., $
-				   0., -167.,    3., -166.,    3., -156., $
-				   5., -173.,  -20., -225.,  -44., -226.]
-			kgeom.ccoff = offs
-			kgeom.resolution = 2.50	; Angstroms
-			kgeom.wavran = 1310.	; Angstroms
-			kgeom.ccwn = 80./kgeom.ybinsize	; Pixels
-			kgeom.rho = 1.20d
-			kgeom.slant = 0.0d
-			kgeom.lastdegree = 5
-			;
-			; output disperison
-			kgeom.dwout = 0.275 * float(kcfg.ybinsize)
-		endif
-		;
-		; check central wavelength
-		if kgeom.cwave le 0. then $
-			kgeom.cwave = cwi_central_wave(strtrim(kgeom.gratid,2),$
-				kcfg.campos, kcfg.gratpos)
-		;
-		; spatial scales
-		kgeom.pxscl = 0.00008096d0	; degrees per unbinned pixel
-		kgeom.slscl = 0.00075437d0	; degrees per slice
+		; output disperison
+		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
+	endif
 	;
-	; check for KCWI data
-	endif else if strtrim(strupcase(kcfg.instrume),2) eq 'KCWI' then begin
-		;
-		; check resolution and dispersion
-		if strtrim(kcfg.gratid,2) eq 'BH1' then begin
-			kgeom.resolution = 0.25
-			kgeom.wavran = 120.
-			kgeom.ccwn = 260./kgeom.ybinsize
-			kgeom.rho = 3.72d
-			kgeom.slant = -1.0d
-			kgeom.lastdegree = 4
-			;
-			; output disperison
-			kgeom.dwout = 0.095 * float(kcfg.ybinsize)
-		endif
-		;
-		; spatial scales
-		kgeom.pxscl = 0.00004048d0	; deg/unbinned pixel
-		kgeom.slscl = 0.00037718d0	; deg/slice
-		if kcfg.ifupos eq 2 then begin
-			kgeom.slscl = kgeom.slscl/2.d0
-		endif else if kcfg.ifupos eq 3 then begin
-			kgeom.slscl = kgeom.slscl/4.d0
-		endif
-		;
-		; check central wavelength
-		if kgeom.cwave le 0. then begin
-			kcwi_print_info,ppar,pre,'No central wavelength found',/error
-			return
-		endif
-	endif else begin
-		kcwi_print_info,ppar,pre,'Unknown instrument',kcfg.instrume,/error
+	; spatial scales
+	kgeom.pxscl = 0.00004048d0	; deg/unbinned pixel
+	kgeom.slscl = 0.00037718d0	; deg/slice
+	if kcfg.ifupos eq 2 then begin
+		kgeom.slscl = kgeom.slscl/2.d0
+	endif else if kcfg.ifupos eq 3 then begin
+		kgeom.slscl = kgeom.slscl/4.d0
+	endif
+	;
+	; check central wavelength
+	if kgeom.cwave le 0. then begin
+		kcwi_print_info,ppar,pre,'No central wavelength found',/error
 		return
-	endelse
+	endif
 	;
 	; now check ppar values which override defaults
 	if ppar.dw gt 0. then $

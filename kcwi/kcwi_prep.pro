@@ -32,8 +32,6 @@
 ; Wavelength fitting params (only relevant for full-ccd images)
 ;	PKDEL		- matching thresh in frac. of resolution (def: 0.75)
 ; Switches
-;	CWI		- set for CWI data: skip first bias image, 
-;				use CWI associations (def: NO)
 ;	NOCRREJECT	- set to skip cosmic ray rejection
 ;	NONASSUB	- set to skip nod-and-shuffle subtraction
 ;	NOCLEANCOEFFS	- set to skip cleaning wavelength sol'n coeffs
@@ -91,6 +89,7 @@
 ;	2014-MAY-28	Removed FILESPEC keyword and now uses FROOT and FDIGITS
 ;			to generate file spec for input images
 ;	2014-JUN-03	checks file digits automatically if FDIGITS not set
+;	2016-APR-04	changes specific to KCWI lab data
 ;-
 pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	froot=froot, $
@@ -99,7 +98,6 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	mingroupdark=mingroupdark, $
 	minoscanpix=minoscanpix, $
 	taperfrac=taperfrac, pkdel=pkdel, $
-	cwi=cwi, $
 	nocrreject=nocrreject, $
 	nonassub=nonassub, $
 	nocleancoeffs=nocleancoeffs, $
@@ -122,7 +120,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		print,pre+': Info - Usage: '+pre+', RawDir, ReducedDir, CalibDir, DataDir'
 		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, MINGROUPBIAS=N, MINOSCANPIX=N'
 		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
-		print,pre+': Info - Switch Keywords: /CWI, /NOCRREJECT, /NONASSUB, /NOCLEANCOEFFS, /DOMEPRIORITY'
+		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /NOCLEANCOEFFS, /DOMEPRIORITY'
 		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /HELP'
 		return
 	endif
@@ -252,9 +250,6 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		ppar.taperfrac = taperfrac
 	if keyword_set(pkdel) then $
 		ppar.pkdel = pkdel
-	if keyword_set(cwi) then $
-		ppar.biasskip1 = 1 $
-	else	ppar.biasskip1 = 0
 	if keyword_set(nocrreject) then $
 		ppar.crzap = 0 $
 	else	ppar.crzap = 1
@@ -295,8 +290,6 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	printf,ll,'Min Grp Dark: ',ppar.mingroupdark
 	printf,ll,'Wl TaperFrac: ',ppar.taperfrac
 	printf,ll,'Wl Fit PkDel: ',ppar.pkdel
-	if keyword_set(cwi) then $
-		printf,ll,'CWI data    : skipping first bias in each group, CWI associations'
 	if keyword_set(nocrreject) then $
 		printf,ll,'No cosmic ray rejection performed'
 	if keyword_set(nonassub) then $
