@@ -1,4 +1,4 @@
-; $Id: kcwi_stage6rr.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -340,7 +340,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 					endfor
 					;
 					; update header
-					sxaddpar,mskhdr,'COMMENT','  '+pre+' '+systime(0)
+					sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,mskhdr,'RRCOR','T',' rr corrected?'
 					sxaddpar,mskhdr,'MRFILE',mrfile,' master rr file applied'
 					sxaddpar,mskhdr,'MRIMNO',mrimgno,' master rr image number'
@@ -350,7 +350,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 					kcwi_write_image,msk,mskhdr,ofil,ppar
 					;
 					; update header
-					sxaddpar,varhdr,'COMMENT','  '+pre+' '+systime(0)
+					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,varhdr,'RRCOR','T',' rr corrected?'
 					sxaddpar,varhdr,'MRFILE',mrfile,' master rr file applied'
 					sxaddpar,varhdr,'MRIMNO',mrimgno,' master rr image number'
@@ -360,7 +360,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 					kcwi_write_image,var,varhdr,ofil,ppar
 					;
 					; update header
-					sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
+					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,hdr,'RRCOR','T',' rr corrected?'
 					sxaddpar,hdr,'MRFILE',mrfile,' master rr file applied'
 					sxaddpar,hdr,'MRIMNO',mrimgno,' master rr image number'
@@ -379,7 +379,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 							sky[ix,is,*] = sky[ix,is,*] / rrob[is,*]
 						;
 						; update header
-						sxaddpar,skyhdr,'COMMENT','  '+pre+' '+systime(0)
+						sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,skyhdr,'RRCOR','T',' rr corrected?'
 						sxaddpar,skyhdr,'MRFILE',mrfile,' master rr file applied'
 						sxaddpar,skyhdr,'MRIMNO',mrimgno,' master rr image number'
@@ -399,7 +399,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 							obj[ix,is,*] = obj[ix,is,*] / rrob[is,*]
 						;
 						; update header
-						sxaddpar,objhdr,'COMMENT','  '+pre+' '+systime(0)
+						sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,objhdr,'RRCOR','T',' rr corrected?'
 						sxaddpar,objhdr,'MRFILE',mrfile,' master rr file applied'
 						sxaddpar,objhdr,'MRIMNO',mrimgno,' master rr image number'

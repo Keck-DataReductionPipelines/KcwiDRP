@@ -111,7 +111,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	kgeom.goody1 = kgeom.ny - 10
 	kgeom.trimy0 = 0
 	kgeom.trimy1 = kgeom.ny
-	kgeom.ypad = 600
+	kgeom.ypad = 1400 / kgeom.ybinsize
 	kgeom.nasmask = kcfg.nasmask
 	if kcfg.nasmask eq 1 then begin
 		kgeom.goody0 = kcfg.nsobjr0 + 18
@@ -152,12 +152,13 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	;
 	; check resolution and dispersion
 	if strtrim(kcfg.gratid,2) eq 'BH3' then begin
-		kgeom.resolution = 0.25
-		kgeom.wavran = 440.
+		kgeom.resolution = 0.15
+		kgeom.wavran = 560.
 		kgeom.ccwn = 260./kgeom.ybinsize
 		kgeom.rho = 2.80d
-		kgeom.slant = -2.5d
+		kgeom.slant = -5.0d
 		kgeom.lastdegree = 4
+		kgeom.ccoff[0:4] = -277.0
 		;
 		; output disperison
 		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
@@ -166,9 +167,9 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	; spatial scales
 	kgeom.pxscl = 0.00004048d0	; deg/unbinned pixel
 	kgeom.slscl = 0.00037718d0	; deg/slice
-	if kcfg.ifupos eq 2 then begin
+	if kcfg.ifunum eq 2 then begin
 		kgeom.slscl = kgeom.slscl/2.d0
-	endif else if kcfg.ifupos eq 3 then begin
+	endif else if kcfg.ifunum eq 3 then begin
 		kgeom.slscl = kgeom.slscl/4.d0
 	endif
 	;

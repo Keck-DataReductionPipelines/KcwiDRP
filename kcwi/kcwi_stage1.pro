@@ -238,7 +238,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			if bnums[i] ge 0 then begin
 				;
 				; master bias file name
-				mbfile = cdir + 'mbias_' + strn(bnums[i]) + '.fits'
+				mbfile = cdir + 'mbias_' + string(bnums[i],'(i0'+strn(ppar.fdigits)+')') + '.fits'
 				;
 				; master bias image ppar filename
 				mbppfn = strmid(mbfile,0,strpos(mbfile,'.fits')) + '.ppar'
@@ -515,8 +515,8 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			endfor
 			;
 			; update header
-			sxaddpar,hdr,'COMMENT','  '+kcwi_drp_version()
-			sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
+			sxaddpar,hdr,'HISTORY','  '+kcwi_drp_version()
+			sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 			sxaddpar,hdr,'GAINCOR','T',' gain corrected?'
 			sxaddpar,hdr,'BUNIT','electrons',' brightness units'
 			;
@@ -566,7 +566,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 				; update main header
 				sxaddpar,hdr,'CRCLEAN','T',' cleaned cosmic rays?'
 				sxaddpar,hdr,'NCRCLEAN',ncrs,' number of cosmic rays cleaned'
-				sxaddpar,hdr,'COMMENT','  KCWI_LA_COSMIC '+systime(0)
+				sxaddpar,hdr,'HISTORY','  KCWI_LA_COSMIC '+systime(0)
 				;
 				; write out cleaned object image
 				if ppar.saveintims eq 1 then begin

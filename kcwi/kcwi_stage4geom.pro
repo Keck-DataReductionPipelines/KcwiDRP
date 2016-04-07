@@ -308,7 +308,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						; object image
 						img = mrdfits(obfil,0,hdr,/fscale,/silent)
 						;
-						sxaddpar,hdr, 'COMMENT','  '+pre+' '+systime(0)
+						sxaddpar,hdr, 'HISTORY','  '+pre+' '+systime(0)
                                                 ;
                                                 ; CWI FLEX ADDITION/CHANGES +++
                                                 ;
@@ -331,7 +331,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(vfil,/read) then begin
 							var = mrdfits(vfil,0,varhdr,/fscale,/silent)
 							;
-							sxaddpar,varhdr,'COMMENT','  '+pre+' '+systime(0)
+							sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
                                 ;
                                 ; CWI FLEX ADDITIONS + CHANGES +++
  if ppar.biasskip1 then $
@@ -350,7 +350,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(mfil,/read) then begin
 							msk = float(mrdfits(mfil,0,mskhdr,/silent))
 							;
-                                                        sxaddpar,mskhdr,'COMMENT','  '+pre+' '+systime(0)
+                                                        sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
                                 ; CWI FLEX ADDITIONS/CHANGES +++
                                                         ;
                                                         if ppar.biasskip1 then $
@@ -369,7 +369,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(sfil,/read) then begin
 							sky = mrdfits(sfil,0,skyhdr,/fscale,/silent)
 							;
-							sxaddpar,skyhdr,'COMMENT','  '+pre+' '+systime(0)
+							sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
                                 ;
                                 ; CWI FLEX ADDITIONS/CHANGES +++
                                                         if ppar.biasskip1 then $
@@ -388,7 +388,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(nfil,/read) then begin
 							obj = mrdfits(nfil,0,objhdr,/fscale,/silent)
 							;
-                                                        sxaddpar,objhdr,'COMMENT','  '+pre+' '+systime(0)
+                                                        sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
                                 ; CWI FLEX ADDITIONS/CHANGES +++
                                                         if ppar.biasskip1 then $
                                                            kcwi_apply_geom,obj,objhdr,kgeom,ppar,ocub,ochdr,flex=flexpar else $

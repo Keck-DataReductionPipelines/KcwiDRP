@@ -1,4 +1,4 @@
-; $Id: kcwi_fit_flat.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -157,7 +157,7 @@ pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
 	print,' '
 	;
 	; update header
-	sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
+	sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 	sxaddpar,hdr,'FFITSPO',splo,' spline order for flat fit'
 	;
 	; plot specific columns

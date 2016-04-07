@@ -1,4 +1,4 @@
-; $Id: kcwi_correct_extin.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -89,7 +89,7 @@ for ix=0,sz[0]-1l do for iy=0,sz[1]-1l do $
 flrmo = moment(flxr)
 ;
 ; update header
-sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
+sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 sxaddpar,hdr,'EXTCOR','T',' extinction corrected?'
 sxaddpar,hdr,'AVEXCOR',flrmo[0],' average extin. correction (flux ratio)'
 ;

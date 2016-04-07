@@ -1,4 +1,4 @@
-; $Id: kcwi_extract_arcs.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -81,7 +81,7 @@ if kcwi_verify_geom(kgeom) ne 0 then return
 ; keywords
 if keyword_set(navg) then $
 	nav = (fix(navg/2)-1) > 1 $
-else	nav = 2
+else	nav = 8/kgeom.ybinsize
 ;
 if keyword_set(ccwindow) then $
 	ccwn = ccwindow $
@@ -123,6 +123,7 @@ for i=0,ns-1 do begin
 	;
 	; compute spectrum
 	vec = median(sub,dim=1)
+	vec = vec - median(vec,11)	; TODO: better fix
 	spec(*,i) = vec
 endfor
 ;

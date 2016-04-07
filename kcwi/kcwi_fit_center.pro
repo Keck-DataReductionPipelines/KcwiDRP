@@ -136,6 +136,7 @@ endif
 ; there is some... so
 ;
 prelim_disp *= cos(gamma/!radeg)
+prelim_disp = 0.138
 ;
 ; report results
 kcwi_print_info,ppar,pre,'Initial calculated dispersion (A/binned pixel)', $

@@ -1,4 +1,4 @@
-; $Id: kcwi_trace_cbars.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -108,7 +108,7 @@ pbuf = 5
 if keyword_set(pkbuf) then pbuf=pkbuf
 step = 80/kgeom.ybinsize
 if keyword_set(stepsize) then step=stepsize
-navg = 3
+navg = 6/kgeom.ybinsize
 if keyword_set(avgrows) then navg=avgrows
 do_plots = ppar.display
 ;
@@ -356,11 +356,11 @@ for j=0,npks-1 do begin
 		; over plot fit results if fitting done
 		if keyword_set(gauss) or keyword_set(moffat) then begin
 			oplot,xp,yp,linesty=5
-			oplot,[a[1],a[1]],[-100,10000],linesty=5
+			oplot,[a[1],a[1]],[-100,1e9],linesty=5
 		endif
 		;
 		; overplot centroid
-		oplot,[cnt,cnt],[-100,10000]
+		oplot,[cnt,cnt],[-100,1e9]
 		;
 		; query user
 		read,'Next? (Q-quit plotting, <cr>-next): ',q

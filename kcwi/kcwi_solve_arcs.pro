@@ -277,7 +277,7 @@ if keyword_set(tweak) then begin
 	endif
 	;
 	; let's find the peaks in the reference spectrum.
-	smooth_width = fix(resolution/refdisp)		; in pixels
+	smooth_width = fix(resolution/refdisp)>4	; in pixels
 	slope_thresh = 0.003
 	ampl_thresh  = 0.
 	twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
@@ -343,7 +343,7 @@ if keyword_set(tweak) then begin
 			endif
 			;
 			; find good peaks in object spectrum
-			smooth_width = fix(resolution/abs(twkcoeff[1,b]))	; in pixels
+			smooth_width = fix(resolution/abs(twkcoeff[1,b]))>4	; in pixels
 			peak_width   = fix(smooth_width*1.5)			; for fitting peaks
 			slope_thresh = 0.7*smooth_width/2./100.0		; more severe for object
 			ampl_thresh  = kgeom.rdnoise * 30.

@@ -290,7 +290,7 @@ pro kcwi_stage7std,ppfname,linkfname,help=help,select=select, $
 					endfor
 					;
 					; update header
-					sxaddpar,mskhdr,'COMMENT','  '+pre+' '+systime(0)
+					sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,mskhdr,'STDCOR','T',' std corrected?'
 					sxaddpar,mskhdr,'MSFILE',msfile,' master std file applied'
 					sxaddpar,mskhdr,'MSIMNO',msimgno,' master std image number'
@@ -301,7 +301,7 @@ pro kcwi_stage7std,ppfname,linkfname,help=help,select=select, $
 					kcwi_write_image,msk,mskhdr,ofil,ppar
 					;
 					; update header
-					sxaddpar,varhdr,'COMMENT','  '+pre+' '+systime(0)
+					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,varhdr,'STDCOR','T',' std corrected?'
 					sxaddpar,varhdr,'MSFILE',msfile,' master std file applied'
 					sxaddpar,varhdr,'MSIMNO',msimgno,' master std image number'
@@ -312,7 +312,7 @@ pro kcwi_stage7std,ppfname,linkfname,help=help,select=select, $
 					kcwi_write_image,var,varhdr,ofil,ppar
 					;
 					; update header
-					sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
+					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,hdr,'STDCOR','T',' std corrected?'
 					sxaddpar,hdr,'MSFILE',msfile,' master std file applied'
 					sxaddpar,hdr,'MSIMNO',msimgno,' master std image number'
@@ -335,7 +335,7 @@ pro kcwi_stage7std,ppfname,linkfname,help=help,select=select, $
 							sky[ix,is,*] = (sky[ix,is,*]/expt) * mscal
 						;
 						; update header
-						sxaddpar,skyhdr,'COMMENT','  '+pre+' '+systime(0)
+						sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,skyhdr,'STDCOR','T',' std corrected?'
 						sxaddpar,skyhdr,'MSFILE',msfile,' master std file applied'
 						sxaddpar,skyhdr,'MSIMNO',msimgno,' master std image number'
@@ -359,7 +359,7 @@ pro kcwi_stage7std,ppfname,linkfname,help=help,select=select, $
 							obj[ix,is,*] = (obj[ix,is,*]/expt) * mscal
 						;
 						; update header
-						sxaddpar,objhdr,'COMMENT','  '+pre+' '+systime(0)
+						sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,objhdr,'STDCOR','T',' std corrected?'
 						sxaddpar,objhdr,'MSFILE',msfile,' master std file applied'
 						sxaddpar,objhdr,'MSIMNO',msimgno,' master std image number'

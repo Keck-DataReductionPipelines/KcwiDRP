@@ -1,4 +1,4 @@
-; $Id: kcwi_make_flat.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -159,7 +159,7 @@ pro kcwi_make_flat,ppar
 	kcwi_fit_flat,mflat,hdr,ppar,flato
 	;
 	; update master flat header
-	sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
+	sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 	sxaddpar,hdr,'NMEDIAN',nf, $
 		' number of images used for stack'
 	sxaddpar,hdr,'MASTFLAT','T',' master flat image?'

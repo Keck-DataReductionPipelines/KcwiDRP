@@ -1,4 +1,4 @@
-; $Id: kcwi_stage5prof.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -282,7 +282,7 @@ pro kcwi_stage5prof,ppfname,linkfname,help=help,select=select, $
 					endfor
 					;
 					; update header
-					sxaddpar,mskhdr,'COMMENT','  '+pre+' '+systime(0)
+					sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,mskhdr,'PROFCOR','T',' prof corrected?'
 					sxaddpar,mskhdr,'MPFILE',mpfile,' master prof file applied'
 					sxaddpar,mskhdr,'MPIMNO',mpimgno,' master prof image number'
@@ -292,7 +292,7 @@ pro kcwi_stage5prof,ppfname,linkfname,help=help,select=select, $
 					kcwi_write_image,msk,mskhdr,ofil,ppar
 					;
 					; update header
-					sxaddpar,varhdr,'COMMENT','  '+pre+' '+systime(0)
+					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,varhdr,'PROFCOR','T',' prof corrected?'
 					sxaddpar,varhdr,'MPFILE',mpfile,' master prof file applied'
 					sxaddpar,varhdr,'MPIMNO',mpimgno,' master prof image number'
@@ -302,7 +302,7 @@ pro kcwi_stage5prof,ppfname,linkfname,help=help,select=select, $
 					kcwi_write_image,var,varhdr,ofil,ppar
 					;
 					; update header
-					sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
+					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,hdr,'PROFCOR','T',' prof corrected?'
 					sxaddpar,hdr,'MPFILE',mpfile,' master prof file applied'
 					sxaddpar,hdr,'MPIMNO',mpimgno,' master prof image number'
@@ -321,7 +321,7 @@ pro kcwi_stage5prof,ppfname,linkfname,help=help,select=select, $
 							sky[*,is,iy] = sky[*,is,iy] / mprof[*,is]
 						;
 						; update header
-						sxaddpar,skyhdr,'COMMENT','  '+pre+' '+systime(0)
+						sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,skyhdr,'PROFCOR','T',' prof corrected?'
 						sxaddpar,skyhdr,'MPFILE',mpfile,' master prof file applied'
 						sxaddpar,skyhdr,'MPIMNO',mpimgno,' master prof image number'
@@ -341,7 +341,7 @@ pro kcwi_stage5prof,ppfname,linkfname,help=help,select=select, $
 							obj[*,is,iy] = obj[*,is,iy] / mprof[*,is]
 						;
 						; update header
-						sxaddpar,objhdr,'COMMENT','  '+pre+' '+systime(0)
+						sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,objhdr,'PROFCOR','T',' prof corrected?'
 						sxaddpar,objhdr,'MPFILE',mpfile,' master prof file applied'
 						sxaddpar,objhdr,'MPIMNO',mpimgno,' master prof image number'

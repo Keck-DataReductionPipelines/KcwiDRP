@@ -214,7 +214,7 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 	endfor
 	;
 	; update rr image header
-	sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
+	sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 	sxaddpar,hdr,'SLRR','T',' Slice rr image?'
 	sxaddpar,hdr,'SLRRY0',y0,' low wave pixel for rr'
 	sxaddpar,hdr,'SLRRY1',y1,' high wave pixel for rr'
