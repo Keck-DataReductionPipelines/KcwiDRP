@@ -123,7 +123,7 @@ for i=0,ns-1 do begin
 	;
 	; compute spectrum
 	vec = median(sub,dim=1)
-	vec = vec - median(vec,11)	; TODO: better fix
+	;vec = vec - median(vec,11)	; TODO: better bkg fix
 	spec(*,i) = vec
 endfor
 ;

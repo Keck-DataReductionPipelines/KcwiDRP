@@ -95,9 +95,9 @@ kcwi_print_info,ppar,pre,'Slice dimensions (x,y)',xcut+1l,lastpix+1l, $
 	format='(a,2i9)'
 ;
 ; image number
-imgnum = sxpar(hdr,'IMGNUM')
+imgnum = sxpar(hdr,'FRAMENO')
 object = sxpar(hdr,'OBJECT')
-imgtyp = sxpar(hdr,'IMGTYPE')
+imgtyp = sxpar(hdr,'CALTYPE')
 ;
 ; log
 kcwi_print_info,ppar,pre,'Slicing and dicing image '+strn(imgnum)+': '+object+'...'
