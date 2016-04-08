@@ -1,12 +1,12 @@
 $Id: AAAREADME | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 
-Copyright (c) 2015, California Institute of Technology.  All rights reserved.
+Copyright (c) 2016, California Institute of Technology.  All rights reserved.
 
 
         KCWI Data Extraction and Reduction Pipeline (KDERP) README
 
 
-Eleventh beta release; Version: 0.2.10 Date: 2015/04/27
+Twelfth beta release; Version: 0.2.11 Date: 2016/04/XX
 
 New routine: kcwi_quick.pro for at-telescope reductions.  See NEW FEATURES
 (section 4) below.
@@ -93,17 +93,6 @@ this:
 defsysv,'!KCWI_DATA','/Path/to/package/kderp-<ver>/data/'
 
 Be sure to include the trailing '/'.  
-
-
-Ca. Point !CWI_DATA to the correct directory:
-
-If you are reducing Palomar CWI data, then you will also need this IDL
-system variable to point at the correct directory.  This is used by
-cwi_format_info.pro to add the general header keywords to CWI images.
-It should point to the subdirectory 'cwi' within the package and should
-look like this:
-
-defsysv,'!CWI_DATA','/Path/to/package/kderp-<ver>/cwi/'
 
 The other lines in the file should be left alone.
 
@@ -197,7 +186,6 @@ Datdir		- Data directory, defaults to IDL system variable !KCWI_DATA
 
 These are the keywords:
 
-/CWI		- skip initial bias image and apply CWI associations (for CWI)
 /NOCRREJECT	- turn off CR rejection (good for quick look)
 /NONASSUB	- turn off nod-and-shuffle subtraction (why?)
 /SAVEINTIMS	- save intermediate images (takes a lot of disk space)
@@ -232,7 +220,7 @@ PKDEL		- arc line matching threshold in fraction of resolution (0.75)
 
 Once you have decided on the options just execute it. For example:
 
-IDL> kcwi_prep,/skip1bias,/verbose,display=2
+IDL> kcwi_prep,/verbose,display=2
 
 This will run very quickly.  It will prompt you to create the output
 directory if it doesn't exist.  Exit IDL and look in the output directory

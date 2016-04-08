@@ -1,9 +1,14 @@
 # $Id$
-# Copyright (c) 2013, California Institute of Technology, all rights reserved
+# Copyright (c) 2013-2016, California Institute of Technology, all rights reserved
 
-2015-May-XX: v0.2.11 - Twelfth beta release
+2016-Apr-XX: v0.2.11 - Twelfth beta release
 
-- Added code to handle flexure in CWI data (hopefully not needed for KCWI).
+- Removed code specific to Palomar CWI.
+
+- Adapted code to handle KCWI FITS header keywords.
+
+- Made adjustments to allow solution of geometry using BH3 grating and binning
+	1x1 pixels.
 
 
 2015-APR-27: v0.2.10 - Eleventh beta release

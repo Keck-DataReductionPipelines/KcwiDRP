@@ -123,15 +123,6 @@ prelim_beta = prelim_beta + gratanom/!radeg
 prelim_disp = cos(prelim_beta)/rho/fcam*(pix*ybin)*1e4
 ; the 1e4 is there to make the units Angstrom/binnedpixel
 ;
-; redo this for the MEDREZ grating which is a surface profile grating
-if strtrim(strupcase(grating),2) eq 'MEDREZ' then begin
-	; preliminary beta
-	prelim_alpha = -((-264500.0)-kgeom.gratpos)/2000.0
-	prelim_beta = 61. - prelim_alpha
-	prelim_disp = ((-cos(prelim_beta/!radeg)) / $
-		(rho * fcam ) ) * (pix*ybin)*1e4
-endif
-;
 ; need to correct for the out-of-band angle here... not much, but
 ; there is some... so
 ;

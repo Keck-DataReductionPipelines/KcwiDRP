@@ -26,6 +26,7 @@
 ;	header	- set to print headings for the columns
 ;	silent	- just return string, do not print
 ;	outfile	- filename to print to
+;	help	- print help info for this routine
 ;
 ; PROCEDURE:
 ;	Prints a summary allowing comparison of configurations of each image.
@@ -43,11 +44,19 @@
 ;	2013-JUL-08	Initial version
 ;	2013-NOV-13	Added outfile keyword
 ;-
-pro kcwi_print_cfgs,kcfg,imsum,header=header,silent=silent,outfile=outfile
+pro kcwi_print_cfgs,kcfg,imsum, $
+	header=header,silent=silent,outfile=outfile,help=help
 	;
 	; setup
 	pre = 'KCWI_PRINT_CFGS'
 	imsum = ''
+	;
+	; help request
+	if keyword_set(help) then begin
+		print,pre+': Info - Usage: '+pre+', Kcfg, Imsum'
+		print,pre+': Info Keywords: /header, /silent, outfile=<outfile>'
+		return
+	endif
 	;
 	; check inputs
 	if kcwi_verify_cfg(kcfg) ne 0 then return
