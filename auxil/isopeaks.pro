@@ -71,6 +71,11 @@ endif else begin
 	endif
 endelse
 ;
+; do we have any peaks?
+if npk le 0 then begin
+	return,-1
+endif
+;
 ; now get isolated peaks
 valid = bytarr(npk)+1b
 one = fltarr(npk)+1.0
