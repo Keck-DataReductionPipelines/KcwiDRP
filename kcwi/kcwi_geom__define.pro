@@ -43,6 +43,7 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2013-MAY-03	Initial version
 ;	2013-AUG-12	Added padlo, padhi tags
+;	2016-APR-22	Added rotoff tag
 ;-
 pro kcwi_geom__define
 ;
@@ -88,6 +89,9 @@ tmp = { kcwi_geom, $
 ;
 ; slice scale
 	slscl:0.00075437d0, $	; degrees per slice
+;
+; IFU rotator offset
+	rotoff:0.0, $		; degrees from rotator PA
 ;
 ; CCD binning
 	xbinsize:1, $		; binning in x (pixels)
