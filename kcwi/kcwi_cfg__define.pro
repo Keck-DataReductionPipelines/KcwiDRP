@@ -68,15 +68,18 @@ tmp = { kcwi_cfg, $
 	frameno:0l, $		; image number
 	skyobs:0, $		; sky observation? 0 - object, 1 - sky
 	shuffmod:0, $		; is this a Nod & Shuffle observation?
-	nasmask:0, $		; is the Nod & Shuffle mask deployed?
-	bgratnam:'', $		; grating id
-	bgratnum:0, $		; graing number
-	bfiltnam:'', $		; filter id
-	bfiltnum:0, $		; filter number
-	fm4pos:0l, $		; FM4 encoder steps
-	gratpos:0l, $		; Grating encoder steps
-	campos:0l, $		; Camera articulation encoder steps
-	focpos:0l, $		; Focus stage encoder steps
+	bgratnam:'', $		; Blue grating id
+	bgratnum:0, $		; Blue graing number
+	bgrangle:0., $		; Blue grating angle (degrees)
+	bgrenc:0l, $		; Blue grating rotator encoder steps
+	bfiltnam:'', $		; Blue filter id
+	bfiltnum:0, $		; Blue filter number
+	bartang:0., $		; Blue articulation angle
+	bartenc:0l, $		; Blue cmaera articulation encoder steps
+	bfocpos:0l, $		; Blue focus stage encoder steps
+	bfocus:0., $		; Blue focus (mm)
+	bnasname:'', $		; Blue mask position name
+	bnaspos:0, $		; Blue mask position
 	ifunum:0, $		; Slicer number (0-5, -1=unknown)
 	ifunam:'', $		; Slicer name ("Small", etc.)
 	cwave:0., $		; central wavelength (Ang)
@@ -127,12 +130,19 @@ tmp = { kcwi_cfg, $
 	obstype:'', $		; observation type: 'zero', 'cal', 'obj', 'std'
 	imgnum:0L, $		; image number
 ;
-; Spectrograph state
+; Instrument state
 	imgtype:'', $		; observation type: bias, dark, arc, etc.
 	gratid:'', $		; Grating id name
 	gratnum:-1, $		; Gratind id number
+	grangle:0., $		; Grating angle (degrees)
+	grenc:0l, $		; Grating rotator encoder steps
 	filter:'', $		; Filter id name
 	filtnum:-1, $		; filter id number
+	camang:0., $		; Camera articulation angle (degrees)
+	campos:0l, $		; Camera articulation encoder steps
+	focpos:0l, $		; Camera focus encoder steps
+	focus:0., $		; Camera focus (mm)
+	nasmask:0, $		; is the Nod & Shuffle mask deployed?
 ;
 ; Master group properties
 	groupnum:-1l, $		; group image number

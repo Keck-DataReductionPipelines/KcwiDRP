@@ -90,34 +90,19 @@ pro kcwi_group_flats, kcfg, ppar, fcfg
 			imnums = kcfg[flist].imgnum
 			rangepar,imnums,rl
 			;
+			; copy params
+			f = flist[0]
+			tags = tag_names(fcfg)
+			for it = 0, n_elements(tags)-1 do $
+				fcfg[i].(it) = kcfg[f].(it)
+			;
 			; set parameters
 			pp.cflats		= rl
 			fcfg[i].grouplist	= rl
 			fcfg[i].nimages		= nims
 			;
-			; get date and coords from first flat in series
-			f = flist[0]
-			fcfg[i].juliandate	= kcfg[f].juliandate
-			fcfg[i].date		= kcfg[f].date
-			fcfg[i].ra		= kcfg[f].ra
-			fcfg[i].dec		= kcfg[f].dec
-			;
 			; configuration
 			fcfg[i].imgtype		= 'cflat'
-			fcfg[i].naxis		= kcfg[f].naxis
-			fcfg[i].naxis1		= kcfg[f].naxis1
-			fcfg[i].naxis2		= kcfg[f].naxis2
-			fcfg[i].binning		= kcfg[f].binning
-			fcfg[i].xbinsize	= kcfg[f].xbinsize
-			fcfg[i].ybinsize	= kcfg[f].ybinsize
-			fcfg[i].ampmode		= kcfg[f].ampmode
-			fcfg[i].nasmask		= kcfg[f].nasmask
-			fcfg[i].gratid		= kcfg[f].gratid
-			fcfg[i].gratpos		= kcfg[f].gratpos
-			fcfg[i].filter		= kcfg[f].filter
-			fcfg[i].fm4pos		= kcfg[f].fm4pos
-			fcfg[i].campos		= kcfg[f].campos
-			fcfg[i].focpos		= kcfg[f].focpos
 			;
 			; use first image number in group
 			fi = kcfg[f].imgnum

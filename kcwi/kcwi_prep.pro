@@ -486,8 +486,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	;
 	; set up configuration matching: here is our list of 
 	; default tags to match in the KCWI_CFG struct
-	mtags = ['XBINSIZE','YBINSIZE','AMPMODE','GRATID','GRATPOS','FILTER', $
-		 'FM4POS','CAMPOS','FOCPOS','NASMASK']
+	mtags = ['XBINSIZE','YBINSIZE','AMPMODE','GRATID','GRANGLE','FILTER', $
+		 'CAMPOS','FOCPOS','NASMASK','IFUNUM']
 	;
 	; set up links
 	nlinks = 9	; bias,dark.flat,cbar,arc,prof,sky,rrsp,std
@@ -588,7 +588,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; no sense flat fielding the dark frames
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.nfgrps gt 0 then begin
-			mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time,count=f,/silent,cwi=cwi)
+			mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time,count=f,cwi=cwi)
 			if f eq 1 then begin
 				mffile = mcfg.groupfile
 				flink = mcfg.groupnum

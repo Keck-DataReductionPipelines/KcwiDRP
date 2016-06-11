@@ -81,7 +81,8 @@ tmp = { kcwi_geom, $
 ;
 ; encoder positions
 	campos:0L, $		; Camera encoder position
-	gratpos:0L, $		; grating encoder position
+	grenc:0L, $		; grating rotator encoder position
+	grangle:0., $		; grating rotator angle (degrees)
 	gratanom:0., $		; grating angle anomoly (degrees)
 ;
 ; pixel scale

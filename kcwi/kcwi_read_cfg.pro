@@ -93,8 +93,17 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	cfg.date	= cfg.datepclr
 	cfg.gratid	= cfg.bgratnam
 	cfg.gratnum	= cfg.bgratnum
+	cfg.grangle	= cfg.bgrangle
+	cfg.grenc	= cfg.bgrenc
 	cfg.filter	= cfg.bfiltnam
 	cfg.filtnum	= cfg.bfiltnum
+	cfg.campos	= cfg.bartenc
+	cfg.camang	= cfg.bartang
+	cfg.focpos	= cfg.bfocpos
+	cfg.focus	= cfg.bfocus
+	if cfg.bnaspos eq 2 then $
+		cfg.nasmask = 1 $
+	else	cfg.nasmask = 0
 	cfg.obsfname	= root + '.' + ext
 	cfg.obsdir	= disk + dir
 	cfg.obstype	= 'test'
