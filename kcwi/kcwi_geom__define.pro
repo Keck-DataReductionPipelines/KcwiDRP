@@ -72,7 +72,7 @@ tmp = { kcwi_geom, $
 	gratid:'', $		; grating id
 	gratnum:-1, $		; grating number
 	rho:3.0d, $		; grating lines/mm
-	slant:0.0d, $		; off-Bragg angle in degrees
+	adjang:0.0d, $		; grating adjustment angle (0 or 180 deg)
 	lastdegree:4, $		; highest order for full-ccd wavelength fit
 ;
 ; filter properties
@@ -81,6 +81,7 @@ tmp = { kcwi_geom, $
 ;
 ; encoder positions
 	campos:0L, $		; Camera encoder position
+	camang:0.0d, $		; Camera articulation angle in degrees
 	grenc:0L, $		; grating rotator encoder position
 	grangle:0., $		; grating rotator angle (degrees)
 	gratanom:0., $		; grating angle anomoly (degrees)

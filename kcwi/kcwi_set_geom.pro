@@ -14,11 +14,11 @@
 ;	Data reduction for the Keck Cosmic Web Imager (KCWI).
 ;
 ; CALLING SEQUENCE:
-;	KCWI_SET_GEOM, Kgeom, Kcfg
+;	KCWI_SET_GEOM, Kgeom, iKcfg
 ;
 ; INPUTS:
 ;	Kgeom	- Input KCWI_GEOM struct.
-;	Kcfg	- Input KCWI_CFG struct for a given observation.
+;	iKcfg	- Input KCWI_CFG struct for a given observation.
 ;	Ppar	- Input KCWI_PPAR struct.
 ;
 ; KEYWORDS:
@@ -37,7 +37,7 @@
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2013-AUG-13	Initial version
-;	2014-AUG-14	Added CWI Yellow grating
+;	2016-JUN-12	Added KCWI gratings BH2,BH3, BM, BL
 ;-
 pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	;
@@ -100,6 +100,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	kgeom.filter = kcfg.filter
 	kgeom.filtnum = kcfg.filtnum
 	kgeom.campos = kcfg.campos
+	kgeom.camang = kcfg.camang
 	kgeom.grenc = kcfg.grenc
 	kgeom.grangle = kcfg.grangle
 	kgeom.gratanom = kcfg.gratanom
@@ -151,13 +152,69 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	; default to no cc offsets
 	kgeom.ccoff = fltarr(24)
 	;
-	; check resolution and dispersion
+	; grating parameters BH1
+	if strtrim(kcfg.gratid,2) eq 'BH1' then begin
+		kgeom.resolution = 0.15
+		kgeom.wavran = 560.
+		kgeom.ccwn = 260./kgeom.ybinsize
+		kgeom.rho = 3.751d
+		kgeom.adjang = 180.d
+		kgeom.lastdegree = 4
+		kgeom.ccoff[0:4] = -277.0
+		;
+		; output disperison
+		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
+	endif
+	;
+	; grating parameters BH2
+	if strtrim(kcfg.gratid,2) eq 'BH2' then begin
+		kgeom.resolution = 0.15
+		kgeom.wavran = 560.
+		kgeom.ccwn = 260./kgeom.ybinsize
+		kgeom.rho = 3.255d
+		kgeom.adjang = 180.d
+		kgeom.lastdegree = 4
+		kgeom.ccoff[0:4] = -277.0
+		;
+		; output disperison
+		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
+	endif
+	;
+	; grating parameters BH3
 	if strtrim(kcfg.gratid,2) eq 'BH3' then begin
 		kgeom.resolution = 0.15
 		kgeom.wavran = 560.
 		kgeom.ccwn = 260./kgeom.ybinsize
 		kgeom.rho = 2.80d
-		kgeom.slant = -5.0d
+		kgeom.adjang = 180.d
+		kgeom.lastdegree = 4
+		kgeom.ccoff[0:4] = -277.0
+		;
+		; output disperison
+		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
+	endif
+	;
+	; grating parameters BM
+	if strtrim(kcfg.gratid,2) eq 'BM' then begin
+		kgeom.resolution = 0.15
+		kgeom.wavran = 560.
+		kgeom.ccwn = 260./kgeom.ybinsize
+		kgeom.rho = 1.900d
+		kgeom.adjang = 180.d
+		kgeom.lastdegree = 4
+		kgeom.ccoff[0:4] = -277.0
+		;
+		; output disperison
+		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
+	endif
+	;
+	; grating parameters BL
+	if strtrim(kcfg.gratid,2) eq 'BL' then begin
+		kgeom.resolution = 0.15
+		kgeom.wavran = 560.
+		kgeom.ccwn = 260./kgeom.ybinsize
+		kgeom.rho = 0.870d
+		kgeom.adjang = 180.d
 		kgeom.lastdegree = 4
 		kgeom.ccoff[0:4] = -277.0
 		;

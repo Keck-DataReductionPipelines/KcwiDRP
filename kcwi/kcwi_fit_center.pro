@@ -113,11 +113,15 @@ centcoeff = dblarr(9,120)
 ;
 ; Next we refine the central dispersion estimate
 ;
+; 0- compute alpha
+prelim_alpha = kgeom.grangle - 13.0d - kgeom.adjang
+;
 ; 1- compute the prelim angle of diffraction
-prelim_beta = asin(cwvl/10000.0 * rho/2.0)+slant/!radeg
+;prelim_beta = asin(cwvl/10000.0 * rho/2.0)+slant/!radeg
+prelim_beta = kgeom.camang - prelim_alpha
 ;
 ; 1b - add the grating tilt anomoly
-prelim_beta = prelim_beta + gratanom/!radeg
+;prelim_beta = prelim_beta + gratanom/!radeg
 ;
 ; 2- compute the preliminary dispersion
 prelim_disp = cos(prelim_beta)/rho/fcam*(pix*ybin)*1e4
@@ -126,8 +130,8 @@ prelim_disp = cos(prelim_beta)/rho/fcam*(pix*ybin)*1e4
 ; need to correct for the out-of-band angle here... not much, but
 ; there is some... so
 ;
-prelim_disp *= cos(gamma/!radeg)
-prelim_disp = 0.138
+;prelim_disp *= cos(gamma/!radeg)
+;prelim_disp = 0.138
 ;
 ; report results
 kcwi_print_info,ppar,pre,'Initial calculated dispersion (A/binned pixel)', $
