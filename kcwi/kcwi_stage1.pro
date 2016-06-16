@@ -351,15 +351,19 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 					osvec = total(img[osx0:osx1,osy0:osy1],1)/float(osx1-osx0)
 					xx = findgen(n_elements(osvec)) + osy0
 					mo = moment(osvec)
-					yrng = [mo[0]-mo[1]*3.,mo[0]+mo[1]*3.]
+					mnos = mo[0]
+					sdos = sqrt(mo[1])
+					yrng = [mnos-sdos*3.,mnos+sdos*3.]
 					;
 					; fit overscan vector
 					res = polyfit(xx,osvec,5,osfit)
+					resid = osvec - osfit
+					mo = moment(resid)
+					mnrs = mo[0]
+					sdrs = sqrt(mo[1])
 					;
 					; plot if display set
 					if doplots then begin
-						resid = osvec - osfit
-						mo = moment(resid)
 						deepcolor
 						!p.background=colordex('white')
 						!p.color=colordex('black')
@@ -395,6 +399,10 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 						strtrim(string(namps),2)+' (x0,x1,y0,y1): '+ $
 						    strtrim(string(osx0),2)+','+strtrim(string(osx1),2)+ $
 						','+strtrim(string(osy0),2)+','+strtrim(string(osy1),2)
+					kcwi_print_info,ppar,pre,'overscan '+strtrim(string(ia+1),2)+'/'+ $
+						strtrim(string(namps),2)+' (<os>, sd os, <resid>, sd resid): '+ $
+						     strtrim(string(mnos),2)+', '+strtrim(string(sdos),2) + $
+						', '+strtrim(string(mnrs),2)+', '+strtrim(string(sdrs),2)
 					;
 					; make interactive if display greater than 1
 					if doplots and ppar.display ge 2 then begin
@@ -521,7 +529,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			sxaddpar,hdr,'BUNIT','electrons',' brightness units'
 			;
 			; log
-			kcwi_print_info,ppar,pre,'amplifier gains (e/DN)',gainstr
+			kcwi_print_info,ppar,pre,'amplifier gains (e/DN)',gainstr, format='(a,1x,a)'
 			;
 			; output gain-corrected image
 			if ppar.saveintims eq 1 then begin

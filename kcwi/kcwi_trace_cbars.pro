@@ -220,7 +220,8 @@ while npks ne 120 and tries lt 10 do begin
 	; keep incrementing tries until we reach limit
 	tries += 1
 endwhile
-kcwi_print_info,ppar,pre,'final bar thresh, ntries',barth,tries
+kcwi_print_info,ppar,pre,'final bar thresh, ntries',barth,tries, $
+	format='(a,f9.2,i5)'
 ;
 ; did we succeed?
 if npks ne 120 then begin

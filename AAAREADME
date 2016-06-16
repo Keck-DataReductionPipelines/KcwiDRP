@@ -74,7 +74,8 @@ this:
 > setenv IDL_PATH "+/Path/to/package/kderp-<ver>:<IDL_DEFAULT>"
 
 The "+" at the beginning ensures that IDL searches the entire directory
-tree below the top level for all the code.
+tree below the top level for all the code.  Note also that the itme
+<IDL_DEFAULT> should be entered as is, not replaced with another path.
 
 **** NOTE ****: It is very important that you put the kderp package
 directory at the head of the list of paths in the IDL_PATH environment

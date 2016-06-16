@@ -168,13 +168,12 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	;
 	; grating parameters BH2
 	if strtrim(kcfg.gratid,2) eq 'BH2' then begin
-		kgeom.resolution = 0.15
+		kgeom.resolution = 0.35
 		kgeom.wavran = 560.
-		kgeom.ccwn = 260./kgeom.ybinsize
+		kgeom.ccwn = 360./kgeom.ybinsize
 		kgeom.rho = 3.255d
 		kgeom.adjang = 180.d
 		kgeom.lastdegree = 4
-		kgeom.ccoff[0:4] = -277.0
 		;
 		; output disperison
 		kgeom.dwout = 0.095 * float(kcfg.ybinsize)

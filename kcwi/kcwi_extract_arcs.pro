@@ -123,7 +123,13 @@ for i=0,ns-1 do begin
 	;
 	; compute spectrum
 	vec = median(sub,dim=1)
-	;vec = vec - median(vec,11)	; TODO: better bkg fix
+	ims_asym,vec,mn,sig,wgt,siglim=[1.5,3.0]
+	good = where(wgt eq 1,ngood)
+	if ngood gt 9 then $
+		cont = min(vec[good]) $
+	else	cont = median(vec[good])
+	cont = mn - 3.*sig
+	vec -= cont
 	spec(*,i) = vec
 endfor
 ;
@@ -149,6 +155,7 @@ else	refb = 57	; default
 ;
 ; log
 kcwi_print_info,ppar,pre,'cross-correlating with reference bar',refb
+kcwi_print_info,ppar,pre,'using cc window (px)',ccwn
 ;
 ; cross-correlate to reference line
 for i=0,ns-1 do begin

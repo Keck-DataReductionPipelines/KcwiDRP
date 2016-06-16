@@ -84,7 +84,6 @@ gratanom = kgeom.gratanom
 ;
 ; set the grating specific parameters
 rho = kgeom.rho
-slant = kgeom.slant
 ;
 ; which is the reference bar?
 refbar = kgeom.refbar
@@ -124,16 +123,18 @@ prelim_beta = kgeom.camang - prelim_alpha
 ;prelim_beta = prelim_beta + gratanom/!radeg
 ;
 ; 2- compute the preliminary dispersion
-prelim_disp = cos(prelim_beta)/rho/fcam*(pix*ybin)*1e4
+prelim_disp = cos(prelim_beta/!radeg)/rho/fcam*(pix*ybin)*1e4
 ; the 1e4 is there to make the units Angstrom/binnedpixel
 ;
 ; need to correct for the out-of-band angle here... not much, but
 ; there is some... so
 ;
-;prelim_disp *= cos(gamma/!radeg)
-;prelim_disp = 0.138
+prelim_disp *= cos(gamma/!radeg)
+;prelim_disp = 0.230
 ;
 ; report results
+kcwi_print_info,ppar,pre,'Initial alpha, beta',prelim_alpha, prelim_beta, $
+	format='(a,2f9.2)'
 kcwi_print_info,ppar,pre,'Initial calculated dispersion (A/binned pixel)', $
 	prelim_disp,format='(a,f8.3)'
 ;
@@ -207,17 +208,21 @@ prelim_refspec = prelim_refspec * tukeywgt(n_elements(prelim_refspec),ppar.taper
 ; (prelim_intspec and prelim_refspec), so let's do that:
 if ddisplay then window,1,title='kcwi_xspec'
 kcwi_xspec,prelim_intspec,prelim_refspec,ppar,prelim_offset,prelim_value, $
-	/min,/shift,/plot,label='Obj(0) vs Atlas(1)'
+	/min,/shift,/plot,label='Obj(0) vs Atlas(1)',central=5.
 if ddisplay then wset,0
 ;
+; record initial offset
+kcwi_print_info,ppar,pre,'Initial arc-atlas offset (px, Ang)',prelim_offset, $
+	prelim_offset*refdisp,format='(a,1x,f9.2,1x,f9.2)'
 if ppar.display ge 2 then begin
 	q='test'
 	while strlen(q) gt 0 do begin
-	    plot,prelim_subwvl,prelim_spec/max(prelim_spec),charsi=si,charthi=th,thick=th, $
-		xthick=th,xtitle='Wave(A)', $
+	    plot,prelim_subwvl-prelim_offset*refdisp,prelim_spec/max(prelim_spec), $
+		charsi=si,charthi=th,thick=th,xthick=th,xtitle='Wave(A)', $
 		ythick=th,ytitle='Rel. Flux',title=imglab+', Offset = ' + $
-		strtrim(string(prelim_offset,form='(f9.3)'),2)+' px',/xs
-	    oplot,prelim_refwvl+prelim_offset*refdisp,prelim_refspec/max(prelim_refspec), $
+		strtrim(string(prelim_offset*refdisp,form='(f9.2)'),2)+' Ang ('+$
+		strtrim(string(prelim_offset,form='(f9.3)'),2)+' px)',/xs
+	    oplot,prelim_refwvl,prelim_refspec/max(prelim_refspec), $
 		color=colordex('red'),thick=th
 	    oplot,[cwvl,cwvl],!y.crange,color=colordex('green'),thick=th,linesty=2
 	    kcwi_legend,['Ref Bar ('+strn(refbar)+')','Atlas','CWAVE'],linesty=[0,0,2], $
@@ -230,6 +235,10 @@ if ppar.display ge 2 then begin
 		    prelim_offset = float(q)
 	endwhile
 endif
+;
+; record final offset
+kcwi_print_info,ppar,pre,'Final   arc-atlas offset (px, Ang)',prelim_offset, $
+	prelim_offset*refdisp,format='(a,1x,f9.2,1x,f9.2)'
 ;
 ; At this point we have the offsets between bars and the approximate offset from
 ; the reference bar to the actual spectrum and the approximate

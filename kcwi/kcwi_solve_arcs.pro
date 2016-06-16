@@ -208,10 +208,10 @@ if keyword_set(tweak) then begin
 		for sec = 0,sectors-1 do begin
 			;
 			; We may need this for low-res gratings!
-			;mn = min(specs[minrow+sec*div:minrow+(sec+1)*div,b],mi)
-			;xv[sec] = mi+minrow+sec*div
-			mn = median(specs[minrow+sec*div:minrow+(sec+1)*div,b])
-			xv[sec] = minrow+sec*div + div/2
+			mn = min(specs[minrow+sec*div:minrow+(sec+1)*div,b],mi)
+			xv[sec] = mi+minrow+sec*div
+			;mn = median(specs[minrow+sec*div:minrow+(sec+1)*div,b])
+			;xv[sec] = minrow+sec*div + div/2
 			yv[sec] = mn
 		endfor
 		;
@@ -339,7 +339,7 @@ if keyword_set(tweak) then begin
 			; plot if needed
 			if ddisplay and iter eq 0 then begin
 				wset,1
-				plot,subwvals,subyvals, title='Object Spectrum Lines (Central 3rd): Bar '+strn(b), $
+				plot,subwvals,subyvals>1., title='Object Spectrum Lines (Central 3rd): Bar '+strn(b), $
 					thick=th,charsi=si,charthi=th, $
 					xthick=th,xtitle='Wave(A)',xrange=xarng,/xs, $
 					ythick=th,ytitle='Flux', $
@@ -356,47 +356,52 @@ if keyword_set(tweak) then begin
 			;print,'am th: ',ampl_thresh
 			twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
 				ampl_thresh,peak_width,count=twk_spec_npks)
-			;
-			; at this point we have the catalog of good reference points (from
-			; before) and list of good points in this bar. We have to associate
-			; them.
-			one_ref = fltarr(twk_ref_npks)+1.0
-			one_spec = fltarr(twk_spec_npks)+1.0
-
-			diff = abs((twk_spec_cent##one_ref) - (one_spec##twk_ref_cent))
-			;
-			mn = min(diff,dim=1,mi)
-			;
-			; here we match the peaks to one another. 
-			pkd = ppar.pkdel
-			pkm = pkd*resolution	; match thresh in Angstroms
-			matchedpeaks = where(mn lt pkm, nmatchedpeaks)
-			;
-			; for first iteration, make sure we have enough peaks
-			; also handle if we have no matched peaks
-			if iter eq 0 or nmatchedpeaks eq 0 then begin
-				orig_nmp = nmatchedpeaks
-				while nmatchedpeaks lt 5 and pkd lt 2. do begin
-					;
-					; open up the match criterion
-					pkd += 0.25
-					;
-					; try again
-					pkm = pkd*resolution
-					matchedpeaks = where(mn lt pkm, nmatchedpeaks)
-				endwhile
+			if twk_spec_npks gt 0 then begin
 				;
-				; report any adjustments
-				if pkd ne ppar.pkdel then begin
-					print,''
-					print,'Bar: ',b,', pkdel updated to ',pkd, '; ',orig_nmp, $
-						' --> ',nmatchedpeaks,' peaks', $
-						format='(a,i3,a,f5.2,a,i2,a,i3,a)'
+				; at this point we have the catalog of good reference points (from
+				; before) and list of good points in this bar. We have to associate
+				; them.
+				one_ref = fltarr(twk_ref_npks)+1.0
+				one_spec = fltarr(twk_spec_npks)+1.0
+
+				diff = abs((twk_spec_cent##one_ref) - (one_spec##twk_ref_cent))
+				;
+				mn = min(diff,dim=1,mi)
+				;
+				; here we match the peaks to one another. 
+				pkd = ppar.pkdel
+				pkm = pkd*resolution	; match thresh in Angstroms
+				matchedpeaks = where(mn lt pkm, nmatchedpeaks)
+				;
+				; for first iteration, make sure we have enough peaks
+				; also handle if we have no matched peaks
+				if iter eq 0 or nmatchedpeaks eq 0 then begin
+					orig_nmp = nmatchedpeaks
+					while nmatchedpeaks lt 5 and pkd lt 2. do begin
+						;
+						; open up the match criterion
+						pkd += 0.25
+						;
+						; try again
+						pkm = pkd*resolution
+						matchedpeaks = where(mn lt pkm, nmatchedpeaks)
+					endwhile
+					;
+					; report any adjustments
+					if pkd ne ppar.pkdel then begin
+						print,''
+						print,'Bar: ',b,', pkdel updated to ',pkd, '; ',orig_nmp, $
+							' --> ',nmatchedpeaks,' peaks', $
+							format='(a,i3,a,f5.2,a,i2,a,i3,a)'
+					endif
 				endif
-			endif
-			; print,"matched "+string(nmatchedpeaks)+" peaks."
+			endif else begin
+				nmatchedpeaks = 0
+				kcwi_print_info,ppar,pre,'No good peaks in arc for Bar # '+strn(b),/warning
+			endelse
+			;
 			if nmatchedpeaks le 0 then begin
-				kcwi_print_info,ppar,pre,'No peaks matched in Bar # '+strn(b)+': '+strn(nmatchedpeaks),/warning
+				kcwi_print_info,ppar,pre,'No peaks matched in Bar # '+strn(b),/warning
 				barstat[b]=9
 				goto, errbar
 			endif
