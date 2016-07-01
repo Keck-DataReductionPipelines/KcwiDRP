@@ -289,7 +289,7 @@ for b = 0,119 do begin
 		; populate the coefficients
 		coeff[0] = p0[b]
 		coeff[1] = disps[d]
-		beta = acos(coeff[1]/(pix*ybin)*rho*fcam*1d-4)
+		beta = acos( (coeff[1]/(pix*ybin)*rho*fcam*1d-4) < 1.d)
 		coeff[2] = -(pix*ybin/fcam)^2*sin(beta)/2.0d/rho*1d4
 		coeff[3] = -(pix*ybin/fcam)^3*cos(beta)/6.0d/rho*1d4
 		coeff[4] = (pix*ybin/fcam)^4*sin(beta)/24.0d/rho*1d4

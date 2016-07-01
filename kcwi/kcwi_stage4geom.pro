@@ -231,15 +231,9 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 					; if not, derive it
 					endif else begin
 						;
-						; get reduced images (assume flat fielded images first)
-						cbf = kcwi_get_imname(ppar,cnums[i],'_intf',/reduced)
-						arf = kcwi_get_imname(ppar,anums[i],'_intf',/reduced)
-						;
-						; check for dark subtracted images next
-						if not file_test(cbf) or not file_test(arf) then begin
-							cbf = kcwi_get_imname(ppar,cnums[i],'_intd',/reduced)
-							arf = kcwi_get_imname(ppar,anums[i],'_intd',/reduced)
-						endif
+						; get reduced images (assume dark subtracted images first)
+						cbf = kcwi_get_imname(ppar,cnums[i],'_intd',/reduced)
+						arf = kcwi_get_imname(ppar,anums[i],'_intd',/reduced)
 						;
 						; check for stage1 output images last
 						if not file_test(cbf) or not file_test(arf) then begin

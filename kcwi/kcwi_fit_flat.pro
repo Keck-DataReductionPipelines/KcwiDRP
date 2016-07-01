@@ -71,9 +71,9 @@ pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
 	splo = long(splo)
 	;
 	; is the nod-and-shuffle mask in?
-	if sxpar(hdr,'NASMASK') eq 1 then begin
-		y0 = sxpar(hdr,'NSOBJR0')
-		y1 = sxpar(hdr,'NSOBJR1')
+	if sxpar(hdr,'BNASPOS') eq 2 then begin
+		y0 = sxpar(hdr,'SHUFROWS')
+		y1 = y0 * 2 - 1
 		if y0 eq 0 or y1 eq 0 then begin
 			y0 = 685
 			y1 = 1369

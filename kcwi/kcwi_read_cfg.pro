@@ -101,9 +101,13 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	cfg.camang	= cfg.bartang
 	cfg.focpos	= cfg.bfocpos
 	cfg.focus	= cfg.bfocus
-	if cfg.bnaspos eq 2 then $
-		cfg.nasmask = 1 $
-	else	cfg.nasmask = 0
+	if cfg.bnaspos eq 2 then begin
+		cfg.nasmask = 1
+		cfg.nsskyr0 = 1
+		cfg.nsskyr1 = cfg.shufrows
+		cfg.nsobjr0 = cfg.nsskyr1 + 1
+		cfg.nsobjr1 = cfg.nsobjr0 + cfg.shufrows
+	endif else	cfg.nasmask = 0
 	cfg.obsfname	= root + '.' + ext
 	cfg.obsdir	= disk + dir
 	cfg.obstype	= 'test'

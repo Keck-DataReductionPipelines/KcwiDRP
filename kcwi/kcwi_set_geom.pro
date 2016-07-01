@@ -154,13 +154,12 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	;
 	; grating parameters BH1
 	if strtrim(kcfg.gratid,2) eq 'BH1' then begin
-		kgeom.resolution = 0.15
-		kgeom.wavran = 560.
+		kgeom.resolution = 0.5
 		kgeom.ccwn = 260./kgeom.ybinsize
 		kgeom.rho = 3.751d
 		kgeom.adjang = 180.d
 		kgeom.lastdegree = 4
-		kgeom.ccoff[0:4] = -277.0
+		kgeom.bclean = 1
 		;
 		; output disperison
 		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
@@ -168,12 +167,12 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	;
 	; grating parameters BH2
 	if strtrim(kcfg.gratid,2) eq 'BH2' then begin
-		kgeom.resolution = 0.35
-		kgeom.wavran = 560.
+		kgeom.resolution = 0.5
 		kgeom.ccwn = 360./kgeom.ybinsize
 		kgeom.rho = 3.255d
 		kgeom.adjang = 180.d
 		kgeom.lastdegree = 4
+		kgeom.bclean = 1
 		;
 		; output disperison
 		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
@@ -181,13 +180,12 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	;
 	; grating parameters BH3
 	if strtrim(kcfg.gratid,2) eq 'BH3' then begin
-		kgeom.resolution = 0.15
-		kgeom.wavran = 560.
+		kgeom.resolution = 0.5
 		kgeom.ccwn = 260./kgeom.ybinsize
 		kgeom.rho = 2.80d
 		kgeom.adjang = 180.d
 		kgeom.lastdegree = 4
-		kgeom.ccoff[0:4] = -277.0
+		kgeom.bclean = 1
 		;
 		; output disperison
 		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
@@ -195,39 +193,39 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	;
 	; grating parameters BM
 	if strtrim(kcfg.gratid,2) eq 'BM' then begin
-		kgeom.resolution = 0.15
-		kgeom.wavran = 560.
+		kgeom.resolution = 1.00
 		kgeom.ccwn = 260./kgeom.ybinsize
 		kgeom.rho = 1.900d
-		kgeom.adjang = 180.d
+		kgeom.adjang = 0.d
 		kgeom.lastdegree = 4
-		kgeom.ccoff[0:4] = -277.0
+		kgeom.bclean = 0
 		;
 		; output disperison
-		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
+		kgeom.dwout = 0.38 * float(kcfg.ybinsize)
 	endif
 	;
 	; grating parameters BL
 	if strtrim(kcfg.gratid,2) eq 'BL' then begin
-		kgeom.resolution = 0.15
-		kgeom.wavran = 560.
-		kgeom.ccwn = 260./kgeom.ybinsize
+		kgeom.resolution = 2.0
+		kgeom.ccwn = 320./kgeom.ybinsize
 		kgeom.rho = 0.870d
-		kgeom.adjang = 180.d
+		kgeom.adjang = 0.d
 		kgeom.lastdegree = 4
-		kgeom.ccoff[0:4] = -277.0
+		kgeom.bclean = 1
 		;
 		; output disperison
-		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
+		kgeom.dwout = 0.95 * float(kcfg.ybinsize)
 	endif
 	;
 	; spatial scales
 	kgeom.pxscl = 0.00004048d0	; deg/unbinned pixel
-	kgeom.slscl = 0.00037718d0	; deg/slice
+	kgeom.slscl = 0.00037718d0	; deg/slice, Large slicer
 	if kcfg.ifunum eq 2 then begin
 		kgeom.slscl = kgeom.slscl/2.d0
+		kgeom.resolution = kgeom.resolution/2.00
 	endif else if kcfg.ifunum eq 3 then begin
 		kgeom.slscl = kgeom.slscl/4.d0
+		kgeom.resolution = kgeom.resolution/4.00
 	endif
 	;
 	; check central wavelength
@@ -243,6 +241,8 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 		kgeom.wave0out = ppar.wave0
 	if ppar.wave1 gt 0. then $
 		kgeom.wave1out = ppar.wave1
+	if ppar.cleancoeffs gt -1. then $
+		kgeom.bclean = ppar.cleancoeffs
 	;
 	; print log of values
 	kcwi_print_info,ppar,pre,'Data cube output Disp (A/px), Wave0 (A): ', $

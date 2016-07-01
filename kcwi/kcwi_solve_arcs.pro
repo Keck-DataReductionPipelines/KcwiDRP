@@ -92,7 +92,7 @@ nasmask = kgeom.nasmask
 cwvl = kgeom.cwave
 ;
 ; canonical resolution in Angstroms?
-resolution = kgeom.resolution
+resolution = kgeom.resolution * float(kgeom.ybinsize)
 ;
 ; log info
 kcwi_print_info,ppar,pre,systime(0)
@@ -512,7 +512,7 @@ if keyword_set(tweak) then begin
 		;
 		; now clean each slice of outlying bars
 		; don't bother for a single iteration
-		if ppar.cleancoeffs and niter gt 1 then begin
+		if kgeom.bclean and niter gt 1 then begin
 			;
 			; only go interactive on last iteration
 			if iter lt niter-1 then $

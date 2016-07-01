@@ -159,6 +159,7 @@ tmp = { kcwi_geom, $
 ; Wavelength fit for each bar
 	bfitcoeffs:fltarr(9,120),$ ; polynomial wavelength solution
 	bfitord:6, $		; order of polynomial wavelength solution
+	bclean:0, $		; clean coeffs of errant bars? 0 - no, 1 - yes
 ;
 ; Which image row was used for canonical x position?
 	midrow:0L, $		; image pixel

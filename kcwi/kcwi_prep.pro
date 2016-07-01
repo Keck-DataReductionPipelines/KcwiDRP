@@ -34,7 +34,7 @@
 ; Switches
 ;	NOCRREJECT	- set to skip cosmic ray rejection
 ;	NONASSUB	- set to skip nod-and-shuffle subtraction
-;	NOCLEANCOEFFS	- set to skip cleaning wavelength sol'n coeffs
+;	CLEANCOEFFS	- set to override default clean of wave sol'n coeffs
 ;	SAVEINTIMS	- set to save intermediate images (def: NO)
 ;	INCLUDETEST	- set to include test images in reduction (def: NO)
 ;	DOMEPRIORITY	- set to use dome flats over twilight flats (def: NO)
@@ -83,7 +83,7 @@
 ;	2013-SEP-13	Use KCWI_PPAR struct for subroutine parameters
 ;	2013-NOV-01	Made cbars/arc associations more robust
 ;	2013-NOV-06	Implemented relative response correction
-;	2014-MAR-25	Added nocleancoeffs keyword
+;	2014-MAR-25	Added cleancoeffs keyword
 ;	2014-APR-01	Added kcwi_group_geom and processing of all calib imgs
 ;	2014-APR-09	Improved association logic based on previous assoc.
 ;	2014-MAY-28	Removed FILESPEC keyword and now uses FROOT and FDIGITS
@@ -100,7 +100,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	taperfrac=taperfrac, pkdel=pkdel, $
 	nocrreject=nocrreject, $
 	nonassub=nonassub, $
-	nocleancoeffs=nocleancoeffs, $
+	cleancoeffs=cleancoeffs, $
 	saveintims=saveintims, $
 	includetest=includetest, $
 	domepriority=domepriority, $
@@ -120,7 +120,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		print,pre+': Info - Usage: '+pre+', RawDir, ReducedDir, CalibDir, DataDir'
 		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, MINGROUPBIAS=N, MINOSCANPIX=N'
 		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
-		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /NOCLEANCOEFFS, /DOMEPRIORITY'
+		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /DOMEPRIORITY'
 		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /HELP'
 		return
 	endif
@@ -250,15 +250,14 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		ppar.taperfrac = taperfrac
 	if keyword_set(pkdel) then $
 		ppar.pkdel = pkdel
+	if keyword_set(cleancoeffs) then $
+		ppar.cleancoeffs = cleancoeffs
 	if keyword_set(nocrreject) then $
 		ppar.crzap = 0 $
 	else	ppar.crzap = 1
 	if keyword_set(nonassub) then $
 		ppar.nassub = 0 $
 	else	ppar.nassub = 1
-	if keyword_set(nocleancoeffs) then $
-		ppar.cleancoeffs = 0 $
-	else	ppar.cleancoeffs = 1
 	if keyword_set(saveintims) then $
 		ppar.saveintims = 1 $
 	else	ppar.saveintims = 0
@@ -294,8 +293,9 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		printf,ll,'No cosmic ray rejection performed'
 	if keyword_set(nonassub) then $
 		printf,ll,'No nod-and-shuffle sky subtraction performed'
-	if keyword_set(nocleancoeffs) then $
-		printf,ll,'No wavelength coefficient cleaning performed'
+	if ppar.cleancoeffs eq 1 then $
+		printf,ll,'Wavelength coefficient cleaning performed' $
+	else	printf,ll,'No Wavelength coefficient cleaning performed'
 	if keyword_set(saveintims) then $
 		printf,ll,'Saving intermediate images'
 	if keyword_set(includetest) then $
