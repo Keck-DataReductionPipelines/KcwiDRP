@@ -152,7 +152,7 @@ pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
 		resid = y - yfit
 		mo = moment(resid[where(w gt 0.)])
 		print,string(13B),i+1,'/',sz[0],sqrt(mo[1]), $
-			format='($,a1,"Col: ",i6,a1,i6," Resid: ",f5.1," e-")'
+			format='($,a1,"Col: ",i6,a1,i6," Resid: ",f7.1," e-")'
 	endfor
 	print,' '
 	;

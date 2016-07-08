@@ -191,7 +191,7 @@ endif
 if ppar.display ge 2 then begin
 	plot,prelim_subwvl,prelim_spec/max(prelim_spec),charsi=si,charthi=th,thick=th, $
 		xthick=th, xtitle='Wave(A)', $
-		ythick=th, ytitle='Rel. Flux',title=imglab+', No Offset',/xs
+		ythick=th, ytitle='Rel. Flux',title=imglab+' ('+kgeom.refname+'), No Offset',/xs
 	oplot,prelim_refwvl,prelim_refspec/max(prelim_refspec),color=colordex('red'),thick=th
 	oplot,[cwvl,cwvl],!y.crange,color=colordex('green'),thick=th,linesty=2
 	kcwi_legend,['Ref Bar ('+strn(refbar)+')','Atlas','CWAVE'],linesty=[0,0,2], $
@@ -208,7 +208,7 @@ prelim_refspec = prelim_refspec * tukeywgt(n_elements(prelim_refspec),ppar.taper
 ; (prelim_intspec and prelim_refspec), so let's do that:
 if ddisplay then window,1,title='kcwi_xspec'
 kcwi_xspec,prelim_intspec,prelim_refspec,ppar,prelim_offset,prelim_value, $
-	/min,/shift,/plot,label='Obj(0) vs Atlas(1)',central=5.
+	/min,/shift,/plot,label='Obj(0) vs '+kgeom.refname+'(1)',central=5.
 if ddisplay then wset,0
 ;
 ; record initial offset
@@ -219,7 +219,7 @@ if ppar.display ge 2 then begin
 	while strlen(q) gt 0 do begin
 	    plot,prelim_subwvl-prelim_offset*refdisp,prelim_spec/max(prelim_spec), $
 		charsi=si,charthi=th,thick=th,xthick=th,xtitle='Wave(A)', $
-		ythick=th,ytitle='Rel. Flux',title=imglab+', Offset = ' + $
+		ythick=th,ytitle='Rel. Flux',title=imglab+' ('+kgeom.refname+'), Offset = ' + $
 		strtrim(string(prelim_offset*refdisp,form='(f9.2)'),2)+' Ang ('+$
 		strtrim(string(prelim_offset,form='(f9.3)'),2)+' px)',/xs
 	    oplot,prelim_refwvl,prelim_refspec/max(prelim_refspec), $
@@ -408,7 +408,7 @@ for b = 0,119 do begin
 		plot,disps,maxima,psym=-4,charsi=si,charthi=th,thick=th, $
 			xthick=th,xtitle='Central Dispersion',/xs, $
 			ythick=th,ytitle='X-Corr Value',yrange=yrng,/ys, $
-			title=imglab+', Bar: '+string(b,"(i3)") + $
+			title=imglab+' ('+kgeom.refname+'), Bar: '+string(b,"(i3)") + $
 			', Slice: '+string(fix(b/5),"(i2)")
 		oplot,disps[submaxidx],yf,color=colordex('orange'),thick=th
 		oplot,[bardispp,bardispp],!y.crange,color=colordex('green'),thick=th

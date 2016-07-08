@@ -248,13 +248,16 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						ccfg = kcwi_read_cfg(cbf)
 						acfg = kcwi_read_cfg(arf)
 						;
+						; get arc atlas
+						kcwi_get_atlas,acfg,atlas,atname
+						;
 						; create a new Kgeom
 						kgeom = {kcwi_geom}
 						kgeom = struct_init(kgeom)
 						kgeom.initialized = 1
 						;
 						; populate it with goodness
-						kcwi_set_geom,kgeom,ccfg,ppar
+						kcwi_set_geom,kgeom,ccfg,ppar,atlas=atlas,atname=atname
 						kgeom.cbarsfname = cbf
 						kgeom.cbarsimgnum = ccfg.imgnum
 						kgeom.arcfname = arf

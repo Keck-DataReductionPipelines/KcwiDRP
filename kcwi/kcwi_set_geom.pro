@@ -22,6 +22,8 @@
 ;	Ppar	- Input KCWI_PPAR struct.
 ;
 ; KEYWORDS:
+;	Atlas	- Arc atlas fits file (string, eg: 'fear.fits')
+;	Atname	- Arc atlas name (string, eg: 'FeAr')
 ;
 ; OUTPUTS:
 ;	None
@@ -38,8 +40,9 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2013-AUG-13	Initial version
 ;	2016-JUN-12	Added KCWI gratings BH2,BH3, BM, BL
+;	2016-JUL-01	Added atlas, atname keywords
 ;-
-pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
+pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	;
 	; setup
 	pre = 'KCWI_SET_GEOM'
@@ -144,10 +147,17 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	kgeom.wave1out = kcfg.wave1
 	kgeom.dwout = kcfg.dwav
 	;
-	; reference spectrum
-	kgeom.refspec = ppar.datdir+ppar.atlas
-	kgeom.reflist = ppar.datdir+ppar.linelist
-	kgeom.refname = ppar.atlasname
+	; reference spectrum: ppar value has top priority
+	if strlen(strtrim(ppar.atlas,2)) gt 0 then begin
+		kgeom.refspec = ppar.datdir+ppar.atlas
+		kgeom.refname = ppar.atlasname
+	endif else if keyword_set(atlas) then begin
+		kgeom.refspec = ppar.datdir+atlas
+		kgeom.refname = atname
+	endif else begin
+		kgeom.refspec = ppar.datdir+'fear.fits'
+		kgeom.refname = 'FeAr'
+	endelse
 	;
 	; default to no cc offsets
 	kgeom.ccoff = fltarr(24)
@@ -172,7 +182,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 		kgeom.rho = 3.255d
 		kgeom.adjang = 180.d
 		kgeom.lastdegree = 4
-		kgeom.bclean = 1
+		kgeom.bclean = 0
 		;
 		; output disperison
 		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
@@ -185,7 +195,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 		kgeom.rho = 2.80d
 		kgeom.adjang = 180.d
 		kgeom.lastdegree = 4
-		kgeom.bclean = 1
+		kgeom.bclean = 0
 		;
 		; output disperison
 		kgeom.dwout = 0.095 * float(kcfg.ybinsize)

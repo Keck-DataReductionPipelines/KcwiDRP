@@ -89,6 +89,16 @@ tmp = { kcwi_cfg, $
 	wave1:0., $		; red end of wavelength range (Ang)
 	dwav:0., $		; average dispersion (Ang/pix)
 ;
+; Cal Lamp properties
+	lmp0nam:'', $		; Lamp 0 name
+	lmp0stat:0, $		; Lamp 0 status (0 - off, 1 - on)
+	lmp0shst:0, $		; Lamp 0 shutter (0 - closed, 1 - open)
+	lmp1nam:'', $		; Lamp 0 name
+	lmp1stat:0, $		; Lamp 0 status (0 - off, 1 - on)
+	lmp1shst:0, $		; Lamp 0 shutter (0 - closed, 1 - open)
+	lmp3nam:'', $		; Lamp 0 name
+	lmp3stat:0, $		; Lamp 0 status (0 - off, 1 - on)
+;
 ; CCD properties
 	biasrn1:3., $		; bias read noise for amp 1 in electrons/pixel
 	biasrn2:3., $		; bias read noise for amp 2 in electrons/pixel

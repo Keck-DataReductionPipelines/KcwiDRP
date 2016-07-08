@@ -83,7 +83,7 @@ grating = kgeom.gratid
 filter = kgeom.filter
 ;
 ; image label
-imglab = 'Img # '+strn(imgnum)+' Fl: '+strtrim(filter,2)+' Gr: '+strtrim(grating,2)
+imglab = 'Img # '+strn(imgnum)+' ('+kgeom.refname+') Fl: '+strtrim(filter,2)+' Gr: '+strtrim(grating,2)
 ;
 ; is this N+S mask in?
 nasmask = kgeom.nasmask
@@ -269,9 +269,9 @@ if keyword_set(tweak) then begin
 		if ppar.display ge 3 then begin
 			dwav = (maxwav - minwav)/3.
 			xarng = get_plotlims([minwav+dwav,maxwav-dwav],pad=0.3)
-			atitle = 'Atlas Spectrum Lines (Central 3rd)'
+			atitle = 'Atlas ('+kgeom.refname+') Spectrum Lines (Central 3rd)'
 		endif else $
-			atitle = 'Atlas Spectrum Lines'
+			atitle = 'Atlas ('+kgeom.refname+') Spectrum Lines'
 		plot,twk_reference_wavelengths,twk_reference_spectrum, title=atitle, $
 			thick=th,charsi=si,charthi=th, $
 			xthick=th,xtitle='Wave(A)',xrange=xarng,/xs, $

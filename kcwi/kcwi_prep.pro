@@ -213,6 +213,13 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	if keyword_set(froot) then $
 		ppar.froot = froot
 	;
+	; do we have any files?
+	flist = file_search(indir + ppar.froot+'*.fit*', count=nf)
+	if nf le 0 then begin
+		kcwi_print_info,ppar,pre,'no fits files found in '+indir,/error
+		return
+	endif
+	;
 	; now check number of digits in image number
 	;
 	; specified with keyword
@@ -221,11 +228,6 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	;
 	; derive from file names in INDIR
 	else begin
-		flist = file_search(indir + ppar.froot+'*.fit*', count=nf)
-		if nf le 0 then begin
-			kcwi_print_info,ppar,pre,'no fits files found in '+indir,/error
-			return
-		endif
 		fdig = 0
 		for i=0,nf-1 do begin
 			ndig = kcwi_get_digits(flist[i])

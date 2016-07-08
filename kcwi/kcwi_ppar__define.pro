@@ -128,9 +128,8 @@ tmp = { kcwi_ppar, $
 	arcbars:'', $		; List of arc bars images (rangelist)
 	taperfrac:0.2, $	; cosine bell taper fraction for x-correlation
 	pkdel:0.75, $		; match thresh in fraction of resolution
-	atlas:'thar.fits', $	; wavelength atlas
-	atlasname:'ThAr', $	; wavelength atlas name
-	linelist:'thar_list.txt', $	; wavelength line list
+	atlas:'', $		; wavelength atlas
+	atlasname:'', $		; wavelength atlas name
 ;
 ; Override header RA, Dec reference pixels
 	crpix1:-1., $		; RA reference spatial pixel
