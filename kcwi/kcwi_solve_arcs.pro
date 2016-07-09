@@ -1,5 +1,5 @@
 ;
-; Copyright (c) 2013, California Institute of Technology. All rights
+; Copyright (c) 2013-2016, California Institute of Technology. All rights
 ;	reserved.
 ;+
 ; NAME:
@@ -254,7 +254,7 @@ if keyword_set(tweak) then begin
 	twk_reference_spectrum = refspec
 	twk_reference_wavelengths = refwvl
 	;
-	; first trim to the filter bandpass. 
+	; first trim to the grating bandpass (and a buffer of 100 Ang). 
 	qwvs = where(twk_reference_wavelengths gt minwav-100. and $
 		     twk_reference_wavelengths lt maxwav+100.,nqwvs)
 	if nqwvs eq 0 then begin
@@ -287,10 +287,12 @@ if keyword_set(tweak) then begin
 	; let's find the peaks in the reference spectrum.
 	smooth_width = fix(resolution/refdisp)>4	; in pixels
 	slope_thresh = 0.003
-	fthr = 0.05	; 5% of max
+	fthr = 0.05	; start at 5% of max
 	ampl_thresh  = max(twk_reference_spectrum)*fthr
 	twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
 			smooth_width,slope_thresh,ampl_thresh,count=twk_ref_npks)
+	;
+	; want at least 50 lines, but don't get noise
 	while twk_ref_npks lt 50 and fthr gt 0.01 do begin
 		fthr -= 0.01
 		ampl_thresh  = max(twk_reference_spectrum)*fthr
@@ -298,11 +300,15 @@ if keyword_set(tweak) then begin
 			smooth_width,slope_thresh,ampl_thresh,count=twk_ref_npks)
 	endwhile
 	;
-	if twk_ref_npks eq 0 then begin
-		kcwi_print_info,ppar,pre,'No good atlas points found',/error
+	if twk_ref_npks le lastdegree then begin
+		kcwi_print_info,ppar,pre,'Not enough good atlas points found',twk_ref_npks,/error
 		kgeom.status=6
 		return
 	endif
+	;
+	if twk_ref_npks lt 50 then $
+		kcwi_print_info,ppar,pre,'Atlas wavelength coverage may be limited: N lines < 50',/warn
+
 	kcwi_print_info,ppar,pre,'Atlas threshhold in percent of max',fix(fthr*100.)
 	kcwi_print_info,ppar,pre,'Number of clean atlas lines found',twk_ref_npks,$
 		format='(a,i4)'
@@ -368,12 +374,15 @@ if keyword_set(tweak) then begin
 			ampl_thresh  = max(subyvals) * fthr
 			twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
 				ampl_thresh,peak_width,count=twk_spec_npks)
-			while twk_spec_npks lt 10*(iter+1) and fthr gt 0.01 do begin
-				fthr -= 0.01
+			nlines = intarr(20)
+			for ith = 1,20 do begin
+				fthr = float(ith)/100.
 				ampl_thresh = max(subyvals) * fthr
 				twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
 					ampl_thresh,peak_width,count=twk_spec_npks)
-			endwhile
+				nlines[ith-1] = twk_spec_npks
+			endfor
+			stop
 			;kcwi_print_info,ppar,pre,'Object threshhold in percent of max',fix(fthr*100.)
 			;kcwi_print_info,ppar,pre,'Number of clean object lines found',twk_spec_npks,$
 			;	format='(a,i4)'
@@ -418,6 +427,8 @@ if keyword_set(tweak) then begin
 							format='(a,i3,a,f5.2,a,i2,a,i3,a)'
 					endif
 				endif
+			;
+			; no matched peaks
 			endif else begin
 				nmatchedpeaks = 0
 				kcwi_print_info,ppar,pre,'No good peaks in arc for Bar # '+strn(b),/warning
@@ -439,7 +450,7 @@ if keyword_set(tweak) then begin
 						10.^!y.crange,color=colordex('G')
 			endif
 			;
-			if nmatchedpeaks le 2 then begin
+			if nmatchedpeaks le degree then begin
 				print,' '
 				kcwi_print_info,ppar,pre,'Not enough peaks matched in Bar # '+strn(b)+': '+strn(nmatchedpeaks),/warning
 				barstat[b]=9
