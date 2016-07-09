@@ -126,7 +126,7 @@ tmp = { kcwi_ppar, $
 	arcs:'', $		; List of arc images (rangelist)
 	arcbars:'', $		; List of arc bars images (rangelist)
 	taperfrac:0.2, $	; cosine bell taper fraction for x-correlation
-	pkdel:0.75, $		; match thresh in fraction of resolution
+	pkdel:2.0, $		; match thresh in fraction of resolution
 	atlas:'', $		; wavelength atlas
 	atlasname:'', $		; wavelength atlas name
 ;

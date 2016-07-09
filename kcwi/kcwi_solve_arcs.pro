@@ -291,14 +291,22 @@ if keyword_set(tweak) then begin
 	ampl_thresh  = max(twk_reference_spectrum)*fthr
 	twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
 			smooth_width,slope_thresh,ampl_thresh,count=twk_ref_npks)
+	newlines = twk_ref_npks
+	oldlines = newlines
 	;
-	; want at least 50 lines, but don't get noise
-	while twk_ref_npks lt 50 and fthr gt 0.01 do begin
+	; find where noise starts to contaminate line list
+	while (newlines - oldlines) lt 10 and fthr gt 0.01 do begin
 		fthr -= 0.01
+		oldlines = newlines
 		ampl_thresh  = max(twk_reference_spectrum)*fthr
 		twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
 			smooth_width,slope_thresh,ampl_thresh,count=twk_ref_npks)
+		newlines = twk_ref_npks
 	endwhile
+	fthr += 0.01
+	ampl_thresh  = max(twk_reference_spectrum)*fthr
+	twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
+		smooth_width,slope_thresh,ampl_thresh,count=twk_ref_npks)
 	;
 	if twk_ref_npks le lastdegree then begin
 		kcwi_print_info,ppar,pre,'Not enough good atlas points found',twk_ref_npks,/error
@@ -323,6 +331,8 @@ if keyword_set(tweak) then begin
 		oplot,[maxwav,maxwav],10.^!y.crange,color=colordex('green'),thick=th,linesty=5
 		kcwi_legend,['PeakFit','WavRng'],linesty=[0,5],thick=[1.0,th], $
 			color=[colordex('blue'),colordex('green')],/clear,charsi=si,charthi=th
+		kcwi_legend,['Thr='+string(fix(fthr*100.),form='(i02)')+'%'], $
+			/clear,/right, charthi=th,charsi=si
 	endif
 	;
 	; at this point we have the peaks we want in the atlas spectrum. 
