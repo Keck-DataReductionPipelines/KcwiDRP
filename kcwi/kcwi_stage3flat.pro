@@ -1,4 +1,3 @@
-; $Id: kcwi_stage3flat.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -218,7 +217,8 @@ pro kcwi_stage3flat,ppfname,linkfname,help=help,select=select, $
 				if fnums[i] ge 0 then begin
 					;
 					; master flat file name
-					mffile = cdir + 'mflat_' + strn(fnums[i]) + '.fits'
+					mffile = cdir + 'mflat_' + $
+						string(fnums[i],'(i0'+strn(ppar.fdigits)+')') + '.fits'
 					;
 					; master flat image ppar filename
 					mfppfn = strmid(mffile,0,strpos(mffile,'.fits')) + '.ppar'
@@ -239,52 +239,60 @@ pro kcwi_stage3flat,ppfname,linkfname,help=help,select=select, $
 				; let's read in or create master flat
 				if do_flat then begin
 					;
-					; build master flat if necessary
-					if not file_test(mffile) then begin
+					; skip flat correction for continuum bars and arcs
+					if strpos(kcfg.imgtype,'bar') ge 0 or strpos(kcfg.imgtype,'arc') ge 0 then begin
+						kcwi_print_info,ppar,pre,'skipping flattening of arc/bars image',/info
+					;
+					; do the flat for science images
+					endif else begin
 						;
-						; build master flat
-						fpar = kcwi_read_ppar(mfppfn)
-						fpar.loglun  = ppar.loglun
-						fpar.verbose = ppar.verbose
-						fpar.display = ppar.display
-						kcwi_make_flat,fpar
-					endif
-					;
-					; read in master flat
-					mflat = mrdfits(mffile,0,mfhdr,/fscale,/silent)
-					;
-					; do correction
-					img = img * mflat
-					;
-					; variance is multiplied by flat squared
-					var = var * mflat^2
-					;
-					; update header
-					sxaddpar,mskhdr,'COMMENT','  '+pre+' '+systime(0)
-					sxaddpar,mskhdr,'FLATCOR','T',' flat corrected?'
-					sxaddpar,mskhdr,'MFFILE',mffile,' master flat file applied'
-					;
-					; write out final intensity image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_mskf',/nodir)
-					kcwi_write_image,msk,mskhdr,ofil,ppar
-					;
-					; update header
-					sxaddpar,varhdr,'COMMENT','  '+pre+' '+systime(0)
-					sxaddpar,varhdr,'FLATCOR','T',' flat corrected?'
-					sxaddpar,varhdr,'MFFILE',mffile,' master flat file applied'
-					;
-					; write out mask image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_varf',/nodir)
-					kcwi_write_image,var,varhdr,ofil,ppar
-					;
-					; update header
-					sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
-					sxaddpar,hdr,'FLATCOR','T',' flat corrected?'
-					sxaddpar,hdr,'MFFILE',mffile,' master flat file applied'
-					;
-					; write out final intensity image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_intf',/nodir)
-					kcwi_write_image,img,hdr,ofil,ppar
+						; build master flat if necessary
+						if not file_test(mffile) then begin
+							;
+							; build master flat
+							fpar = kcwi_read_ppar(mfppfn)
+							fpar.loglun  = ppar.loglun
+							fpar.verbose = ppar.verbose
+							fpar.display = ppar.display
+							kcwi_make_flat,fpar
+						endif
+						;
+						; read in master flat
+						mflat = mrdfits(mffile,0,mfhdr,/fscale,/silent)
+						;
+						; do correction
+						img = img * mflat
+						;
+						; variance is multiplied by flat squared
+						var = var * mflat^2
+						;
+						; update header
+						sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
+						sxaddpar,mskhdr,'FLATCOR','T',' flat corrected?'
+						sxaddpar,mskhdr,'MFFILE',mffile,' master flat file applied'
+						;
+						; write out final intensity image
+						ofil = kcwi_get_imname(ppar,imgnum[i],'_mskf',/nodir)
+						kcwi_write_image,msk,mskhdr,ofil,ppar
+						;
+						; update header
+						sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
+						sxaddpar,varhdr,'FLATCOR','T',' flat corrected?'
+						sxaddpar,varhdr,'MFFILE',mffile,' master flat file applied'
+						;
+						; write out mask image
+						ofil = kcwi_get_imname(ppar,imgnum[i],'_varf',/nodir)
+						kcwi_write_image,var,varhdr,ofil,ppar
+						;
+						; update header
+						sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
+						sxaddpar,hdr,'FLATCOR','T',' flat corrected?'
+						sxaddpar,hdr,'MFFILE',mffile,' master flat file applied'
+						;
+						; write out final intensity image
+						ofil = kcwi_get_imname(ppar,imgnum[i],'_intf',/nodir)
+						kcwi_write_image,img,hdr,ofil,ppar
+					endelse
 					;
 					; handle the case when no flat frames were taken
 				endif else begin

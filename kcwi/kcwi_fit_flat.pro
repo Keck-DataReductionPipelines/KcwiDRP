@@ -1,4 +1,3 @@
-; $Id: kcwi_fit_flat.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -71,9 +70,9 @@ pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
 	splo = long(splo)
 	;
 	; is the nod-and-shuffle mask in?
-	if sxpar(hdr,'NASMASK') eq 1 then begin
-		y0 = sxpar(hdr,'NSOBJR0')
-		y1 = sxpar(hdr,'NSOBJR1')
+	if sxpar(hdr,'BNASPOS') eq 2 then begin
+		y0 = sxpar(hdr,'SHUFROWS')
+		y1 = y0 * 2 - 1
 		if y0 eq 0 or y1 eq 0 then begin
 			y0 = 685
 			y1 = 1369
@@ -152,12 +151,12 @@ pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
 		resid = y - yfit
 		mo = moment(resid[where(w gt 0.)])
 		print,string(13B),i+1,'/',sz[0],sqrt(mo[1]), $
-			format='($,a1,"Col: ",i6,a1,i6," Resid: ",f5.1," e-")'
+			format='($,a1,"Col: ",i6,a1,i6," Resid: ",f7.1," e-")'
 	endfor
 	print,' '
 	;
 	; update header
-	sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
+	sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 	sxaddpar,hdr,'FFITSPO',splo,' spline order for flat fit'
 	;
 	; plot specific columns

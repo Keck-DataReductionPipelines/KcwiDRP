@@ -44,7 +44,7 @@
 ; IDL> oplot,pk,y[pk],ps=2
 ;
 ; MODIFICATION HISTORY:
-; $Id: isopeaks.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+; $Id$
 ;
 ;-
 function isopeaks,y,pkgap,nsig,level=level,count=npk
@@ -70,6 +70,11 @@ endif else begin
 		if npk gt 0 then pk = pk[good] else pk = -1
 	endif
 endelse
+;
+; do we have any peaks?
+if npk le 0 then begin
+	return,-1
+endif
 ;
 ; now get isolated peaks
 valid = bytarr(npk)+1b

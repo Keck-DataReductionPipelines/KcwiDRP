@@ -1,4 +1,3 @@
-; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -32,11 +31,9 @@
 ; Wavelength fitting params (only relevant for full-ccd images)
 ;	PKDEL		- matching thresh in frac. of resolution (def: 0.75)
 ; Switches
-;	CWI		- set for CWI data: skip first bias image, 
-;				use CWI associations (def: NO)
 ;	NOCRREJECT	- set to skip cosmic ray rejection
 ;	NONASSUB	- set to skip nod-and-shuffle subtraction
-;	NOCLEANCOEFFS	- set to skip cleaning wavelength sol'n coeffs
+;	CLEANCOEFFS	- set to override default clean of wave sol'n coeffs
 ;	SAVEINTIMS	- set to save intermediate images (def: NO)
 ;	INCLUDETEST	- set to include test images in reduction (def: NO)
 ;	DOMEPRIORITY	- set to use dome flats over twilight flats (def: NO)
@@ -85,12 +82,13 @@
 ;	2013-SEP-13	Use KCWI_PPAR struct for subroutine parameters
 ;	2013-NOV-01	Made cbars/arc associations more robust
 ;	2013-NOV-06	Implemented relative response correction
-;	2014-MAR-25	Added nocleancoeffs keyword
+;	2014-MAR-25	Added cleancoeffs keyword
 ;	2014-APR-01	Added kcwi_group_geom and processing of all calib imgs
 ;	2014-APR-09	Improved association logic based on previous assoc.
 ;	2014-MAY-28	Removed FILESPEC keyword and now uses FROOT and FDIGITS
 ;			to generate file spec for input images
 ;	2014-JUN-03	checks file digits automatically if FDIGITS not set
+;	2016-APR-04	changes specific to KCWI lab data
 ;-
 pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	froot=froot, $
@@ -99,10 +97,9 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	mingroupdark=mingroupdark, $
 	minoscanpix=minoscanpix, $
 	taperfrac=taperfrac, pkdel=pkdel, $
-	cwi=cwi, $
 	nocrreject=nocrreject, $
 	nonassub=nonassub, $
-	nocleancoeffs=nocleancoeffs, $
+	cleancoeffs=cleancoeffs, $
 	saveintims=saveintims, $
 	includetest=includetest, $
 	domepriority=domepriority, $
@@ -122,7 +119,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		print,pre+': Info - Usage: '+pre+', RawDir, ReducedDir, CalibDir, DataDir'
 		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, MINGROUPBIAS=N, MINOSCANPIX=N'
 		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
-		print,pre+': Info - Switch Keywords: /CWI, /NOCRREJECT, /NONASSUB, /NOCLEANCOEFFS, /DOMEPRIORITY'
+		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /DOMEPRIORITY'
 		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /HELP'
 		return
 	endif
@@ -215,6 +212,13 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	if keyword_set(froot) then $
 		ppar.froot = froot
 	;
+	; do we have any files?
+	flist = file_search(indir + ppar.froot+'*.fit*', count=nf)
+	if nf le 0 then begin
+		kcwi_print_info,ppar,pre,'no fits files found in '+indir,/error
+		return
+	endif
+	;
 	; now check number of digits in image number
 	;
 	; specified with keyword
@@ -223,11 +227,6 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	;
 	; derive from file names in INDIR
 	else begin
-		flist = file_search(indir + ppar.froot+'*.fit*', count=nf)
-		if nf le 0 then begin
-			kcwi_print_info,ppar,pre,'no fits files found in '+indir,/error
-			return
-		endif
 		fdig = 0
 		for i=0,nf-1 do begin
 			ndig = kcwi_get_digits(flist[i])
@@ -252,18 +251,14 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		ppar.taperfrac = taperfrac
 	if keyword_set(pkdel) then $
 		ppar.pkdel = pkdel
-	if keyword_set(cwi) then $
-		ppar.biasskip1 = 1 $
-	else	ppar.biasskip1 = 0
+	if keyword_set(cleancoeffs) then $
+		ppar.cleancoeffs = cleancoeffs
 	if keyword_set(nocrreject) then $
 		ppar.crzap = 0 $
 	else	ppar.crzap = 1
 	if keyword_set(nonassub) then $
 		ppar.nassub = 0 $
 	else	ppar.nassub = 1
-	if keyword_set(nocleancoeffs) then $
-		ppar.cleancoeffs = 0 $
-	else	ppar.cleancoeffs = 1
 	if keyword_set(saveintims) then $
 		ppar.saveintims = 1 $
 	else	ppar.saveintims = 0
@@ -295,14 +290,13 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	printf,ll,'Min Grp Dark: ',ppar.mingroupdark
 	printf,ll,'Wl TaperFrac: ',ppar.taperfrac
 	printf,ll,'Wl Fit PkDel: ',ppar.pkdel
-	if keyword_set(cwi) then $
-		printf,ll,'CWI data    : skipping first bias in each group, CWI associations'
 	if keyword_set(nocrreject) then $
 		printf,ll,'No cosmic ray rejection performed'
 	if keyword_set(nonassub) then $
 		printf,ll,'No nod-and-shuffle sky subtraction performed'
-	if keyword_set(nocleancoeffs) then $
-		printf,ll,'No wavelength coefficient cleaning performed'
+	if ppar.cleancoeffs eq 1 then $
+		printf,ll,'Wavelength coefficient cleaning performed' $
+	else	printf,ll,'No Wavelength coefficient cleaning performed'
 	if keyword_set(saveintims) then $
 		printf,ll,'Saving intermediate images'
 	if keyword_set(includetest) then $
@@ -493,8 +487,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	;
 	; set up configuration matching: here is our list of 
 	; default tags to match in the KCWI_CFG struct
-	mtags = ['XBINSIZE','YBINSIZE','AMPMODE','GRATID','GRATPOS','FILTER', $
-		 'FM4POS','CAMPOS','FOCPOS','NASMASK']
+	mtags = ['XBINSIZE','YBINSIZE','AMPMODE','GRATID','GRANGLE','FILTER', $
+		 'CAMPOS','FOCPOS','NASMASK','IFUNUM']
 	;
 	; set up links
 	nlinks = 9	; bias,dark.flat,cbar,arc,prof,sky,rrsp,std
@@ -595,7 +589,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; no sense flat fielding the dark frames
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.nfgrps gt 0 then begin
-			mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time,count=f,/silent,cwi=cwi)
+			mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time,count=f,cwi=cwi)
 			if f eq 1 then begin
 				mffile = mcfg.groupfile
 				flink = mcfg.groupnum

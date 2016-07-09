@@ -1,4 +1,3 @@
-;$Id: kcwi_read_raw.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ;+
 ;

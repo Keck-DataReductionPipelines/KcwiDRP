@@ -1,4 +1,3 @@
-; $Id: kcwi_quick.pro | Wed Apr 15 04:39:29 2015 -0700 | Don Neill  $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.

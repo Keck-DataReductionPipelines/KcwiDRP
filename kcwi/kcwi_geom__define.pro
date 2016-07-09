@@ -1,4 +1,3 @@
-; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -43,6 +42,7 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2013-MAY-03	Initial version
 ;	2013-AUG-12	Added padlo, padhi tags
+;	2016-APR-22	Added rotoff tag
 ;-
 pro kcwi_geom__define
 ;
@@ -67,11 +67,15 @@ tmp = { kcwi_geom, $
 ; nod and shuffle?
 	nasmask:0, $		; 0 - no, 1 - yes
 ;
+; IFU properties
+	ifunum: 0, $		; Slicer number (1-3, Large, Medium, Small)
+	ifunam: '', $		; Slicer name ("Large", etc.)
+;
 ; grating properties
 	gratid:'', $		; grating id
 	gratnum:-1, $		; grating number
 	rho:3.0d, $		; grating lines/mm
-	slant:0.0d, $		; off-Bragg angle in degrees
+	adjang:0.0d, $		; grating adjustment angle (0 or 180 deg)
 	lastdegree:4, $		; highest order for full-ccd wavelength fit
 ;
 ; filter properties
@@ -80,7 +84,9 @@ tmp = { kcwi_geom, $
 ;
 ; encoder positions
 	campos:0L, $		; Camera encoder position
-	gratpos:0L, $		; grating encoder position
+	camang:0.0d, $		; Camera articulation angle in degrees
+	grenc:0L, $		; grating rotator encoder position
+	grangle:0., $		; grating rotator angle (degrees)
 	gratanom:0., $		; grating angle anomoly (degrees)
 ;
 ; pixel scale
@@ -88,6 +94,9 @@ tmp = { kcwi_geom, $
 ;
 ; slice scale
 	slscl:0.00075437d0, $	; degrees per slice
+;
+; IFU rotator offset
+	rotoff:0.0, $		; degrees from rotator PA
 ;
 ; CCD binning
 	xbinsize:1, $		; binning in x (pixels)
@@ -153,6 +162,7 @@ tmp = { kcwi_geom, $
 ; Wavelength fit for each bar
 	bfitcoeffs:fltarr(9,120),$ ; polynomial wavelength solution
 	bfitord:6, $		; order of polynomial wavelength solution
+	bclean:0, $		; clean coeffs of errant bars? 0 - no, 1 - yes
 ;
 ; Which image row was used for canonical x position?
 	midrow:0L, $		; image pixel

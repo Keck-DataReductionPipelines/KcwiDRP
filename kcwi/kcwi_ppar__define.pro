@@ -1,4 +1,3 @@
-; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -90,7 +89,7 @@ tmp = { kcwi_ppar, $
 	verbose:0, $		; extra output?
 	display:0, $		; display diagnostic plots?
 	saveplots:1, $		; save diagnostic plots?
-	cleancoeffs:1, $	; clean wavelength coeffs of errant bars?
+	cleancoeffs:-1, $	; clean wavelength coeffs of errant bars?
 ;
 ; Bias processing
 	mingroupbias:5, $	; minimum number of bias frames per group
@@ -127,10 +126,9 @@ tmp = { kcwi_ppar, $
 	arcs:'', $		; List of arc images (rangelist)
 	arcbars:'', $		; List of arc bars images (rangelist)
 	taperfrac:0.2, $	; cosine bell taper fraction for x-correlation
-	pkdel:0.75, $		; match thresh in fraction of resolution
-	atlas:'thar.fits', $	; wavelength atlas
-	atlasname:'ThAr', $	; wavelength atlas name
-	linelist:'thar_list.txt', $	; wavelength line list
+	pkdel:2.0, $		; match thresh in fraction of resolution
+	atlas:'', $		; wavelength atlas
+	atlasname:'', $		; wavelength atlas name
 ;
 ; Override header RA, Dec reference pixels
 	crpix1:-1., $		; RA reference spatial pixel

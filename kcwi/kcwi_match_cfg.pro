@@ -1,4 +1,3 @@
-; $Id: kcwi_match_cfg.pro,v 1.19 2014/10/27 19:47:13 neill Exp $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -93,8 +92,8 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 	;
 	; do we have a tag list
 	if n_elements(tlist) le 0 then begin
-		mtags = ['XBINSIZE','YBINSIZE','AMPMODE','GRATID','GRATPOS','FILTER', $
-			 'FM4POS','CAMPOS','FOCPOS']
+		mtags = ['XBINSIZE','YBINSIZE','AMPMODE','GRATID','FILTER', $
+			 'FOCPOS']
 	endif else begin
 		mtags = strupcase(tlist)
 	endelse

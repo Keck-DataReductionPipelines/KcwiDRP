@@ -52,8 +52,8 @@ pro fits_add_checksum, hdr, im, no_timestamp = no_timestamp, $
          exten = sxpar( hdr, 'XTENSION', Count = N_exten)
          if N_exten GT 0 then if exten EQ 'TABLE   ' then $
                  checksum32,[dsum,replicate(32b,2880-remain)],dsum
-         sdsum = strtrim(dsum,2)
     endif
+    sdsum = strtrim(dsum,2)
     dsum_exist= 1b
  endif else begin 
         if N_datasum EQ 0 then   sdsum = '         0' else begin 

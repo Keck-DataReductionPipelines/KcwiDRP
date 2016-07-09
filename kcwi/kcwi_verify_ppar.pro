@@ -1,4 +1,3 @@
-; $Id: kcwi_verify_ppar.pro,v 1.2 2013/09/14 23:12:21 neill Exp $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.

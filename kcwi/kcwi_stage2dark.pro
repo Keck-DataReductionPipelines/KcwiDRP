@@ -1,4 +1,3 @@
-; $Id: kcwi_stage2dark.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -217,7 +216,7 @@ pro kcwi_stage2dark,ppfname,linkfname,help=help,select=select, $
 				if dnums[i] ge 0 then begin
 					;
 					; master dark file name
-					mdfile = cdir + 'mdark_' + strn(dnums[i]) + '.fits'
+					mdfile = cdir + 'mdark_' + string(dnums[i],'(i0'+strn(ppar.fdigits)+')') + '.fits'
 					;
 					; master dark image ppar filename
 					mdppfn = strmid(mdfile,0,strpos(mdfile,'.fits')) + '.ppar'
@@ -279,7 +278,7 @@ pro kcwi_stage2dark,ppfname,linkfname,help=help,select=select, $
 					msk = msk + mdmsk
 					;
 					; update header
-					sxaddpar,mskhdr,'COMMENT','  '+pre+' '+systime(0)
+					sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,mskhdr,'DARKSUB','T',' dark subtracted?'
 					sxaddpar,mskhdr,'MDFILE',mdfile,' master dark file applied'
 					sxaddpar,mskhdr,'DARKSCL',fac,' dark scale factor'
@@ -289,7 +288,7 @@ pro kcwi_stage2dark,ppfname,linkfname,help=help,select=select, $
 					kcwi_write_image,msk,mskhdr,ofil,ppar
 					;
 					; update header
-					sxaddpar,varhdr,'COMMENT','  '+pre+' '+systime(0)
+					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,varhdr,'DARKSUB','T',' dark subtracted?'
 					sxaddpar,varhdr,'MDFILE',mdfile,' master dark file applied'
 					sxaddpar,varhdr,'DARKSCL',fac,' dark scale factor'
@@ -299,7 +298,7 @@ pro kcwi_stage2dark,ppfname,linkfname,help=help,select=select, $
 					kcwi_write_image,var,varhdr,ofil,ppar
 					;
 					; update header
-					sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
+					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,hdr,'DARKSUB','T',' dark subtracted?'
 					sxaddpar,hdr,'MDFILE',mdfile,' master dark file applied'
 					sxaddpar,hdr,'DARKSCL',fac,' dark scale factor'

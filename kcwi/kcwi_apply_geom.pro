@@ -1,4 +1,3 @@
-; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -95,9 +94,9 @@ kcwi_print_info,ppar,pre,'Slice dimensions (x,y)',xcut+1l,lastpix+1l, $
 	format='(a,2i9)'
 ;
 ; image number
-imgnum = sxpar(hdr,'IMGNUM')
+imgnum = sxpar(hdr,'FRAMENO')
 object = sxpar(hdr,'OBJECT')
-imgtyp = sxpar(hdr,'IMGTYPE')
+imgtyp = sxpar(hdr,'CALTYPE')
 ;
 ; log
 kcwi_print_info,ppar,pre,'Slicing and dicing image '+strn(imgnum)+': '+object+'...'
@@ -105,17 +104,13 @@ kcwi_print_info,ppar,pre,'Slicing and dicing image '+strn(imgnum)+': '+object+'.
 ; loop over slices
 for i=0,23 do begin
 	sli = where(kgeom.slice eq i)
-        ;
-        ; CWI FLEX ADDITION +++
-        if doflex then begin
-           kwx = flex.kwx_new[*,*,i]
-           kwy = flex.kwy_new[*,*,i]
-        endif else begin
-           kwx = kgeom.kwx[*,*,i]
-           kwy = kgeom.kwy[*,*,i]
-        endelse; kgeom.kw(x/y)
+	;
+	; coefficients
+        kwx = kgeom.kwx[*,*,i]
+        kwy = kgeom.kwy[*,*,i]
+	;
+	; perform the resampling here
         warp = poly_2d(pimg,kwx,kwy,2,cubic=-0.5)
-        ; CWI FLEX ADDITION ---
         ;
 	; check dimensions
 	wsz = size(warp,/dim)
@@ -195,7 +190,10 @@ if nra ne 1 or ndec ne 1 then begin
 endif
 ;
 ; Position Angle ( = -ROTPA) in radians
-crota = -sxpar(hdr,'ROTPA',count=npa) / !RADEG
+; Plus an offset between rotator and IFU (may be zero)
+crota = (-(sxpar(hdr,'ROTPA',count=npa) + kgeom.rotoff)) / !RADEG
+sxaddpar,chdr,'IFUPA',-crota*!RADEG,' IFU position angle (degrees)'
+sxaddpar,chdr,'IFUROFF',kgeom.rotoff,' IFU-ROTPA offset (degrees)'
 ;
 ; pixel scales
 cdelt1 = -kgeom.pxscl*kgeom.xbinsize	; RA degrees per px (column)
@@ -212,11 +210,11 @@ if nra ne 1 or ndec ne 1 or npa ne 1 then begin
 	ra = 0.
 	dec = 0.
 	;
-	; zero CD matrix
-	CD11 = 0.
-	CD12 = 0.
-	CD21 = 0.
-	CD22 = 0.
+	; nominal CD matrix (no rotation)
+	CD11 = cdelt1*cos(0.)
+	CD12 = abs(cdelt2)*sign(cdelt1)*sin(0.)
+	CD21 = -abs(cdelt1)*sign(cdelt2)*sin(0.)
+	CD22 = cdelt2*cos(0.)
 endif else begin
 	;
 	; calculate CD matrix
@@ -264,8 +262,8 @@ sxaddpar,chdr,'CD2_2',cd22,' DEC degrees per row pixel'
 sxaddpar,chdr,'CD3_3',kgeom.dwout,' Wavelength Angstroms per pixel'
 sxaddpar,chdr,'LONPOLE',180.0,' Native longitude of Celestial pole'
 sxaddpar,chdr,'LATPOLE',0.0,' Celestial latitude of native pole'
-sxaddpar,chdr,'COMMENT','  '+kgeom.progid
-sxaddpar,chdr,'COMMENT','  '+pre+' '+systime(0)
+sxaddpar,chdr,'HISTORY','  '+kgeom.progid+' '+systime(0,kgeom.timestamp)
+sxaddpar,chdr,'HISTORY','  '+pre+' '+systime(0)
 ;
 return
 end

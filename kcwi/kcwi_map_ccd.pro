@@ -1,4 +1,3 @@
-; $Id: kcwi_map_ccd.pro,v 1.3 2014/01/08 01:32:02 neill Exp $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -14,7 +13,7 @@
 ;	Data reduction for the Keck Cosmic Web Imager (KCWI).
 ;
 ; CALLING SEQUENCE:
-;	KCWI_MAP_CCD, Hdr, Asec, Bsec, Csec, Tasec
+;	KCWI_MAP_CCD, Hdr, Asec, Bsec, Dsec, Tasec
 ;
 ; INPUTS:
 ;	Hdr	- FITS header for raw KCWI image
@@ -27,7 +26,7 @@
 ; OUTPUTS:
 ;	Asec	- Array of pixel limits for each amplifier section
 ;	Bsec	- Array of pixel limits for each overscan section
-;	Csec	- Array of pixel limits for each CCD section
+;	Dsec	- Array of pixel limits for each CCD data section
 ;	Tsec	- Array of pixel limits for each amplifier after trimming
 ;
 ; SIDE EFFECTS:
@@ -36,7 +35,7 @@
 ; PROCEDURE:
 ;	Uses FITS keyword NVIDINP to determine how many amplifiers were used
 ;	to read out the CCD.  Then reads the corresponding ASECn, BSECn, and
-;	CSECn keywords, where n is the amplifier number.  The indices are
+;	DSECn keywords, where n is the amplifier number.  The indices are
 ;	converted to IDL (0-biased) indices and an array is constructed for
 ;	each of the three useful sections of the CCD as follows:
 ;	
@@ -54,11 +53,11 @@
 ;	Bsec is the full overscan region for the given amplifier and is used
 ;	to calculate and perform the overscan subtraction.
 ;
-;	Csec is the full CCD region for the given amplifier and is used to
+;	Dsec is the full CCD region for the given amplifier and is used to
 ;	trim the image after overscan subtraction has been performed.
 ;
 ;	Tsec is the same as Asec but accounts for trimming the image
-;	according to Csec.
+;	according to Dsec.
 ;
 ;	Amps are assumed to organized as follows:
 ;	
@@ -74,7 +73,7 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2013-MAY-13	Initial version
 ;-
-pro kcwi_map_ccd, hdr, asec, bsec, csec, tsec, $
+pro kcwi_map_ccd, hdr, asec, bsec, dsec, tsec, $
 	namps = namps, $
 	trimmed_size=trimmed_size, $
 	verbose=verbose
@@ -92,7 +91,7 @@ pro kcwi_map_ccd, hdr, asec, bsec, csec, tsec, $
 	; set up outputs
 	asec = intarr(namps,2,2)
 	bsec = asec
-	csec = asec
+	dsec = asec
 	tsec = asec
 	;
 	; get original image dimensions
@@ -111,47 +110,47 @@ pro kcwi_map_ccd, hdr, asec, bsec, csec, tsec, $
 		;
 		; BSEC
 		bs = kcwi_parse_imsec(sxpar(hdr,'BSEC'+strn(i+1)))
-		bsec[i,0,0] = (bs[0] - 1) > 0
-		bsec[i,0,1] = (bs[1] - 1) < (nx-1)
-		bsec[i,1,0] = (bs[2] - 1) > 0
-		bsec[i,1,1] = (bs[3] - 1) < (ny-1)
+		bsec[i,0,0] = (min([bs[0],bs[1]]) - 1) > 0
+		bsec[i,0,1] = (max([bs[0],bs[1]]) - 1) < (nx-1)
+		bsec[i,1,0] = (min([bs[2],bs[3]]) - 1) > 0
+		bsec[i,1,1] = (max([bs[2],bs[3]]) - 1) < (ny-1)
 		;
-		; CSEC
-		cs = kcwi_parse_imsec(sxpar(hdr,'CSEC'+strn(i+1)))
-		csec[i,0,0] = (cs[0] - 1) > 0
-		csec[i,0,1] = (cs[1] - 1) < (nx-1)
-		csec[i,1,0] = (cs[2] - 1) > 0
-		csec[i,1,1] = (cs[3] - 1) < (ny-1)
+		; DSEC
+		ds = kcwi_parse_imsec(sxpar(hdr,'DSEC'+strn(i+1)))
+		dsec[i,0,0] = (min([ds[0],ds[1]]) - 1) > 0
+		dsec[i,0,1] = (max([ds[0],ds[1]]) - 1) < (nx-1)
+		dsec[i,1,0] = (min([ds[2],ds[3]]) - 1) > 0
+		dsec[i,1,1] = (max([ds[2],ds[3]]) - 1) < (ny-1)
 		;
 		; TSEC
 		case i of
 			0: begin
 				tsec[i,0,0] = 0
-				tsec[i,0,1] = csec[i,0,1] - csec[i,0,0]
+				tsec[i,0,1] = dsec[i,0,1] - dsec[i,0,0]
 				tsec[i,1,0] = 0
-				tsec[i,1,1] = csec[i,1,1] - csec[i,1,0]
+				tsec[i,1,1] = dsec[i,1,1] - dsec[i,1,0]
 			end
 			1: begin
 				tsec[i,0,0] = tsec[0,0,1] + 1
 				tsec[i,0,1] = tsec[i,0,0] + $
-					(csec[i,0,1] - csec[i,0,0])
+					(dsec[i,0,1] - dsec[i,0,0])
 				tsec[i,1,0] = 0
-				tsec[i,1,1] = csec[i,1,1] - csec[i,1,0]
+				tsec[i,1,1] = dsec[i,1,1] - dsec[i,1,0]
 			end
 			2: begin
 				tsec[i,0,0] = 0
-				tsec[i,0,1] = csec[i,0,1] - csec[i,0,0]
+				tsec[i,0,1] = dsec[i,0,1] - dsec[i,0,0]
 				tsec[i,1,0] = tsec[0,1,1] + 1
 				tsec[i,1,1] = tsec[i,1,0] + $
-					(csec[i,1,1] - csec[i,1,0])
+					(dsec[i,1,1] - dsec[i,1,0])
 			end
 			3: begin
 				tsec[i,0,0] = tsec[0,0,1] + 1
 				tsec[i,0,1] = tsec[i,0,0] + $
-					(csec[i,0,1] - csec[i,0,0])
+					(dsec[i,0,1] - dsec[i,0,0])
 				tsec[i,1,0] = tsec[0,1,1] + 1
 				tsec[i,1,1] = tsec[i,1,0] + $
-					(csec[i,1,1] - csec[i,1,0])
+					(dsec[i,1,1] - dsec[i,1,0])
 			end
 			else: begin
 				print,'Error - should not get here!'

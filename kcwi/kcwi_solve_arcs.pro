@@ -1,6 +1,5 @@
-; $Id$
 ;
-; Copyright (c) 2013, California Institute of Technology. All rights
+; Copyright (c) 2013-2016, California Institute of Technology. All rights
 ;	reserved.
 ;+
 ; NAME:
@@ -76,6 +75,10 @@ endif
 ; which image number
 imgnum = kgeom.arcimgnum
 ;
+; which slicer?
+ifunum = kgeom.ifunum
+ifunam = kgeom.ifunam
+;
 ; which grating? 
 grating = kgeom.gratid
 ;
@@ -83,7 +86,8 @@ grating = kgeom.gratid
 filter = kgeom.filter
 ;
 ; image label
-imglab = 'Img # '+strn(imgnum)+' Fl: '+strtrim(filter,2)+' Gr: '+strtrim(grating,2)
+imglab = 'Img # '+strn(imgnum)+' ('+kgeom.refname+') Sl: '+strtrim(ifunam,2)+ $
+	' Fl: '+strtrim(filter,2)+' Gr: '+strtrim(grating,2)
 ;
 ; is this N+S mask in?
 nasmask = kgeom.nasmask
@@ -92,7 +96,7 @@ nasmask = kgeom.nasmask
 cwvl = kgeom.cwave
 ;
 ; canonical resolution in Angstroms?
-resolution = kgeom.resolution
+resolution = kgeom.resolution * float(kgeom.ybinsize)
 ;
 ; log info
 kcwi_print_info,ppar,pre,systime(0)
@@ -206,8 +210,12 @@ if keyword_set(tweak) then begin
 		;
 		; get continuum point in each sector
 		for sec = 0,sectors-1 do begin
-			mn = min(specs[minrow+sec*div:minrow+(sec+1)*div],mi)
+			;
+			; We may need this for low-res gratings!
+			mn = min(specs[minrow+sec*div:minrow+(sec+1)*div,b],mi)
 			xv[sec] = mi+minrow+sec*div
+			;mn = median(specs[minrow+sec*div:minrow+(sec+1)*div,b])
+			;xv[sec] = minrow+sec*div + div/2
 			yv[sec] = mn
 		endfor
 		;
@@ -246,7 +254,7 @@ if keyword_set(tweak) then begin
 	twk_reference_spectrum = refspec
 	twk_reference_wavelengths = refwvl
 	;
-	; first trim to the filter bandpass. 
+	; first trim to the grating bandpass (and a buffer of 100 Ang). 
 	qwvs = where(twk_reference_wavelengths gt minwav-100. and $
 		     twk_reference_wavelengths lt maxwav+100.,nqwvs)
 	if nqwvs eq 0 then begin
@@ -265,9 +273,9 @@ if keyword_set(tweak) then begin
 		if ppar.display ge 3 then begin
 			dwav = (maxwav - minwav)/3.
 			xarng = get_plotlims([minwav+dwav,maxwav-dwav],pad=0.3)
-			atitle = 'Atlas Spectrum Lines (Central 3rd)'
+			atitle = 'Atlas ('+kgeom.refname+') Spectrum Lines (Central 3rd)'
 		endif else $
-			atitle = 'Atlas Spectrum Lines'
+			atitle = 'Atlas ('+kgeom.refname+') Spectrum Lines'
 		plot,twk_reference_wavelengths,twk_reference_spectrum, title=atitle, $
 			thick=th,charsi=si,charthi=th, $
 			xthick=th,xtitle='Wave(A)',xrange=xarng,/xs, $
@@ -277,19 +285,43 @@ if keyword_set(tweak) then begin
 	endif
 	;
 	; let's find the peaks in the reference spectrum.
-	smooth_width = fix(resolution/refdisp)		; in pixels
+	smooth_width = fix(resolution/refdisp)>4	; in pixels
 	slope_thresh = 0.003
-	ampl_thresh  = 0.
+	fthr = 0.05	; start at 5% of max
+	ampl_thresh  = max(twk_reference_spectrum)*fthr
 	twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
 			smooth_width,slope_thresh,ampl_thresh,count=twk_ref_npks)
+	newlines = twk_ref_npks
+	oldlines = newlines
 	;
-	if twk_ref_npks eq 0 then begin
-		kcwi_print_info,ppar,pre,'No good atlas points found',/error
+	; find where noise starts to contaminate line list
+	while (newlines - oldlines) lt 10 and fthr gt 0.01 do begin
+		fthr -= 0.01
+		oldlines = newlines
+		ampl_thresh  = max(twk_reference_spectrum)*fthr
+		twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
+			smooth_width,slope_thresh,ampl_thresh,count=twk_ref_npks)
+		newlines = twk_ref_npks
+	endwhile
+	fthr += 0.01
+	ampl_thresh  = max(twk_reference_spectrum)*fthr
+	twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
+		smooth_width,slope_thresh,ampl_thresh,count=twk_ref_npks)
+	;
+	if twk_ref_npks le lastdegree then begin
+		kcwi_print_info,ppar,pre,'Not enough good atlas points found',twk_ref_npks,/error
 		kgeom.status=6
 		return
 	endif
+	;
+	if twk_ref_npks lt 50 then $
+		kcwi_print_info,ppar,pre,'Atlas wavelength coverage may be limited: N lines < 50',/warn
+
+	kcwi_print_info,ppar,pre,'Atlas threshhold in percent of max',fix(fthr*100.)
 	kcwi_print_info,ppar,pre,'Number of clean atlas lines found',twk_ref_npks,$
 		format='(a,i4)'
+	kcwi_print_info,ppar,pre,'Matching width in Angstroms',ppar.pkdel*resolution>refdisp,$
+		format='(a,f6.4)'
 	;
 	if ppar.display ge 3 then begin
 		for j=0,twk_ref_npks-1 do begin
@@ -299,6 +331,8 @@ if keyword_set(tweak) then begin
 		oplot,[maxwav,maxwav],10.^!y.crange,color=colordex('green'),thick=th,linesty=5
 		kcwi_legend,['PeakFit','WavRng'],linesty=[0,5],thick=[1.0,th], $
 			color=[colordex('blue'),colordex('green')],/clear,charsi=si,charthi=th
+		kcwi_legend,['Thr='+string(fix(fthr*100.),form='(i02)')+'%'], $
+			/clear,/right, charthi=th,charsi=si
 	endif
 	;
 	; at this point we have the peaks we want in the atlas spectrum. 
@@ -335,7 +369,7 @@ if keyword_set(tweak) then begin
 			; plot if needed
 			if ddisplay and iter eq 0 then begin
 				wset,1
-				plot,subwvals,subyvals, title='Object Spectrum Lines (Central 3rd): Bar '+strn(b), $
+				plot,subwvals,subyvals>1., title='Object Spectrum Lines (Central 3rd): Bar '+strn(b), $
 					thick=th,charsi=si,charthi=th, $
 					xthick=th,xtitle='Wave(A)',xrange=xarng,/xs, $
 					ythick=th,ytitle='Flux', $
@@ -343,55 +377,83 @@ if keyword_set(tweak) then begin
 			endif
 			;
 			; find good peaks in object spectrum
-			smooth_width = fix(resolution/abs(twkcoeff[1,b]))	; in pixels
+			smooth_width = fix(resolution/abs(twkcoeff[1,b]))>4	; in pixels
 			peak_width   = fix(smooth_width*1.5)			; for fitting peaks
 			slope_thresh = 0.7*smooth_width/2./100.0		; more severe for object
-			ampl_thresh  = kgeom.rdnoise * 30.
-			;print,'sl th: ',slope_thresh
-			;print,'am th: ',ampl_thresh
+			fthr = 0.15						; start at 15% of max
+			ampl_thresh  = max(subyvals) * fthr
+			twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
+				ampl_thresh,peak_width,count=twk_spec_npks)
+			newlines = twk_spec_npks
+			oldlines = newlines
+			;
+			; find where the noise starts to contaminate the line list
+			while (newlines - oldlines) lt 10 and fthr gt 0.01 do begin
+				oldlines = newlines
+				fthr -= 0.01
+				ampl_thresh = max(subyvals) * fthr
+				twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
+					ampl_thresh,peak_width,count=twk_spec_npks)
+				newlines = twk_spec_npks
+			endwhile
+			;
+			; put threshhold back above the noise
+			fthr += 0.02
+			ampl_thresh  = max(subyvals) * fthr
 			twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
 				ampl_thresh,peak_width,count=twk_spec_npks)
 			;
-			; at this point we have the catalog of good reference points (from
-			; before) and list of good points in this bar. We have to associate
-			; them.
-			one_ref = fltarr(twk_ref_npks)+1.0
-			one_spec = fltarr(twk_spec_npks)+1.0
-
-			diff = abs((twk_spec_cent##one_ref) - (one_spec##twk_ref_cent))
-			;
-			mn = min(diff,dim=1,mi)
-			;
-			; here we match the peaks to one another. 
-			pkd = ppar.pkdel
-			pkm = pkd*resolution	; match thresh in Angstroms
-			matchedpeaks = where(mn lt pkm, nmatchedpeaks)
-			;
-			; for first iteration, make sure we have enough peaks
-			; also handle if we have no matched peaks
-			if iter eq 0 or nmatchedpeaks eq 0 then begin
-				orig_nmp = nmatchedpeaks
-				while nmatchedpeaks lt 5 and pkd lt 2. do begin
-					;
-					; open up the match criterion
-					pkd += 0.25
-					;
-					; try again
-					pkm = pkd*resolution
-					matchedpeaks = where(mn lt pkm, nmatchedpeaks)
-				endwhile
+			; test final line list
+			if twk_spec_npks gt 0 then begin
 				;
-				; report any adjustments
-				if pkd ne ppar.pkdel then begin
-					print,''
-					print,'Bar: ',b,', pkdel updated to ',pkd, '; ',orig_nmp, $
-						' --> ',nmatchedpeaks,' peaks', $
-						format='(a,i3,a,f5.2,a,i2,a,i3,a)'
+				; at this point we have the catalog of good reference points (from
+				; before) and list of good points in this bar. We have to associate
+				; them.
+				one_ref = fltarr(twk_ref_npks)+1.0
+				one_spec = fltarr(twk_spec_npks)+1.0
+
+				diff = abs((twk_spec_cent##one_ref) - (one_spec##twk_ref_cent))
+				;
+				mn = min(diff,dim=1,mi)
+				;
+				; here we match the peaks to one another. 
+				pkd = ppar.pkdel
+				;
+				; never let this get smaller than a single atlas pixel
+				pkm = pkd*resolution>refdisp	; match thresh in Angstroms
+				matchedpeaks = where(mn lt pkm, nmatchedpeaks)
+				;
+				; for first iteration, make sure we have enough peaks
+				; also handle if we have no matched peaks
+				if iter eq 0 or nmatchedpeaks eq 0 then begin
+					orig_nmp = nmatchedpeaks
+					while nmatchedpeaks lt 5 and pkd lt 2. do begin
+						;
+						; open up the match criterion
+						pkd += 0.25
+						;
+						; try again
+						pkm = pkd*resolution>refdisp
+						matchedpeaks = where(mn lt pkm, nmatchedpeaks)
+					endwhile
+					;
+					; report any adjustments
+					if pkd ne ppar.pkdel then begin
+						print,''
+						print,'Bar: ',b,', pkdel updated to ',pkd, '; ',orig_nmp, $
+							' --> ',nmatchedpeaks,' peaks', $
+							format='(a,i3,a,f5.2,a,i2,a,i3,a)'
+					endif
 				endif
-			endif
-			; print,"matched "+string(nmatchedpeaks)+" peaks."
+			;
+			; no matched peaks
+			endif else begin
+				nmatchedpeaks = 0
+				kcwi_print_info,ppar,pre,'No good peaks in arc for Bar # '+strn(b),/warning
+			endelse
+			;
 			if nmatchedpeaks le 0 then begin
-				kcwi_print_info,ppar,pre,'No peaks matched in Bar # '+strn(b)+': '+strn(nmatchedpeaks),/warning
+				kcwi_print_info,ppar,pre,'No peaks matched in Bar # '+strn(b),/warning
 				barstat[b]=9
 				goto, errbar
 			endif
@@ -406,7 +468,7 @@ if keyword_set(tweak) then begin
 						10.^!y.crange,color=colordex('G')
 			endif
 			;
-			if nmatchedpeaks le 2 then begin
+			if nmatchedpeaks le degree then begin
 				print,' '
 				kcwi_print_info,ppar,pre,'Not enough peaks matched in Bar # '+strn(b)+': '+strn(nmatchedpeaks),/warning
 				barstat[b]=9
@@ -473,6 +535,8 @@ if keyword_set(tweak) then begin
 				kcwi_legend,['Good','NoAtlas','Reject'],linesty=[0,0,0], $
 					/bottom,/clear, charthi=th,charsi=si, $
 					color=[colordex('G'),colordex('R'),colordex('B')]
+				kcwi_legend,['Thr='+string(fix(fthr*100.),form='(i02)')+'%'], $
+					/clear,/right, charthi=th,charsi=si
 				print,''
 				read,'Next? (Q - quit plotting, <cr> - next): ',q
 				if strupcase(strmid(q,0,1)) eq 'Q' then ddisplay = (1 eq 0)
@@ -502,7 +566,7 @@ if keyword_set(tweak) then begin
 		;
 		; now clean each slice of outlying bars
 		; don't bother for a single iteration
-		if ppar.cleancoeffs and niter gt 1 then begin
+		if kgeom.bclean and niter gt 1 then begin
 			;
 			; only go interactive on last iteration
 			if iter lt niter-1 then $

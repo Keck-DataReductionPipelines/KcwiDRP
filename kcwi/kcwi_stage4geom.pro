@@ -1,4 +1,3 @@
-; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -231,15 +230,9 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 					; if not, derive it
 					endif else begin
 						;
-						; get reduced images (assume flat fielded images first)
-						cbf = kcwi_get_imname(ppar,cnums[i],'_intf',/reduced)
-						arf = kcwi_get_imname(ppar,anums[i],'_intf',/reduced)
-						;
-						; check for dark subtracted images next
-						if not file_test(cbf) or not file_test(arf) then begin
-							cbf = kcwi_get_imname(ppar,cnums[i],'_intd',/reduced)
-							arf = kcwi_get_imname(ppar,anums[i],'_intd',/reduced)
-						endif
+						; get reduced images (assume dark subtracted images first)
+						cbf = kcwi_get_imname(ppar,cnums[i],'_intd',/reduced)
+						arf = kcwi_get_imname(ppar,anums[i],'_intd',/reduced)
 						;
 						; check for stage1 output images last
 						if not file_test(cbf) or not file_test(arf) then begin
@@ -254,13 +247,16 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						ccfg = kcwi_read_cfg(cbf)
 						acfg = kcwi_read_cfg(arf)
 						;
+						; get arc atlas
+						kcwi_get_atlas,acfg,atlas,atname
+						;
 						; create a new Kgeom
 						kgeom = {kcwi_geom}
 						kgeom = struct_init(kgeom)
 						kgeom.initialized = 1
 						;
 						; populate it with goodness
-						kcwi_set_geom,kgeom,ccfg,ppar
+						kcwi_set_geom,kgeom,ccfg,ppar,atlas=atlas,atname=atname
 						kgeom.cbarsfname = cbf
 						kgeom.cbarsimgnum = ccfg.imgnum
 						kgeom.arcfname = arf
@@ -308,7 +304,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						; object image
 						img = mrdfits(obfil,0,hdr,/fscale,/silent)
 						;
-						sxaddpar,hdr, 'COMMENT','  '+pre+' '+systime(0)
+						sxaddpar,hdr, 'HISTORY','  '+pre+' '+systime(0)
                                                 ;
                                                 ; CWI FLEX ADDITION/CHANGES +++
                                                 ;
@@ -331,7 +327,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(vfil,/read) then begin
 							var = mrdfits(vfil,0,varhdr,/fscale,/silent)
 							;
-							sxaddpar,varhdr,'COMMENT','  '+pre+' '+systime(0)
+							sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
                                 ;
                                 ; CWI FLEX ADDITIONS + CHANGES +++
  if ppar.biasskip1 then $
@@ -350,7 +346,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(mfil,/read) then begin
 							msk = float(mrdfits(mfil,0,mskhdr,/silent))
 							;
-                                                        sxaddpar,mskhdr,'COMMENT','  '+pre+' '+systime(0)
+                                                        sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
                                 ; CWI FLEX ADDITIONS/CHANGES +++
                                                         ;
                                                         if ppar.biasskip1 then $
@@ -369,7 +365,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(sfil,/read) then begin
 							sky = mrdfits(sfil,0,skyhdr,/fscale,/silent)
 							;
-							sxaddpar,skyhdr,'COMMENT','  '+pre+' '+systime(0)
+							sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
                                 ;
                                 ; CWI FLEX ADDITIONS/CHANGES +++
                                                         if ppar.biasskip1 then $
@@ -388,7 +384,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						if file_test(nfil,/read) then begin
 							obj = mrdfits(nfil,0,objhdr,/fscale,/silent)
 							;
-                                                        sxaddpar,objhdr,'COMMENT','  '+pre+' '+systime(0)
+                                                        sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
                                 ; CWI FLEX ADDITIONS/CHANGES +++
                                                         if ppar.biasskip1 then $
                                                            kcwi_apply_geom,obj,objhdr,kgeom,ppar,ocub,ochdr,flex=flexpar else $

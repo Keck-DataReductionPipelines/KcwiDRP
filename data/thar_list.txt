@@ -1,5 +1,5 @@
-# $Id: thar_list.txt,v 1.2 2013/07/24 16:37:02 neill Exp $
-# Thorium Argon list from NOAO: http://old-www.noao.edu/kpno/specatlas/thar/
+# $Id$
+# Thorium Argon list from NOAO: http://iraf.noao.edu/specatlas/thar/thar.html
 3006.9314 ThII
 3012.7078 ThII
 3015.7252 ThII

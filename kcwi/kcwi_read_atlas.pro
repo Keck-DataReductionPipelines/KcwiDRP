@@ -1,4 +1,3 @@
-; $Id: kcwi_read_atlas.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -52,7 +51,7 @@ if kcwi_verify_geom(kgeom,/init) ne 0 then return
 if kcwi_verify_ppar(ppar,/init) ne 0 then return
 ;
 ; canonical resolution?
-resolution = kgeom.resolution
+resolution = kgeom.resolution * float(kgeom.ybinsize)
 ;
 ; check if file is available
 if not file_test(kgeom.refspec,/read,/regular) then begin
@@ -60,6 +59,10 @@ if not file_test(kgeom.refspec,/read,/regular) then begin
 		format='(a,a)',/error
 	return
 endif
+;
+; report the read
+kcwi_print_info,ppar,pre,'Reading atlas spectrum in',kgeom.refspec, $
+	format='(a,1x,a)'
 ;
 ; load the reference atlas spectrum.
 rdfits1dspec,kgeom.refspec,refwave,atlas, $

@@ -1,4 +1,3 @@
-; $Id: kcwi_oplot_slices.pro,v 1.2 2013/12/18 20:11:43 neill Exp $
 pro kcwi_oplot_slices
 ;
 yd = !y.crange[1]-!y.crange[0]

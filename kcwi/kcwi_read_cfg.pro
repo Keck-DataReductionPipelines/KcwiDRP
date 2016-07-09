@@ -1,4 +1,3 @@
-; $Id: kcwi_read_cfg.pro,v 1.6 2014/09/12 23:06:30 neill Exp $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -75,8 +74,11 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	stopky = stopky[0]
 ;
 ; get values for all native property keys
-	for j=0, stopky-1 do $
-		cfg.(j) = sxpar(hdr,keys[j])
+	for j=0, stopky-1 do begin
+		val = sxpar(hdr,keys[j],count=nval)
+		if nval eq 1 then $
+			cfg.(j) = val
+	endfor
 ;
 ; process the derived property keys
 	ccdsum		= sxpar(hdr,'CCDSUM')
@@ -85,17 +87,48 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	if cfg.xbinsize gt 1 or cfg.ybinsize gt 1 then $
 		cfg.binning	= 1 $
 	else	cfg.binning	= 0
-	cfg.juliandate	= kcwi_parse_dates(cfg.date)
+	cfg.juliandate	= kcwi_parse_dates(cfg.datepclr)
 	fdecomp,obsfname,disk,dir,root,ext
+	cfg.date	= cfg.datepclr
+	cfg.gratid	= cfg.bgratnam
+	cfg.gratnum	= cfg.bgratnum
+	cfg.grangle	= cfg.bgrangle
+	cfg.grenc	= cfg.bgrenc
+	cfg.filter	= cfg.bfiltnam
+	cfg.filtnum	= cfg.bfiltnum
+	cfg.campos	= cfg.bartenc
+	cfg.camang	= cfg.bartang
+	cfg.focpos	= cfg.bfocpos
+	cfg.focus	= cfg.bfocus
+	if cfg.bnaspos eq 2 then begin
+		cfg.nasmask = 1
+		cfg.nsskyr0 = 1
+		cfg.nsskyr1 = cfg.shufrows
+		cfg.nsobjr0 = cfg.nsskyr1 + 1
+		cfg.nsobjr1 = cfg.nsobjr0 + cfg.shufrows
+	endif else	cfg.nasmask = 0
 	cfg.obsfname	= root + '.' + ext
 	cfg.obsdir	= disk + dir
 	cfg.obstype	= 'test'
-	if strpos(cfg.imgtype,'bias') ge 0 or $
-	   strpos(cfg.imgtype,'dark') ge 0 then cfg.obstype = 'zero'
-   	if strpos(cfg.imgtype,'arc') ge 0 or $
-	   strpos(cfg.imgtype,'bars') ge 0 or $
-	   strpos(cfg.imgtype,'flat') ge 0 then cfg.obstype = 'cal'
-   	if strpos(cfg.imgtype,'object') ge 0 then cfg.obstype = 'obj'
+	caltype		= strlowcase(strtrim(cfg.caltype,2))
+	cfg.imgtype	= caltype
+	if strcmp(caltype,'bias') eq 1 then begin
+		cfg.obstype	= 'zero'
+	endif else if strcmp(caltype,'dark') eq 1 then begin
+		cfg.obstype	= 'zero'
+	endif else if strcmp(caltype,'arcflat') eq 1 then begin
+		cfg.imgtype	= 'arc'
+		cfg.obstype	= 'cal'
+	endif else if strcmp(caltype,'cbars') eq 1 then begin
+		cfg.obstype	= 'cal'
+	endif else if strcmp(caltype,'cflat') eq 1 then begin
+		cfg.obstype	= 'cal'
+	;
+	; TODO: put in case for dome flats that checks for
+	; object type and dome lamp on.
+	endif else if strcmp(caltype,'object') eq 1 then begin
+		cfg.obstype	= 'obj'
+	endif
 	cfg.imgnum	= long(stregex(root,'[0-9]+',/extract))
 	cfg.initialized	= 1
 	cfg.timestamp	= double(fi.mtime)	; use file timestamp

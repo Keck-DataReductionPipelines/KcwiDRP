@@ -1,4 +1,3 @@
-; $Id: kcwi_cfg__define.pro,v 1.18 2015/01/13 18:17:05 neill Exp $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -52,35 +51,52 @@ tmp = { kcwi_cfg, $
 	telescop:'', $		; telescope
 	instrume:'', $		; instrument
 	object:'', $		; object name
-	date:'', $		; UT date of observation (YYYY-MM-DDTHH:MM:SS)
+	datepclr:'', $		; UT start of observation (YYYY-MM-DDTHH:MM:SS)
+	daterend:'', $		; UT end of observation (YYYY-MM-DDTHH:MM:SS)
 	ra:-99.d0, $		; RA
 	dec:-99.d0, $		; Dec
 	epoch:-99.d0, $		; Coordinate epoch
-	rotpa:-999.d0, $		; Rotator PA
-	exptime:-9.0, $		; Exposure time in seconds
+	rotpa:-999.d0, $	; Rotator PA
+	xposure:-9.0, $		; shutter open duration (s)
+	telapse:-9.0, $		; dark current duration (s)
 	airmass:-1.0, $		; Airmass
 
 ;
 ; Configuration properties
-	imgtype:'', $		; observation type: bias, dark, arc, etc.
-	imgnum:0l, $		; image number
+	caltype:'', $		; calibration type: bias, dark, arc, etc.
+	frameno:0l, $		; image number
 	skyobs:0, $		; sky observation? 0 - object, 1 - sky
 	shuffmod:0, $		; is this a Nod & Shuffle observation?
-	nasmask:0, $		; is the Nod & Shuffle mask deployed?
-	gratid:'', $		; grating id
-	gratnum:0, $		; graing number
-	filter:'', $		; filter id
-	filtnum:0, $		; filter number
-	fm4pos:0l, $		; FM4 encoder steps
-	gratpos:0l, $		; Grating encoder steps
-	campos:0l, $		; Camera articulation encoder steps
-	focpos:0l, $		; Focus stage encoder steps
-	ifupos:0, $		; Slicer number (0-5, -1=unknown)
+	bgratnam:'', $		; Blue grating id
+	bgratnum:0, $		; Blue graing number
+	bgrangle:0., $		; Blue grating angle (degrees)
+	bgrenc:0l, $		; Blue grating rotator encoder steps
+	bfiltnam:'', $		; Blue filter id
+	bfiltnum:0, $		; Blue filter number
+	bartang:0., $		; Blue articulation angle
+	bartenc:0l, $		; Blue cmaera articulation encoder steps
+	bfocpos:0l, $		; Blue focus stage encoder steps
+	bfocus:0., $		; Blue focus (mm)
+	bnasname:'', $		; Blue mask position name
+	bnaspos:0, $		; Blue mask position
+	shufrows:0, $		; Number of CCD rows shuffled
+	ifunum:0, $		; Slicer number (0-5, -1=unknown)
+	ifunam:'', $		; Slicer name ("Small", etc.)
 	cwave:0., $		; central wavelength (Ang)
 	gratanom:0., $		; grating angle anomoly (degrees)
 	wave0:0., $		; blue end  of wavelength range (Ang)
 	wave1:0., $		; red end of wavelength range (Ang)
 	dwav:0., $		; average dispersion (Ang/pix)
+;
+; Cal Lamp properties
+	lmp0nam:'', $		; Lamp 0 name
+	lmp0stat:0, $		; Lamp 0 status (0 - off, 1 - on)
+	lmp0shst:0, $		; Lamp 0 shutter (0 - closed, 1 - open)
+	lmp1nam:'', $		; Lamp 0 name
+	lmp1stat:0, $		; Lamp 0 status (0 - off, 1 - on)
+	lmp1shst:0, $		; Lamp 0 shutter (0 - closed, 1 - open)
+	lmp3nam:'', $		; Lamp 0 name
+	lmp3stat:0, $		; Lamp 0 status (0 - off, 1 - on)
 ;
 ; CCD properties
 	biasrn1:3., $		; bias read noise for amp 1 in electrons/pixel
@@ -113,6 +129,7 @@ tmp = { kcwi_cfg, $
 ;
 ; Derived properties
 	juliandate:0.d0, $	; Julian date of observation
+	date:'', $		; UT start of observation (YYYY-MM-DDTHH:MM:SS)
 	binning:0, $		; is image binned?
 	xbinsize:1, $		; binning in x
 	ybinsize:1, $		; binning in y
@@ -121,6 +138,21 @@ tmp = { kcwi_cfg, $
 	obsfname:'', $		; input observation FITS file name (sans dir)
 	obsdir:'', $		; input directory for observation
 	obstype:'', $		; observation type: 'zero', 'cal', 'obj', 'std'
+	imgnum:0L, $		; image number
+;
+; Instrument state
+	imgtype:'', $		; observation type: bias, dark, arc, etc.
+	gratid:'', $		; Grating id name
+	gratnum:-1, $		; Gratind id number
+	grangle:0., $		; Grating angle (degrees)
+	grenc:0l, $		; Grating rotator encoder steps
+	filter:'', $		; Filter id name
+	filtnum:-1, $		; filter id number
+	camang:0., $		; Camera articulation angle (degrees)
+	campos:0l, $		; Camera articulation encoder steps
+	focpos:0l, $		; Camera focus encoder steps
+	focus:0., $		; Camera focus (mm)
+	nasmask:0, $		; is the Nod & Shuffle mask deployed?
 ;
 ; Master group properties
 	groupnum:-1l, $		; group image number

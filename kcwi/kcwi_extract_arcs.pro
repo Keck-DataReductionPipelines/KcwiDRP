@@ -1,4 +1,3 @@
-; $Id: kcwi_extract_arcs.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -81,7 +80,7 @@ if kcwi_verify_geom(kgeom) ne 0 then return
 ; keywords
 if keyword_set(navg) then $
 	nav = (fix(navg/2)-1) > 1 $
-else	nav = 2
+else	nav = 8/kgeom.ybinsize
 ;
 if keyword_set(ccwindow) then $
 	ccwn = ccwindow $
@@ -123,6 +122,13 @@ for i=0,ns-1 do begin
 	;
 	; compute spectrum
 	vec = median(sub,dim=1)
+	ims_asym,vec,mn,sig,wgt,siglim=[1.5,3.0]
+	good = where(wgt eq 1,ngood)
+	if ngood gt 9 then $
+		cont = min(vec[good]) $
+	else	cont = median(vec[good])
+	cont = mn - 3.*sig
+	vec -= cont
 	spec(*,i) = vec
 endfor
 ;
@@ -148,6 +154,7 @@ else	refb = 57	; default
 ;
 ; log
 kcwi_print_info,ppar,pre,'cross-correlating with reference bar',refb
+kcwi_print_info,ppar,pre,'using cc window (px)',ccwn
 ;
 ; cross-correlate to reference line
 for i=0,ns-1 do begin

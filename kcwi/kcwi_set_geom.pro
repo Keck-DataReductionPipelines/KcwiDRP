@@ -1,4 +1,3 @@
-; $Id: kcwi_set_geom.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -14,14 +13,16 @@
 ;	Data reduction for the Keck Cosmic Web Imager (KCWI).
 ;
 ; CALLING SEQUENCE:
-;	KCWI_SET_GEOM, Kgeom, Kcfg
+;	KCWI_SET_GEOM, Kgeom, iKcfg
 ;
 ; INPUTS:
 ;	Kgeom	- Input KCWI_GEOM struct.
-;	Kcfg	- Input KCWI_CFG struct for a given observation.
+;	iKcfg	- Input KCWI_CFG struct for a given observation.
 ;	Ppar	- Input KCWI_PPAR struct.
 ;
 ; KEYWORDS:
+;	Atlas	- Arc atlas fits file (string, eg: 'fear.fits')
+;	Atname	- Arc atlas name (string, eg: 'FeAr')
 ;
 ; OUTPUTS:
 ;	None
@@ -37,9 +38,10 @@
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2013-AUG-13	Initial version
-;	2014-AUG-14	Added CWI Yellow grating
+;	2016-JUN-12	Added KCWI gratings BH2,BH3, BM, BL
+;	2016-JUL-01	Added atlas, atname keywords
 ;-
-pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
+pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	;
 	; setup
 	pre = 'KCWI_SET_GEOM'
@@ -95,12 +97,16 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	    strmid(kcfg.obsfname,0,strpos(kcfg.obsfname,'_int')) + '_geom.save'
     	;
     	; set basic configuration parameters
+    	kgeom.ifunum = kcfg.ifunum
+	kgeom.ifunam = kcfg.ifunam
 	kgeom.gratid = kcfg.gratid
 	kgeom.gratnum = kcfg.gratnum
 	kgeom.filter = kcfg.filter
 	kgeom.filtnum = kcfg.filtnum
 	kgeom.campos = kcfg.campos
-	kgeom.gratpos = kcfg.gratpos
+	kgeom.camang = kcfg.camang
+	kgeom.grenc = kcfg.grenc
+	kgeom.grangle = kcfg.grangle
 	kgeom.gratanom = kcfg.gratanom
 	kgeom.xbinsize = kcfg.xbinsize
 	kgeom.ybinsize = kcfg.ybinsize
@@ -111,7 +117,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	kgeom.goody1 = kgeom.ny - 10
 	kgeom.trimy0 = 0
 	kgeom.trimy1 = kgeom.ny
-	kgeom.ypad = 600
+	kgeom.ypad = 1400 / kgeom.ybinsize
 	kgeom.nasmask = kcfg.nasmask
 	if kcfg.nasmask eq 1 then begin
 		kgeom.goody0 = kcfg.nsobjr0 + 18
@@ -142,110 +148,102 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 	kgeom.wave1out = kcfg.wave1
 	kgeom.dwout = kcfg.dwav
 	;
-	; reference spectrum
-	kgeom.refspec = ppar.datdir+ppar.atlas
-	kgeom.reflist = ppar.datdir+ppar.linelist
-	kgeom.refname = ppar.atlasname
+	; reference spectrum: ppar value has top priority
+	if strlen(strtrim(ppar.atlas,2)) gt 0 then begin
+		kgeom.refspec = ppar.datdir+ppar.atlas
+		kgeom.refname = ppar.atlasname
+	endif else if keyword_set(atlas) then begin
+		kgeom.refspec = ppar.datdir+atlas
+		kgeom.refname = atname
+	endif else begin
+		kgeom.refspec = ppar.datdir+'fear.fits'
+		kgeom.refname = 'FeAr'
+	endelse
 	;
 	; default to no cc offsets
 	kgeom.ccoff = fltarr(24)
 	;
-	; check for CWI data
-    	if strtrim(strupcase(kcfg.instrume),2) eq 'CWI' then begin
+	; grating parameters BH1
+	if strtrim(kcfg.gratid,2) eq 'BH1' then begin
+		kgeom.resolution = 0.5
+		kgeom.ccwn = 360./kgeom.ybinsize
+		kgeom.rho = 3.751d
+		kgeom.adjang = 180.d
+		kgeom.lastdegree = 4
+		kgeom.bclean = 1
 		;
-		; check resolution and dispersion
-		if strtrim(kcfg.gratid,2) eq 'RED' then begin
-			kgeom.resolution = 1.16	; Angstroms
-			kgeom.wavran = 740.	; Angstroms
-			kgeom.ccwn = 260./kgeom.ybinsize	; Pixels
-			kgeom.rho = 2.1730d
-			kgeom.slant = -1.0d
-			kgeom.lastdegree = 4
-			;
-			; output disperison
-			kgeom.dwout = 0.11 * float(kcfg.ybinsize)
-		endif else if strtrim(kcfg.gratid,2) eq 'YELLOW' then begin
-			kgeom.resolution = 0.82	; Angstroms
-			kgeom.wavran = 570	; Angstroms
-			kgeom.ccwn = 260./kgeom.ybinsize	; Pixels
-			kgeom.rho = 2.5300d
-			kgeom.slant = -1.1d
-			kgeom.lastdegree = 4
-			;
-			; output disperison
-			kgeom.dwout = 0.137 * float(kcfg.ybinsize)
-		endif else if strtrim(kcfg.gratid,2) eq 'BLUE' then begin
-			kgeom.resolution = 0.98	; Angstroms
-			kgeom.wavran = 440.	; Angstroms
-			kgeom.ccwn = 260./kgeom.ybinsize	; Pixels
-			kgeom.rho = 3.050d
-			kgeom.slant = 0.50d
-			kgeom.lastdegree = 4
-			;
-			; output disperison
-			kgeom.dwout = 0.095 * float(kcfg.ybinsize)
-		endif else if strtrim(kcfg.gratid,2) eq 'MEDREZ' then begin
-			;
-			; MEDREZ requires input offsets or bar-to-bar cc will fail
-			offs = [-278.,  -59., -237.,  -32., -216.,  -37., $
-				-197.,  -15., -190.,  -20., -175.,    0., $
-				   0., -167.,    3., -166.,    3., -156., $
-				   5., -173.,  -20., -225.,  -44., -226.]
-			kgeom.ccoff = offs
-			kgeom.resolution = 2.50	; Angstroms
-			kgeom.wavran = 1310.	; Angstroms
-			kgeom.ccwn = 80./kgeom.ybinsize	; Pixels
-			kgeom.rho = 1.20d
-			kgeom.slant = 0.0d
-			kgeom.lastdegree = 5
-			;
-			; output disperison
-			kgeom.dwout = 0.275 * float(kcfg.ybinsize)
-		endif
-		;
-		; check central wavelength
-		if kgeom.cwave le 0. then $
-			kgeom.cwave = cwi_central_wave(strtrim(kgeom.gratid,2),$
-				kcfg.campos, kcfg.gratpos)
-		;
-		; spatial scales
-		kgeom.pxscl = 0.00008096d0	; degrees per unbinned pixel
-		kgeom.slscl = 0.00075437d0	; degrees per slice
+		; output disperison
+		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
+	endif
 	;
-	; check for KCWI data
-	endif else if strtrim(strupcase(kcfg.instrume),2) eq 'KCWI' then begin
+	; grating parameters BH2
+	if strtrim(kcfg.gratid,2) eq 'BH2' then begin
+		kgeom.resolution = 0.5
+		kgeom.ccwn = 360./kgeom.ybinsize
+		kgeom.rho = 3.255d
+		kgeom.adjang = 180.d
+		kgeom.lastdegree = 4
+		kgeom.bclean = 0
 		;
-		; check resolution and dispersion
-		if strtrim(kcfg.gratid,2) eq 'BH1' then begin
-			kgeom.resolution = 0.25
-			kgeom.wavran = 120.
-			kgeom.ccwn = 260./kgeom.ybinsize
-			kgeom.rho = 3.72d
-			kgeom.slant = -1.0d
-			kgeom.lastdegree = 4
-			;
-			; output disperison
-			kgeom.dwout = 0.095 * float(kcfg.ybinsize)
-		endif
+		; output disperison
+		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
+	endif
+	;
+	; grating parameters BH3
+	if strtrim(kcfg.gratid,2) eq 'BH3' then begin
+		kgeom.resolution = 0.5
+		kgeom.ccwn = 360./kgeom.ybinsize
+		kgeom.rho = 2.80d
+		kgeom.adjang = 180.d
+		kgeom.lastdegree = 4
+		kgeom.bclean = 0
 		;
-		; spatial scales
-		kgeom.pxscl = 0.00004048d0	; deg/unbinned pixel
-		kgeom.slscl = 0.00037718d0	; deg/slice
-		if kcfg.ifupos eq 2 then begin
-			kgeom.slscl = kgeom.slscl/2.d0
-		endif else if kcfg.ifupos eq 3 then begin
-			kgeom.slscl = kgeom.slscl/4.d0
-		endif
+		; output disperison
+		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
+	endif
+	;
+	; grating parameters BM
+	if strtrim(kcfg.gratid,2) eq 'BM' then begin
+		kgeom.resolution = 1.00
+		kgeom.ccwn = 260./kgeom.ybinsize
+		kgeom.rho = 1.900d
+		kgeom.adjang = 0.d
+		kgeom.lastdegree = 4
+		kgeom.bclean = 0
 		;
-		; check central wavelength
-		if kgeom.cwave le 0. then begin
-			kcwi_print_info,ppar,pre,'No central wavelength found',/error
-			return
-		endif
-	endif else begin
-		kcwi_print_info,ppar,pre,'Unknown instrument',kcfg.instrume,/error
+		; output disperison
+		kgeom.dwout = 0.38 * float(kcfg.ybinsize)
+	endif
+	;
+	; grating parameters BL
+	if strtrim(kcfg.gratid,2) eq 'BL' then begin
+		kgeom.resolution = 2.0
+		kgeom.ccwn = 320./kgeom.ybinsize
+		kgeom.rho = 0.870d
+		kgeom.adjang = 0.d
+		kgeom.lastdegree = 4
+		kgeom.bclean = 1
+		;
+		; output disperison
+		kgeom.dwout = 0.95 * float(kcfg.ybinsize)
+	endif
+	;
+	; spatial scales
+	kgeom.pxscl = 0.00004048d0	; deg/unbinned pixel
+	kgeom.slscl = 0.00037718d0	; deg/slice, Large slicer
+	if kcfg.ifunum eq 2 then begin
+		kgeom.slscl = kgeom.slscl/2.d0
+		kgeom.resolution = kgeom.resolution/2.00
+	endif else if kcfg.ifunum eq 3 then begin
+		kgeom.slscl = kgeom.slscl/4.d0
+		kgeom.resolution = kgeom.resolution/4.00
+	endif
+	;
+	; check central wavelength
+	if kgeom.cwave le 0. then begin
+		kcwi_print_info,ppar,pre,'No central wavelength found',/error
 		return
-	endelse
+	endif
 	;
 	; now check ppar values which override defaults
 	if ppar.dw gt 0. then $
@@ -254,6 +252,8 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar, help=help
 		kgeom.wave0out = ppar.wave0
 	if ppar.wave1 gt 0. then $
 		kgeom.wave1out = ppar.wave1
+	if ppar.cleancoeffs gt -1. then $
+		kgeom.bclean = ppar.cleancoeffs
 	;
 	; print log of values
 	kcwi_print_info,ppar,pre,'Data cube output Disp (A/px), Wave0 (A): ', $

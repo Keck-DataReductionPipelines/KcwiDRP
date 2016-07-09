@@ -1,4 +1,3 @@
-; $Id: kcwi_read_cfgs.pro,v 1.15 2014/06/06 21:06:17 neill Exp $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.

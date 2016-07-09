@@ -1,4 +1,3 @@
-; $Id: kcwi_fit_center.pro | Thu Apr 16 04:02:00 2015 -0700 | Don Neill  $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -84,7 +83,6 @@ gratanom = kgeom.gratanom
 ;
 ; set the grating specific parameters
 rho = kgeom.rho
-slant = kgeom.slant
 ;
 ; which is the reference bar?
 refbar = kgeom.refbar
@@ -113,31 +111,29 @@ centcoeff = dblarr(9,120)
 ;
 ; Next we refine the central dispersion estimate
 ;
+; 0- compute alpha
+prelim_alpha = kgeom.grangle - 13.0d - kgeom.adjang
+;
 ; 1- compute the prelim angle of diffraction
-prelim_beta = asin(cwvl/10000.0 * rho/2.0)+slant/!radeg
+;prelim_beta = asin(cwvl/10000.0 * rho/2.0)+slant/!radeg
+prelim_beta = kgeom.camang - prelim_alpha
 ;
 ; 1b - add the grating tilt anomoly
-prelim_beta = prelim_beta + gratanom/!radeg
+;prelim_beta = prelim_beta + gratanom/!radeg
 ;
 ; 2- compute the preliminary dispersion
-prelim_disp = cos(prelim_beta)/rho/fcam*(pix*ybin)*1e4
+prelim_disp = cos(prelim_beta/!radeg)/rho/fcam*(pix*ybin)*1e4
 ; the 1e4 is there to make the units Angstrom/binnedpixel
-;
-; redo this for the MEDREZ grating which is a surface profile grating
-if strtrim(strupcase(grating),2) eq 'MEDREZ' then begin
-	; preliminary beta
-	prelim_alpha = -((-264500.0)-kgeom.gratpos)/2000.0
-	prelim_beta = 61. - prelim_alpha
-	prelim_disp = ((-cos(prelim_beta/!radeg)) / $
-		(rho * fcam ) ) * (pix*ybin)*1e4
-endif
 ;
 ; need to correct for the out-of-band angle here... not much, but
 ; there is some... so
 ;
 prelim_disp *= cos(gamma/!radeg)
+;prelim_disp = 0.230
 ;
 ; report results
+kcwi_print_info,ppar,pre,'Initial alpha, beta',prelim_alpha, prelim_beta, $
+	format='(a,2f9.2)'
 kcwi_print_info,ppar,pre,'Initial calculated dispersion (A/binned pixel)', $
 	prelim_disp,format='(a,f8.3)'
 ;
@@ -194,7 +190,7 @@ endif
 if ppar.display ge 2 then begin
 	plot,prelim_subwvl,prelim_spec/max(prelim_spec),charsi=si,charthi=th,thick=th, $
 		xthick=th, xtitle='Wave(A)', $
-		ythick=th, ytitle='Rel. Flux',title=imglab+', No Offset',/xs
+		ythick=th, ytitle='Rel. Flux',title=imglab+' ('+kgeom.refname+'), No Offset',/xs
 	oplot,prelim_refwvl,prelim_refspec/max(prelim_refspec),color=colordex('red'),thick=th
 	oplot,[cwvl,cwvl],!y.crange,color=colordex('green'),thick=th,linesty=2
 	kcwi_legend,['Ref Bar ('+strn(refbar)+')','Atlas','CWAVE'],linesty=[0,0,2], $
@@ -211,17 +207,21 @@ prelim_refspec = prelim_refspec * tukeywgt(n_elements(prelim_refspec),ppar.taper
 ; (prelim_intspec and prelim_refspec), so let's do that:
 if ddisplay then window,1,title='kcwi_xspec'
 kcwi_xspec,prelim_intspec,prelim_refspec,ppar,prelim_offset,prelim_value, $
-	/min,/shift,/plot,label='Obj(0) vs Atlas(1)'
+	/min,/shift,/plot,label='Obj(0) vs '+kgeom.refname+'(1)',central=5.
 if ddisplay then wset,0
 ;
+; record initial offset
+kcwi_print_info,ppar,pre,'Initial arc-atlas offset (px, Ang)',prelim_offset, $
+	prelim_offset*refdisp,format='(a,1x,f9.2,1x,f9.2)'
 if ppar.display ge 2 then begin
 	q='test'
 	while strlen(q) gt 0 do begin
-	    plot,prelim_subwvl,prelim_spec/max(prelim_spec),charsi=si,charthi=th,thick=th, $
-		xthick=th,xtitle='Wave(A)', $
-		ythick=th,ytitle='Rel. Flux',title=imglab+', Offset = ' + $
-		strtrim(string(prelim_offset,form='(f9.3)'),2)+' px',/xs
-	    oplot,prelim_refwvl+prelim_offset*refdisp,prelim_refspec/max(prelim_refspec), $
+	    plot,prelim_subwvl-prelim_offset*refdisp,prelim_spec/max(prelim_spec), $
+		charsi=si,charthi=th,thick=th,xthick=th,xtitle='Wave(A)', $
+		ythick=th,ytitle='Rel. Flux',title=imglab+' ('+kgeom.refname+'), Offset = ' + $
+		strtrim(string(prelim_offset*refdisp,form='(f9.2)'),2)+' Ang ('+$
+		strtrim(string(prelim_offset,form='(f9.3)'),2)+' px)',/xs
+	    oplot,prelim_refwvl,prelim_refspec/max(prelim_refspec), $
 		color=colordex('red'),thick=th
 	    oplot,[cwvl,cwvl],!y.crange,color=colordex('green'),thick=th,linesty=2
 	    kcwi_legend,['Ref Bar ('+strn(refbar)+')','Atlas','CWAVE'],linesty=[0,0,2], $
@@ -234,6 +234,10 @@ if ppar.display ge 2 then begin
 		    prelim_offset = float(q)
 	endwhile
 endif
+;
+; record final offset
+kcwi_print_info,ppar,pre,'Final   arc-atlas offset (px, Ang)',prelim_offset, $
+	prelim_offset*refdisp,format='(a,1x,f9.2,1x,f9.2)'
 ;
 ; At this point we have the offsets between bars and the approximate offset from
 ; the reference bar to the actual spectrum and the approximate
@@ -284,7 +288,7 @@ for b = 0,119 do begin
 		; populate the coefficients
 		coeff[0] = p0[b]
 		coeff[1] = disps[d]
-		beta = acos(coeff[1]/(pix*ybin)*rho*fcam*1d-4)
+		beta = acos( (coeff[1]/(pix*ybin)*rho*fcam*1d-4) < 1.d)
 		coeff[2] = -(pix*ybin/fcam)^2*sin(beta)/2.0d/rho*1d4
 		coeff[3] = -(pix*ybin/fcam)^3*cos(beta)/6.0d/rho*1d4
 		coeff[4] = (pix*ybin/fcam)^4*sin(beta)/24.0d/rho*1d4
@@ -403,7 +407,7 @@ for b = 0,119 do begin
 		plot,disps,maxima,psym=-4,charsi=si,charthi=th,thick=th, $
 			xthick=th,xtitle='Central Dispersion',/xs, $
 			ythick=th,ytitle='X-Corr Value',yrange=yrng,/ys, $
-			title=imglab+', Bar: '+string(b,"(i3)") + $
+			title=imglab+' ('+kgeom.refname+'), Bar: '+string(b,"(i3)") + $
 			', Slice: '+string(fix(b/5),"(i2)")
 		oplot,disps[submaxidx],yf,color=colordex('orange'),thick=th
 		oplot,[bardispp,bardispp],!y.crange,color=colordex('green'),thick=th

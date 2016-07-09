@@ -1,4 +1,3 @@
-; $Id: kcwi_make_bias.pro | Tue Mar 3 16:42:00 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -132,7 +131,7 @@ pro kcwi_make_bias,ppar
 		endfor
 		;
 		; update master bias header
-		sxaddpar,hdr,'COMMENT','  '+pre+' '+systime(0)
+		sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 		sxaddpar,hdr,'NMEDIAN',nstack, $
 			' number of images used for median stack'
 		sxaddpar,hdr,'MASTBIAS','T', ' master bias image?'
