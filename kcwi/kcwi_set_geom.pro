@@ -98,6 +98,8 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	    strmid(kcfg.obsfname,0,strpos(kcfg.obsfname,'_int')) + '_geom.save'
     	;
     	; set basic configuration parameters
+    	kgeom.ifunum = kcfg.ifunum
+	kgeom.ifunam = kcfg.ifunam
 	kgeom.gratid = kcfg.gratid
 	kgeom.gratnum = kcfg.gratnum
 	kgeom.filter = kcfg.filter
@@ -165,7 +167,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	; grating parameters BH1
 	if strtrim(kcfg.gratid,2) eq 'BH1' then begin
 		kgeom.resolution = 0.5
-		kgeom.ccwn = 260./kgeom.ybinsize
+		kgeom.ccwn = 360./kgeom.ybinsize
 		kgeom.rho = 3.751d
 		kgeom.adjang = 180.d
 		kgeom.lastdegree = 4
@@ -191,7 +193,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	; grating parameters BH3
 	if strtrim(kcfg.gratid,2) eq 'BH3' then begin
 		kgeom.resolution = 0.5
-		kgeom.ccwn = 260./kgeom.ybinsize
+		kgeom.ccwn = 360./kgeom.ybinsize
 		kgeom.rho = 2.80d
 		kgeom.adjang = 180.d
 		kgeom.lastdegree = 4

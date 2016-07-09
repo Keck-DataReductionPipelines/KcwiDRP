@@ -76,6 +76,10 @@ endif
 ; which image number
 imgnum = kgeom.arcimgnum
 ;
+; which slicer?
+ifunum = kgeom.ifunum
+ifunam = kgeom.ifunam
+;
 ; which grating? 
 grating = kgeom.gratid
 ;
@@ -83,7 +87,8 @@ grating = kgeom.gratid
 filter = kgeom.filter
 ;
 ; image label
-imglab = 'Img # '+strn(imgnum)+' ('+kgeom.refname+') Fl: '+strtrim(filter,2)+' Gr: '+strtrim(grating,2)
+imglab = 'Img # '+strn(imgnum)+' ('+kgeom.refname+') Sl: '+strtrim(ifunam,2)+ $
+	' Fl: '+strtrim(filter,2)+' Gr: '+strtrim(grating,2)
 ;
 ; is this N+S mask in?
 nasmask = kgeom.nasmask
@@ -283,17 +288,27 @@ if keyword_set(tweak) then begin
 	; let's find the peaks in the reference spectrum.
 	smooth_width = fix(resolution/refdisp)>4	; in pixels
 	slope_thresh = 0.003
-	ampl_thresh  = max(twk_reference_spectrum)*0.05	; 5% of max
+	fthr = 0.05	; 5% of max
+	ampl_thresh  = max(twk_reference_spectrum)*fthr
 	twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
 			smooth_width,slope_thresh,ampl_thresh,count=twk_ref_npks)
+	while twk_ref_npks lt 50 and fthr gt 0.01 do begin
+		fthr -= 0.01
+		ampl_thresh  = max(twk_reference_spectrum)*fthr
+		twk_ref_cent = findpeaks(twk_reference_wavelengths,twk_reference_spectrum, $
+			smooth_width,slope_thresh,ampl_thresh,count=twk_ref_npks)
+	endwhile
 	;
 	if twk_ref_npks eq 0 then begin
 		kcwi_print_info,ppar,pre,'No good atlas points found',/error
 		kgeom.status=6
 		return
 	endif
+	kcwi_print_info,ppar,pre,'Atlas threshhold in percent of max',fix(fthr*100.)
 	kcwi_print_info,ppar,pre,'Number of clean atlas lines found',twk_ref_npks,$
 		format='(a,i4)'
+	kcwi_print_info,ppar,pre,'Matching width in Angstroms',ppar.pkdel*resolution>refdisp,$
+		format='(a,f6.4)'
 	;
 	if ppar.display ge 3 then begin
 		for j=0,twk_ref_npks-1 do begin
@@ -350,12 +365,19 @@ if keyword_set(tweak) then begin
 			smooth_width = fix(resolution/abs(twkcoeff[1,b]))>4	; in pixels
 			peak_width   = fix(smooth_width*1.5)			; for fitting peaks
 			slope_thresh = 0.7*smooth_width/2./100.0		; more severe for object
-			;ampl_thresh  = kgeom.rdnoise * 30.
-			ampl_thresh  = max(subyvals) * 0.05	; 5% of max
-			;print,'sl th: ',slope_thresh
-			;print,'am th: ',ampl_thresh
+			fthr = 0.10						; 10% of max
+			ampl_thresh  = max(subyvals) * fthr
 			twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
 				ampl_thresh,peak_width,count=twk_spec_npks)
+			while twk_spec_npks lt 10*(iter+1) and fthr gt 0.01 do begin
+				fthr -= 0.01
+				ampl_thresh = max(subyvals) * fthr
+				twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
+					ampl_thresh,peak_width,count=twk_spec_npks)
+			endwhile
+			;kcwi_print_info,ppar,pre,'Object threshhold in percent of max',fix(fthr*100.)
+			;kcwi_print_info,ppar,pre,'Number of clean object lines found',twk_spec_npks,$
+			;	format='(a,i4)'
 			if twk_spec_npks gt 0 then begin
 				;
 				; at this point we have the catalog of good reference points (from
@@ -370,7 +392,9 @@ if keyword_set(tweak) then begin
 				;
 				; here we match the peaks to one another. 
 				pkd = ppar.pkdel
-				pkm = pkd*resolution	; match thresh in Angstroms
+				;
+				; never let this get smaller than a single atlas pixel
+				pkm = pkd*resolution>refdisp	; match thresh in Angstroms
 				matchedpeaks = where(mn lt pkm, nmatchedpeaks)
 				;
 				; for first iteration, make sure we have enough peaks
@@ -383,7 +407,7 @@ if keyword_set(tweak) then begin
 						pkd += 0.25
 						;
 						; try again
-						pkm = pkd*resolution
+						pkm = pkd*resolution>refdisp
 						matchedpeaks = where(mn lt pkm, nmatchedpeaks)
 					endwhile
 					;

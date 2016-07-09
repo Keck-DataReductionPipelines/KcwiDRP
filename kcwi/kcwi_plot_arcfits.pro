@@ -55,7 +55,11 @@ if not display then return
 ;
 ; which image number
 imgnum = kgeom.arcimgnum
-imglab = 'Img # '+strn(imgnum)+' ('+kgeom.refname+') Fl: '+strtrim(kgeom.filter,2)+' Gr: '+strtrim(kgeom.gratid,2)
+;
+; which slicer
+ifunam = kgeom.ifunam
+imglab = 'Img # '+strn(imgnum)+' ('+kgeom.refname+') Sl: '+strtrim(ifunam,2)+ $
+	' Fl: '+strtrim(kgeom.filter,2)+' Gr: '+strtrim(kgeom.gratid,2)
 ;
 ; is the N+S mask in?
 nasmask = kgeom.nasmask

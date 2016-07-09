@@ -68,6 +68,10 @@ tmp = { kcwi_geom, $
 ; nod and shuffle?
 	nasmask:0, $		; 0 - no, 1 - yes
 ;
+; IFU properties
+	ifunum: 0, $		; Slicer number (1-3, Large, Medium, Small)
+	ifunam: '', $		; Slicer name ("Large", etc.)
+;
 ; grating properties
 	gratid:'', $		; grating id
 	gratnum:-1, $		; grating number
