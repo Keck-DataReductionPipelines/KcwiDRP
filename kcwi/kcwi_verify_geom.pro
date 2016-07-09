@@ -1,4 +1,3 @@
-; $Id: kcwi_verify_geom.pro,v 1.2 2013/09/16 20:45:12 neill Exp $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.

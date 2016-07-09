@@ -1,4 +1,3 @@
-; $Id: kcwi_clean_coeffs.pro | Wed Mar 4 12:02:01 2015 -0800 | Don Neill  $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.

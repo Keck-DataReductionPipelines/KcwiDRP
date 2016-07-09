@@ -1,4 +1,3 @@
-; $Id: kcwi_get_imname.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
 function kcwi_get_imname,ppar,imgnum,tail, $
 	nodir = nodir, calib = calib, raw = raw, reduced = reduced, $
 	master = master, help = help

@@ -1,4 +1,3 @@
-; $Id: kcwi_drp_batch.pro,v 1.8 2015/02/21 00:18:36 neill Exp $
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.

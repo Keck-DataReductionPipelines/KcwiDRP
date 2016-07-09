@@ -1,4 +1,3 @@
-; $Id: kcwi_verify_dirs.pro,v 1.4 2015/02/21 00:18:39 neill Exp $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.

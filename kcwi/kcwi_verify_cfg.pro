@@ -1,4 +1,3 @@
-; $Id: kcwi_verify_cfg.pro,v 1.5 2013/10/31 18:06:04 neill Exp $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.

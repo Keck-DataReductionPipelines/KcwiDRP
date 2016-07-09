@@ -1,4 +1,3 @@
-; $Id$
 ;
 ; Copyright (c) 2016, California Institute of Technology. All rights
 ;	reserved.
