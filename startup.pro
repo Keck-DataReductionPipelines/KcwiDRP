@@ -1,4 +1,3 @@
-; $Id$
 ;
 ; KCWI DRP IDL startup file
 ;
