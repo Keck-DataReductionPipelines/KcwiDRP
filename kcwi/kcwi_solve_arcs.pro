@@ -370,22 +370,28 @@ if keyword_set(tweak) then begin
 			smooth_width = fix(resolution/abs(twkcoeff[1,b]))>4	; in pixels
 			peak_width   = fix(smooth_width*1.5)			; for fitting peaks
 			slope_thresh = 0.7*smooth_width/2./100.0		; more severe for object
-			fthr = 0.10						; 10% of max
+			fthr = 0.15						; start at 15% of max
 			ampl_thresh  = max(subyvals) * fthr
 			twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
 				ampl_thresh,peak_width,count=twk_spec_npks)
-			nlines = intarr(20)
-			for ith = 1,20 do begin
-				fthr = float(ith)/100.
+			newlines = twk_spec_npks
+			oldlines = newlines
+			while (newlines - oldlines) < 10 and fthr gt 0.01 do begin
+				oldlines = newlines
+				fthr -= 0.01
 				ampl_thresh = max(subyvals) * fthr
 				twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
 					ampl_thresh,peak_width,count=twk_spec_npks)
-				nlines[ith-1] = twk_spec_npks
+				newlines = twk_spec_npks
 			endfor
-			stop
-			;kcwi_print_info,ppar,pre,'Object threshhold in percent of max',fix(fthr*100.)
-			;kcwi_print_info,ppar,pre,'Number of clean object lines found',twk_spec_npks,$
-			;	format='(a,i4)'
+			if fthr += 0.01
+			ampl_thresh  = max(subyvals) * fthr
+			twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
+				ampl_thresh,peak_width,count=twk_spec_npks)
+			kcwi_print_info,ppar,pre,'Object threshhold in percent of max',fix(fthr*100.)
+			kcwi_print_info,ppar,pre,'Number of clean object lines found',twk_spec_npks,$
+				format='(a,i4)'
+			read,'next: ',q
 			if twk_spec_npks gt 0 then begin
 				;
 				; at this point we have the catalog of good reference points (from
