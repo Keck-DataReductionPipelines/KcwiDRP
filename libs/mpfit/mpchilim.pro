@@ -92,7 +92,7 @@
 ;   Add usage message, 24 Nov 2006, CM
 ;   Usage message with /CONTINUE, 23 Sep 2009, CM
 ;
-;  $Id: mpchilim.pro,v 1.8 2009/09/23 20:12:46 craigm Exp $
+;  $Id$
 ;-
 ; Copyright (C) 1997-2001, 2006, 2009, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

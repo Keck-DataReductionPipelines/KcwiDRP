@@ -55,7 +55,7 @@
 ;   Transcribed from GAUSS1, 13 Dec 1999, CM
 ;   Added copyright notice, 25 Mar 2001, CM
 ;
-;  $Id: gauss1p.pro,v 1.2 2001/03/25 18:55:12 craigm Exp $
+;  $Id$
 ;
 ;-
 ; Copyright (C) 1999,2001, Craig Markwardt

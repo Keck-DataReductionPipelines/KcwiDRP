@@ -62,7 +62,7 @@
 ;   Added copyright notice, 25 Mar 2001, CM
 ;   Added PEAK keyword, 30 Sep 2001, CM
 ;
-;  $Id: gauss1.pro,v 1.4 2001/10/13 17:41:48 craigm Exp $
+;  $Id$
 ;
 ;-
 ; Copyright (C) 1998,1999,2001, Craig Markwardt

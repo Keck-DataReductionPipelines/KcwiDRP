@@ -174,7 +174,7 @@
 ;   Written, 2010-10-27, CM
 ;   Updated documentation, 2011-06-26, CM
 ;
-;  $Id: mpproperr.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+;  $Id$
 ;-
 ; Copyright (C) 2011, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

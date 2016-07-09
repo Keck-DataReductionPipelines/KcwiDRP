@@ -475,7 +475,7 @@
 ;  - scale derivatives semi-automatically;
 ;  - ability to scale and offset parameters;
 ;
-;  $Id: tnmin.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+;  $Id$
 ;-
 ; Copyright (C) 1998-2001,2002,2003,2007,2008,2009 Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

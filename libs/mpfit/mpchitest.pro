@@ -85,7 +85,7 @@
 ;   Add usage message, 24 Nov 2006, CM
 ;   Really add usage message, with /CONTINUE, 23 Sep 2009, CM
 ;
-;  $Id: mpchitest.pro | Tue Mar 3 16:16:17 2015 -0800 | Don Neill  $
+;  $Id$
 ;-
 ; Copyright (C) 1997-2001, 2006, 2009, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

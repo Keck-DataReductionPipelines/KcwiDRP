@@ -85,7 +85,7 @@
 ; MODIFICATION HISTORY:
 ;   Written, Feb 2009
 ;   Documented, 14 Apr 2009, CM
-;  $Id: linfitex.pro,v 1.3 2009/04/15 04:17:52 craigm Exp $
+;  $Id$
 ;
 ;-
 ; Copyright (C) 2009, Craig Markwardt

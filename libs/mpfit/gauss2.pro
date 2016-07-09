@@ -58,7 +58,7 @@
 ;   Written, 02 Oct 1999, CM
 ;   Added copyright notice, 25 Mar 2001, CM
 ;
-;  $Id: gauss2.pro,v 1.2 2001/03/25 18:55:13 craigm Exp $
+;  $Id$
 ;
 ;-
 ; Copyright (C) 1999,2001, Craig Markwardt
