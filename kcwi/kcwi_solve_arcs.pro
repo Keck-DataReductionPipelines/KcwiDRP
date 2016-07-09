@@ -376,22 +376,24 @@ if keyword_set(tweak) then begin
 				ampl_thresh,peak_width,count=twk_spec_npks)
 			newlines = twk_spec_npks
 			oldlines = newlines
-			while (newlines - oldlines) < 10 and fthr gt 0.01 do begin
+			;
+			; find where the noise starts to contaminate the line list
+			while (newlines - oldlines) lt 10 and fthr gt 0.01 do begin
 				oldlines = newlines
 				fthr -= 0.01
 				ampl_thresh = max(subyvals) * fthr
 				twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
 					ampl_thresh,peak_width,count=twk_spec_npks)
 				newlines = twk_spec_npks
-			endfor
-			if fthr += 0.01
+			endwhile
+			;
+			; put threshhold back above the noise
+			fthr += 0.02
 			ampl_thresh  = max(subyvals) * fthr
 			twk_spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
 				ampl_thresh,peak_width,count=twk_spec_npks)
-			kcwi_print_info,ppar,pre,'Object threshhold in percent of max',fix(fthr*100.)
-			kcwi_print_info,ppar,pre,'Number of clean object lines found',twk_spec_npks,$
-				format='(a,i4)'
-			read,'next: ',q
+			;
+			; test final line list
 			if twk_spec_npks gt 0 then begin
 				;
 				; at this point we have the catalog of good reference points (from
@@ -523,6 +525,8 @@ if keyword_set(tweak) then begin
 				kcwi_legend,['Good','NoAtlas','Reject'],linesty=[0,0,0], $
 					/bottom,/clear, charthi=th,charsi=si, $
 					color=[colordex('G'),colordex('R'),colordex('B')]
+				kcwi_legend,['Thr='+string(fix(fthr*100.),form='(i02)')+'%'], $
+					/clear,/right, charthi=th,charsi=si
 				print,''
 				read,'Next? (Q - quit plotting, <cr> - next): ',q
 				if strupcase(strmid(q,0,1)) eq 'Q' then ddisplay = (1 eq 0)
