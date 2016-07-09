@@ -174,7 +174,6 @@
 ;   Written, 2010-10-27, CM
 ;   Updated documentation, 2011-06-26, CM
 ;
-;  $Id$
 ;-
 ; Copyright (C) 2011, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

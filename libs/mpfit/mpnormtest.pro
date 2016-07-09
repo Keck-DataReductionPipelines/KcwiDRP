@@ -80,7 +80,6 @@
 ;   Add usage message, 24 Nov 2006, CM
 ;   Usage message with /CONTINUE, 23 Sep 2009, CM
 ;
-;  $Id$
 ;-
 ; Copyright (C) 1997-2001, 2003, 2009, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

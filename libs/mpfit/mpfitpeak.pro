@@ -301,7 +301,6 @@
 ;    only the estimate and return immediately without fitting,
 ;    C. Markwardt, 2011-07-12
 ;
-;  $Id$
 ;-
 ; Copyright (C) 1997-2001, 2003, 2005, 2007, 2008, 2009, 2010, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

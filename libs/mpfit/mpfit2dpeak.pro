@@ -244,7 +244,6 @@
 ;   Clarify documentation regarding what happens when ESTIMATES is not
 ;     set, CM, 14 Dec 2008
 ;
-;  $Id$
 ;-
 ; Copyright (C) 1997-2000, 2002, 2003, 2005, 2006, 2007, 2008 Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

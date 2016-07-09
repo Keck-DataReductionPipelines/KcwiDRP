@@ -483,7 +483,6 @@
 ;   Convert to IDL 5 array syntax (!), 16 Jul 2006, CM
 ;   Move STRICTARR compile option inside each function/procedure, 9 Oct 2006
 ;
-;  $Id$
 ;-
 ; Copyright (C) 1997-2000, 2002, 2003, 2004, 2005, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

@@ -1296,7 +1296,6 @@
 ;          CM, 2010-10-27
 ;   1.79 - Documentation corrections.  CM, 2011-08-26
 ;
-;  $Id$
 ;-
 ; Original MINPACK by More' Garbow and Hillstrom, translated with permission
 ; Modifications and enhancements are:
@@ -2576,7 +2575,7 @@ end
 ;; Parse the RCSID revision number
 function mpfit_revision
   ;; NOTE: this string is changed every time an RCS check-in occurs
-  revision = '$Revision$'
+  revision = '$Revision: v0.2.10-40-g60c9d44 $'
 
   ;; Parse just the version number portion
   revision = stregex(revision,'\$'+'Revision: *([0-9.]+) *'+'\$',/extract,/sub)

@@ -605,7 +605,6 @@
 ;     update some documentation that had become stale, CM, 2010-10-28
 ;   Documentation corrections, CM, 2011-08-26
 ;
-;  $Id$
 ;-
 ; Copyright (C) 1997-2002, 2003, 2006, 2007, 2009, 2010, 2011, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

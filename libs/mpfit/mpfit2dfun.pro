@@ -532,7 +532,6 @@
 ;   Move STRICTARR compile option inside each function/procedure, 9 Oct 2006
 ;   Add COMPATIBILITY section, CM, 13 Dec 2007
 ;
-;  $Id$
 ;-
 ; Copyright (C) 1997-2000, 2002, 2003, 2004, 2005, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

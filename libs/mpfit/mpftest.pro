@@ -147,7 +147,6 @@
 ;   Move STRICTARR compile option inside each function/procedure, 9 Oct 2006
 ;   Usage message with /CONTINUE, 23 Sep 2009, CM
 ;
-;  $Id$
 ;-
 ; Copyright (C) 1999,2001,2002,2003,2009, Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

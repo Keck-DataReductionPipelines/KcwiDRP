@@ -199,7 +199,6 @@
 ;   Document an example of how to plot a tilted ellipse, 09 Nov 2009, CM
 ;   Check for MPFIT error conditions and return immediately, 23 Jan 2010, CM
 ;
-;  $Id$
 ;-
 ; Copyright (C) 1997-2000,2002,2003,2007,2008,2009,2010 Craig Markwardt
 ; This software is provided as is without any warranty whatsoever.

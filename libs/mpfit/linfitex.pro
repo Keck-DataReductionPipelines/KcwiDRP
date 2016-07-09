@@ -85,7 +85,6 @@
 ; MODIFICATION HISTORY:
 ;   Written, Feb 2009
 ;   Documented, 14 Apr 2009, CM
-;  $Id$
 ;
 ;-
 ; Copyright (C) 2009, Craig Markwardt

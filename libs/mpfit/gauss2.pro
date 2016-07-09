@@ -58,7 +58,6 @@
 ;   Written, 02 Oct 1999, CM
 ;   Added copyright notice, 25 Mar 2001, CM
 ;
-;  $Id$
 ;
 ;-
 ; Copyright (C) 1999,2001, Craig Markwardt
