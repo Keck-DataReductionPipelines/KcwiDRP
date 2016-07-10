@@ -1,4 +1,3 @@
-; $Id: pascal_shift.pro,v 1.1 2013/12/12 01:22:39 neill Exp $
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -44,7 +43,7 @@
 function pascal_shift, coeff, x0, silent=silent
 
 pre = 'PASCAL_SHIFT'
-version = repstr('$Revision: 1.1 $ $Date: 2013/12/12 01:22:39 $','$','')
+version = repstr('$Revision: v0.2.10-40-g60c9d44 $ $Date: Sun Apr 19 13:15:01 2015 -0700 $','$','')
 q=''
 ;
 ; check inputs

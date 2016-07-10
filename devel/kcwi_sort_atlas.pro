@@ -1,4 +1,3 @@
-; $Id$
 ;+
 ; kcwi_sort_atlas - get good atlas lines and output list sorted by wavelength
 ;

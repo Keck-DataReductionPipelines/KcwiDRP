@@ -1,10 +1,9 @@
-;$Id$
 pro kcwi_cflat_anal,imgno
 ;+
 ;	kcwi_cflat_anal - analyze continuum flat images for charge transfer
 ;-
 pre = 'KCWI_CFLAT_ANAL'
-version = repstr('$Revision$ $Date$','$','')
+version = repstr('$Revision: v0.2.10-40-g60c9d44 $ $Date: Fri May 15 10:35:48 2015 -0700 $','$','')
 ;
 img = mrdfits('image'+strn(imgno)+'.fits',0,hdr,/fscale)
 kcwi_map_ccd,hdr,asec,bsec,csec,tsec,namps=namps,trimmed_size=tsz

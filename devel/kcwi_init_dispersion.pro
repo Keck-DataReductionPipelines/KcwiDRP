@@ -1,4 +1,3 @@
-; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -53,7 +52,7 @@ pro kcwi_init_dispersion, spec, kgeom, ppar, help=help
 ;
 ; startup
 pre = 'KCWI_INIT_DISPERSION'
-version = repstr('$Revision$ $Date$','$','')
+version = repstr('$Revision: v0.2.10-40-g60c9d44 $ $Date: Fri May 15 10:35:48 2015 -0700 $','$','')
 q = ''
 ;
 ; check inputs

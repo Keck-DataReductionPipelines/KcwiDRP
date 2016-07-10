@@ -1,4 +1,3 @@
-;$Id$
 pro cwi_grat_caldat
 ;+
 ;	cwi_grat_caldat - get data for calibrating the CWI gratings

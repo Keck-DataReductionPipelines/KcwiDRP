@@ -1,11 +1,10 @@
-; $Id$
 ;+
 ; Compare profile images
 ;-
 pro kcwi_comp_profs
 ;
 pre = 'KCWI_COMP_PROFS'
-version = repstr('$Revision$ $Date$','$','')
+version = repstr('$Revision: v0.2.10-40-g60c9d44 $ $Date: Fri May 15 10:35:48 2015 -0700 $','$','')
 ;
 flist=file_search('*_prof.fits',count=nf)
 profs = fltarr(nf,100,24)

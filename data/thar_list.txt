@@ -1,4 +1,3 @@
-# $Id$
 # Thorium Argon list from NOAO: http://iraf.noao.edu/specatlas/thar/thar.html
 3006.9314 ThII
 3012.7078 ThII

@@ -1,7 +1,6 @@
 function get_plotlims,data,errs, $
 	pad_fraction=pad_fraction,magnitudes=magnitudes,minzero=minzero
 ;+
-; $Id: get_plotlims.pro,v 1.3 2014/08/28 07:15:11 neill Exp $
 ;
 ; get_plotlims - get range of values suitable for plots
 ;

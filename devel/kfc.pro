@@ -1,4 +1,3 @@
-; $Id$
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -38,7 +37,7 @@
 pro kcwi_fit_center, specs, kgeom, ppar, centcoeff
 
 pre = 'KCWI_FIT_CENTER'
-version = repstr('$Revision$ $Date$','$','')
+version = repstr('$Revision: v0.2.10-40-g60c9d44 $ $Date: Fri May 15 10:35:48 2015 -0700 $','$','')
 q=''
 ;
 ; log info

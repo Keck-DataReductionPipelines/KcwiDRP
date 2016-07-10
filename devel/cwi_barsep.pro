@@ -1,4 +1,3 @@
-;$Id$
 pro cwi_barsep,barsep,wavmid,grat,jd
 ;+
 ;	cwi_barsep - analyze average bar separation in ref slice

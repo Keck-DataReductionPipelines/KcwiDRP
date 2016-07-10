@@ -44,7 +44,6 @@
 ; IDL> oplot,pk,y[pk],ps=2
 ;
 ; MODIFICATION HISTORY:
-; $Id$
 ;
 ;-
 function isopeaks,y,pkgap,nsig,level=level,count=npk

@@ -1,4 +1,3 @@
-; $Id: ccpeak.pro,v 1.2 2014/09/26 00:27:34 neill Exp $
 ;+
 ; NAME:
 ;           CCPEAK

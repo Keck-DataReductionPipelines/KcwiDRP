@@ -1,4 +1,3 @@
-; $Id$
 ;	copyright 2015 California Institute of Technology
 ;+
 ; kcwi_proc_std - process an Oke and Gunn stds table in AB mags
@@ -12,7 +11,7 @@ pro kcwi_proc_std,ifil,display=display
 	;
 	; setup
 	pre = 'KCWI_PROC_STD'
-	version = repstr('$Revision$ $Date$','$','')
+	version = repstr('$Revision: v0.2.10-40-g60c9d44 $ $Date: Fri May 15 10:35:48 2015 -0700 $','$','')
 	q=''
 	;
 	; get input units

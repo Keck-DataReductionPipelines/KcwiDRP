@@ -1,4 +1,3 @@
-; $Id: pkfind.pro,v 1.2 2013/12/20 00:53:39 neill Exp $
 function pkfind, y, npeaks, thresh=thresh
 	;
 	; THRESH is a fractional thresshold in units of the highest peak

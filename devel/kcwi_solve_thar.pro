@@ -1,4 +1,3 @@
-; $Id$
 ;
 ; Copyright (c) 2013, California Institute of Technology. All rights
 ;	reserved.
@@ -61,7 +60,7 @@
 pro kcwi_solve_thar, specs, kgeom, ppar, tweak=tweak, plot_file=plot_file
 
 pre = 'KCWI_SOLVE_THAR'
-version = repstr('$Revision$ $Date$','$','')
+version = repstr('$Revision: v0.2.10-40-g60c9d44 $ $Date: Fri May 15 10:35:48 2015 -0700 $','$','')
 q=''
 ;
 ; do we want to display stuff? 

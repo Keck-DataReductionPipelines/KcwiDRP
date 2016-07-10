@@ -228,7 +228,6 @@
 ;     polynomial term); JPLEPHTEST verification tests still pass;
 ;     change is of order < 0.5 cm in position, 22 Nov 2004, CM
 ;
-;  $Id: jplephinterp.pro,v 1.14 2005/01/31 04:22:26 craigm Exp $
 ;
 ;-
 ; Copyright (C) 2001, 2002, 2004, Craig Markwardt
@@ -240,8 +239,6 @@
 
 pro jplephinterp_calc, info, raw, obj, t, x, y, z, vx, vy, vz, $
                        velocity=vel, tbase=tbase
-
-  ; '$Id: jplephinterp.pro,v 1.14 2005/01/31 04:22:26 craigm Exp $'
 
   if n_elements(tbase) EQ 0 then tbase = 0D
   ;; Number of coefficients (x3), number of subintervals, num of rows

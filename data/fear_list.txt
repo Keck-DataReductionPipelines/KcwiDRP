@@ -1,4 +1,3 @@
-# $Id$
 # Iron Argon list from NOAO: http://iraf.noao.edu/specatlas/fear/fear.html
 3020.6391  FeI
 3024.0325  FeI

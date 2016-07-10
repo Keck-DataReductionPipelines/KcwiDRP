@@ -1,4 +1,3 @@
-; $Id$
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -39,7 +38,7 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 	;
 	; setup
 	pre = 'KCWI_TEST_STD'
-	version = repstr('$Revision$ $Date$','$','')
+	version = repstr('$Revision: v0.2.10-40-g60c9d44 $ $Date: Mon Feb 15 09:27:24 2016 -0800 $','$','')
 	q=''
 	;
 	; check input

@@ -1,4 +1,3 @@
-; $Id$
 ;
 ; Copyright (c) 2014, California Institute of Technology. All rights
 ;	reserved.
@@ -48,7 +47,7 @@ pro kcwi_group_rr, kcfg, ppar, rcfg
 	;
 	; setup
 	pre = 'KCWI_GROUP_RR'
-	version = repstr('$Revision$ $Date$','$','')
+	version = repstr('$Revision: v0.2.10-40-g60c9d44 $ $Date: Fri May 15 10:35:48 2015 -0700 $','$','')
 	;
 	; instantiate and init a KCWI_CFG struct for the rr groups
 	R = {kcwi_cfg}

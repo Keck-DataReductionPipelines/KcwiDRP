@@ -135,7 +135,6 @@
 ;   Written and Documented, CM, Jun 2001
 ;   Use GETTOK() instead of STR_SEP()  W. Landsman  July 2002
 ;
-;  $Id: jplephread.pro,v 1.6 2001/07/01 03:32:02 craigm Exp $
 ;
 ;-
 ; Copyright (C) 2001, Craig Markwardt
@@ -149,7 +148,6 @@
 function jplephpar, header, parname, default=default, fatal=fatal
 compile_opt idl2
 
-  ; '$Id: jplephread.pro,v 1.6 2001/07/01 03:32:02 craigm Exp $'
 
   value = fxpar(header, parname, Count = N_value)
   if N_value EQ 0 then begin
