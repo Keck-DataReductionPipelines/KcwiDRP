@@ -75,6 +75,8 @@ tmp = { kcwi_cfg, $
 	bfiltnum:0, $		; Blue filter number
 	bartang:0., $		; Blue articulation angle
 	bartenc:0l, $		; Blue cmaera articulation encoder steps
+	bcwave:0., $		; Blue central wavelength (Ang)
+	bpwave:0., $		; Blue peak wavelength (Ang)
 	bfocpos:0l, $		; Blue focus stage encoder steps
 	bfocus:0., $		; Blue focus (mm)
 	bnasname:'', $		; Blue mask position name

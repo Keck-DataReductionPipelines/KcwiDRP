@@ -98,6 +98,7 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	cfg.filtnum	= cfg.bfiltnum
 	cfg.campos	= cfg.bartenc
 	cfg.camang	= cfg.bartang
+	cfg.cwave	= cfg.bcwave
 	cfg.focpos	= cfg.bfocpos
 	cfg.focus	= cfg.bfocus
 	if cfg.bnaspos eq 2 then begin

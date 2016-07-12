@@ -1,6 +1,6 @@
 # Copyright (c) 2013-2016, California Institute of Technology, all rights reserved
 
-2016-Jul-10: v0.2.11 - Twelfth beta release
+2016-Jul-12: v0.2.11 - Twelfth beta release
 
 - Major work on arc line finding to be more robust for all KCWI modes.
 

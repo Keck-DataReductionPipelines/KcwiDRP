@@ -5,7 +5,7 @@ Copyright (c) 2016, California Institute of Technology.  All rights reserved.
         KCWI Data Extraction and Reduction Pipeline (KDERP) README
 
 
-Twelfth beta release; Version: 0.2.11 Date: 2016/07/10
+Twelfth beta release; Version: 0.2.11 Date: 2016/07/12
 
 New routine: kcwi_quick.pro for at-telescope reductions.  See NEW FEATURES
 (section 4) below.
