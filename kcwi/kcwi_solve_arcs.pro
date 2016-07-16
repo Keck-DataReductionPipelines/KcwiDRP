@@ -337,6 +337,17 @@ if keyword_set(tweak) then begin
 	;
 	; at this point we have the peaks we want in the atlas spectrum. 
 	;
+	; write out atlas line list
+	openw,al,ppar.reddir+ppar.froot+string(imgnum,'(i0'+strn(ppar.fdigits)+')')+'_atlas.txt',/get_lun
+	printf,al,'# '+pre+': Atlas lines (Ang) printed on '+systime(0)
+	for j=0,twk_ref_npks-1 do printf,al,twk_ref_cent[j],format='(f12.3)'
+	free_lun,al
+	;
+	; open file for output of object line list
+	openw,al,ppar.reddir+ppar.froot+string(imgnum,'(i0'+strn(ppar.fdigits)+')')+'_object.txt',/get_lun
+	printf,al,'# '+pre+': Object lines (Ang) printed on '+systime(0)
+	printf,al,'# AtlWl           Ypx             Bar'
+	;
 	; now pop up a diagnostic window if requested
 	ddisplay = (ppar.display ge 3)
 	if ddisplay then $
@@ -546,6 +557,12 @@ if keyword_set(tweak) then begin
 			rwaves[b,0:(nmatchedpeaks-1)] = targetw
 			xcents[b,0:(nmatchedpeaks-1)] = initx
 			;
+			; write out
+			if iter eq niter-1 do begin
+				for j=0,nmatchedpeaks-1 do $
+					printf,al,targetw[j],initx[j],b,format='(f12.3,f15.3,i7)'
+			endif
+			;
 			if nmatchedpeaks ge degree+2 then begin
 				twkcoeff[*,b] = 0
 				twkcoeff[0:fitdegree,b] = newcoeff
@@ -585,6 +602,9 @@ if keyword_set(tweak) then begin
 	print,'Done tweaking: now get final stats.'
 endif; tweak
 ; endtweak
+;
+; close object line output list
+free_lun,al
 ;
 ; use the tweaked coefficients, if asked to.
 if keyword_set(tweak) and niter gt 1 then $
