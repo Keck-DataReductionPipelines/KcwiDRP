@@ -73,7 +73,7 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2013-MAY-13	Initial version
 ;-
-pro kcwi_map_ccd, hdr, asec, bsec, dsec, tsec, $
+pro kcwi_map_ccd, hdr, asec, bsec, dsec, tsec, direc, $
 	namps = namps, $
 	trimmed_size=trimmed_size, $
 	verbose=verbose
@@ -93,6 +93,7 @@ pro kcwi_map_ccd, hdr, asec, bsec, dsec, tsec, $
 	bsec = asec
 	dsec = asec
 	tsec = asec
+	direc = intarr(namps,2) + 1
 	;
 	; get original image dimensions
 	nx = sxpar(hdr,'NAXIS1')
@@ -121,6 +122,10 @@ pro kcwi_map_ccd, hdr, asec, bsec, dsec, tsec, $
 		dsec[i,0,1] = (max([ds[0],ds[1]]) - 1) < (nx-1)
 		dsec[i,1,0] = (min([ds[2],ds[3]]) - 1) > 0
 		dsec[i,1,1] = (max([ds[2],ds[3]]) - 1) < (ny-1)
+		;
+		; Readout Direction 1 forward, -1 backward
+		if (ds[0] gt ds[1]) then direc[i,0] = -1
+		if (ds[2] gt ds[3]) then direc[i,1] = -1
 		;
 		; TSEC
 		case i of

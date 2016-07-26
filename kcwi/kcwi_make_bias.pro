@@ -106,7 +106,7 @@ pro kcwi_make_bias,ppar
 		; get read noise for each amplifier
 		;
 		; first, get ccd geometry
-		kcwi_map_ccd,hdr,asec,bsec,csec,tsec,namps=namps,verbose=ppar.verbose
+		kcwi_map_ccd,hdr,asec,bsec,csec,tsec,direc,namps=namps,verbose=ppar.verbose
 		mbias_rn = fltarr(namps)
 		for ia = 0, namps - 1 do begin
 			x0 = csec[ia,0,0]

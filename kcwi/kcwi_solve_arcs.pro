@@ -338,15 +338,18 @@ if keyword_set(tweak) then begin
 	; at this point we have the peaks we want in the atlas spectrum. 
 	;
 	; write out atlas line list
-	openw,al,ppar.reddir+ppar.froot+string(imgnum,'(i0'+strn(ppar.fdigits)+')')+'_atlas.txt',/get_lun
+	atllist = ppar.reddir+ppar.froot+string(imgnum,'(i0'+strn(ppar.fdigits)+')')+'_atlas.txt'
+	openw,al,atllist,/get_lun
 	printf,al,'# '+pre+': Atlas lines (Ang) printed on '+systime(0)
 	for j=0,twk_ref_npks-1 do printf,al,twk_ref_cent[j],format='(f12.3)'
 	free_lun,al
+	kcwi_print_info,ppar,pre,'Atlas lines written to',atllist,format='(a,a)'
 	;
 	; open file for output of object line list
-	openw,al,ppar.reddir+ppar.froot+string(imgnum,'(i0'+strn(ppar.fdigits)+')')+'_object.txt',/get_lun
+	objlist = ppar.reddir+ppar.froot+string(imgnum,'(i0'+strn(ppar.fdigits)+')')+'_object.txt'
+	openw,al,objlist,/get_lun
 	printf,al,'# '+pre+': Object lines (Ang) printed on '+systime(0)
-	printf,al,'# AtlWl           Ypx             Bar'
+	printf,al,'#     AtlWl           Ypx      Bar'
 	;
 	; now pop up a diagnostic window if requested
 	ddisplay = (ppar.display ge 3)
@@ -558,7 +561,7 @@ if keyword_set(tweak) then begin
 			xcents[b,0:(nmatchedpeaks-1)] = initx
 			;
 			; write out
-			if iter eq niter-1 do begin
+			if iter eq niter-1 then begin
 				for j=0,nmatchedpeaks-1 do $
 					printf,al,targetw[j],initx[j],b,format='(f12.3,f15.3,i7)'
 			endif
@@ -605,6 +608,7 @@ endif; tweak
 ;
 ; close object line output list
 free_lun,al
+kcwi_print_info,ppar,pre,'Object lines written to',objlist,format='(a,a)'
 ;
 ; use the tweaked coefficients, if asked to.
 if keyword_set(tweak) and niter gt 1 then $

@@ -12,8 +12,7 @@ defsysv,'!colorstr',''
 defsysv,'!colorstr_ps',''
 defsysv,'!colorstr_x',''
 ;
-; KCWI system variables:
+; KCWI system variable:
 ; EDIT THIS to point to data dir in current release!!!
 defsysv,'!KCWI_DATA','/Users/neill/kcwi/pipeline/releases/kderp/data/'
-defsysv,'!CWI_DATA','/Users/neill/kcwi/pipeline/releases/kderp/cwi/'
 ;

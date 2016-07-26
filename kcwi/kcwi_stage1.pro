@@ -209,7 +209,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			sz = size(img,/dimension)
 			;
 			; get ccd geometry
-			kcwi_map_ccd,hdr,asec,bsec,dsec,tsec,namps=namps,trimmed_size=tsz,verbose=ppar.verbose
+			kcwi_map_ccd,hdr,asec,bsec,dsec,tsec,direc,namps=namps,trimmed_size=tsz,verbose=ppar.verbose
 			;
 			; check amps
 			if namps le 0 then begin
@@ -347,15 +347,20 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 					osy1	= bsec[ia,1,1]
 					;
 					; collapse each row
-					osvec = total(img[osx0:osx1,osy0:osy1],1)/float(osx1-osx0)
-					xx = findgen(n_elements(osvec)) + osy0
+					osvec = median(img[osx0:osx1,osy0:osy1],dim=1)
+					nx = n_elements(osvec)
+					xx = findgen(nx) + osy0
 					mo = moment(osvec)
 					mnos = mo[0]
 					sdos = sqrt(mo[1])
 					yrng = [mnos-sdos*3.,mnos+sdos*3.]
 					;
 					; fit overscan vector
-					res = polyfit(xx,osvec,5,osfit)
+					; but skip first 50 pixels read to avoid edge effects
+					if direc[ia,1] lt 0 then $
+						res = polyfit(xx[0:nx-50],osvec[0:nx-50],2) $
+					else	res = polyfit(xx[49:*],osvec[49:*],2)
+					osfit = poly(xx,res)
 					resid = osvec - osfit
 					mo = moment(resid)
 					mnrs = mo[0]
