@@ -356,11 +356,33 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 					yrng = [mnos-sdos*3.,mnos+sdos*3.]
 					;
 					; fit overscan vector
-					; but skip first 50 pixels read to avoid edge effects
-					if direc[ia,1] lt 0 then $
-						res = polyfit(xx[0:nx-50],osvec[0:nx-50],2) $
-					else	res = polyfit(xx[49:*],osvec[49:*],2)
-					osfit = poly(xx,res)
+					;
+					; are we reading out so that larger y-values are read out first?
+					if direc[ia,1] lt 0 then begin
+						res = polyfit(xx[0:nx-50],osvec[0:nx-50],2)
+						resu = polyfit(xx[nx-50:nx-1],osvec[nx-50:nx-1],1)
+						osfit = poly(xx,res)
+						osfitu = poly(xx[nx-50:nx-1],resu)
+						;
+						; make sure we are ending above the main fit and that we are increasing
+						if (osfitu[49] gt osfit[nx-1]) and (osfitu[49] gt osfitu[0]) then $
+							for oy=0,49 do $
+								if (osfitu[oy] gt osfit[(nx-50)+oy]) then $
+									osfit[(nx-50)+oy] = osfitu[oy]
+					;
+					; reading out so that smaller y-values are read out first
+					endif else begin
+						res = polyfit(xx[49:*],osvec[49:*],2)
+						resu = polyfit(xx[0:49],osvec[0:49],1)
+						osfit = poly(xx,res)
+						osfitu = poly(xx[0:49],resu)
+						;
+						; make sure we are ending above the main fit and that we are increasing
+						if (osfitu[0] gt osfit[0]) and (osfitu[0] gt osfitu[49])then $
+							for oy=0,49 do $
+								if (osfitu[oy] gt osfit[oy]) then $
+									osfit[oy] = osfitu[oy]
+					endelse
 					resid = osvec - osfit
 					mo = moment(resid)
 					mnrs = mo[0]
