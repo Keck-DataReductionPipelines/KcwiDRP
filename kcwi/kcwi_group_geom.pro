@@ -163,8 +163,8 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg, ngeom
 			match = (where(diff eq min(diff)))[0]
 			ind = array_indices(diff,match)
 			;
-			cbi[i] = cbri[ind[0]]
-			ari[i] = arci[ind[1<(n_elements(ind)-1)]]
+			cbi[i] = cbri[ ind[0] <(n_elements(cbri)-1) ]
+			ari[i] = arci[ ind[1  <(n_elements(ind)-1)  ] <(n_elements(arci)-1) ]
 			stat[i] = 1
 		endif
 	endfor
