@@ -1,6 +1,12 @@
 # Copyright (c) 2013-2016, California Institute of Technology, all rights reserved
 
-2016-Aug-XX: v0.2.12 - Thirteenth beta release
+2016-Aug-23: v0.2.12 - Thirteenth beta release
+
+- Changed default image prefix to "kcwi"
+
+- Added image rectification (based on CCD amp mode) segment to stage1.
+
+- Fixed bug in geometry grouping.
 
 - Changed overscan calculation to use lower order (5 to 2), to skip first 50 
 	read pixels.

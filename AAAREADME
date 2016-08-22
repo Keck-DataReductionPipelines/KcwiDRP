@@ -5,10 +5,7 @@ Copyright (c) 2016, California Institute of Technology.  All rights reserved.
         KCWI Data Extraction and Reduction Pipeline (KDERP) README
 
 
-Twelfth beta release; Version: 0.2.11 Date: 2016/07/12
-
-New routine: kcwi_quick.pro for at-telescope reductions.  See NEW FEATURES
-(section 4) below.
+Thirteenth beta release; Version: 0.2.12 Date: 2016/08/23
 
 Caveat Emptor!  Use at your own risk!  In active development!
 
@@ -593,7 +590,6 @@ This is a beta release, so there is still much to do:
 -. Combine a group of skys to improve profile s/n
 -. Clean up data structures to remove extraneous or repeated items
 -. Implement non-nod-and-shuffle sky subtraction
--. Implement all configuration modes of KCWI
 -. Install a library of calibration images and geometry solutions
 -. Install a library of reference spectra for wavelength solutions
 -. Refine flat field fitting to better handle fringing in the red

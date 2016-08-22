@@ -129,7 +129,6 @@ prelim_disp = cos(prelim_beta/!radeg)/rho/fcam*(pix*ybin)*1e4
 ; there is some... so
 ;
 prelim_disp *= cos(gamma/!radeg)
-;prelim_disp = 0.230
 ;
 ; report results
 kcwi_print_info,ppar,pre,'Initial alpha, beta',prelim_alpha, prelim_beta, $

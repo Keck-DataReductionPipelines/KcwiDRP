@@ -72,7 +72,7 @@ tmp = { kcwi_ppar, $
 ;
 ; processing files
 	filespec:'image????.fit*', $	; input file spec
-	froot:'kb', $		; filename root string
+	froot:'kcwi', $		; filename root string
 	fdigits:4, $		; number of digits in image numbers
 ;
 ; Image numbers
