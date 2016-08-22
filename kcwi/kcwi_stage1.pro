@@ -355,34 +355,23 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 					sdos = sqrt(mo[1])
 					yrng = [mnos-sdos*3.,mnos+sdos*3.]
 					;
+					; check order of fit
+					if nx gt 1050 then $
+						order = 7 $
+					else	order = 2
+					;
 					; fit overscan vector
 					;
+					; don't let first read pixels skew the fit (they can be high)
 					; are we reading out so that larger y-values are read out first?
 					if direc[ia,1] lt 0 then begin
-						res = polyfit(xx[0:nx-50],osvec[0:nx-50],2)
-						resu = polyfit(xx[nx-50:nx-1],osvec[nx-50:nx-1],1)
-						osfit = poly(xx,res)
-						osfitu = poly(xx[nx-50:nx-1],resu)
-						;
-						; make sure we are ending above the main fit and that we are increasing
-						if (osfitu[49] gt osfit[nx-1]) and (osfitu[49] gt osfitu[0]) then $
-							for oy=0,49 do $
-								if (osfitu[oy] gt osfit[(nx-50)+oy]) then $
-									osfit[(nx-50)+oy] = osfitu[oy]
+						res = polyfit(xx[0:nx-50],osvec[0:nx-50],order)
 					;
 					; reading out so that smaller y-values are read out first
 					endif else begin
-						res = polyfit(xx[49:*],osvec[49:*],2)
-						resu = polyfit(xx[0:49],osvec[0:49],1)
-						osfit = poly(xx,res)
-						osfitu = poly(xx[0:49],resu)
-						;
-						; make sure we are ending above the main fit and that we are increasing
-						if (osfitu[0] gt osfit[0]) and (osfitu[0] gt osfitu[49])then $
-							for oy=0,49 do $
-								if (osfitu[oy] gt osfit[oy]) then $
-									osfit[oy] = osfitu[oy]
+						res = polyfit(xx[49:*],osvec[49:*],order)
 					endelse
+					osfit = poly(xx,res)
 					resid = osvec - osfit
 					mo = moment(resid)
 					mnrs = mo[0]
@@ -844,6 +833,48 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			; END   STAGE 1-H: NOD-AND-SHUFFLE SUBTRACTION
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			;
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			; BEGIN STAGE 1-I: IMAGE RECTIFICATION
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			;
+			; get ampmodes that require rectification
+			ampmode = strupcase(strtrim(kcfg.ampmode,2))
+			if ampmode eq '__D' or ampmode eq '__F' or ampmode eq '__B' or ampmode eq '__G' or $
+			   ampmode eq '__A' or ampmode eq '__H' or ampmode eq 'TUP' then begin
+				;
+			   	; Upper Right Amp
+			   	if ampmode eq '__B' or ampmode eq '__G' then begin
+					img = rotate(img, 2)
+					msk = rotate(msk, 2)
+					var = rotate(var, 2)
+				endif
+				;
+				;  Lower Right Amp
+				if ampmode eq '__D' or ampmode eq '__F' then begin
+					img = rotate(img, 5)
+					msk = rotate(msk, 5)
+					var = rotate(var, 5)
+				endif
+				;
+				; Upper Left Amp
+				if ampmode eq '__A' or ampmode eq '__H' then begin
+					img = rotate(img, 7)
+					msk = rotate(msk, 7)
+					var = rotate(var, 7)
+				endif
+				;
+				; Upper two Amps
+				if ampmode eq 'TUP' then begin
+					img = rotate(img, 7)
+					msk = rotate(msk, 7)
+					var = rotate(var, 7)
+				endif
+		   	endif 
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			; END   STAGE 1-I: IMAGE RECTIFICATION
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			;
 			;
 			; write out mask image
 			ofil = kcwi_get_imname(ppar,imgnum[i],'_msk',/nodir)
