@@ -356,7 +356,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 					yrng = [mnos-sdos*3.,mnos+sdos*3.]
 					;
 					; check order of fit
-					if nx gt 1050 then $
+					if namps lt 4 then $
 						order = 7 $
 					else	order = 2
 					;
