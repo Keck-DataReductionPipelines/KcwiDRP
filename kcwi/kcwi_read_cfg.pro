@@ -101,7 +101,8 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	cfg.cwave	= cfg.bcwave
 	cfg.focpos	= cfg.bfocpos
 	cfg.focus	= cfg.bfocus
-	if cfg.bnaspos eq 2 then begin
+	if cfg.bnaspos eq 2 or $
+	    strcmp(strtrim(strupcase(cfg.bnasnam),2),'MASK') eq 1 then begin
 		cfg.nasmask = 1
 		cfg.nsskyr0 = 1
 		cfg.nsskyr1 = cfg.shufrows
