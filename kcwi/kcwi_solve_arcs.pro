@@ -493,7 +493,15 @@ if keyword_set(tweak) then begin
 			twk_spec_idx = matchedpeaks
 			;
 			targetw = twk_ref_cent[twk_ref_idx]
-			initx = cspline(subwvals,subxvals,twk_spec_cent[twk_spec_idx])
+			;
+			; check if subwvals is monotonic (cspline requires this)
+			testw = subwvals(sort(subwvals))
+			diff = subwvals - testw
+			junk = where(diff ne 0., ndiff)
+			if ndiff gt 0 then begin
+				kcwi_print_info,ppar,pre,'wavelengths not monotonic',/warn
+				initx = twk_spec_cent[twk_spec_idx]
+			endif else	initx = cspline(subwvals,subxvals,twk_spec_cent[twk_spec_idx])
 			;
 			; we need reverse coefficients.
 			fitdegree = degree < (nmatchedpeaks-1)
