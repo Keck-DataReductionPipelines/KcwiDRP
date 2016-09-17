@@ -487,8 +487,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	;
 	; set up configuration matching: here is our list of 
 	; default tags to match in the KCWI_CFG struct
-	mtags = ['XBINSIZE','YBINSIZE','AMPMODE','GRATID','GRANGLE','FILTER', $
-		 'CAMPOS','FOCPOS','NASMASK','IFUNUM']
+	mtags = ['XBINSIZE','YBINSIZE','GRATID','GRANGLE','FILTNUM', $
+		 'CAMANG','NASMASK','IFUNUM']
 	;
 	; set up links
 	nlinks = 9	; bias,dark.flat,cbar,arc,prof,sky,rrsp,std
@@ -616,7 +616,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; no sense creating a dark data cube
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.ncbars gt 0 and ppar.narcs gt 0 then begin
-			mcfg = kcwi_match_cfg(ccfg,kcfg[p],ppar,mtags,imgtype='cbars',/time,count=c,/silent,cwi=cwi)
+			mcfg = kcwi_match_cfg(ccfg,kcfg[p],ppar,mtags,imgtype='cbars',/time,count=c,/silent)
 			if c eq 1 then begin
 				;
 				; record cbars filename
