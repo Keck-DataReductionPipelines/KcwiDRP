@@ -203,8 +203,15 @@ cdelt2 = kgeom.slscl			; Dec degrees per slice (row)
 if nra ne 1 or ndec ne 1 or npa ne 1 then begin
 	;
 	; no good coords
-	kcwi_print_info,ppar,pre,'no coords for image',imgnum,imgtyp, $
-		format='(a,2x,a,2x,a)',/warning
+	; a warning for objects
+	if strcmp(imgtyp,'object') eq 1 then begin
+		kcwi_print_info,ppar,pre,'no coords for image',imgnum,imgtyp, $
+			format='(a,2x,a,2x,a)',/warning
+	; otherwise just info
+	endif else begin
+		kcwi_print_info,ppar,pre,'no coords for image',imgnum,imgtyp, $
+			format='(a,2x,a,2x,a)'
+	endelse
 	;
 	; zero coords
 	ra = 0.
