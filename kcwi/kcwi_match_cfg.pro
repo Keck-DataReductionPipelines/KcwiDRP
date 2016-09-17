@@ -20,9 +20,9 @@
 ;	Tcfg	- target struct KCWI_CFG to match
 ;	Ppar	- pipeline parameter KCWI_PPAR struct
 ;	Tlist	- list of KCWI_CFG struct tag names to match
-;		   Defaults to ['XBINSIZE','YBINSIZE','AMPMODE',
-;				'GRATID','GRATPOS','FILTER',
-;				'FM4POS','CAMPOS','FOCPOS']
+;		   Defaults to ['XBINSIZE','YBINSIZE','GRATID',
+;				'GRANGLE','FILTNUM','CAMANG',
+;				'NASMASK','IFUNUM']
 ;
 ; Returns:
 ;	Kcfg entries that match the target configuration, -1 if none found.
@@ -92,8 +92,8 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 	;
 	; do we have a tag list
 	if n_elements(tlist) le 0 then begin
-		mtags = ['XBINSIZE','YBINSIZE','AMPMODE','GRATID','FILTER', $
-			 'FOCPOS']
+		mtags = ['XBINSIZE','YBINSIZE','GRATID','GRANGLE','FILTNUM', $
+			 'CAMANG','NASMASK','IFUNUM']
 	endif else begin
 		mtags = strupcase(tlist)
 	endelse
@@ -129,10 +129,40 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 		; loop over match tags
 		for j=0,nmatch-1 do begin
 			;
+			; get type
+			type = size(tcfg.(tnum[j]),/type)
+			;
 			; check for non-matching condition
-			if kcfg[i].(tnum[j]) ne tcfg.(tnum[j]) then begin
-				match = (1 eq 0)
-			endif
+			switch type of
+				; float-like types
+				4:
+				5: begin
+					if abs(kcfg[i].(tnum[j]) - tcfg.(tnum[j])) gt 0.01 then begin
+						match = (1 eq 0)
+					endif
+					break
+				end
+				; int-like types
+				1:
+				2:
+				3: begin
+					if abs(kcfg[i].(tnum[j]) - tcfg.(tnum[j])) gt 0 then begin
+						match = (1 eq 0)
+					endif
+					break
+				end
+				; string type
+				7: begin
+					if kcfg[i].(tnum[j]) ne tcfg.(tnum[j]) then begin
+						match = (1 eq 0)
+					endif
+					break
+				end
+				else: begin
+					kcwi_print_info,ppar,pre,'Illegal tag type for comparison',type,/warning
+					match = (1 eq 0)
+				end
+			endswitch
 		endfor
 		;
 		; we have a tag match
