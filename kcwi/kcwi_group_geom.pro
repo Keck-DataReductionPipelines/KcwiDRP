@@ -84,7 +84,7 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg, ngeom
 			;
 			; check for group overflow
 			if gind ge maxgrps then begin
-				kcwi_print_info,'geom group overflow',gind,/error
+				kcwi_print_info,ppar,pre,'geom group overflow',gind,/error
 				return
 			endif
 			;
@@ -95,7 +95,7 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg, ngeom
 			;
 			; check for member overflow
 			if p ge maxmemb then begin
-				kcwi_print_info,'geom group member overflow',p,/error
+				kcwi_print_info,ppar,pre,'geom group member overflow',p,/error
 				return
 			endif
 		endif else begin
@@ -107,7 +107,7 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg, ngeom
 			;
 			; check for member overflow
 			if p ge maxmemb then begin
-				kcwi_print_info,'geom group member overflow',p,/error
+				kcwi_print_info,ppar,pre,'geom group member overflow',p,/error
 				return
 			endif
 		endelse
@@ -149,6 +149,20 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg, ngeom
 		;
 		; do we have enough?
 		if nga gt 0 and ngc gt 0 then begin
+			;
+			; BH gratings prefer ThAr
+			if nga gt 1 then begin
+				if strpos(kcfg[arci[ga[0]]].gratid,'BH') ge 0 then begin
+					for ii=0,nga-1 do begin
+						if kcfg[arci[ga[ii]]].lmp1stat eq 1 and $
+						   kcfg[arci[ga[ii]]].lmp1shst eq 1 then begin
+					   		ga = ga[ii]
+							kcwi_print_info,ppar,pre,"For BH grating, choosing lamp",kcfg[arci[ga]].lmp1nam
+							break
+						endif
+					endfor
+				endif
+			endif
 			cbri = cbri[gc]
 			arci = arci[ga]
 			;
