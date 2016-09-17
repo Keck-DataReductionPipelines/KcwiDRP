@@ -179,11 +179,14 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	; grating parameters BH2
 	if strtrim(kcfg.gratid,2) eq 'BH2' then begin
 		kgeom.resolution = 0.5
-		kgeom.ccwn = 360./kgeom.ybinsize
+		kgeom.ccwn = 100.	;360./kgeom.ybinsize
 		kgeom.rho = 3.255d
 		kgeom.adjang = 180.d
 		kgeom.lastdegree = 4
 		kgeom.bclean = 0
+		kgeom.ccoff = [-300.,-60.,-300.,-60.,-275.,-60.,-250.,-60.,-230.,-60.,-220.,0., $
+			       -220., -7.,-150., 13.,-150., 35.,-150., 60.,-150., 90.,-140.,125.]
+		kgeom.ccoff = kgeom.ccoff/kgeom.ybinsize
 		;
 		; output disperison
 		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
@@ -192,11 +195,14 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	; grating parameters BH3
 	if strtrim(kcfg.gratid,2) eq 'BH3' then begin
 		kgeom.resolution = 0.5
-		kgeom.ccwn = 360./kgeom.ybinsize
+		kgeom.ccwn = 100.	;360./kgeom.ybinsize
 		kgeom.rho = 2.80d
 		kgeom.adjang = 180.d
 		kgeom.lastdegree = 4
 		kgeom.bclean = 0
+		kgeom.ccoff = [-300.,-60.,-300.,-60.,-250.,-60.,-240.,-60.,-220.,-60.,-200.,0., $
+			       -210., -7.,-150., 13.,-150., 35.,-150., 60.,-150., 90.,-140.,115.]
+		kgeom.ccoff = kgeom.ccoff/kgeom.ybinsize
 		;
 		; output disperison
 		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
@@ -205,11 +211,14 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	; grating parameters BM
 	if strtrim(kcfg.gratid,2) eq 'BM' then begin
 		kgeom.resolution = 1.00
-		kgeom.ccwn = 260./kgeom.ybinsize
+		kgeom.ccwn = 75.	;260./kgeom.ybinsize
 		kgeom.rho = 1.900d
 		kgeom.adjang = 0.d
 		kgeom.lastdegree = 4
 		kgeom.bclean = 0
+		kgeom.ccoff = [-200.,50.,-220.,15.,-230.,-15.,-230.,-35.,-230.,-50.,-220.,0., $
+			       -235.,-5.,-160.,25.,-140., 70.,-120.,120., -85.,185., -40.,200.]
+		kgeom.ccoff = kgeom.ccoff/kgeom.ybinsize
 		;
 		; output disperison
 		kgeom.dwout = 0.38 * float(kcfg.ybinsize)
