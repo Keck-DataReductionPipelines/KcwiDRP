@@ -91,6 +91,33 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 		return
 	endif
 	;
+	; set up bar offsets
+	baroffs = [[[-220.,   20., -220.,    0., -210.,  -14., -210.,  -30., -210.,  -40., -200.,    0., $	; BH3 Lar
+		     -220.,  -20., -170.,  -10., -180.,    0., -190.,   20., -190.,   40., -190.,   70.], $
+		    [-260.,  -20., -250.,  -30., -240.,  -40., -230.,  -50., -220.,  -50., -200.,    0., $	; BH3 Med
+		     -215.,  -10., -160.,    5., -160.,   25., -160.,   50., -150.,   80., -140.,  118.], $
+		    [-286.,  -40., -270.,  -50., -260.,  -50., -240.,  -50., -225.,  -60., -210.,    0., $	; BH3 Sma
+		     -215.,   -7., -151.,   15., -150.,   40., -140.,   70., -130.,  100., -120.,  140.]], $
+		   [[ -80.,  150., -120.,   90., -160.,   40., -190.,   -4., -200.,  -40., -220.,    0., $	; BL Lar
+		     -240.,  -20., -180.,    8., -170.,   40., -160.,   90., -120.,  150.,  -80.,  240.], $
+		    [-140.,  106., -175.,   50., -200.,   10., -215.,  -20., -220.,  -50., -225.,    0., $	; BL Med
+		     -240.,   -8., -160.,   25., -150.,   70., -120.,  130.,  -80.,  200.,  -30.,  290.], $
+		    [-160.,   80., -195.,   35., -215.,   -4., -220.,  -30., -230.,  -50., -230.,    0., $	; BL Sma
+		     -240.,   -3., -160.,   35., -140.,   85., -105.,  150.,  -60.,  220.,   -4.,  315.]], $
+		   [[-220.,   20., -220.,    0., -210.,  -16., -210.,   30., -200.,  -40., -200.,    0., $	; BH2 Lar
+		     -220.,  -20., -170.,  -10., -180.,    0., -190.,   20., -190.,   40., -190.,   60.], $
+		    [-260.,  -25., -250.,  -30., -240.,  -40., -230.,  -40., -215.,  -50., -200.,    0., $	; BH2 Med
+		     -210.,  -10., -160.,    5., -160.,   25., -160.,   50., -150.,   75., -140.,  110.], $
+		    [-280.,  -50., -270.,  -50., -250.,  -50., -240.,  -50., -220.,  -60., -205.,    0., $	; BH2 Sma
+		     -210.,   -7., -150.,   15., -150.,   40., -140.,   60., -130.,   95., -120.,  135.]], $
+		   [[-140.,  100., -160.,   60., -180.,   20., -200.,  -15., -200.,  -40., -210.,    0., $	; BM Lar
+		     -240.,  -20., -180.,    0., -180.,   20., -160.,   60., -150.,  100., -120.,  170.], $
+		    [-180.,   60., -200.,   20., -210.,   -8., -220.,  -30., -220.,  -50., -220.,    0., $	; BM Med
+		     -230.,  -10., -160.,   20., -150.,   50., -135.,  100., -110.,  150.,  -70.,  220.], $
+		    [-210.,   40., -220.,    5., -230.,  -20., -230.,  -40., -230.,  -50., -220.,    0., $	; BM Sma
+		     -230.,   -5., -150.,   30., -140.,   70., -120.,  120.,  -90.,  175.,  -50.,  250.]]]
+
+	;
 	; get output geom file name
 	odir = ppar.reddir
 	kgeom.geomfile = ppar.reddir + $
@@ -161,7 +188,8 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	endelse
 	;
 	; default to no cc offsets
-	kgeom.ccoff = fltarr(24)
+	kgeom.ccoff = reform(baroffs[*,kgeom.ifunum-1,kgeom.gratnum-1])
+	kgeom.ccoff = kgeom.ccoff/kgeom.ybinsize
 	;
 	; grating parameters BH1
 	if strtrim(kcfg.gratid,2) eq 'BH1' then begin
@@ -184,9 +212,6 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 		kgeom.adjang = 180.d
 		kgeom.lastdegree = 4
 		kgeom.bclean = 0
-		kgeom.ccoff = [-300.,-60.,-300.,-60.,-275.,-60.,-250.,-60.,-230.,-60.,-220.,0., $
-			       -220., -7.,-150., 13.,-150., 35.,-150., 60.,-150., 90.,-140.,125.]
-		kgeom.ccoff = kgeom.ccoff/kgeom.ybinsize
 		;
 		; output disperison
 		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
@@ -200,9 +225,6 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 		kgeom.adjang = 180.d
 		kgeom.lastdegree = 4
 		kgeom.bclean = 0
-		kgeom.ccoff = [-300.,-60.,-300.,-60.,-250.,-60.,-240.,-60.,-220.,-60.,-200.,0., $
-			       -210., -7.,-150., 13.,-150., 35.,-150., 60.,-150., 90.,-140.,115.]
-		kgeom.ccoff = kgeom.ccoff/kgeom.ybinsize
 		;
 		; output disperison
 		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
@@ -216,9 +238,6 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 		kgeom.adjang = 0.d
 		kgeom.lastdegree = 4
 		kgeom.bclean = 0
-		kgeom.ccoff = [-200.,50.,-220.,15.,-230.,-15.,-230.,-35.,-230.,-50.,-220.,0., $
-			       -235.,-5.,-160.,25.,-140., 70.,-120.,120., -85.,185., -40.,200.]
-		kgeom.ccoff = kgeom.ccoff/kgeom.ybinsize
 		;
 		; output disperison
 		kgeom.dwout = 0.38 * float(kcfg.ybinsize)
@@ -227,7 +246,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	; grating parameters BL
 	if strtrim(kcfg.gratid,2) eq 'BL' then begin
 		kgeom.resolution = 2.0
-		kgeom.ccwn = 320./kgeom.ybinsize
+		kgeom.ccwn = 75.	;320./kgeom.ybinsize
 		kgeom.rho = 0.870d
 		kgeom.adjang = 0.d
 		kgeom.lastdegree = 4
