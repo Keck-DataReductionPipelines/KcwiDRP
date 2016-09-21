@@ -303,8 +303,14 @@ for b=0,119 do begin
 		;
 		; plot residuals
 		if keyword_set(tweak) and display then begin
-			residrng = get_plotlims(ddwaves)
-			resrng = [residrng[0]<(-0.2),residrng[1]>0.2]
+			if nli gt 0 then begin
+				residrng = get_plotlims(ddwaves)
+				resrng = [residrng[0]<(-0.2),residrng[1]>0.2]
+			endif else begin
+				ffwaves = fltarr(2)
+				ddwaves = fltarr(2)
+				resrng = [-0.2, 0.2]
+			endelse
 			plot,ffwaves,ddwaves,psym=4,charthi=th,thick=th, $
 				xthick=th,xtitle='Wave(Ang)',xrange=[minwav,maxwav],/xs, $
 				ythick=th,ytitle='Resid(Ang)',yrange=resrng,/ys, $
