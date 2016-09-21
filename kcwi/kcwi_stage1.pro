@@ -723,7 +723,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 				skyrow0 = (kcfg.nsskyr0 - 1) > 0
 				skyrow1 = (kcfg.nsskyr1 - 1) > 0
 				objrow0 = (kcfg.nsobjr0 - 1) > 0
-				objrow1 = (kcfg.nsobjr1 - 2) > 0	; gotta fix this in the server!!!!
+				objrow1 = (kcfg.nsobjr1 - 1) > 0
 				;
 				; check limits
 				if (skyrow1-skyrow0) eq (objrow1-objrow0) then begin
