@@ -577,7 +577,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 				;
 				; test for short exposures
 				if strmatch(kcfg.imgtype,'object') eq 1 then begin
-					if kcfg.exptime lt 300. then $
+					if kcfg.xposure lt 300. then $
 						sigclip = 10. $
 					else	sigclip = 4.5
 				endif
@@ -723,7 +723,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 				skyrow0 = (kcfg.nsskyr0 - 1) > 0
 				skyrow1 = (kcfg.nsskyr1 - 1) > 0
 				objrow0 = (kcfg.nsobjr0 - 1) > 0
-				objrow1 = (kcfg.nsobjr1 - 1) > 0
+				objrow1 = (kcfg.nsobjr1 - 2) > 0	; gotta fix this in the server!!!!
 				;
 				; check limits
 				if (skyrow1-skyrow0) eq (objrow1-objrow0) then begin

@@ -109,12 +109,15 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 		cfg.nsobjr0 = cfg.nsskyr1 + 1
 		cfg.nsobjr1 = cfg.nsobjr0 + cfg.shufrows
 	endif else	cfg.nasmask = 0
+	if sxpar(hdr,'NSHFUP') gt 0 or sxpar(hdr,'NSHFDN') gt 0 then $
+		cfg.shuffmod = 1
 	cfg.obsfname	= root + '.' + ext
 	cfg.obsdir	= disk + dir
 	cfg.obstype	= 'test'
 	caltype		= strlowcase(strtrim(cfg.caltype,2))
 	cfg.imgtype	= caltype
-	if strcmp(caltype,'bias') eq 1 then begin
+	if cfg.xposure eq 0. or strcmp(caltype,'bias') eq 1 then begin
+		cfg.imgtype	= 'bias'
 		cfg.obstype	= 'zero'
 	endif else if strcmp(caltype,'dark') eq 1 then begin
 		cfg.obstype	= 'zero'

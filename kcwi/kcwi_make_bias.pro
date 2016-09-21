@@ -76,7 +76,7 @@ pro kcwi_make_bias,ppar
 		for i=1,nb-1 do begin
 			im = kcwi_read_raw(ppar,bnums[i],header=bhdr, $
 					/silent)
-			if strtrim(sxpar(bhdr,'IMGTYPE'),2) eq 'bias' then begin
+			if sxpar(bhdr,'XPOSURE') eq 0. then begin
 				stack[nstack,*,*] = im
 				nstack = nstack + 1
 			endif else begin
@@ -118,7 +118,8 @@ pro kcwi_make_bias,ppar
 			ims,noise,mn,sg
 			;
 			; get gain
-			gain = sxpar(hdr,'GAIN'+strn(ia+1))
+			gain = sxpar(hdr,'GAIN'+strn(ia+1),count=ngain)
+			if ngain eq 0 then gain = sxpar(hdr,'CCDGAIN')
 			mbias_rn[ia] = gain * sg/sqrt(2)
 			;
 			; log
