@@ -107,7 +107,7 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 		cfg.nsskyr0 = 1
 		cfg.nsskyr1 = cfg.shufrows
 		cfg.nsobjr0 = cfg.nsskyr1 + 1
-		cfg.nsobjr1 = cfg.nsobjr0 + cfg.shufrows
+		cfg.nsobjr1 = cfg.nsobjr0 + cfg.shufrows - 1
 	endif else	cfg.nasmask = 0
 	if sxpar(hdr,'NSHFUP') gt 0 or sxpar(hdr,'NSHFDN') gt 0 then $
 		cfg.shuffmod = 1
