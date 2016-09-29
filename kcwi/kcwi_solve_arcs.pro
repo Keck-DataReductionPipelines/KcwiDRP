@@ -320,7 +320,7 @@ if keyword_set(tweak) then begin
 	kcwi_print_info,ppar,pre,'Atlas threshhold in percent of max',fix(fthr*100.)
 	kcwi_print_info,ppar,pre,'Number of clean atlas lines found',twk_ref_npks,$
 		format='(a,i4)'
-	kcwi_print_info,ppar,pre,'Matching width in Angstroms',ppar.pkdel*resolution>refdisp,$
+	kcwi_print_info,ppar,pre,'Matching width in Angstroms',ppar.pkdel*refdisp,$
 		format='(a,f6.4)'
 	;
 	if ppar.display ge 3 then begin
@@ -431,10 +431,10 @@ if keyword_set(tweak) then begin
 				mn = min(diff,dim=1,mi)
 				;
 				; here we match the peaks to one another. 
-				pkd = ppar.pkdel
+				pkd = ppar.pkdel > 1.0
 				;
 				; never let this get smaller than a single atlas pixel
-				pkm = pkd*resolution>refdisp	; match thresh in Angstroms
+				pkm = pkd*refdisp	; match thresh in Angstroms
 				matchedpeaks = where(mn lt pkm, nmatchedpeaks)
 				;
 				; for first iteration, make sure we have enough peaks
@@ -444,10 +444,10 @@ if keyword_set(tweak) then begin
 					while nmatchedpeaks lt 5 and pkd lt 2. do begin
 						;
 						; open up the match criterion
-						pkd += 0.25
+						pkd += 0.5
 						;
 						; try again
-						pkm = pkd*resolution>refdisp
+						pkm = pkd*refdisp
 						matchedpeaks = where(mn lt pkm, nmatchedpeaks)
 					endwhile
 					;
