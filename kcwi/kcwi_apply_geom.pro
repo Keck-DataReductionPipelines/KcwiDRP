@@ -165,6 +165,10 @@ sxaddpar,chdr,'AVWVSIG',kgeom.avewavesig,' Avg. bar wave sigma (Ang)'
 sxaddpar,chdr,'SDWVSIG',kgeom.stdevwavesig,' Stdev. bar wave sigma (Ang)'
 ;
 ; geometry solution RMS
+xmo = moment(kgeom.xrsd,/nan)
+ymo = moment(kgeom.yrsd,/nan)
+sxaddpar,chdr, 'GEOXGSG', xmo[0], ' Global geometry X sigma (pix)'
+sxaddpar,chdr, 'GEOYGSG', ymo[0], ' Global geometry Y sigma (pix)'
 for i=0,23 do begin
 	sxaddpar,chdr, 'GEOXSG'+strn(i), kgeom.xrsd[i],' Avg. geometry X sigma (pix) slice '+strn(i),format='F7.3'
 	sxaddpar,chdr, 'GEOYSG'+strn(i), kgeom.yrsd[i],' Avg. geometry Y sigma (pix) slice '+strn(i),format='F7.3'

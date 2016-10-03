@@ -118,6 +118,8 @@ for i=0,23 do begin
 	ymo = moment(yrsd,/nan)
 	kgeom.xrsd[i] = sqrt(xmo[1])
 	kgeom.yrsd[i] = sqrt(ymo[1])
+	kcwi_print_info,ppar,pre,'X, Y avg pixel residual for slice: ',i,kgeom.xrsd[i],kgeom.yrsd[i], $
+		format='(a,i3,2f9.3)'
 	;
 	; plot if requested
 	if display then begin
@@ -151,6 +153,12 @@ for i=0,23 do begin
 		if strupcase(strmid(q,0,1)) eq 'Q' then display = (1 eq 0)
 	endif	; display
 endfor	; loop over slices
+;
+; global average
+xmo = moment(kgeom.xrsd,/nan)
+ymo = moment(kgeom.yrsd,/nan)
+kcwi_print_info,ppar,pre,'X, Y global pixel residuals: ',i,xmo[0],ymo[0], $
+	format='(a,i3,2f9.3)'
 ;
 ; Kgeom timestamp
 kgeom.timestamp = systime(1)

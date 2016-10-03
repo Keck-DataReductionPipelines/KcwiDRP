@@ -61,11 +61,8 @@ if kwxsz[0] ne degree+1 or kwxsz[1] ne degree+1 or $
    return
 endif
 ;
-xrsd = fltarr(np)
-yrsd = fltarr(np)
-;
-xp=0
-yp=0
+xp=0.
+yp=0.
 for i=0,degree do for j=0,degree do begin
 	xp = xp + kwx[i,j]*xw^j*yw^i
 	yp = yp + kwy[i,j]*xw^j*yw^i
