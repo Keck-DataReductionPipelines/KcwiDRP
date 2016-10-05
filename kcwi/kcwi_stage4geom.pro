@@ -230,6 +230,9 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 					; if not, derive it
 					endif else begin
 						;
+						; time geometry generation
+						gstartime = systime(1)
+						;
 						; get reduced images (assume dark subtracted images first)
 						cbf = kcwi_get_imname(ppar,cnums[i],'_intd',/reduced)
 						arf = kcwi_get_imname(ppar,anums[i],'_intd',/reduced)
@@ -294,6 +297,12 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						;
 						; write out result
 						kcwi_write_geom,ppar,kgeom
+						;
+						; time for geometry
+						eltime = systime(1) - gstartime
+						print,''
+						printf,ll,''
+						kcwi_print_info,ppar,pre,'geom time in seconds',eltime
 					endelse
 					;
 					; is our geometry good?
