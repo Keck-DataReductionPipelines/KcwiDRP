@@ -231,7 +231,7 @@ pro kcwi_stage7std,ppfname,linkfname,help=help,select=select, $
 					mswav = msw0 + findgen(mssz[0]) * msdw
 					;
 					; get master std image number
-					msimgno = sxpar(mshdr,'IMGNUM')
+					msimgno = sxpar(mshdr,'FRAMENO')
 					;
 					; read in image
 					img = mrdfits(obfil,0,hdr,/fscale,/silent)
@@ -253,7 +253,7 @@ pro kcwi_stage7std,ppfname,linkfname,help=help,select=select, $
 					endif else mscal = mstd
 					;
 					; get exposure time
-					expt = sxpar(hdr,'EXPTIME')
+					expt = sxpar(hdr,'XPOSURE')
 					;
 					; read variance, mask images
 					vfil = repstr(obfil,'_icube','_vcube')

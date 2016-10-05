@@ -225,7 +225,7 @@ pro kcwi_stage5prof,ppfname,linkfname,help=help,select=select, $
 					mprof = mrdfits(mpfile,0,mphdr,/fscale,/silent)
 					;
 					; get master prof image number
-					mpimgno = sxpar(mphdr,'IMGNUM')
+					mpimgno = sxpar(mphdr,'FRAMENO')
 					;
 					; get dimensions
 					mpsz = size(mprof,/dimension)

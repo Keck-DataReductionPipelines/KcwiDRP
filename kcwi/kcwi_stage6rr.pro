@@ -239,7 +239,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 					mrsz = size(mrr,/dimension)
 					;
 					; get master rr image number
-					mrimgno = sxpar(mrhdr,'IMGNUM')
+					mrimgno = sxpar(mrhdr,'FRAMENO')
 					;
 					; get wavelength info
 					mrwave0 = sxpar(mrhdr,'crval2')

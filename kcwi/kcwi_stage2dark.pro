@@ -181,7 +181,7 @@ pro kcwi_stage2dark,ppfname,linkfname,help=help,select=select, $
 				sz = size(img,/dimension)
 				;
 				; get exposure time
-				exptime = sxpar(hdr,'EXPTIME')
+				exptime = sxpar(hdr,'XPOSURE')
 				;
 				; read variance, mask images
 				vfil = kcwi_get_imname(ppar,imgnum[i],'_var',/reduced)
@@ -252,7 +252,7 @@ pro kcwi_stage2dark,ppfname,linkfname,help=help,select=select, $
 					mdark = mrdfits(mdfile,0,mdhdr,/fscale,/silent)
 					;
 					; get exposure time
-					dexptime = sxpar(mdhdr,'EXPTIME')
+					dexptime = sxpar(mdhdr,'XPOSURE')
 					;
 					; read in master dark variance
 					mdvarfile = strmid(mdfile,0,strpos(mdfile,'.fit')) + '_var.fits'

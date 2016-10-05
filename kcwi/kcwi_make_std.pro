@@ -110,7 +110,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	y1 = sz[2] - 175
 	;
 	; get exposure time
-	expt = sxpar(hdr,'EXPTIME')
+	expt = sxpar(hdr,'XPOSURE')
 	if expt eq 0. then begin
 		kcwi_print_info,ppar,pre,'no exposure time found, setting to 1s',/warn
 		expt = 1.
@@ -360,6 +360,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	sxaddpar,hdr,'INVSLX',cx,' spatial pixel position of std within slice'
 	sxaddpar,hdr,'BUNIT','erg/cm^2/A/e-',' brightness units'
 	sxaddpar,hdr,'EXPTIME',1.,' effective exposure time (seconds)'
+	sxaddpar,hdr,'XPOSURE',1.,' effective exposure time (seconds)'
 	;
 	; remove old WCS
 	sxdelpar,hdr,'RADESYS'

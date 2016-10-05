@@ -119,7 +119,8 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	if cfg.xposure eq 0. or strcmp(caltype,'bias') eq 1 then begin
 		cfg.imgtype	= 'bias'
 		cfg.obstype	= 'zero'
-	endif else if strcmp(caltype,'dark') eq 1 then begin
+	endif else if strcmp(caltype,'dark') eq 1 or cfg.bnaspos eq 1 then begin
+		cfg.imgtype	= 'dark'
 		cfg.obstype	= 'zero'
 	endif else if strcmp(caltype,'arcflat') eq 1 then begin
 		cfg.imgtype	= 'arc'
