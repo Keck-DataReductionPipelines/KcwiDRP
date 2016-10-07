@@ -1,5 +1,41 @@
 # Copyright (c) 2013-2016, California Institute of Technology, all rights reserved
 
+2016-Oct-07: v0.2.13 - Fourteenth beta release
+
+- Improved dark image grouping and association and now use TELAPSE instead 
+	of XPOSURE for matching criterion.
+
+- Update keywords to XPOSURE and FRAMENO.
+
+- Removal of CWI flexure routines.
+
+- Added timing log output for solving geometry alone.
+
+- Added logging of slice geometry solution residuals.
+
+- Make arc-atlas match criterion based on atlas resolution element.
+
+- Handle case where no lines are matched for a given bar in kcwi_plot_arcfits.
+
+- Modified and tested nod-and-shuffle implementation.
+
+- Added starting inter-bar cross-correlation positions for all gratings.
+
+- Changed criterion for picking overscan fit order to be based on
+	number of amps.
+
+- Put in a check for monotonicity prior to call to cspline, which requires it.
+
+- Check both nod-and-shuffle mask name and position number to assert status.
+
+- Updated configuration matching criteria to allow for small variations in
+	floating point values.
+
+- Implement preference for ThAr arc for BH gratings.
+
+- Changed coord check for cal images from warning to info.
+
+
 2016-Aug-29: v0.2.12 - Thirteenth beta release
 
 - Changed default image prefix to "kcwi"
