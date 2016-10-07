@@ -239,7 +239,7 @@ pro kcwi_stage3flat,ppfname,linkfname,help=help,select=select, $
 				; let's read in or create master flat
 				if do_flat then begin
 					;
-					; skip flat correction for continuum bars and arcs
+					; skip flat correction for darks, continuum bars, and arcs
 					if strpos(kcfg.imgtype,'bar') ge 0 or strpos(kcfg.imgtype,'arc') ge 0 then begin
 						kcwi_print_info,ppar,pre,'skipping flattening of arc/bars image',/info
 					;
@@ -296,8 +296,13 @@ pro kcwi_stage3flat,ppfname,linkfname,help=help,select=select, $
 					;
 					; handle the case when no flat frames were taken
 				endif else begin
-					kcwi_print_info,ppar,pre,'cannot associate with any master flat: '+ $
-						kcfg.obsfname,/warning
+					;
+					; except if it is a dark, then who cares?
+					if strpos(kcfg.imgtype,'dark') ge 0 then $
+						kcwi_print_info,ppar,pre,'darks do not get flattened: '+ $
+							kcfg.obsfname,/info $
+					else	kcwi_print_info,ppar,pre,'cannot associate with any master flat: '+ $
+							kcfg.obsfname,/warning
 				endelse
 				flush,ll
 			;

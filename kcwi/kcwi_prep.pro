@@ -558,26 +558,19 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		endif	; ppar.nbgrps gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		; ASSOCIATE WITH MASTER DARK IMAGE
+		; ASSOCIATE WITH MASTER DARK IMAGES
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		if ppar.ndgrps gt 0 then begin
-			mcfg = kcwi_associate(dcfg,kcfg[p],ppar,count=d)
-			if d eq 1 then begin
-				mdfile = mcfg.groupfile
-				dlink = mcfg.groupnum
-				;
-				; log
-				kcwi_print_info,ppar,pre,'master dark file = '+$
-					mdfile
 			;
-			; handle the ambiguous case or when no dark frames were taken
-			endif else begin
-				kcwi_print_info,ppar,pre, $
-				    'cannot unambiguously associate with any master dark: '+ $
-				    kcfg[p].obsfname,/warning
-				mdfile = '-'
-				dlink = -1
-			endelse
+			; based on exposure time
+			tdel = abs(dcfg.telapse - kcfg[p].xposure)
+			tind = (where(tdel eq min(tdel)))[0]
+			mcfg = dcfg[tind]	;kcwi_associate(dcfg,kcfg[p],ppar,count=d)
+			mdfile = mcfg.groupfile
+			dlink = mcfg.groupnum
+			;
+			; log
+			kcwi_print_info,ppar,pre,'master dark file = '+mdfile
 			;
 			; set dark link
 			links[idark] = dlink

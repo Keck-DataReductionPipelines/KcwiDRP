@@ -58,17 +58,61 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 	if kcwi_verify_cfg(kcfg) ne 0 then return
 	if kcwi_verify_ppar(ppar) ne 0 then return
 	;
-	; get dark list
-	darks = where(strmatch(kcfg.imgtype,'dark') eq 1, ndarks)
+	; get dark groups
+	dg = where(strmatch(kcfg.imgtype,'dark') eq 1, ndg)
 	;
 	; if we have darks, group them
-	if ndarks gt 0 then begin
+	if ndg gt 0 then begin
 		;
-		; create range list of all darks
-		rangepar,darks,dlist
+		; set up for group counting
+		maxgrps = 100
+		maxmemb = 50
+		groups = lonarr(maxgrps,maxmemb) - 1l
+		gind = 0
+		p = 0
 		;
-		; get dark groups split by comma
-		dgroups = strsplit(dlist,',',/extract,count=ngroups)
+		; set up first group
+		gcfg = kcfg[dg[0]]
+		groups[gind,p] = dg[0]
+		p += 1
+		;
+		; loop over dark images and gather groups
+		for i=1,ndg-1 do begin
+			;
+			; check exposure time
+			if kcfg[dg[i]].telapse ne gcfg.telapse then begin
+				;
+				; new group
+				gind += 1
+				p = 0
+				;
+				; check for group overflow
+				if gind ge maxgrps then begin
+					kcwi_print_info,ppar,pre,'dark group overflow',gind,/error
+					return
+				endif
+				;
+				; first member of new group
+				gcfg = kcfg[dg[i]]
+				groups[gind,p] = dg[i]
+				p += 1
+			endif else begin
+				;
+				; next member of group
+				gcfg = kcfg[dg[i]]
+				groups[gind,p] = dg[i]
+				p += 1
+				;
+				; check for member overflow
+				if p ge maxmemb then begin
+					kcwi_print_info,ppar,pre,'dark group member overflow',p,/error
+					return
+				endif
+			endelse
+		endfor
+		;
+		; number of groups
+		ngroups = gind + 1
 		;
 		; record number of groups
 		ppar.ndgrps = ngroups
@@ -84,8 +128,10 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 			; fresh copy of KCWI_PPAR struct
 			pp = ppar
 			;
-			; get image numbers for this group
-			rangepar,dgroups[i],dlist
+			; get indexes for this group
+			dlist = reform(groups[i,*])
+			good = where(dlist ge 0, nmem)
+			dlist = dlist[good]
 			nims = n_elements(dlist)
 			;
 			; do we have enough for a group?
@@ -103,6 +149,8 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 				;
 				; configuration
 				dcfg[g].imgtype		= 'dark'
+				dcfg[g].xposure		= kcfg[d].xposure
+				dcfg[g].telapse		= kcfg[d].telapse
 				dcfg[g].naxis		= kcfg[d].naxis
 				dcfg[g].naxis1		= kcfg[d].naxis1
 				dcfg[g].naxis2		= kcfg[d].naxis2

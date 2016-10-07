@@ -55,7 +55,6 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg, ngeom
 	cg = where(kcfg.obstype eq 'cal', ncal)
 	;
 	; set up for group counting
-	ngeom = 0
 	maxgrps = 100
 	maxmemb = 50
 	groups = lonarr(maxgrps,maxmemb) - 1l
