@@ -365,8 +365,15 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						kcwi_print_info,ppar,pre,'unusable geom for: '+obfil+' type: '+kcfg.imgtype,/error
 				;
 				; end check cnums and anums links
-				endif else $
-					kcwi_print_info,ppar,pre,'missing calibration file(s) for: '+obfil,/warning
+				endif else begin
+					;
+					; no problem skipping darks
+					if strpos(kcfg.imgtype,'dark') ge 0 then $
+						kcwi_print_info,ppar,pre,'darks do not get geometry: '+ $
+							obfil,/info $
+					else	kcwi_print_info,ppar,pre,'missing calibration file(s) for: '+ $
+							obfil,/warning
+				endelse
 			;
 			; end check if output file exists already
 			endif else begin

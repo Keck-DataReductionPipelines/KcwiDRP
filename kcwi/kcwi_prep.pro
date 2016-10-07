@@ -563,9 +563,17 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		if ppar.ndgrps gt 0 then begin
 			;
 			; based on exposure time
-			tdel = abs(dcfg.telapse - kcfg[p].xposure)
-			tind = (where(tdel eq min(tdel)))[0]
-			mcfg = dcfg[tind]	;kcwi_associate(dcfg,kcfg[p],ppar,count=d)
+			tdel = abs(dcfg.exptime - kcfg[p].exptime)
+			tind = where(tdel eq min(tdel), ntind)
+			;
+			; same exposure time, choose closest in sequence
+			if ntind gt 1 then begin
+				zcfg = dcfg[tind]
+				zdel = abs(zcfg.groupnum - kcfg[p].imgnum)
+				zind = (where(zdel eq min(zdel)))[0]
+				mcfg = zcfg[zind]
+			endif else $
+				mcfg = dcfg[tind]
 			mdfile = mcfg.groupfile
 			dlink = mcfg.groupnum
 			;

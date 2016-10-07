@@ -80,7 +80,7 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 		for i=1,ndg-1 do begin
 			;
 			; check exposure time
-			if kcfg[dg[i]].telapse ne gcfg.telapse then begin
+			if abs(kcfg[dg[i]].telapse - gcfg.telapse) gt 0.01 then begin
 				;
 				; new group
 				gind += 1
@@ -151,6 +151,7 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 				dcfg[g].imgtype		= 'dark'
 				dcfg[g].xposure		= kcfg[d].xposure
 				dcfg[g].telapse		= kcfg[d].telapse
+				dcfg[g].exptime		= kcfg[d].exptime
 				dcfg[g].naxis		= kcfg[d].naxis
 				dcfg[g].naxis1		= kcfg[d].naxis1
 				dcfg[g].naxis2		= kcfg[d].naxis2

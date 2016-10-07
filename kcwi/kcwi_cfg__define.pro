@@ -126,8 +126,8 @@ tmp = { kcwi_cfg, $
 ;
 ; Wavelength values for reduced data
 	crval3:0., $		; wavelength zeropoint
-	crpix3: 0., $		; wavelength reference pixel
-	cdelt3: 0., $		; wavelength dispersion Ang/px
+	crpix3:0., $		; wavelength reference pixel
+	cdelt3:0., $		; wavelength dispersion Ang/px
 ;
 ; Derived properties
 	juliandate:0.d0, $	; Julian date of observation
@@ -135,6 +135,7 @@ tmp = { kcwi_cfg, $
 	binning:0, $		; is image binned?
 	xbinsize:1, $		; binning in x
 	ybinsize:1, $		; binning in y
+	exptime:-9., $		; exposure time (either xposure or telapse)
 ;
 ; Input file properties
 	obsfname:'', $		; input observation FITS file name (sans dir)
