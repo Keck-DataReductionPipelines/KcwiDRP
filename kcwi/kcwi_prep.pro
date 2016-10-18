@@ -561,31 +561,40 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; ASSOCIATE WITH MASTER DARK IMAGES
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		if ppar.ndgrps gt 0 then begin
-			tlist = ['xbinsize','ybinsize','ccdmode']
-			mcfg = kcwi_match_cfg(dcfg,kcfg[p],ppar, tlist, count=b)
-			;
-			; refine based on exposure time
-			tdel = abs(mcfg.exptime - kcfg[p].exptime)
-			tind = where(tdel eq min(tdel), ntind)
-			;
-			; same exposure time, choose closest in sequence
-			if ntind gt 1 then begin
-				zcfg = mcfg[tind]
-				zdel = abs(zcfg.groupnum - kcfg[p].imgnum)
-				zind = (where(zdel eq min(zdel)))[0]
-				mcfg = zcfg[zind]
-			endif else $
-				mcfg = mcfg[tind]
-			mdfile = mcfg.groupfile
-			dlink = mcfg.groupnum
-			;
-			; log
-			kcwi_print_info,ppar,pre,'master dark file = '+mdfile
+		if ( strmatch(kcfg[p].imgtype,'dark') eq 1 or $
+		     strmatch(kcfg[p].imgtype,'object') eq 1 ) and ppar.ndgrps gt 0 then begin
+			tlist = ['xbinsize','ybinsize','ampmode','ccdmode']
+			mcfg = kcwi_match_cfg(dcfg,kcfg[p],ppar,tlist,count=b)
+			if b ge 1 then begin
+				;
+				; refine based on exposure time
+				tdel = abs(mcfg.exptime - kcfg[p].exptime)
+				tind = where(tdel eq min(tdel), ntind)
+				;
+				; same exposure time, choose closest in sequence
+				if ntind gt 1 then begin
+					zcfg = mcfg[tind]
+					zdel = abs(zcfg.groupnum - kcfg[p].imgnum)
+					zind = (where(zdel eq min(zdel)))[0]
+					mcfg = zcfg[zind]
+				endif else $
+					mcfg = mcfg[tind]
+				mdfile = mcfg.groupfile
+				dlink = mcfg.groupnum
+				;
+				; log
+				kcwi_print_info,ppar,pre,'master dark file = '+mdfile
+			endif else begin
+				kcwi_print_info,ppar,pre, $
+					'cannot unambiguously associate with any master dark: '+ $
+					kcfg[p].obsfname,/warning
+				mdfile = '-'
+				dlink = -1
+			endelse
 			;
 			; set dark link
 			links[idark] = dlink
-		endif	; only object frames and ndgrps gt 0
+		endif	; ppar.ndgrps gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; ASSOCIATE WITH MASTER FLAT IMAGE

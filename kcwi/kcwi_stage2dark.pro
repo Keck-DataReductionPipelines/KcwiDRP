@@ -310,8 +310,11 @@ pro kcwi_stage2dark,ppfname,linkfname,help=help,select=select, $
 					;
 					; handle the case when no dark frames were taken
 				endif else begin
-					kcwi_print_info,ppar,pre,'cannot associate with any master dark: '+ $
-						kcfg.obsfname,/warning
+					if strpos(kcfg.obstype,'cal') ge 0 then $
+						kcwi_print_info,ppar,pre,'cals do not get dark subtracted: '+ $
+							kcfg.obsfname,/info $
+					else	kcwi_print_info,ppar,pre,'cannot associate with any master dark: '+ $
+							kcfg.obsfname,/warning
 				endelse
 				flush,ll
 			;

@@ -79,7 +79,7 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 		; loop over biases and gather groups
 		for i=1,nbiases-1 do begin
 			;
-			; check binning, ccdmode, nvidinp (ampmode)
+			; check binning, ccdmode, ampmode
 			if kcfg[biases[i]].xbinsize ne gcfg.xbinsize or $
 			   kcfg[biases[i]].ybinsize ne gcfg.ybinsize or $
 			   kcfg[biases[i]].ccdmode ne gcfg.ccdmode or $

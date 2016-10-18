@@ -78,6 +78,7 @@ pro kcwi_make_dark,ppar
 		dfil = reddir + root + string(dnums[0],form=i_fmt)+'_int.fits'
 		if file_test(dfil) then begin
 			im = mrdfits(dfil,0,hdr,/fscale,/silent)
+			kcwi_print_info,ppar,pre,'dark exposure time',sxpar(hdr,'TELAPSE'),format='(a,f9.2)'
 		endif else begin
 			kcwi_print_info,ppar,pre,'Image file not found', $
 				dfil,/error

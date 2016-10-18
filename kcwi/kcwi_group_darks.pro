@@ -79,11 +79,12 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 		; loop over dark images and gather groups
 		for i=1,ndg-1 do begin
 			;
-			; check exposure time
+			; check exposure time, binning, ccdmode and ampmode
 			if abs(kcfg[dg[i]].telapse - gcfg.telapse) gt 0.01 or $
 			       kcfg[dg[i]].xbinsize ne gcfg.xbinsize or $
 			       kcfg[dg[i]].ybinsize ne gcfg.ybinsize or $
-			       kcfg[dg[i]].ccdmode ne gcfg.ccdmode then begin
+			       kcfg[dg[i]].ccdmode ne gcfg.ccdmode or $
+			       strcmp(kcfg[dg[i]].ampmode,gcfg.ampmode) ne 1 then begin
 				;
 				; new group
 				gind += 1
@@ -161,6 +162,7 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 				dcfg[g].binning		= kcfg[d].binning
 				dcfg[g].xbinsize	= kcfg[d].xbinsize
 				dcfg[g].ybinsize	= kcfg[d].ybinsize
+				dcfg[g].ampmode		= kcfg[d].ampmode
 				dcfg[g].ccdmode		= kcfg[d].ccdmode
 				;
 				; use first image number in group
