@@ -181,7 +181,7 @@ pro kcwi_stage2dark,ppfname,linkfname,help=help,select=select, $
 				sz = size(img,/dimension)
 				;
 				; get exposure time
-				exptime = sxpar(hdr,'XPOSURE')
+				exptime = kcfg.exptime
 				;
 				; read variance, mask images
 				vfil = kcwi_get_imname(ppar,imgnum[i],'_var',/reduced)
@@ -252,7 +252,7 @@ pro kcwi_stage2dark,ppfname,linkfname,help=help,select=select, $
 					mdark = mrdfits(mdfile,0,mdhdr,/fscale,/silent)
 					;
 					; get exposure time
-					dexptime = sxpar(mdhdr,'XPOSURE')
+					dexptime = sxpar(mdhdr,'TELAPSE')
 					;
 					; read in master dark variance
 					mdvarfile = strmid(mdfile,0,strpos(mdfile,'.fit')) + '_var.fits'
@@ -267,6 +267,7 @@ pro kcwi_stage2dark,ppfname,linkfname,help=help,select=select, $
 					if exptime gt 0. and dexptime gt 0. then $
 						fac = exptime/dexptime $
 					else	kcwi_print_info,ppar,pre,'unable to scale dark by exposure time',/warning
+					kcwi_print_info,ppar,pre,'dark scale factor',fac,form='(a,f9.3)'
 					;
 					; do subtraction
 					img = img - mdark*fac

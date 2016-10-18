@@ -137,7 +137,13 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	; TODO: put in case for dome flats that checks for
 	; object type and dome lamp on.
 	endif else if strcmp(caltype,'object') eq 1 then begin
+		;cfg.imgtype	= 'dflat'
+		;cfg.obstype	= 'cal'
 		cfg.obstype	= 'obj'
+	endif else if strcmp(strtrim(cfg.gratid,2),'None') eq 1 and $
+			cfg.camang lt 5. then begin
+		cfg.imgtype	= 'object'
+		cfg.obstype	= 'direct'
 	endif
 	cfg.imgnum	= long(stregex(root,'[0-9]+',/extract))
 	cfg.initialized	= 1

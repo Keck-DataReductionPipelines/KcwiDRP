@@ -535,7 +535,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		; ASSOCIATE WITH MASTER BIAS IMAGE
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		if ppar.nbgrps gt 0 then begin
-			mcfg = kcwi_associate(bcfg,kcfg[p],ppar,count=b)
+			tlist = ['xbinsize','ybinsize','ampmode','ccdmode']
+			mcfg = kcwi_match_cfg(bcfg,kcfg[p],ppar,tlist,count=b)
 			if b eq 1 then begin
 				mbfile = mcfg.groupfile
 				blink = mcfg.groupnum
@@ -561,19 +562,21 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		; ASSOCIATE WITH MASTER DARK IMAGES
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		if ppar.ndgrps gt 0 then begin
+			tlist = ['xbinsize','ybinsize','ccdmode']
+			mcfg = kcwi_match_cfg(dcfg,kcfg[p],ppar, tlist, count=b)
 			;
-			; based on exposure time
-			tdel = abs(dcfg.exptime - kcfg[p].exptime)
+			; refine based on exposure time
+			tdel = abs(mcfg.exptime - kcfg[p].exptime)
 			tind = where(tdel eq min(tdel), ntind)
 			;
 			; same exposure time, choose closest in sequence
 			if ntind gt 1 then begin
-				zcfg = dcfg[tind]
+				zcfg = mcfg[tind]
 				zdel = abs(zcfg.groupnum - kcfg[p].imgnum)
 				zind = (where(zdel eq min(zdel)))[0]
 				mcfg = zcfg[zind]
 			endif else $
-				mcfg = dcfg[tind]
+				mcfg = mcfg[tind]
 			mdfile = mcfg.groupfile
 			dlink = mcfg.groupnum
 			;

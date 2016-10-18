@@ -80,7 +80,10 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 		for i=1,ndg-1 do begin
 			;
 			; check exposure time
-			if abs(kcfg[dg[i]].telapse - gcfg.telapse) gt 0.01 then begin
+			if abs(kcfg[dg[i]].telapse - gcfg.telapse) gt 0.01 or $
+			       kcfg[dg[i]].xbinsize ne gcfg.xbinsize or $
+			       kcfg[dg[i]].ybinsize ne gcfg.ybinsize or $
+			       kcfg[dg[i]].ccdmode ne gcfg.ccdmode then begin
 				;
 				; new group
 				gind += 1
@@ -158,6 +161,7 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 				dcfg[g].binning		= kcfg[d].binning
 				dcfg[g].xbinsize	= kcfg[d].xbinsize
 				dcfg[g].ybinsize	= kcfg[d].ybinsize
+				dcfg[g].ccdmode		= kcfg[d].ccdmode
 				;
 				; use first image number in group
 				gi = kcfg[d].imgnum

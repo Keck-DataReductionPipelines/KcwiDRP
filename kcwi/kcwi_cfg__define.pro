@@ -112,6 +112,7 @@ tmp = { kcwi_cfg, $
 	nampsxy:'1 1', $	; number of amplifiers in x and y
 	ampmode:'LL', $		; amplifier mode: LL,LR,UL,UR,DUP,DLO,QUAD
 	nvidinp:0, $		; number of amps (video inputs)
+	ccdmode:0, $		; ccd mode: 0 - slow, 1 - fast
 ;
 ; Image geometry properties
 	naxis:0, $		; number of data axes
@@ -129,7 +130,7 @@ tmp = { kcwi_cfg, $
 	crpix3:0., $		; wavelength reference pixel
 	cdelt3:0., $		; wavelength dispersion Ang/px
 ;
-; Derived properties
+; Derived properties (above should correspond to real FITS header keywords)
 	juliandate:0.d0, $	; Julian date of observation
 	date:'', $		; UT start of observation (YYYY-MM-DDTHH:MM:SS)
 	binning:0, $		; is image binned?

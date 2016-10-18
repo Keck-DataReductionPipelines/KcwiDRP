@@ -64,11 +64,58 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 	; if we have biases, group them
 	if nbiases gt 0 then begin
 		;
-		; create range list of all biases
-		rangepar,biases,blist
+		; set up for group counting
+		maxgrps = 100
+		maxmemb = 50
+		groups = lonarr(maxgrps, maxmemb) - 1L
+		gind = 0
+		p = 0
 		;
-		; get bias groups split by comma
-		bgroups = strsplit(blist,',',/extract,count=ngroups)
+		; set up first group
+		gcfg = kcfg[biases[0]]
+		groups[gind,p] = biases[0]
+		p += 1
+		;
+		; loop over biases and gather groups
+		for i=1,nbiases-1 do begin
+			;
+			; check binning, ccdmode, nvidinp (ampmode)
+			if kcfg[biases[i]].xbinsize ne gcfg.xbinsize or $
+			   kcfg[biases[i]].ybinsize ne gcfg.ybinsize or $
+			   kcfg[biases[i]].ccdmode ne gcfg.ccdmode or $
+			   strcmp(kcfg[biases[i]].ampmode,gcfg.ampmode) ne 1 then begin
+				;
+			   	; new group
+			   	gind += 1
+				p = 0
+				;
+				; check for group overflow
+				if gind gt maxgrps then begin
+					kcwi_print_info,ppar,pre,'bias group overflow',gind,/error
+					return
+				endif
+				;
+				; first member of new group
+				gcfg = kcfg[biases[i]]
+				groups[gind,p] = biases[i]
+				p += 1
+			endif else begin
+				;
+				; next member of group
+				gcfg = kcfg[biases[i]]
+				groups[gind,p] = biases[i]
+				p += 1
+				;
+				; check for member overflow
+				if p ge maxmemb then begin
+					kcwi_print_info,ppar,pre,'bias broup member overflow',p,/error
+					return
+				endif
+			endelse
+		endfor
+		;
+		; number of groups
+		ngroups = gind + 1
 		;
 		; record number of groups
 		ppar.nbgrps = ngroups
@@ -85,7 +132,9 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 			pp = ppar
 			;
 			; get image numbers for this group
-			rangepar,bgroups[i],blist
+			blist = reform(groups[i,*])
+			good = where(blist ge 0, nmem)
+			blist = blist[good]
 			nims = n_elements(blist)
 			;
 			; check if skip1 set
@@ -115,6 +164,9 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 				bcfg[g].binning		= kcfg[b].binning
 				bcfg[g].xbinsize	= kcfg[b].xbinsize
 				bcfg[g].ybinsize	= kcfg[b].ybinsize
+				bcfg[g].ampmode		= kcfg[b].ampmode
+				bcfg[g].nvidinp		= kcfg[b].nvidinp
+				bcfg[g].ccdmode		= kcfg[b].ccdmode
 				;
 				; use first image number in group
 				gi = kcfg[b].imgnum
