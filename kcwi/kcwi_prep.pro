@@ -537,7 +537,20 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		if ppar.nbgrps gt 0 then begin
 			tlist = ['xbinsize','ybinsize','ampmode','ccdmode']
 			mcfg = kcwi_match_cfg(bcfg,kcfg[p],ppar,tlist,count=b)
-			if b eq 1 then begin
+			;
+			; multiple matches, take the closest one in sequence
+			if b gt 1 then begin
+				zdel = abs(mcfg.groupnum - kcfg[p].imgnum)
+				zind = (where(zdel eq min(zdel)))[0]
+				mbfile = mcfg[zind].groupfile
+				blink = mcfg[zind].groupnum
+				;
+				; log
+				kcwi_print_info,ppar,pre,'master bias file = '+$
+					mbfile
+			;
+			; only one match
+			endif else if b eq 1 then begin
 				mbfile = mcfg.groupfile
 				blink = mcfg.groupnum
 				;
@@ -545,10 +558,10 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				kcwi_print_info,ppar,pre,'master bias file = '+$
 					mbfile
 			;
-			; handle the ambiguous case or when no bias frames were taken
+			; handle the no match case or when no bias frames were taken
 			endif else begin
 				kcwi_print_info,ppar,pre,$
-				     'cannot unambiguously associate with any master bias: '+ $
+				     'cannot associate with any master bias: '+ $
 				     kcfg[p].obsfname,/warning
 				mbfile = '-'
 				blink = -1
