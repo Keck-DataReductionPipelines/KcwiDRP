@@ -446,8 +446,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP CBARS AND ARC FILES (GEOM)
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	kcwi_group_geom,calcfg,ppar,ccfg,acfg,ngeom
-	if ppar.ncbars le 0 then $
+	kcwi_group_geom,calcfg,ppar,ccfg,acfg
+	if ppar.ngeom le 0 then $
 		kcwi_print_info,ppar,pre,'no geom groups found',/warning
 	kcwi_print_info,ppar,pre,'Number of geom groups', ppar.ncbars
 	;

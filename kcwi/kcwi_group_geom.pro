@@ -13,7 +13,7 @@
 ;	Data reduction for the Keck Cosmic Web Imager (KCWI).
 ;
 ; CALLING SEQUENCE:
-;	KCWI_GROUP_GEOM, Kcfg, Ppar, Ccfg, Acfg, Ngeom
+;	KCWI_GROUP_GEOM, Kcfg, Ppar, Ccfg, Acfg
 ;
 ; INPUTS:
 ;	Kcfg	- array of struct KCWI_CFG for a given directory
@@ -24,12 +24,12 @@
 ;			a calibration set
 ;	Acfg	- a KCWI_CFG struct vector with one entry for each arc from
 ;			a calibration set
-;	Ngeom	- number of good geometry calibration groups
 ;
 ; KEYWORDS:
 ;
 ; SIDE EFFECTS:
-;	None.
+;	Updates Ppar struct with number of geometry groups, number of
+;	arcs and number continuum bars (ngeom, narcs, nbars).
 ;
 ; PROCEDURE:
 ;
@@ -39,7 +39,7 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2014-APR-01	Initial version
 ;-
-pro kcwi_group_geom, kcfg, ppar, ccfg, acfg, ngeom
+pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 	;
 	; setup
 	pre = 'KCWI_GROUP_GEOM'
@@ -48,160 +48,86 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg, ngeom
 	if kcwi_verify_cfg(kcfg) ne 0 then return
 	if kcwi_verify_ppar(ppar) ne 0 then return
 	;
-	; get size of kcfg
-	ncfg = n_elements(kcfg)
+	; required calibration image types
+	bg = where(kcfg.imgtype eq 'cbars', nbar)
+	ag = where(kcfg.imgtype eq 'arc', narc)
 	;
-	; calibration groups
-	cg = where(kcfg.obstype eq 'cal', ncal)
-	;
-	; set up for group counting
-	maxgrps = 100
-	maxmemb = 50
-	groups = lonarr(maxgrps,maxmemb) - 1l
-	gind = 0
-	p = 0
-	;
-	; set up first group
-	gcfg = kcfg[cg[0]]
-	groups[gind,p] = cg[0]
-	p += 1
-	;
-	; loop over cal images and gather groups
-	for i=1,ncal-1 do begin
+	; check if we have required types
+	if narc le 0 or nbar le 0 then begin
 		;
-		; check configuration
-		tcfg = kcwi_match_cfg(kcfg[cg[i]],gcfg,ppar,count=nm,/silent)
-		;print,nm,kcfg[cg[i]].imgnum,gcfg.imgnum
-		;
-		; check for sequential image numbers (disabling for now)
-		;if kcfg[cg[i]].imgnum - gcfg.imgnum ne 1 or nm ne 1 then begin
-		if kcfg[cg[i]].imgnum - gcfg.imgnum gt 5 or nm ne 1 then begin
-			;
-			; new group
-			gind += 1
-			p = 0
-			;
-			; check for group overflow
-			if gind ge maxgrps then begin
-				kcwi_print_info,ppar,pre,'geom group overflow',gind,/error
-				return
-			endif
-			;
-			; first member of group
-			gcfg = kcfg[cg[i]]
-			groups[gind,p] = cg[i]
-			p += 1
-			;
-			; check for member overflow
-			if p ge maxmemb then begin
-				kcwi_print_info,ppar,pre,'geom group member overflow',p,/error
-				return
-			endif
-		endif else begin
-			;
-			; next member of group
-			gcfg = kcfg[cg[i]]
-			groups[gind,p] = cg[i]
-			p += 1
-			;
-			; check for member overflow
-			if p ge maxmemb then begin
-				kcwi_print_info,ppar,pre,'geom group member overflow',p,/error
-				return
-			endif
-		endelse
-	endfor
+		; record results
+		ppar.ncbars = nbar
+		ppar.narcs = narc
+		ppar.ngeom = 0
+		if narc le 0 then $
+			kcwi_print_info,ppar,pre,'no arcs found!',/error
+		if nbar le 0 then $
+			kcwi_print_info,ppar,pre,'no bars found!',/error
+		return
+	endif
 	;
-	; number of groups
-	ngeom = gind + 1
+	; get config records
+	cfg = kcfg[bg]
+	afg = kcfg[ag]
 	;
-	; we'll check the status of each group
-	stat = intarr(ngeom)
+	; collect matches
+	bmatch = lonarr(nbar) - 1L
+	amatch = lonarr(nbar) - 1L
 	;
-	; here's where we collect arc and cbars indices
-	ari = lonarr(ngeom) - 1l
-	cbi = lonarr(ngeom) - 1l
-	;
-	; loop over groups
-	for i=0,ngeom-1 do begin
+	; loop over bars images and gather geom pairs
+	for i=0,nbar-1 do begin
 		;
-		; get indexes for this group
-		igrp = reform(groups[i,*])
-		good = where(igrp ge 0, nmem)
-		igrp = igrp[good]
-		;
-		; look for arc/cbars nearest pair
-		arci = -1l
-		cbri = -1l
-		for j=0,nmem-1 do begin
+		; loop over arcs and find a good match
+		for j=0,narc-1 do begin
 			;
-			; collect each arc and cbars image in the group
-			if strtrim(kcfg[igrp[j]].imgtype,2) eq 'arc' then $
-				arci = [arci, igrp[j]]
-			if strtrim(kcfg[igrp[j]].imgtype,2) eq 'cbars' then $
-				cbri = [cbri, igrp[j]]
-		endfor
-		;
-		; how many do we have?
-		ga = where(arci ge 0, nga)
-		gc = where(cbri ge 0, ngc)
-		;
-		; do we have enough?
-		if nga gt 0 and ngc gt 0 then begin
+			; check configuration
+			tcfg = kcwi_match_cfg(afg[j],cfg[i],ppar,count=nm,/silent)
 			;
-			; BH gratings prefer ThAr
-			if nga gt 1 then begin
-				if strpos(kcfg[arci[ga[0]]].gratid,'BH') ge 0 then begin
-					for ii=0,nga-1 do begin
-						if kcfg[arci[ga[ii]]].lmp1stat eq 1 and $
-						   kcfg[arci[ga[ii]]].lmp1shst eq 1 then begin
-					   		ga = ga[ii]
-							kcwi_print_info,ppar,pre,"For BH grating, choosing lamp",kcfg[arci[ga]].lmp1nam
-							break
-						endif
-					endfor
-				endif
-			endif
-			cbri = cbri[gc]
-			arci = arci[ga]
-			;
-			; now find closest pair
-			cbrimn = kcfg[cbri].imgnum
-			arcimn = kcfg[arci].imgnum
-			;
-			one_cbr = intarr(ngc) + 1
-			one_arc = intarr(nga) + 1
-			diff = abs( (arcimn##one_cbr) - (one_arc##cbrimn))
-			;
-			match = (where(diff eq min(diff)))[0]
-			ind = array_indices(diff,match)
-			;
-			cbi[i] = cbri[ ind[0] <(n_elements(cbri)-1) ]
-			ari[i] = arci[ ind[1  <(n_elements(ind)-1)  ] <(n_elements(arci)-1) ]
-			stat[i] = 1
-		endif
-	endfor
+			; check for match
+			if nm eq 1 then begin
+				;
+				; are we close in image number?
+				if abs(cfg[i].imgnum - afg[j].imgnum) lt 3 then begin
+					bmatch[i] = i
+					if strpos(cfg[i].gratid,'BH') ge 0 then begin
+						if afg[j].lmp1stat eq 1 and afg[j].lmp1shst eq 1 then begin
+							kcwi_print_info,ppar,pre,"For "+cfg[i].gratid+" grating, choosing lamp",afg[j].lmp1nam
+							amatch[i] = j
+						endif else $
+							if amatch[i] lt 0 then amatch[i] = j
+					endif else begin
+						if afg[j].lmp0stat eq 1 and afg[j].lmp0shst eq 1 then begin
+							kcwi_print_info,ppar,pre,"For "+cfg[i].gratid+" grating, choosing lamp",afg[j].lmp0nam
+							amatch[i] = j
+						endif else $
+							if amatch[i] lt 0 then amatch[i] = j
+					endelse
+				endif	; end check if we are close in image number
+			endif	; end check for match
+		endfor	; end loop over arcs
+	endfor	; end loop over cbars
 	;
 	; get the good ones
-	good = where(stat eq 1, ngeom)
+	good = where(bmatch ge 0, ngeom)
 	;
 	; collect the good calibs
 	if ngeom gt 0 then begin
 		;
-		; arcs
-		acfg = kcfg[ari[good]]
-		;
 		; cbars
-		ccfg = kcfg[cbi[good]]
+		ccfg = cfg[bmatch[good]]
+		;
+		; arcs
+		acfg = afg[amatch[good]]
 	endif else begin
 		acfg = -1
 		ccfg = -1
-		kcwi_print_info,ppar,pre,'no geom frame sets found',/warning
+		kcwi_print_info,ppar,pre,'no geom image sets found',/warning
 	endelse
 	;
 	; record results
 	ppar.ncbars = ngeom
 	ppar.narcs = ngeom
+	ppar.ngeom = ngeom
 	if ngeom gt 0 then ppar.geomexists = 1
 	;
 	return

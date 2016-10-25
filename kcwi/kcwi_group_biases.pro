@@ -74,15 +74,17 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 		; set up first group
 		gcfg = kcfg[biases[0]]
 		groups[gind,p] = biases[0]
+		last = gcfg.imgnum
 		p += 1
 		;
 		; loop over biases and gather groups
 		for i=1,nbiases-1 do begin
 			;
-			; check binning, ccdmode, ampmode
+			; check binning, ccdmode, ampmode, and sequence
 			if kcfg[biases[i]].xbinsize ne gcfg.xbinsize or $
 			   kcfg[biases[i]].ybinsize ne gcfg.ybinsize or $
 			   kcfg[biases[i]].ccdmode ne gcfg.ccdmode or $
+			   (kcfg[biases[i]].imgnum - last) ne 1 or $
 			   strcmp(kcfg[biases[i]].ampmode,gcfg.ampmode) ne 1 then begin
 				;
 			   	; new group
@@ -98,12 +100,14 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 				; first member of new group
 				gcfg = kcfg[biases[i]]
 				groups[gind,p] = biases[i]
+				last = gcfg.imgnum
 				p += 1
 			endif else begin
 				;
 				; next member of group
 				gcfg = kcfg[biases[i]]
 				groups[gind,p] = biases[i]
+				last = kcfg[biases[i]].imgnum
 				p += 1
 				;
 				; check for member overflow

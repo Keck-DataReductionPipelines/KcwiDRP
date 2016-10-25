@@ -117,6 +117,7 @@ tmp = { kcwi_ppar, $
 	nfgrps:0, $		; number of flat groups
 ;
 ; Geometry processing
+	ngeom:0, $		; number of geometry groups
 	geomexists:0, $		; geometry frames exist?
 	ncbars:0, $		; number of continuum bars images
 	cbars:'', $		; List of continuum bars images (rangelist)
