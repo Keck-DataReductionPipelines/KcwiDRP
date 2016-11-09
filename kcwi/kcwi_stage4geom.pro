@@ -173,8 +173,15 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 			; read configuration
 			kcfg = kcwi_read_cfg(obfil)
 			;
+			; direct or dispersed?
+			if strpos(kcfg.obstype,'direct') ge 0 then $
+				do_direct = (1 eq 1) $
+			else	do_direct = (1 eq 0)
+			;
 			; final output file
-			ofil = kcwi_get_imname(ppar,imgnum[i],'_icube',/reduced)
+			if strpos(kcfg.obstype,'direct') ge 0 then $
+				ofil = kcwi_get_imname(ppar,imgnum[i],'_img',/reduced) $
+			else	ofil = kcwi_get_imname(ppar,imgnum[i],'_icube',/reduced)
 			;
 			; get image type
 			kcfg.imgtype = strtrim(kcfg.imgtype,2)
@@ -203,12 +210,16 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 					arf = kcwi_get_imname(ppar,anums[i],/nodir)
 					;
 					; get corresponding kgeom file
-					gfile = cdir + strmid(cbf,0,strpos(cbf,'.fit'))+'_geom.save'
+					if do_direct then $
+						gfile = cdir + strmid(arf,0,strpos(arf,'.fit'))+'_dgeom.save' $
+					else	gfile = cdir + strmid(cbf,0,strpos(cbf,'.fit'))+'_geom.save'
 					;
 					; if it exists restore it
 					if file_test(gfile,/read) then begin
 						restore,gfile
-						do_geom = (kgeom.status eq 0)
+						if do_direct then $
+							do_geom = (kdgeom.status eq 0) $
+						else	do_geom = (kgeom.status eq 0)
 						;
 						; log it
 						kcwi_print_info,ppar,pre,'Using geometry from',gfile,format='(a,a)'
@@ -236,53 +247,90 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						ccfg = kcwi_read_cfg(cbf)
 						acfg = kcwi_read_cfg(arf)
 						;
-						; get arc atlas
-						kcwi_get_atlas,acfg,atlas,atname
-						;
-						; create a new Kgeom
-						kgeom = {kcwi_geom}
-						kgeom = struct_init(kgeom)
-						kgeom.initialized = 1
-						;
-						; populate it with goodness
-						kcwi_set_geom,kgeom,ccfg,ppar,atlas=atlas,atname=atname
-						kgeom.cbarsfname = cbf
-						kgeom.cbarsimgnum = ccfg.imgnum
-						kgeom.arcfname = arf
-						kgeom.arcimgnum = acfg.imgnum
-						;
-						; read in cbars image
-						cbars = mrdfits(cbf,0,chdr,/fscale,/silent)
-						;
-						; trace the bars
-						kcwi_trace_cbars,cbars,kgeom,ppar,status=stat
-						;
-						; check status, if < 0 don't proceed
-						if stat ge 0 then begin
+						; direct image geometry
+						if do_direct then begin
 							;
-							; log
-							kcwi_print_info,ppar,pre,'traced continuum bars in cbars image',cbf,format='(a,a)'
+							; create a new Kdgeom
+							kdgeom = {kcwi_dgeom}
+							kdgeom = struct_init(kdgeom)
+							kdgeom.initialized = 1
 							;
-							; read in arcs
-							arc = mrdfits(arf,0,ahdr,/fscale,/silent)
+							; populate it with goodness
+							kcwi_set_dgeom,kdgeom,acfg,ppar
+							kdgeom.arcfname = arf
+							kdgeom.arcimgnum = acfg.imgnum
+							kdgeom.cbarsfname = cbf
+							kdgeom.cbarsimgnum = ccfg.imgnum
 							;
-							; extract along bars
-							kcwi_extract_arcs,arc,kgeom,spec,ppar
-							;
-							; log
-							kcwi_print_info,ppar,pre,'extracted arc spectra from arc image',arf,format='(a,a)'
-							;
-							; do the solution
-							kcwi_solve_geom,spec,kgeom,ppar
+							; get direct geometry
+							kcwi_solve_dgeom,kdgeom,ppar
 							;
 							; log bad solution
-							if kgeom.status ne 0 then $
-								kcwi_print_info,ppar,pre,'bad geometry solution',/error
-						endif else $
-							kcwi_print_info,ppar,pre,'unable to trace cont bars',/error
+							if kdgeom.status ne 0 then begin
+								kcwi_print_info,ppar,pre,'bad direct geometry solution',/error
+								do_geom = (1 eq 0)
+							endif else $
+								do_geom = (1 eq 1)
+							;
+							; write out result
+							kcwi_write_dgeom,ppar,kdgeom
 						;
-						; write out result
-						kcwi_write_geom,ppar,kgeom
+						; dispersed image geometry
+						endif else begin
+							;
+							; get arc atlas
+							kcwi_get_atlas,acfg,atlas,atname
+							;
+							; create a new Kgeom
+							kgeom = {kcwi_geom}
+							kgeom = struct_init(kgeom)
+							kgeom.initialized = 1
+							;
+							; populate it with goodness
+							kcwi_set_geom,kgeom,ccfg,ppar,atlas=atlas,atname=atname
+							kgeom.cbarsfname = cbf
+							kgeom.cbarsimgnum = ccfg.imgnum
+							kgeom.arcfname = arf
+							kgeom.arcimgnum = acfg.imgnum
+							;
+							; read in cbars image
+							cbars = mrdfits(cbf,0,chdr,/fscale,/silent)
+							;
+							; trace the bars
+							kcwi_trace_cbars,cbars,kgeom,ppar,status=stat
+							;
+							; check status, if < 0 don't proceed
+							if stat ge 0 then begin
+								;
+								; log
+								kcwi_print_info,ppar,pre,'traced continuum bars in cbars image',cbf,format='(a,a)'
+								;
+								; read in arcs
+								arc = mrdfits(arf,0,ahdr,/fscale,/silent)
+								;
+								; extract along bars
+								kcwi_extract_arcs,arc,kgeom,spec,ppar
+								;
+								; log
+								kcwi_print_info,ppar,pre,'extracted arc spectra from arc image',arf,format='(a,a)'
+								;
+								; do the solution
+								kcwi_solve_geom,spec,kgeom,ppar
+								;
+								; log bad solution
+								if kgeom.status ne 0 then begin
+									kcwi_print_info,ppar,pre,'bad dispersed geometry solution',/error
+									do_geom = (1 eq 0)
+								endif else $
+									do_geom = (1 eq 1)
+							endif else begin
+								kcwi_print_info,ppar,pre,'unable to trace cont bars',/error
+								do_geom = (1 eq 0)
+							endelse
+							;
+							; write out result
+							kcwi_write_geom,ppar,kgeom
+						endelse	; dispersed image geometry
 						;
 						; time for geometry
 						eltime = systime(1) - gstartime
@@ -292,7 +340,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 					endelse
 					;
 					; is our geometry good?
-					if kgeom.status eq 0 then begin
+					if do_geom then begin
 						;
 						; read in, update header, apply geometry, write out
 						;
@@ -301,66 +349,77 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 						;
 						sxaddpar,hdr, 'HISTORY','  '+pre+' '+systime(0)
                                                 ;
-                                                kcwi_apply_geom,img,hdr,kgeom,ppar,cube,chdr                               
+						; apply direct geometry
+						if do_direct then begin
+							kcwi_apply_dgeom,img,hdr,kdgeom,ppar,dimg,dhdr
+							;
+							; write out intensity image
+							ofil = kcwi_get_imname(ppar,imgnum[i],'_img',/nodir)
+							kcwi_write_image,dimg,dhdr,ofil,ppar
 						;
-						; write out intensity cube
-						ofil = kcwi_get_imname(ppar,imgnum[i],'_icube',/nodir)
-						kcwi_write_image,cube,chdr,ofil,ppar
-						;
-						; variance image
-						vfil = repstr(obfil,'_int','_var')
-						if file_test(vfil,/read) then begin
-							var = mrdfits(vfil,0,varhdr,/fscale,/silent)
+						; apply dispersed geometry
+						endif else begin
+                                                	kcwi_apply_geom,img,hdr,kgeom,ppar,cube,chdr                               
 							;
-							sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
-                                                        kcwi_apply_geom,var,varhdr,kgeom,ppar,vcub,vchdr
+							; write out intensity cube
+							ofil = kcwi_get_imname(ppar,imgnum[i],'_icube',/nodir)
+							kcwi_write_image,cube,chdr,ofil,ppar
 							;
-							; write out variance cube
-							ofil = kcwi_get_imname(ppar,imgnum[i],'_vcube',/nodir)
-							kcwi_write_image,vcub,vchdr,ofil,ppar
-						endif else $
-							kcwi_print_info,ppar,pre,'no variance image found',/warning
-						;
-						; mask image
-						mfil = repstr(obfil,'_int','_msk')
-						if file_test(mfil,/read) then begin
-							msk = float(mrdfits(mfil,0,mskhdr,/silent))
+							; variance image
+							vfil = repstr(obfil,'_int','_var')
+							if file_test(vfil,/read) then begin
+								var = mrdfits(vfil,0,varhdr,/fscale,/silent)
+								;
+								sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
+                                                        	kcwi_apply_geom,var,varhdr,kgeom,ppar,vcub,vchdr
+								;
+								; write out variance cube
+								ofil = kcwi_get_imname(ppar,imgnum[i],'_vcube',/nodir)
+								kcwi_write_image,vcub,vchdr,ofil,ppar
+							endif else $
+								kcwi_print_info,ppar,pre,'no variance image found',/warning
 							;
-                                                        sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
-                                                        kcwi_apply_geom,msk,mskhdr,kgeom,ppar,mcub,mchdr   
+							; mask image
+							mfil = repstr(obfil,'_int','_msk')
+							if file_test(mfil,/read) then begin
+								msk = float(mrdfits(mfil,0,mskhdr,/silent))
+								;
+                                                        	sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
+                                                        	kcwi_apply_geom,msk,mskhdr,kgeom,ppar,mcub,mchdr   
+								;
+								; write out mask cube
+								ofil = kcwi_get_imname(ppar,imgnum[i],'_mcube',/nodir)
+								kcwi_write_image,mcub,mchdr,ofil,ppar
+							endif else $
+								kcwi_print_info,ppar,pre,'no mask image found',/warning
 							;
-							; write out mask cube
-							ofil = kcwi_get_imname(ppar,imgnum[i],'_mcube',/nodir)
-							kcwi_write_image,mcub,mchdr,ofil,ppar
-						endif else $
-							kcwi_print_info,ppar,pre,'no mask image found',/warning
-						;
-						; check for nod-and-shuffle sky images
-						sfil = kcwi_get_imname(ppar,imgnum[i],'_sky',/reduced)
-						if file_test(sfil,/read) then begin
-							sky = mrdfits(sfil,0,skyhdr,/fscale,/silent)
+							; check for nod-and-shuffle sky images
+							sfil = kcwi_get_imname(ppar,imgnum[i],'_sky',/reduced)
+							if file_test(sfil,/read) then begin
+								sky = mrdfits(sfil,0,skyhdr,/fscale,/silent)
+								;
+								sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
+                                                        	kcwi_apply_geom,sky,skyhdr,kgeom,ppar,scub,schdr
+								;
+								; write out sky cube
+								ofil = kcwi_get_imname(ppar,imgnum[i],'_scube',/nodir)
+								kcwi_write_image,scub,schdr,ofil,ppar
+							endif
 							;
-							sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
-                                                        kcwi_apply_geom,sky,skyhdr,kgeom,ppar,scub,schdr
-							;
-							; write out sky cube
-							ofil = kcwi_get_imname(ppar,imgnum[i],'_scube',/nodir)
-							kcwi_write_image,scub,schdr,ofil,ppar
-						endif
-						;
-						; check for nod-and-shuffle obj images
-						nfil = kcwi_get_imname(ppar,imgnum[i],'_obj',/reduced)
-						if file_test(nfil,/read) then begin
-							obj = mrdfits(nfil,0,objhdr,/fscale,/silent)
-							;
-                                                        sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
-                                                        kcwi_apply_geom,obj,objhdr,kgeom,ppar,ocub,ochdr
-							;
-							; write out obj cube
-							ofil = kcwi_get_imname(ppar,imgnum[i],'_ocube',/nodir)
-							kcwi_write_image,ocub,ochdr,ofil,ppar
-						endif
-					; end if geometry is good
+							; check for nod-and-shuffle obj images
+							nfil = kcwi_get_imname(ppar,imgnum[i],'_obj',/reduced)
+							if file_test(nfil,/read) then begin
+								obj = mrdfits(nfil,0,objhdr,/fscale,/silent)
+								;
+                                                        	sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
+                                                        	kcwi_apply_geom,obj,objhdr,kgeom,ppar,ocub,ochdr
+								;
+								; write out obj cube
+								ofil = kcwi_get_imname(ppar,imgnum[i],'_ocube',/nodir)
+								kcwi_write_image,ocub,ochdr,ofil,ppar
+							endif
+						endelse	; end apply dispersed geometry
+					; end if do_geom
 					endif else $
 						kcwi_print_info,ppar,pre,'unusable geom for: '+obfil+' type: '+kcfg.imgtype,/error
 				;

@@ -5,6 +5,7 @@ arc = mrdfits('kcwi'+strn(arc_imno)+'_int.fits',0,ahdr)
 bar = mrdfits('kcwi'+strn(bar_imno)+'_int.fits',0,bhdr)
 obj = mrdfits('kcwi'+strn(obj_imno)+'_int.fits',0,ohdr)
 out = 'kcwi'+strn(obj_imno)+'_img.fits'
+pout = 'kcwi'+strn(obj_imno)+'_pimg.fits'
 ;
 do_plot = keyword_set(plot)
 ;
@@ -63,6 +64,7 @@ endcase
 onx = 180 / xbin
 ony = 300 / ybin
 oimg = fltarr(onx,ony)
+pimg = fltarr(180,700)
 yp = 0L
 ;
 data = fltarr(3,24,1000) - 1.
@@ -316,7 +318,7 @@ for i=0,23 do begin
 	x1 = coords[1,i]
 	y0 = coords[2,i]
 	y1 = coords[3,i]
-	w  = coords[4,i]
+	w  = coords[4,i]; + fix(2/ybin)
 	nxx = (x1-x0) + 1
 	sub = obj[x0:x1,y0:y1]
 	subr = rot(sub,angles[i],cubic=-0.5)
@@ -325,15 +327,28 @@ for i=0,23 do begin
 	y = x/si[1]
 	x = x MOD si[1]
 	res = interpolate(subr,x-off,y)
-	yp = i * (w*2)
 	yc = si[2]/2
-	oimg[0:nxx-1,yp:yp+(w*2)] = res[0:nxx-1,yc-w:yc+w]
+	if i gt 0 then begin
+		yp0 = yp1; - fix(2/ybin)
+		yp1 = yp0 + w*2
+		yp2 = yp3
+		yp3 = yp2 + (si[2]-1)
+	endif else begin
+		yp0 = 0
+		yp1 = w*2
+		yp2 = 0
+		yp3 = si[2]-1
+	endelse
+	oimg[0:nxx-1,yp0:yp1] += res[0:nxx-1,yc-w:yc+w]
+	pimg[0:nxx-1,yp2:yp3] = subr[0:nxx-1,*]
 	plot,res[*,yc],/xs
 	wait,0.1
 endfor
+maximy = yp1
 ;
 oimg = oimg[0:maximx,0:maximy]
-mwrfits,oimg,out,bhdr
+mwrfits,oimg,out,bhdr,/create
+mwrfits,pimg,pout,bhdr,/create
 print,'Wrote: ',out
 ;
 return

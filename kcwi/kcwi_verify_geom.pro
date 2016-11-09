@@ -40,13 +40,13 @@ function kcwi_verify_geom,kgeom,initialized=initialized,silent=silent
 	sz = size(kgeom)
 	if sz[0] ne 1 or sz[1] lt 1 or sz[2] ne 8 then begin
 		if not keyword_set(silent) then $
-			print,pre+': Error - malformed KCWI_GEOM struct'
+			print,pre+': Error - malformed KCWI_[D]GEOM struct'
 		stat = 1
 	endif else begin
 		if keyword_set(initialized) then begin
 			if kgeom.initialized ne 1 then begin
 				if not keyword_set(silent) then $
-					print,pre+': Error - KCWI_GEOM struct not initialized, run KCWI_TRACE_CBARS and KCWI_EXTRACT_ARCS first'
+					print,pre+': Error - KCWI_[D]GEOM struct not initialized, run geometry fitting program first'
 				stat = 1
 			endif
 		endif

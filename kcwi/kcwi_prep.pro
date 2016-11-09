@@ -353,8 +353,14 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	; if nothing found, then we assume that we will use local images
 	;endif else begin
 		kcwi_print_info,ppar,pre,'Using only local calibrations'
-		calcfg = kcfg
-		ncal = nf
+		cals = where(strpos(kcfg.obstype,'cal') ge 0 or $
+			     strpos(kcfg.obstype,'zero') ge 0, ncal)
+		if ncal gt 0 then begin
+			calcfg = kcfg[cals]
+		endif else begin
+			calcfg = kcfg
+			ncal = nf
+		endelse
 	;endelse
 	kcwi_print_info,ppar,pre,'Number of images in calibration pool',ncal,$
 		format='(a,i5)'
@@ -444,12 +450,20 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	kcwi_print_info,ppar,pre,'Number of flat groups', ppar.nfgrps
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; GROUP DIRECT ARCBARS AND ARC FILES (DGEOM)
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	kcwi_group_dgeom,calcfg,ppar,dccfg,dacfg
+	if ppar.ndirect le 0 then $
+		kcwi_print_info,ppar,pre,'no direct geom groups found',/warning
+	kcwi_print_info,ppar,pre,'Number of direct geom groups', ppar.ndirect
+	;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP CBARS AND ARC FILES (GEOM)
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	kcwi_group_geom,calcfg,ppar,ccfg,acfg
 	if ppar.ngeom le 0 then $
 		kcwi_print_info,ppar,pre,'no geom groups found',/warning
-	kcwi_print_info,ppar,pre,'Number of geom groups', ppar.ncbars
+	kcwi_print_info,ppar,pre,'Number of geom groups', ppar.ngeom
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP SLICE PROFILE OBSERVATIONS
@@ -665,6 +679,46 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 			endif else begin
 				kcwi_print_info,ppar,pre, $
 				    'cannot unambiguously find geom images (arc, cbars) for object image: '+ $
+				    kcfg[p].obsfname,/warning
+				clink = -1
+				alink = -1
+			endelse
+			;
+			; set cbars and arc links
+			links[icbar] = clink
+			links[iarc]  = alink
+		endif	; only object and cflat frames and ncbars gt 0 and narcs gt 0
+		;
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		; ASSOCIATE WITH ARCBARS AND ARC IMAGES (DGEOM)
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;
+		; no sense creating a dark direct image
+		if strpos(kcfg[p].obstype,'direct') ge 0 and strmatch(kcfg[p].imgtype,'dark') ne 1 and $
+			ppar.ndirect gt 0 and ppar.ndarcs gt 0 then begin
+			mcfg = kcwi_match_cfg(dccfg,kcfg[p],ppar,mtags,imgtype='arcbars',/time,count=c,/silent)
+			if c eq 1 then begin
+				;
+				; record arcbars filename
+				cbfile = mcfg.obsfname
+				clink  = mcfg.imgnum
+				;
+				; now find matched arc
+				m = where(dccfg.imgnum eq clink)
+				mcf2 = dacfg[m]
+				;
+				; record arc filename
+				arfile = mcf2.obsfname
+				alink  = mcf2.imgnum
+				;
+				; log
+				kcwi_print_info,ppar,pre,'arcbars file = '+cbfile
+				kcwi_print_info,ppar,pre,'arc     file = '+arfile
+				;
+				; handle the ambiguous case or when no cbars image can be found
+			endif else begin
+				kcwi_print_info,ppar,pre, $
+				    'cannot unambiguously find direct geom images (arc, arcbars) for object image: '+ $
 				    kcfg[p].obsfname,/warning
 				clink = -1
 				alink = -1

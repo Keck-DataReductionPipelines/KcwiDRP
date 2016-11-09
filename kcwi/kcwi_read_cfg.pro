@@ -131,6 +131,8 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 		cfg.obstype	= 'cal'
 	endif else if strcmp(caltype,'cbars') eq 1 then begin
 		cfg.obstype	= 'cal'
+	endif else if strcmp(caltype,'arcbars') eq 1 then begin
+		cfg.obstype	= 'cal'
 	endif else if strcmp(caltype,'cflat') eq 1 then begin
 		cfg.obstype	= 'cal'
 	;
@@ -140,10 +142,12 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 		;cfg.imgtype	= 'dflat'
 		;cfg.obstype	= 'cal'
 		cfg.obstype	= 'obj'
-	endif else if strcmp(strtrim(cfg.gratid,2),'None') eq 1 and $
+	endif
+	;
+	; now check for direct mode
+	if strcmp(strtrim(cfg.gratid,2),'None') eq 1 and $
 			cfg.camang lt 5. then begin
-		cfg.imgtype	= 'object'
-		cfg.obstype	= 'direct'
+		cfg.obstype = 'direct-' + cfg.obstype
 	endif
 	cfg.imgnum	= long(stregex(root,'[0-9]+',/extract))
 	cfg.initialized	= 1

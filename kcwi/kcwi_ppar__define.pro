@@ -122,6 +122,12 @@ tmp = { kcwi_ppar, $
 	ncbars:0, $		; number of continuum bars images
 	cbars:'', $		; List of continuum bars images (rangelist)
 ;
+; Direct mode processing
+	ndirect:0, $		; number of direct groups
+	dgeomexists:0, $	; direct geometry frames exist?
+	ndarcs:0, $		; number of direct arc images
+	darcs:'', $		; List of direct arc images (rangelist)
+;
 ; Wavelength processing
 	narcs:0, $		; number of arc images
 	arcs:'', $		; List of arc images (rangelist)
