@@ -315,8 +315,15 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 		if not keyword_set(ps) then $
 			read,'next: ',q
 		yrng = get_plotlims(ea)
-		maxea = max(ea)
-		mo = moment(ea)
+		if yrng[0] lt 0. then yrng[0] = 0.
+		goo = where(wea gt wgoo0 and wea lt wgoo1, ngoo)
+		if ngoo gt 5 then begin
+			maxea = max(ea[goo])
+			mo = moment(ea[goo])
+		endif else begin
+			maxea = max(ea)
+			mo = moment(ea)
+		endelse
 		if area gt 0 then begin
 			plot,wea,ea,xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 				ytitle='!3EA (cm!U2!N)',title=tlab,ys=9, $
