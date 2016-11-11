@@ -287,5 +287,9 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	kcwi_print_info,ppar,pre,'Data cube output Disp (A/px), Wave0 (A): ', $
 		kgeom.dwout,kgeom.wave0out,format='(a,f8.3,f9.2)'
 	;
+	; log our change of the kgeom struct
+	kgeom.progid = pre
+	kgeom.timestamp = systime(1)
+	;
 	return
 end

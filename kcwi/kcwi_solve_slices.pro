@@ -161,6 +161,7 @@ kcwi_print_info,ppar,pre,'X, Y global pixel residuals: ',i,xmo[0],ymo[0], $
 	format='(a,i3,2f9.3)'
 ;
 ; Kgeom timestamp
+kgeom.progid = pre
 kgeom.timestamp = systime(1)
 ;
 if ppar.display ge 4 then $

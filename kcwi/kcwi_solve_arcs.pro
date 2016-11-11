@@ -853,6 +853,7 @@ endfor			; b
 ;
 ; stamp the KCWI_GEOM struct
 kgeom.progid = pre
+kgeom.timestamp = systime(1)
 ;
 ; now let's make some plots!
 ;

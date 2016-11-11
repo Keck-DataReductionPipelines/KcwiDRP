@@ -178,7 +178,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 	for i=0,nproc-1 do begin
 		;
 		; raw image to process
-		obfil = kcwi_get_imname(ppar,imgnum[i],/raw)
+		obfil = kcwi_get_imname(ppar,imgnum[i],/raw,/exist)
 		kcfg = kcwi_read_cfg(obfil)
 		;
 		; final reduced output file

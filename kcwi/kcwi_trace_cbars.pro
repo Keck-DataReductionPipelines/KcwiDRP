@@ -553,6 +553,7 @@ kgeom.slice = slice
 kgeom.barx = barx
 kgeom.midrow = midrow
 kgeom.initialized = 1
+kgeom.progid = pre
 kgeom.timestamp = systime(1)
 ;
 ; make warped version, if requested

@@ -1,6 +1,6 @@
 function kcwi_get_imname,ppar,imgnum,tail, $
 	nodir = nodir, calib = calib, raw = raw, reduced = reduced, $
-	master = master, help = help
+	master = master, exist=exist, help = help
 	;
 	; setup
 	pre = 'KCWI_GET_IMNAME'
@@ -55,6 +55,19 @@ function kcwi_get_imname,ppar,imgnum,tail, $
 	;
 	; construct file name
 	file = dir + rutstr + imgstr + tail + '.fits'
+	;
+	; does it exist?
+	if keyword_set(exist) then begin
+		if not file_test(file,/regular,/read) then begin
+			ofil = file
+			file = file + '.gz'
+			if not file_test(file,/regular,/read) then begin
+				kcwi_print_info,ppar,pre, $
+					'File not found: '+ofil+' nor '+file,/error
+				file = ofil
+			endif
+		endif
+	endif
 	;
 	; all done
 	return,file

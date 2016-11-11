@@ -145,5 +145,9 @@ pro kcwi_set_dgeom,kdgeom,ikcfg,ppar,help=help
 		end
 	endcase
 	;
+	; log our update of the geom struct
+	kdgeom.progid = pre
+	kdgeom.timestamp = systime(1)
+	;
 	return
 end

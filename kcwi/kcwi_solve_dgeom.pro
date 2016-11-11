@@ -225,5 +225,9 @@ for isl = 0, sl-1 do $
 ; we get here, all is good
 kdgeom.status = 0
 ;
+; log our change to geom struct
+kdgeom.progid = pre
+kdgeom.timestamp = systime(1)
+;
 return
 end
