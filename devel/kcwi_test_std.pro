@@ -48,14 +48,27 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 	endif
 	;
 	; get params
-	ppar = kcwi_read_ppar('./redux/kcwi.ppar')
+	pfile = 'kcwi.ppar'
+	if not file_test(pfile) then begin
+		pfile = 'redux/kcwi.ppar'
+		if not file_test(pfile) then begin
+			print,'Parameter file not found: ',pfile
+			return
+		endif
+	endif
+	ppar = kcwi_read_ppar(pfile)
+	;
+	; get input file
+	ifil = kcwi_get_imname(ppar,imno,'_icubes',/reduced)
+	if file_test(ifil) then begin
+		kcfg = kcwi_read_cfg(ifil)
+	endif else begin
+		print,'Input file not found: ',ifil
+		return
+	endelse
 	;
 	; get image number string
 	imstr = string(imno,format='(i0'+strn(ppar.fdigits)+')')
-	;
-	; get inputs
-	fspec = ppar.froot + imstr + '_icubes.fits'
-	kcfg = kcwi_read_cfgs('./redux',filespec=fspec)
 	;
 	; check keyword overrides
 	if keyword_set(verbose) then $
