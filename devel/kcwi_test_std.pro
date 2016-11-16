@@ -235,7 +235,9 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 	linterp,swl,sflx,w,rsflx
 	;
 	; get a smoothed version
-	stdsmoo = gaussfold(w,stdspec,fwhm,lammin=wgoo0,lammax=wgoo1)
+	if kcfg.nasmask then $
+		stdsmoo = gaussfold(w,stdspec,fwhm) $
+	else	stdsmoo = gaussfold(w,stdspec,fwhm,lammin=wgoo0,lammax=wgoo1)
 	;
 	; make a hardcopy if requested
 	if keyword_set(ps) then begin

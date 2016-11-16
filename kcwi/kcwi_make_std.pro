@@ -271,7 +271,9 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		format='(a,f5.1,1x,a)'
 	;
 	; smooth to this resolution
-	obsspec = gaussfold(w,obsspec,fwhm,lammin=wgoo0,lammax=wgoo1)
+	if kcfg.nasmask then $
+		obsspec = gaussfold(w,obsspec,fwhm) $
+	else	obsspec = gaussfold(w,obsspec,fwhm,lammin=wgoo0,lammax=wgoo1)
 	;
 	; resample standard onto our wavelength grid
 	linterp,swl,sflx,w,rsflx

@@ -12,14 +12,13 @@
 ;	Data reduction for the Keck Cosmic Web Imager (KCWI).
 ;
 ; CALLING SEQUENCE:
-;	Result = KCWI_READ_IMAGE( Kcfg, Ppar, Tail, Hdr)
+;	Result = KCWI_READ_IMAGE( ImgNo, Ppar, Tail, Hdr)
 ;
 ; Returns:
 ;	2-d or 3-d image, or -1 if image file not found
 ;
 ; INPUTS:
-;	Kcfg	- KCWI_CFG struct for a single observation.  If this is a
-;			array, will only read first image
+;	ImgNo	- Image serial number
 ;	Ppar	- KCWI_PPAR struct specifying inputs and logging flags
 ;	Tail	- string specifying tail, e.g. '_int', '_icube'
 ;
@@ -53,8 +52,8 @@ function kcwi_read_image,imgnum,ppar,tail,hdr, $
 	;
 	; help request
 	if keyword_set(help) then begin
-		print,pre+': Info - Usage: Img = '+pre+'( Kcfg, Ppar, Tail, Hdr)'
-		print,pre+': Info - Keywords: STATUS=STATUS, /HELP'
+		print,pre+': Info - Usage: Img = '+pre+'( ImgNo, Ppar, Tail, Hdr)'
+		print,pre+': Info - Keywords: STATUS=STATUS, MASTER=MASTER, CALIB=CALIB, /HELP'
 		return,-1
 	endif
 	;
