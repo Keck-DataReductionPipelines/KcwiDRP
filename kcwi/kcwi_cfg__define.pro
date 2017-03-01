@@ -37,6 +37,8 @@
 ; NOTES:
 ;	Keep structure name on a line by itself (see struct_init.pro).
 ;	Keep tag names 15 chars or less.
+;	All tags above the DRIVED PROPERTIES should exactly match header
+;		keywords (except case).
 ;
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)
@@ -60,9 +62,13 @@ tmp = { kcwi_cfg, $
 	xposure:-9.0, $		; shutter open duration (s)
 	telapse:-9.0, $		; dark current duration (s)
 	airmass:-1.0, $		; Airmass
+	ofname:'', $		; Original file name
 
 ;
 ; Configuration properties
+	hatpos:'', $		; hatch position: Open or Closed
+	flimagin:'', $		; dome lamp imaging mode: on or off
+	flspectr:'', $		; dome lamp spectra mode: on or off
 	caltype:'', $		; calibration type: bias, dark, arc, etc.
 	frameno:0l, $		; image number
 	skyobs:0, $		; sky observation? 0 - object, 1 - sky
@@ -130,7 +136,7 @@ tmp = { kcwi_cfg, $
 	crpix3:0., $		; wavelength reference pixel
 	cdelt3:0., $		; wavelength dispersion Ang/px
 ;
-; Derived properties (above should correspond to real FITS header keywords)
+; DERIVED PROPERTIES (above should match real FITS header keywords)
 	juliandate:0.d0, $	; Julian date of observation
 	date:'', $		; UT start of observation (YYYY-MM-DDTHH:MM:SS)
 	binning:0, $		; is image binned?
