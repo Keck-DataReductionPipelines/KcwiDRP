@@ -153,6 +153,10 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 		cfg.obstype = 'direct-' + cfg.obstype
 	endif
 	;
+	; verify imgtype, obstype
+	if strlen(strtrim(cfg.imgtype,2)) le 0 then cfg.imgtype='test'
+	if strlen(strtrim(cfg.obstype,2)) le 0 then cfg.obstype='test'
+	;
 	; extract image number using original file name (minus '.fits')
 	ofn = gettok(strtrim(cfg.ofname,2),'.')
 	imnum = ''
