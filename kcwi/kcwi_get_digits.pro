@@ -32,5 +32,12 @@
 ;
 function kcwi_get_digits,obsfname
 	fdecomp,obsfname,disk,dir,root,ext
-	return,strlen(stregex(root,'[0-9]+',/extract))
+	hdr = headfits(obsfname)
+	outfile = sxpar(hdr, 'OUTFILE', count=nk)
+	if nk ge 1 then begin
+		digs = strmid(root,strlen(outfile))
+		return,strlen(stregex(digs,'[0-9]+',/extract))
+	endif else $
+		return,0
+
 end

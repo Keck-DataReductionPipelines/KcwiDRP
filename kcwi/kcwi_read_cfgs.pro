@@ -24,6 +24,7 @@
 ;
 ; OUTPUT KEYWORDS:
 ;	COUNT	- contains the number of images found
+;	REDO_SORT - 0 - no re-sort, 1 - resort performed
 ;
 ; RETURNS:
 ;	An array of struct KCWI_CFG, with one element for each FITS header
@@ -49,9 +50,10 @@
 ;	2013-AUG-02	added STAGE1 keyword
 ;	2013-SEP-05	added STAGE2 and STAGE3 keywords
 ;	2014-APR-03	added count,silent output keywords
+;	2017-MAR-14	added redo_sort keyword
 ;-
 function kcwi_read_cfgs,inputdir, $
-	filespec=filespec, count=count, silent=silent
+	filespec=filespec, count=count, silent=silent, redo_sort=redo_sort
 	;
 	; setup
 	pre = 'KCWI_READ_CFGS'
@@ -88,6 +90,23 @@ function kcwi_read_cfgs,inputdir, $
 	;
 	; sort on time
 	kcfg = kcfg[sort(kcfg.juliandate)]
+	;
+	; check for image number sequence
+	imgnum = kcfg[0].imgnum
+	redo_sort = (1 eq 0)
+	for i=1,count-1 do begin
+		if kcfg[i].imgnum lt imgnum then begin
+			print,'KCWI_READ_CFGS: Warning - image sequence out of order, resorting'
+			redo_sort = (1 eq 1)
+			break
+		endif
+		imgnum = kcfg[i].imgnum
+	endfor
+	;
+	; redo sort on imgnum
+	if redo_sort then $
+		kcfg = kcfg[sort(kcfg.imgnum)]
+
 	;
 	return,kcfg
 end

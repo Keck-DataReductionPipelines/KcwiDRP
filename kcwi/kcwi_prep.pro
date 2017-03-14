@@ -210,7 +210,24 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	;
 	; check image name prefix or root
 	if keyword_set(froot) then $
-		ppar.froot = froot
+		ppar.froot = froot $
+	else begin
+		ppar.froot = ''
+		; get image name prefix from headers
+		flist = file_search(indir + '*.fit*', count = nf)
+		; loop over fits files
+		for i=0,nf-1 do begin
+			hdr = headfits(flist[i])
+			; make sure it's a science image
+			test = sxpar(hdr,'NAMPSXY',count=nk)
+			if nk ge 1 then begin
+				froot = sxpar(hdr,'OUTFILE',count=nfr)
+				if nfr ge 1 then $
+					ppar.froot = froot
+			endif
+		endfor
+	endelse
+	kcwi_print_info,ppar,pre,'Input image file prefix', ppar.froot
 	;
 	; do we have any files?
 	flist = file_search(indir + ppar.froot+'*.fit*', count=nf)
@@ -312,9 +329,11 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		printf,ll,'Saving plots'
 	;
 	; gather configuration data on each observation in raw dir
-	kcfg = kcwi_read_cfgs(indir,filespec=fspec)
+	kcfg = kcwi_read_cfgs(indir,filespec=fspec, redo_sort=jderr)
 	nf = n_elements(kcfg)
 	kcwi_print_info,ppar,pre,'Number of raw input images',nf
+	if jderr then $
+		kcwi_print_info,ppar,pre,'Image numbers out of time sequence',/warning
 	;
 	; write out a complete listing
 	kcwi_print_cfgs,kcfg,/silent,/header,outfile=odir+'kcwi.imlog'
