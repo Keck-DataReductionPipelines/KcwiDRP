@@ -55,10 +55,11 @@ tmp = { kcwi_cfg, $
 	object:'', $		; object name
 	datepclr:'', $		; UT start of observation (YYYY-MM-DDTHH:MM:SS)
 	daterend:'', $		; UT end of observation (YYYY-MM-DDTHH:MM:SS)
-	ra:-99.d0, $		; RA
-	dec:-99.d0, $		; Dec
+	el:-99.d0, $		; Telescope elevation (deg)
+	az:-99.d0, $		; Telescope azimuth (deg)
+	parang:-99.d0, $	; Parallactic angle (deg)
 	epoch:-99.d0, $		; Coordinate epoch
-	rotpa:-999.d0, $	; Rotator PA
+	rotposn:-999.d0, $	; Rotator user angle (deg)
 	xposure:-9.0, $		; shutter open duration (s)
 	telapse:-9.0, $		; dark current duration (s)
 	airmass:-1.0, $		; Airmass
@@ -137,6 +138,9 @@ tmp = { kcwi_cfg, $
 	cdelt3:0., $		; wavelength dispersion Ang/px
 ;
 ; DERIVED PROPERTIES (above should match real FITS header keywords)
+	ra:-99.d0, $		; RA
+	dec:-99.d0, $		; Dec
+	skypa:-99.d0,		; Sky Position Angle
 	juliandate:0.d0, $	; Julian date of observation
 	date:'', $		; UT start of observation (YYYY-MM-DDTHH:MM:SS)
 	binning:0, $		; is image binned?

@@ -124,18 +124,25 @@ sxaddpar,dhdr, 'ARCNO',   kdgeom.arcimgnum, ' Arc image number'
 sxaddpar,dhdr, 'GEOMFL',  kdgeom.dgeomfile,' Geometry file'
 ;
 ; get sky coords
-ra = sxpar(hdr,'RA',count=nra)
-dec = sxpar(hdr,'DEC',count=ndec)
+rastr = sxpar(hdr,'RA',count=nra)
+decstr = sxpar(hdr,'DEC',count=ndec)
 if nra ne 1 or ndec ne 1 then begin
-	ra = sxpar(hdr,'TARGRA',count=nra)
-	dec = sxpar(hdr,'TARGDEC',count=ndec)
+	rastr = sxpar(hdr,'TARGRA',count=nra)
+	decstr = sxpar(hdr,'TARGDEC',count=ndec)
 endif
+if nra eq 1 and ndec eq 1 then begin
+	radec_parse,rastr,decstr,':',ra,dec
+endif else begin
+	ra = -99.d0
+	dec = -99.d0
+endelse
 ;
-; Position Angle ( = -ROTPA) in radians
+; Position Angle ( = SKYPA) in degrees
 ; Plus an offset between rotator and IFU (may be zero)
-crota = (-(sxpar(hdr,'ROTPA',count=npa) + kdgeom.rotoff)) / !RADEG
-sxaddpar,dhdr,'IFUPA',-crota*!RADEG,' IFU position angle (degrees)'
-sxaddpar,dhdr,'IFUROFF',kdgeom.rotoff,' IFU-ROTPA offset (degrees)'
+skypa = sxpar(hdr,'EL') + sxpar(hdr,'PARANG') + sxpar(hdr,'ROTPOSN',count=npa)
+crota = (skypa + kdgeom.rotoff) / !RADEG
+sxaddpar,dhdr,'IFUPA',crota*!RADEG,' IFU position angle (degrees)'
+sxaddpar,dhdr,'IFUROFF',kdgeom.rotoff,' IFU-SKYPA offset (degrees)'
 ;
 ; pixel scales
 cdelt1 = -kdgeom.pxscl*kdgeom.xbinsize	; RA degrees per px (column)

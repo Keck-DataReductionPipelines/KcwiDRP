@@ -218,6 +218,7 @@ for j=0,nf-1 do begin
 						4:	oval = float(val[i])
 						5:	oval = double(val[i])
 						7:	oval = repstr(val[i],'_',' ')	; handle blanks
+						77:	oval = val[i]			; no translation
 						else:	begin
 							print,'Error - illegal type code: ',tcode[i]
 							return

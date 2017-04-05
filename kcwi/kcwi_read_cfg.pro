@@ -81,6 +81,12 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	endfor
 ;
 ; process the derived property keys
+	rastr		= sxpar(hdr,'RA')
+	decstr		= sxpar(hdr,'DEC')
+	radec_parse,rastr,decstr,':',rad,decd
+	cfg.skypa	= cfg.el + cfg.parang + cfg.rotposn
+	cfg.ra		= rad
+	cfg.dec		= decd
 	ccdsum		= sxpar(hdr,'CCDSUM')
 	cfg.xbinsize	= fix(gettok(ccdsum,' '))
 	cfg.ybinsize	= fix(ccdsum)

@@ -93,7 +93,7 @@ pro kcwi_print_cfgs,kcfg,imsum, $
 			strtrim(kcfg[i].bfiltnam,2), $
 			kcfg[i].cwave,kcfg[i].juliandate, $
 			kcfg[i].exptime,strtrim(kcfg[i].imgtype,2), $
-			kcfg[i].imgnum,kcfg[i].ra,kcfg[i].dec,kcfg[i].rotpa, $
+			kcfg[i].imgnum,kcfg[i].ra,kcfg[i].dec,kcfg[i].skypa, $
 			format='(i4,a1,i4,2i2,1x,a-5,i1,1x,3i1,1x,a-3,1x,a-4,1x,a-4,1x,f8.1,f12.3,f7.1,1x,a-8,i7,2f13.8,2x,f7.2)')
 		;
 		; add object info
