@@ -35,7 +35,7 @@
 ;	'redux' and return an array of struct KCWI_CFG.  Find all the
 ;	continuum flats and print their configuration summary.
 ;
-;	KCFG = KCWI_PRINT_CFGS('redux',filespec='*_int.fits')
+;	KCFG = KCWI_READ_CFGS('redux',filespec='*_int.fits')
 ;	KCWI_PRINT_CFG, KCFG
 ;
 ; MODIFICATION HISTORY:
@@ -93,7 +93,7 @@ pro kcwi_print_cfgs,kcfg,imsum, $
 			strtrim(kcfg[i].bfiltnam,2), $
 			kcfg[i].cwave,kcfg[i].juliandate, $
 			kcfg[i].exptime,strtrim(kcfg[i].imgtype,2), $
-			kcfg[i].imgnum,kcfg[i].ra,kcfg[i].dec,kcfg[i].skypa, $
+			kcfg[i].imgnum,kcfg[i].ra,kcfg[i].dec,kcfg[i].rotposn, $
 			format='(i4,a1,i4,2i2,1x,a-5,i1,1x,3i1,1x,a-3,1x,a-4,1x,a-4,1x,f8.1,f12.3,f7.1,1x,a-8,i7,2f13.8,2x,f7.2)')
 		;
 		; add object info

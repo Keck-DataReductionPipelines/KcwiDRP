@@ -1,5 +1,22 @@
 # Copyright (c) 2013-2016, California Institute of Technology, all rights reserved
 
+2017-Apr-06: v0.3.1 - Fifteenth beta release
+
+- Improve calibration file grouping and associations.
+
+- Implemented initial version of direct imaging pipeline.
+
+- Now accommodates larger image sequence numbers.
+
+- Handles dome flats at Keck correctly.
+
+- Correctly extracts image file root and sequence number given Keck protocol.
+
+- Added devel routine to fix header keywords (kcwi_fix_headers.pro).
+
+- First pass at sky geometry keywords.
+
+
 2016-Oct-07: v0.2.13 - Fourteenth beta release
 
 - Improved dark image grouping and association and now use TELAPSE instead 

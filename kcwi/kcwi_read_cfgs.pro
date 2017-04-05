@@ -96,7 +96,7 @@ function kcwi_read_cfgs,inputdir, $
 	redo_sort = (1 eq 0)
 	for i=1,count-1 do begin
 		if kcfg[i].imgnum lt imgnum then begin
-			print,'KCWI_READ_CFGS: Warning - image sequence out of order, resorting'
+			print,'KCWI_READ_CFGS: Warning - image sequence out of order, resorting; image #',kcfg[i].imgnum
 			redo_sort = (1 eq 1)
 			break
 		endif

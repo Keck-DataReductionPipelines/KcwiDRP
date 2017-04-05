@@ -1,3 +1,3 @@
 function kcwi_drp_version
-	return,'KCWI DERP Version: 0.2.14 DEV Date: 2016/10/17'
+	return,'KCWI DERP Version: 0.3.1 REL Date: 2017/04/06'
 end

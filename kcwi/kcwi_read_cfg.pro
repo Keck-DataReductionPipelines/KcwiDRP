@@ -84,7 +84,6 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	rastr		= sxpar(hdr,'RA')
 	decstr		= sxpar(hdr,'DEC')
 	radec_parse,rastr,decstr,':',rad,decd
-	cfg.skypa	= cfg.el + cfg.parang + cfg.rotposn
 	cfg.ra		= rad
 	cfg.dec		= decd
 	ccdsum		= sxpar(hdr,'CCDSUM')
@@ -93,7 +92,8 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	if cfg.xbinsize gt 1 or cfg.ybinsize gt 1 then $
 		cfg.binning	= 1 $
 	else	cfg.binning	= 0
-	cfg.juliandate	= kcwi_parse_dates(cfg.datepclr)
+	; TODO: when we fix the datepclr, replace datarend
+	cfg.juliandate	= kcwi_parse_dates(cfg.daterend)
 	fdecomp,obsfname,disk,dir,root,ext
 	cfg.date	= cfg.datepclr
 	cfg.gratid	= cfg.bgratnam
