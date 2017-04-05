@@ -140,7 +140,7 @@ tmp = { kcwi_cfg, $
 ; DERIVED PROPERTIES (above should match real FITS header keywords)
 	ra:-99.d0, $		; RA
 	dec:-99.d0, $		; Dec
-	skypa:-99.d0,		; Sky Position Angle
+	skypa:-99.d0, $		; Sky Position Angle
 	juliandate:0.d0, $	; Julian date of observation
 	date:'', $		; UT start of observation (YYYY-MM-DDTHH:MM:SS)
 	binning:0, $		; is image binned?
