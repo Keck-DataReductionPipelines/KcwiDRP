@@ -78,6 +78,8 @@ data = fltarr(3,24,1000) - 1.
 sl = -1
 last = 0
 maximx = 0
+maximy = 0
+minimy = ny
 dx = 2 / xbin
 bspec = fltarr(1000,24)
 ;
@@ -95,6 +97,7 @@ for i=4,nx-4 do begin
 		if last le kdgeom.minpix then begin
 			sl += 1
 			nxp = 0
+			print,'Slice: ',sl
 			if sl gt 23 then begin
 				kcwi_print_info,ppar,pre,'Slice overflow',sl,/warn
 				break
@@ -156,10 +159,12 @@ for i=4,nx-4 do begin
 		endelse
 		;
 		; get data
-		if ferr le 0.001 and abs(cnt-fcnt) le 1. then begin
+		if ferr le 0.1 and abs(cnt-fcnt) le 1. then begin
 			data[0,sl,nxp] = float(i)
 			data[1,sl,nxp] = fcnt
 			data[2,sl,nxp] = fwid
+			if fcnt lt minimy then minimy = fcnt
+			if fcnt gt maximy then maximy = fcnt
 			nxp += 1
 		endif
 	endif
@@ -169,6 +174,14 @@ sl += 1
 ;
 ; log number of slices found
 kcwi_print_info,ppar,pre,'Found this many slices',sl,/info
+;
+; plot the traces
+deepcolor
+!p.background=colordex('white')
+!p.color=colordex('black')
+plot,[0,1],[0,1],xtitle='X pixel',xran=[0,nx],/xs, $
+	ytitle='Y pixel',yran=[minimy,maximy], $
+	/nodata,title='Direct Traces for Image # '+strn(kdgeom.arcimgnum)
 ;
 ; now get spatial extent of arc images
 ;
@@ -181,6 +194,7 @@ for isl = 0, sl-1 do begin
 	xf = xf[good]
 	yf = yf[good]
 	wf = wf[good]
+	oplot,xf,yf,psym=4
 	c = poly_fit(xf,yf,1)
 	angle = atan(c[1]) / !DTOR
 	kdgeom.angles[isl] = angle

@@ -85,6 +85,7 @@ pro kcwi_set_dgeom,kdgeom,ikcfg,ppar,help=help
 	    strmid(kcfg.obsfname,0,strpos(kcfg.obsfname,'_int')) + '_dgeom.save'
     	;
     	; set basic configuration parameters
+	kdgeom.arcimgnum = kcfg.imgnum
     	kdgeom.ifunum = kcfg.ifunum
 	kdgeom.ifunam = kcfg.ifunam
 	kdgeom.filter = kcfg.filter
