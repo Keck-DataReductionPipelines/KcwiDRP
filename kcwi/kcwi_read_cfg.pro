@@ -92,8 +92,7 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	if cfg.xbinsize gt 1 or cfg.ybinsize gt 1 then $
 		cfg.binning	= 1 $
 	else	cfg.binning	= 0
-	; TODO: when we fix the datepclr, replace datarend
-	cfg.juliandate	= kcwi_parse_dates(cfg.daterend)
+	cfg.juliandate	= kcwi_parse_dates(cfg.datepclr)
 	fdecomp,obsfname,disk,dir,root,ext
 	cfg.date	= cfg.datepclr
 	cfg.gratid	= cfg.bgratnam

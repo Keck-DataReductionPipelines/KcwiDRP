@@ -34,6 +34,7 @@
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2016-NOV-09	Initial Revision
+;	2017-APR-06	Updates for real data, more diagnostic output
 ;-
 ;
 pro kcwi_solve_dgeom,kdgeom,ppar, help=help
@@ -75,6 +76,8 @@ ybin = kdgeom.ybinsize
 ;
 ; set up data arrays
 data = fltarr(3,24,1000) - 1.
+errs = fltarr(24,1000) - 1.
+wids = fltarr(24,1000) - 1.
 sl = -1
 last = 0
 maximx = 0
@@ -163,6 +166,8 @@ for i=4,nx-4 do begin
 			data[0,sl,nxp] = float(i)
 			data[1,sl,nxp] = fcnt
 			data[2,sl,nxp] = fwid
+			errs[sl,nxp] = ferr
+			wids[sl,nxp] = fwid
 			if fcnt lt minimy then minimy = fcnt
 			if fcnt gt maximy then maximy = fcnt
 			nxp += 1
@@ -174,6 +179,29 @@ sl += 1
 ;
 ; log number of slices found
 kcwi_print_info,ppar,pre,'Found this many slices',sl,/info
+;
+; report on statistics
+terrs = [-1.]
+twids = [-1.]
+for isl=0,23 do begin
+	es = reform(errs[isl,*])
+	es = es[where(es ge 0.)]
+	ws = reform(wids[isl,*])
+	ws = ws[where(ws ge 0.)]
+	emo = moment(es)
+	wmo = moment(ws)
+	terrs = [terrs, es]
+	twids = [twids, ws]
+	kcwi_print_info,ppar,pre, $
+		'Slice, <err>, STD, min, max, <wid>, STD, min, max',isl, $
+		emo[0],sqrt(emo[1]),minmax(es), $
+		wmo[0],sqrt(wmo[1]),minmax(ws), format='(a,i4,2x,8f9.4)'
+endfor
+emo = moment(terrs[where(terrs ge 0.)])
+wmo = moment(twids[where(twids ge 0.)])
+kcwi_print_info,ppar,pre,'All:   <err>, STD, min, max, <wid>, STD, min, max', $
+	emo[0],sqrt(emo[1]),minmax(es), $
+	wmo[0],sqrt(wmo[1]),minmax(ws), format='(a,6x,8f9.4)'
 ;
 ; plot the traces
 deepcolor
