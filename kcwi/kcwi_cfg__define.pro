@@ -60,6 +60,7 @@ tmp = { kcwi_cfg, $
 	parang:-99.d0, $	; Parallactic angle (deg)
 	epoch:-99.d0, $		; Coordinate epoch
 	rotposn:-999.d0, $	; Rotator user angle (deg)
+	rotrefan:-999.d0, $	; Rotator reference angle (deg)
 	rotmode:'', $		; Rotator mode
 	xposure:-9.0, $		; shutter open duration (s)
 	telapse:-9.0, $		; dark current duration (s)
