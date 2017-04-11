@@ -18,6 +18,8 @@
 
 pro KCWI_REVERSE_GEOM, kgeom, ppar, degree=degree
 
+pre = "KCWI_REVERSE_GEOM"
+
 ; Check structs
 if kcwi_verify_geom(kgeom,/init) ne 0 then return
 if kcwi_verify_ppar(ppar) ne 0 then begin
@@ -44,17 +46,15 @@ endif
   x0out = kgeom.x0out
   dwout = kgeom.dwout
   wave0out = kgeom.wave0out
+  ldeg = kgeom.lastdegree
   
   xpad = 3
 
 ; process the degree, default to 3. 
-  if n_elements(degree) eq 0 then degree = 3 
+  if n_elements(degree) eq 0 then degree = ldeg
   if degree lt 2 or degree gt 4 then degree = 3 
   
-  outfile = "wavemap"+string(imno,"(i05)")+".fits"
-
-  outfile = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_wavemap",/reduced);
-  print,outfile
+  outfile = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_wavemap",/reduced)
 
   x = dindgen(nx)
   y = dindgen(ny); ypad
@@ -69,7 +69,11 @@ endif
   ; loop over slices
   for s=0, 23 do begin
      qs = where(slice eq s and xi gt 0 and finite(xw) and finite(yw), nqs)
-     if nqs eq 0 then message,"Sorry, no points in this slice. Confused. Exiting."
+     if nqs eq 0 then begin
+	     kcwi_print_info,ppar,pre, $
+	     	"Sorry, no points in this slice. Confused. Exiting.",/error
+	     return
+     endif
      x0 = xi[qs]
      y0 = yi[qs]+ypad
      x1 = xw[qs]
@@ -82,7 +86,11 @@ endif
      ; reset the "in" values
      xmm = minmax(x0)
      qin = where(xx gt xmm[0]-xpad and xx lt xmm[1]+xpad and yy ge trimy0 and yy le trimy1, nqxin)
-     if nqxin eq 0 then message, "Sorry, no suitable points found. Confused. Exiting."
+     if nqxin eq 0 then begin
+	     kcwi_print_info,ppar,pre, $
+		"Sorry, no suitable points found. Confused. Exiting.",/error
+	     return
+     endif
      xin = xx[qin]-x0min+x0out
      yin = yy[qin]+ypad
      kcwi_poly_map,xin,yin,kx,ky,xout,yout
@@ -90,10 +98,10 @@ endif
      ; set the pixel values to the wavelengths.
      reverse_image[xin-x0out+x0min,yin-ypad] = yout*dwout+wave0out
 
-  endfor                        ;
+  endfor
 
   ; write the file
-  message,"Writing: "+outfile,/info
+  kcwi_print_info,ppar,pre,"Writing",outfile,/info
   mwrfits, reverse_image,outfile,/create
-  message,"Generated reverse map.",/info
-end;
+  kcwi_print_info,ppar,pre,"Generated reverse map.",/info
+end
