@@ -418,6 +418,9 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 								ofil = kcwi_get_imname(ppar,imgnum[i],'_ocube',/nodir)
 								kcwi_write_image,ocub,ochdr,ofil,ppar
 							endif
+							;
+							; output a wavemap image which gives the wavelength at each pixel
+							kcwi_reverse_geom,kgeom,ppar
 						endelse	; end apply dispersed geometry
 					; end if do_geom
 					endif else $
