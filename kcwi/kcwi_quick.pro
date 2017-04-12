@@ -377,12 +377,23 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	endif else kcwi_print_info,ppar,pre,'no slice profile observations found',/warning
 	;
 	; find relative response images
-	rrs = where(strcmp(calcfg.imgtype,'dflat') eq 1 or strcmp(calcfg.imgtype,'tflat') eq 1, nrrs)
-	if nrrs gt 0 then begin
-		ppar.nrrs = nrrs
+	trrs = where(strcmp(calcfg.imgtype,'tflat') eq 1, ntrrs)
+	drrs = where(strcmp(calcfg.imgtype,'dflat') eq 1, ndrrs)
+	if ntrrs gt 0 or ndrrs gt 0 then begin
+		ppar.rrexists = 1
+		ppar.nrrs = ntrrs + ndrrs
+		if ntrrs gt 0 then begin
+			rrs = trrs
+			if ndrrs gt 0 then $
+				rrs = [rrs, drrs]
+		endif else 	rrs = drrs
+		nrrs = n_elements(rrs)
 		rangepar,calcfg[rrs].imgnum,rlst
 		ppar.rrs = rlst
-	endif else kcwi_print_info,ppar,pre,'no relative response images found',/warning
+	endif else begin
+		nrrs = 0
+		kcwi_print_info,ppar,pre,'no relative response images found',/warning
+	endelse
 	;
 	; find sky observation images
 	skys = where(kcfg.skyobs eq 1, nskys)
@@ -465,8 +476,8 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP RELATIVE RESPONSE OBSERVATIONS
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	if nrrs gt 0 then $
-		rcfg = calcfg[rrs]
+	if ntrrs gt 0 then $
+		rcfg = calcfg[trrs]
 	if ndrrs gt 0 then $
 		rdcfg = calcfg[drrs]
 	kcwi_print_info,ppar,pre,'number of relative response images',nrrs
