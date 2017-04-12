@@ -794,6 +794,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 			else	rd = 0
 			;
 			; do we have a choice?if rt eq 1 and rd eq 1 then begin
+			if rt eq 1 and rd eq 1 then begin
 				if keyword_set(domepriority) then begin
 					r = rd
 					mcfg = mdcfg
