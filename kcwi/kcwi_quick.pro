@@ -404,6 +404,11 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		ppar.skys = rlst
 	endif else kcwi_print_info,ppar,pre,'no sky observations found',/warning
 	;
+	; find standard star observation images
+	stds = kcwi_find_stds(kcfg,ppar,nstds)
+	if nstds le 0 then $
+		kcwi_print_info,ppar,pre,'no standard star images found',/warning
+	;
 	; get image numbers to be processed
 	imnums = kcfg[proc].imgnum
 	rangepar,imnums,imlist
