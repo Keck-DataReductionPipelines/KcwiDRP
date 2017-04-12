@@ -74,12 +74,12 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	mingroupdark=mingroupdark, $
 	minoscanpix=minoscanpix, $
 	taperfrac=taperfrac, pkdel=pkdel, $
-	cwi=cwi, $
 	nocrreject=nocrreject, $
 	nonassub=nonassub, $
-	nocleancoeffs=nocleancoeffs, $
+	cleancoeffs=cleancoeffs, $
 	saveintims=saveintims, $
 	includetest=includetest, $
+	domepriority=domepriority, $
 	clobber=clobber, $
 	verbose=verbose, $
 	display=display, $
@@ -97,8 +97,8 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		print,pre+': Info - Usage: '+pre+', RawDir, ReducedDir, CalibDir, DataDir'
 		print,pre+': Select input imgnum   : IMGTARG=<img_num> (defaults to most recent object image)'
 		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, MINGROUPBIAS=N, MINOSCANPIX=N'
-		print,pre+': Info - Wl Fit Keywords: PKDEL=<match_delta>'
-		print,pre+': Info - Switch Keywords: /CWI, /NOCRREJECT, /NONASSUB, /NOCLEANCOEFFS, /DS9'
+		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
+		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /DOMEPRIORITY, /DS9'
 		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /HELP'
 		return
 	endif
@@ -112,10 +112,10 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	ppar.progid = pre
 	;
 	; set from keyword values
-	if n_elements(verbose) eq 1 then $
-		ppar.verbose = verbose
-	if n_elements(display) eq 1 then $
-		ppar.display = display
+	if n_elements(verbose) eq 0 then verbose = 1
+	ppar.verbose = verbose
+	if n_elements(display) eq 0 then display = 1
+	ppar.display = display
 	;
 	; check directory inputs
 	if n_elements(rawdir) le 0 then $
@@ -224,7 +224,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	; derive from file names in INDIR
 	else begin
 		fdig = 0
-		; lop over fits files
+		; loop over fits files
 		for i=0,nf-1 do begin
 			ndig = kcwi_get_digits(flist[i])
 			if ndig gt fdig then fdig = ndig
@@ -238,8 +238,11 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	ppar.filespec = fspec
 	;
 	; gather configuration data on each observation in indir
-	kcfg = kcwi_read_cfgs(indir,filespec=fspec)
+	kcfg = kcwi_read_cfgs(indir,filespec=fspec, redo_sort=jderr)
 	nf = n_elements(kcfg)
+	kcwi_print_info,ppar,pre,'Number of raw input images',nf
+	if jderr then $
+		kcwi_print_info,ppar,pre,'Image numbers out of time sequence',/warning
 	;
 	; check for requested object image
 	if keyword_set(imgtarg) then begin
@@ -275,18 +278,14 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		ppar.taperfrac = taperfrac
 	if keyword_set(pkdel) then $
 		ppar.pkdel = pkdel
-	if keyword_set(cwi) then $
-		ppar.biasskip1 = 1 $
-	else	ppar.biasskip1 = 0
+	if keyword_set(cleancoeffs) then $
+		ppar.cleancoeffs = cleancoeffs
 	if keyword_set(nocrreject) then $
 		ppar.crzap = 0 $
 	else	ppar.crzap = 1
 	if keyword_set(nonassub) then $
 		ppar.nassub = 0 $
 	else	ppar.nassub = 1
-	if keyword_set(nocleancoeffs) then $
-		ppar.cleancoeffs = 0 $
-	else	ppar.cleancoeffs = 1
 	if keyword_set(saveintims) then $
 		ppar.saveintims = 1 $
 	else	ppar.saveintims = 0
@@ -319,18 +318,20 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	printf,ll,'Min Grp Dark: ',ppar.mingroupdark
 	printf,ll,'Wl TaperFrac: ',ppar.taperfrac
 	printf,ll,'Wl Fit PkDel: ',ppar.pkdel
-	if keyword_set(cwi) then $
-		printf,ll,'CWI data    : skipping first bias in each group, CWI associations'
 	if keyword_set(nocrreject) then $
 		printf,ll,'No cosmic ray rejection performed'
 	if keyword_set(nonassub) then $
 		printf,ll,'No nod-and-shuffle sky subtraction performed'
-	if keyword_set(nocleancoeffs) then $
-		printf,ll,'No wavelength coefficient cleaning performed'
+	if ppar.cleancoeffs eq 1 then $
+		printf,ll,'Wavelength coefficient cleaning performed' $
+	else	printf,ll,'No Wavelength coefficient cleaning performed'
 	if keyword_set(saveintims) then $
 		printf,ll,'Saving intermediate images'
 	if keyword_set(includetest) then $
 		printf,ll,'Including test images in processing'
+	if keyword_set(domepriority) then $
+		printf,ll,'Dome flats have priority for relative response' $
+	else	printf,ll,'Twilight flats have priority for relative response'
 	if keyword_set(clobber) then $
 		printf,ll,'Clobbering existing files'
 	printf,ll,'Verbosity level   : ',ppar.verbose
@@ -362,15 +363,24 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		return
 	endif
 	kcwi_print_info,ppar,pre,'Using only local calibrations'
-	calcfg = kcfg
-	ncal = nf
+	cals = where(strpos(kcfg.obstype,'cal') ge 0 or $
+		     strpos(kcfg.obstype,'zero') ge 0, ncal)
+	if ncal gt 0 then begin
+		calcfg = kcfg[cals]
+	endif else begin
+		calcfg = kcfg
+		ncal = nf
+	endelse
 	kcwi_print_info,ppar,pre,'Number of images in calibration pool',ncal,$
 		format='(a,i5)'
 	;
 	; find slice profile images
 	profs = where(strcmp(calcfg.imgtype,'object') eq 1 and $
 		( calcfg.skyobs eq 1 or (calcfg.nasmask eq 1 and calcfg.shuffmod eq 1) ), nprofs)
+	; twilight flats may be better for this
+	;profs = where(strcmp(calcfg.imgtype,'tflat') eq 1, nprofs)
 	if nprofs gt 0 then begin
+		ppar.profexists = 1
 		ppar.nprofs = nprofs
 		rangepar,calcfg[profs].imgnum,rlst
 		ppar.profs = rlst
@@ -499,7 +509,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	kcwi_write_ppar,ppar,/archive
 	;
 	; now set input dir to output for subsequent stages
-	ppar.reddir = odir
+	;ppar.reddir = odir
 	;
 	; set up configuration matching: here is our list of 
 	; default tags to match in the KCWI_CFG struct
@@ -544,7 +554,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		printf,ll,""
 		printf,ll,imsumo
 		flush,ll
-		if ppar.verbose ge 1 then $
+		if verbose ge 1 then $
 			print,imsumo
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
