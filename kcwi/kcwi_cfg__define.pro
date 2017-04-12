@@ -53,6 +53,7 @@ tmp = { kcwi_cfg, $
 	telescop:'', $		; telescope
 	instrume:'', $		; instrument
 	object:'', $		; object name
+	targname:'', $		; target name
 	datepclr:'', $		; UT start of observation (YYYY-MM-DDTHH:MM:SS)
 	daterend:'', $		; UT end of observation (YYYY-MM-DDTHH:MM:SS)
 	el:-99.d0, $		; Telescope elevation (deg)

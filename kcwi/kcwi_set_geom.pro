@@ -253,7 +253,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 		kgeom.bclean = 1
 		;
 		; output disperison
-		kgeom.dwout = 0.95 * float(kcfg.ybinsize)
+		kgeom.dwout = 0.5 * float(kcfg.ybinsize)
 	endif
 	;
 	; spatial scales

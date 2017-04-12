@@ -245,6 +245,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	; derive from file names in INDIR
 	else begin
 		fdig = 0
+		; loop over fits files
 		for i=0,nf-1 do begin
 			ndig = kcwi_get_digits(flist[i])
 			if ndig gt fdig then fdig = ndig

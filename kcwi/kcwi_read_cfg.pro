@@ -83,6 +83,8 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 ; process the derived property keys
 	rastr		= sxpar(hdr,'RA')
 	decstr		= sxpar(hdr,'DEC')
+	if strlen(strtrim(cfg.object,2)) le 0 then $
+		cfg.object = cfg.targname
 	radec_parse,rastr,decstr,':',rad,decd
 	cfg.ra		= rad
 	cfg.dec		= decd
