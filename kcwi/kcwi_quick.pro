@@ -410,8 +410,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	; do we have any bias groups?
 	if ppar.nbgrps le 0 then $
 		kcwi_print_info,ppar,pre,'no bias groups found',/warning
-	kcwi_print_info,ppar,pre,'number of bias groups = '+ $
-		strtrim(string(ppar.nbgrps),2)
+	kcwi_print_info,ppar,pre,'number of bias groups', ppar.nbgrps
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP DARKS
@@ -421,8 +420,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	; do we have any dark groups?
 	if ppar.ndgrps le 0 then $
 		kcwi_print_info,ppar,pre,'no dark groups found',/warning
-	kcwi_print_info,ppar,pre,'number of dark groups = '+ $
-		strtrim(string(ppar.ndgrps),2)
+	kcwi_print_info,ppar,pre,'number of dark groups', ppar.ndgrps
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP FLATS
@@ -432,8 +430,15 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	; do we have any flat groups?
 	if ppar.nfgrps le 0 then $
 		kcwi_print_info,ppar,pre,'no flat groups found',/warning
-	kcwi_print_info,ppar,pre,'number of flat groups = '+ $
-		strtrim(string(ppar.nfgrps),2)
+	kcwi_print_info,ppar,pre,'number of flat groups', ppar.nfgrps
+	;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; GROUP DIRECT ARCBARS AND ARC FILES (DGEOM)
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	kcwi_group_dgeom,calcfg,ppar,dccfg,dacfg
+	if ppar.ndirect le 0 then $
+		kcwi_print_info,ppar,pre,'no direct geom groups found',/warning
+	kcwi_print_info,ppar,pre,'Number of direct geom groups', ppar.ndirect
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP CBARS AND ARC FILES (GEOM)
@@ -462,7 +467,16 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	if nrrs gt 0 then $
 		rcfg = calcfg[rrs]
+	if ndrrs gt 0 then $
+		rdcfg = calcfg[drrs]
 	kcwi_print_info,ppar,pre,'number of relative response images',nrrs
+	;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; GROUP STANDARD STAR OBSERVATIONS
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	if nstds gt 0 then $
+		stdcfg = kcfg[stds]
+	kcwi_print_info,ppar,pre,'Number of standard star images',nstds
 	;
 	; write out master KCWI_PPAR into file
 	ppar.ppfname = 'kcwi.ppar'
@@ -473,8 +487,8 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	;
 	; set up configuration matching: here is our list of 
 	; default tags to match in the KCWI_CFG struct
-	mtags = ['XBINSIZE','YBINSIZE','AMPMODE','GRATID','GRATPOS','FILTER', $
-		 'FM4POS','CAMPOS','FOCPOS','NASMASK']
+	mtags = ['XBINSIZE','YBINSIZE','GRATID','GRANGLE','FILTNUM', $
+		 'CAMANG','NASMASK','IFUNUM']
 	;
 	; set up links
 	nlinks = 9	; bias,dark.flat,cbar,arc,prof,sky,rrsp,std
@@ -521,8 +535,22 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		; ASSOCIATE WITH MASTER BIAS IMAGE
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		if ppar.nbgrps gt 0 then begin
-			mcfg = kcwi_associate(bcfg,kcfg[p],ppar,count=b)
+			tlist = ['xbinsize','ybinsize','ampmode','ccdmode']
+			mcfg = kcwi_match_cfg(bcfg,kcfg[p],ppar,tlist,count=b)
+			;
+			; multiple matches, take the closest one in sequence
 			if b eq 1 then begin
+				zdel = abs(mcfg.groupnum - kcfg[p].imgnum)
+				zind = (where(zdel eq min(zdel)))[0]
+				mbfile = mcfg[zind].groupfile
+				blink = mcfg[zind].groupnum
+				;
+				; log
+				kcwi_print_info,ppar,pre,'master bias file = '+$
+					mbfile
+			;
+			; only one match
+			endif else if b eq 1 then begin
 				mbfile = mcfg.groupfile
 				blink = mcfg.groupnum
 				;
@@ -546,9 +574,24 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; ASSOCIATE WITH MASTER DARK IMAGE
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		if ppar.ndgrps gt 0 then begin
-			mcfg = kcwi_associate(dcfg,kcfg[p],ppar,count=d)
-			if d eq 1 then begin
+		if ( strmatch(kcfg[p].imgtype,'dark') eq 1 or $
+		     strmatch(kcfg[p].imgtype,'object') eq 1 ) and ppar.ndgrps gt 0 then begin
+		     	tlist = ['xbinsize','ybinsize','ampmode','ccdmode']
+			mcfg = kcwi_match_cfg(dcfg,kcfg[p],ppar,tlist,count=d)
+			if d ge 1 then begin
+				;
+				; refine based on exposure time
+				tdel = abs(mcfg.exptime - kcfg[p].exptime)
+				tind = where(tdel eq min(tdel), ntind)
+				;
+				; same exposure time, choose closest in sequence
+				if ntind gt 1 then begin
+					zcfg = mcfg[tind]
+					zdel = abs(zcfg.groupnum - kcfg[p].imgnum)
+					zind = (where(zdel eq min(zdel)))[0]
+					mcfg = zcfg[zind]
+				endif else $
+					mcfg = mcfg[tind]
 				mdfile = mcfg.groupfile
 				dlink = mcfg.groupnum
 				;
@@ -575,7 +618,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; no sense flat fielding the dark frames
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.nfgrps gt 0 then begin
-			mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time,count=f,/silent)
+			mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time,count=f)
 			if f eq 1 then begin
 				mffile = mcfg.groupfile
 				flink = mcfg.groupnum
@@ -625,6 +668,46 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 			endif else begin
 				kcwi_print_info,ppar,pre, $
 				    'cannot unambiguously find geom images (arc, cbars) for object image: '+ $
+				    kcfg[p].obsfname,/warning
+				clink = -1
+				alink = -1
+			endelse
+			;
+			; set cbars and arc links
+			links[icbar] = clink
+			links[iarc]  = alink
+		endif	; only object and cflat frames and ncbars gt 0 and narcs gt 0
+		;
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		; ASSOCIATE WITH ARCBARS AND ARC IMAGES (DGEOM)
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;
+		; no sense creating a dark direct image
+		if strpos(kcfg[p].obstype,'direct') ge 0 and strmatch(kcfg[p].imgtype,'dark') ne 1 and $
+			ppar.ndirect gt 0 and ppar.ndarcs gt 0 then begin
+			mcfg = kcwi_match_cfg(dccfg,kcfg[p],ppar,mtags,imgtype='arcbars',/time,count=c,/silent)
+			if c eq 1 then begin
+				;
+				; record arcbars filename
+				cbfile = mcfg.obsfname
+				clink  = mcfg.imgnum
+				;
+				; now find matched arc
+				m = where(dccfg.imgnum eq clink)
+				mcf2 = dacfg[m]
+				;
+				; record arc filename
+				arfile = mcf2.obsfname
+				alink  = mcf2.imgnum
+				;
+				; log
+				kcwi_print_info,ppar,pre,'arcbars file = '+cbfile
+				kcwi_print_info,ppar,pre,'arc     file = '+arfile
+				;
+				; handle the ambiguous case or when no cbars image can be found
+			endif else begin
+				kcwi_print_info,ppar,pre, $
+				    'cannot unambiguously find direct geom images (arc, arcbars) for object image: '+ $
 				    kcfg[p].obsfname,/warning
 				clink = -1
 				alink = -1
@@ -699,7 +782,42 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		; also require geometry solution
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.nrrs gt 0 and $
 			links[icbar] ge 0 and links[iarc] ge 0 then begin
-			mcfg = kcwi_match_cfg(rcfg,kcfg[p],ppar,mtags,count=r,/time)
+			;
+			; twilight flats
+			if ntrrs gt 0 then $
+				mtcfg = kcwi_match_cfg(rtcfg,kcfg[p],ppar,mtags,count=rt,/time) $
+			else	rt = 0
+			;
+			; dome flats
+			if ndrrs gt 0 then $
+				mdcfg = kcwi_match_cfg(rdcfg,kcfg[p],ppar,mtags,count=rd,/time) $
+			else	rd = 0
+			;
+			; do we have a choice?if rt eq 1 and rd eq 1 then begin
+				if keyword_set(domepriority) then begin
+					r = rd
+					mcfg = mdcfg
+				endif else begin
+					r = rt
+					mcfg = mtcfg
+				endelse
+			;
+			; nope, one or no choices
+			endif else begin
+				;
+				; only a dome flat
+				if rd eq 1 then begin
+					r = rd
+					mcfg = mdcfg
+				;
+				; must be a twilight flat or nothing
+				endif else begin
+					r = rt
+					if rt eq 1 then mcfg = mtcfg
+				endelse
+			endelse
+			;
+			; did we find any?
 			if r eq 1 then begin
 				;
 				; record dome flat filename
@@ -715,6 +833,30 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 			; set rrsp link
 			links[irrsp] = rlink
 		endif	; only object frames and nskys gt 0
+		;
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		; ASSOCIATE WITH STANDARD STAR OBSERVATIONS
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;
+		; correct only object frames
+		; also require relative response correction
+		if nstds gt 0 and strmatch(kcfg[p].imgtype,'object') eq 1 and links[irrsp] ge 0 then begin
+			mcfg = kcwi_match_cfg(stdcfg,kcfg[p],ppar,mtags,count=std,/time)
+			if std eq 1 then begin
+				;
+				; record stadard observation filename
+				stdfile = mcfg.obsfname
+				stdlink = mcfg.imgnum
+				;
+				; log
+				kcwi_print_info,ppar,pre,'standard star observation file = '+stdfile
+			endif else begin
+				stdlink = -1
+			endelse
+			;
+			; set rrsp link
+			links[istd] = stdlink
+		endif	; only object frames
 		;
 		; write out links
 		printf,kl,kcfg[p].imgnum,links,imsum,format='(10i9,2x,a)'

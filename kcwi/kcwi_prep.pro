@@ -610,8 +610,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		if ( strmatch(kcfg[p].imgtype,'dark') eq 1 or $
 		     strmatch(kcfg[p].imgtype,'object') eq 1 ) and ppar.ndgrps gt 0 then begin
 			tlist = ['xbinsize','ybinsize','ampmode','ccdmode']
-			mcfg = kcwi_match_cfg(dcfg,kcfg[p],ppar,tlist,count=b)
-			if b ge 1 then begin
+			mcfg = kcwi_match_cfg(dcfg,kcfg[p],ppar,tlist,count=d)
+			if d ge 1 then begin
 				;
 				; refine based on exposure time
 				tdel = abs(mcfg.exptime - kcfg[p].exptime)
@@ -640,7 +640,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 			;
 			; set dark link
 			links[idark] = dlink
-		endif	; ppar.ndgrps gt 0
+		endif	; only object frames and ndgrps gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; ASSOCIATE WITH MASTER FLAT IMAGE
@@ -648,7 +648,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; no sense flat fielding the dark frames
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.nfgrps gt 0 then begin
-			mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time,count=f,cwi=cwi)
+			mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time,count=f)
 			if f eq 1 then begin
 				mffile = mcfg.groupfile
 				flink = mcfg.groupnum
@@ -756,7 +756,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		; also require geometry solution
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.nprofs gt 0 and $
 			links[icbar] ge 0 and links[iarc] ge 0 then begin
-			mcfg = kcwi_match_cfg(pcfg,kcfg[p],ppar,mtags,count=s,/time,cwi=cwi)
+			mcfg = kcwi_match_cfg(pcfg,kcfg[p],ppar,mtags,count=s,/time)
 			if s eq 1 then begin
 				;
 				; record slice profile observation filename
