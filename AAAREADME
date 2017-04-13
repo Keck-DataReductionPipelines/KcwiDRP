@@ -208,7 +208,6 @@ MINGROUPDARK	- minimum required number of dark frames to combine
 			this defaults to 3
 MINOSCANPIX	- minimum number of overscan pixels in a given row
 			this defaults to 70
-FILESPEC	- string overriding default file spec ('image????.fit*')
 FROOT		- string overriding default file root ('image')
 FDIGITS		- integer overriding the default image number digits (4)
 

@@ -131,13 +131,17 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	wall1 = sxpar(hdr,'WAVALL1')
 	;
 	; get telescope and atm. correction
-	tel = strtrim(sxpar(hdr,'telescop'),2)
+	tel = strtrim(sxpar(hdr,'telescop',count=ntel),2)
+	if ntel le 0 then tel = 'Keck II'
 	atm = 1./( sxpar(hdr,'avexcor')>1. )
 	area = -1.0
 	refl = 1.0
-	if strpos(tel,'5m') ge 0 then begin
+	if strpos(tel,'Keck') ge 0 then begin
+		area = 779127.d0	; Keck effective area in cm^2
+		refl = 0.658		; reflectivity (3-bounce @ 87% per bounce)
+	endif else if strpos(tel,'5m') ge 0 then begin
 		area = 194165.d0	; Hale 5m area in cm^2
-		refl = 0.90		; reflectivity (2-bounce)
+		refl = 0.757		; reflectivity (2-bounce @ 87% per bounce)
 	endif
 	area = area * refl * atm
 	tlab = ' ' + tel + ' * ' + $

@@ -317,7 +317,7 @@ pro kcwi_stage7std,ppfname,linkfname,help=help,select=select, $
 					sxaddpar,hdr,'MSIMNO',msimgno,' master std image number'
 					sxaddpar,hdr,'BUNIT','FLAM',' brightness units'
 					;
-					; write out final intensity image
+					; write out final calibrated image
 					ofil = kcwi_get_imname(ppar,imgnum[i],'_icubes',/nodir)
 					kcwi_write_image,img,hdr,ofil,ppar
 					;

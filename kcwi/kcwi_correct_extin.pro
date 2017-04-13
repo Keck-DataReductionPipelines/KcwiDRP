@@ -50,7 +50,13 @@ air = sxpar(hdr,'airmass')
 telescope = sxpar(hdr,'telescop')
 ;
 ; get Keck extinction coefficients
+; from Buton et. al 2013, A&A, v549a, p8.
+; units are:
+;	exwl - wavelength in Angstroms
+;	exma - extinction in magnitudes per airmass
 if strpos(telescope,'Keck') ge 0 then begin
+	exfl = !KCWI_DATA + 'extin/snfext.dat'
+	readcol,exfl,exwl,exma,form='f,f'
 ;
 ; get Palomar extinction coefficients (Hayes & Latham, 1975)
 ; units are:
