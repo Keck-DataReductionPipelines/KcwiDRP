@@ -526,6 +526,9 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	; tags for direct images
 	dtags = ['XBINSIZE','YBINSIZE','GRATID','FILTNUM','CAMANG','IFUNUM']
 	;
+	; uncalibrated objects?
+	uncal = ['']
+	;
 	; set up links
 	nlinks = 9	; bias,dark.flat,cbar,arc,prof,sky,rrsp,std
 	ibias = 0
@@ -706,6 +709,10 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				    kcfg[p].obsfname,/warning
 				clink = -1
 				alink = -1
+				cstr = strn(kcfg[p].xbinsize) + strn(kcfg[p].ybinsize) + $
+					kcfg[p].bgratnam + strmid(kcfg[p].ifunam,0,1) + $
+					strtrim(string(kcfg[p].bcwave,format='(f10.1)'),2)
+				uncal = [ uncal, cstr ]
 			endelse
 			;
 			; set cbars and arc links
@@ -746,6 +753,10 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				    kcfg[p].obsfname,/warning
 				clink = -1
 				alink = -1
+				cstr = strn(kcfg[p].xbinsize) + strn(kcfg[p].ybinsize) + $
+					kcfg[p].bgratnam + strmid(kcfg[p].ifunam,0,1) + $
+					strtrim(string(kcfg[p].bcwave,format='(f10.1)'),2)
+				uncal = [ uncal, cstr ]
 			endelse
 			;
 			; set cbars and arc links
@@ -898,6 +909,17 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		; write out links
 		printf,kl,kcfg[p].imgnum,links,imsum,format='(10i9,2x,a)'
 	endfor	; loop over images
+	;
+	; check for un calibrated observations
+	if n_elements(uncal) gt 1 then begin
+		uncal = uncal[1:(n_elements(uncal)-1)]
+		uncal = uncal[sort(uncal)]
+		uncal = uncal[uniq(uncal)]
+		nuncal = n_elements(uncal)
+		kcwi_print_info,ppar,pre,'Number of uncalibrated configurations',nuncal
+		for i = 0,nuncal-1 do $
+			kcwi_print_info,ppar,pre,'Uncalibrated configuration',uncal[i]
+	endif
 	;
 	; report
 	eltime = systime(1) - startime
