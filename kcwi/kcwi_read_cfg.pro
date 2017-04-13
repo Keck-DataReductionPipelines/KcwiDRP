@@ -158,8 +158,10 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	if strcmp(strtrim(cfg.gratid,2),'None') eq 1 and $
 			cfg.camang lt 5. then begin
 		cfg.obstype = 'direct-' + cfg.obstype
-		if strpos(cfg.imgtype,'test') ge 0 then $
+		if strpos(cfg.imgtype,'test') ge 0 then begin
 			cfg.imgtype = 'object'
+			cfg.obstype = 'direct-cal'
+		endif
 	endif
 	;
 	; verify imgtype, obstype
