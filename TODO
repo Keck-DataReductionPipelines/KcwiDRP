@@ -10,6 +10,8 @@ set spatial good range keywords based on continuum flat data cube
 set header params for trough limits during profile correction
 think about the impact of flexure correction on the slicex0 and slicex1 params
 add differential atmospheric refraction correction
+#12-APR-2017 DONE match direct mode data across time
+#12-APR-2017 DONE direct tpat should have imgtype object
 #27-APR-2015 DONE add annotation for wave_*.ps plots for central and limit wavelengths
 #24-APR-2015 DONE fix bright line at end of slice issue
 #25-FEB-2015 DONE be able to run from the raw dir or the redux dir
