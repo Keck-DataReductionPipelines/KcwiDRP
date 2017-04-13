@@ -133,20 +133,13 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; get telescope and atm. correction
 	tel = strtrim(sxpar(hdr,'telescop',count=ntel),2)
 	if ntel le 0 then tel = 'Keck II'
-	atm = 1./( sxpar(hdr,'avexcor')>1. )
 	area = -1.0
-	refl = 1.0
 	if strpos(tel,'Keck') ge 0 then begin
 		area = 779127.d0	; Keck effective area in cm^2
-		refl = 0.658		; reflectivity (3-bounce @ 87% per bounce)
 	endif else if strpos(tel,'5m') ge 0 then begin
 		area = 194165.d0	; Hale 5m area in cm^2
-		refl = 0.757		; reflectivity (2-bounce @ 87% per bounce)
 	endif
-	area = area * refl * atm
-	tlab = ' ' + tel + ' * ' + $
-		string(refl*100.,form='(i2)')+ '% refl. * ' + $
-		string(atm*100.,form='(i2)')+ '% atmos.'
+	tlab = tel
 	;
 	; compute good y pixel ranges
 	if w0 gt 0. and dw gt 0. and wgoo0 gt 0. and wgoo1 gt 0. then begin

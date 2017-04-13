@@ -34,7 +34,7 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2014-APR-22	Initial Revision
 ;-
-pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
+pro kcwi_test_std,imno,instrument=instrument,ps=ps,verbose=verbose,display=display
 	;
 	; setup
 	pre = 'KCWI_TEST_STD'
@@ -322,15 +322,20 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 		fdecomp,eafil,disk,dir,eaf,ext
 		if strpos(tel,'Keck') ge 0 then begin
 			area = 779127.d0	; Keck effective area in cm^2
-			refl = 0.658		; reflectivity (3-bounce @ 87% per bounce)
+			if keyword_set(instrument) then $
+				refl = 0.658		; reflectivity (3-bounce @ 87% per bounce)
 		endif else if strpos(tel,'5m') ge 0 then begin
 			area = 194165.d0	; Hale 5m area in cm^2
-			refl = 0.757		; reflectivity (2-bounce)
+			if keyword_set(instrument) then $
+				refl = 0.757		; reflectivity (2-bounce)
 		endif
-		area = area * refl * atm
-		tlab = eaf + '  ' + tel + ' * ' + $
-			string(refl*100.,form='(i2)')+ '% refl. * ' + $
-			string(atm*100.,form='(i2)')+ '% atmos.'
+		if keyword_set(instrument) then begin
+			area = area * refl * atm
+			tlab = eaf + '  ' + tel + ' * ' + $
+				string(refl*100.,form='(i3)')+ '% refl. * ' + $
+				string(atm*100.,form='(i2)')+ '% atmos.'
+		endif else $
+			tlab = eaf + ' ' + tel
 		if not keyword_set(ps) then $
 			read,'next: ',q
 		yrng = get_plotlims(ea)
