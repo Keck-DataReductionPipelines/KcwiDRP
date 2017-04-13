@@ -308,7 +308,8 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 		rdfits1dspec,eafil,wea,ea,hdr
 		;
 		; get reference area
-		tel = strtrim(sxpar(hdr,'telescop'),2)
+		tel = strtrim(sxpar(hdr,'telescop', count=ntel),2)
+		if ntel le 0 then tel = 'Keck II'
 		;
 		; average extinction correction (atmosphere)
 		atm = 1./( sxpar(hdr,'avexcor')>1. )
@@ -319,9 +320,12 @@ pro kcwi_test_std,imno,ps=ps,verbose=verbose,display=display
 		;
 		; ea file starts the title
 		fdecomp,eafil,disk,dir,eaf,ext
-		if strpos(tel,'5m') ge 0 then begin
+		if strpos(tel,'Keck') ge 0 then begin
+			area = 779127.d0	; Keck effective area in cm^2
+			refl = 0.658		; reflectivity (3-bounce @ 87% per bounce)
+		endif else if strpos(tel,'5m') ge 0 then begin
 			area = 194165.d0	; Hale 5m area in cm^2
-			refl = 0.90		; reflectivity (2-bounce)
+			refl = 0.757		; reflectivity (2-bounce)
 		endif
 		area = area * refl * atm
 		tlab = eaf + '  ' + tel + ' * ' + $
