@@ -47,7 +47,8 @@ pre = 'KCWI_CORRECT_EXTIN'
 air = sxpar(hdr,'airmass')
 ;
 ; check instrument
-telescope = sxpar(hdr,'telescop')
+telescope = sxpar(hdr,'telescop',count=ntel)
+if ntel le 0 then telescope='Keck II'
 ;
 ; get Keck extinction coefficients
 ; from Buton et. al 2013, A&A, v549a, p8.
