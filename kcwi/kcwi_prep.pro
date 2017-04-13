@@ -759,8 +759,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; no point profile correcting dark frames
 		; also require geometry solution
-		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.nprofs gt 0 and $
-			links[icbar] ge 0 and links[iarc] ge 0 then begin
+		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
+			ppar.nprofs gt 0 and links[icbar] ge 0 and links[iarc] ge 0 then begin
 			mcfg = kcwi_match_cfg(pcfg,kcfg[p],ppar,mtags,count=s,/time)
 			if s eq 1 then begin
 				;
@@ -815,8 +815,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; no sense response correcting dark frames
 		; also require geometry solution
-		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.nrrs gt 0 and $
-			links[icbar] ge 0 and links[iarc] ge 0 then begin
+		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
+			ppar.nrrs gt 0 and links[icbar] ge 0 and links[iarc] ge 0 then begin
 			;
 			; twilight flats
 			if ntrrs gt 0 then $
@@ -876,7 +876,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; correct only object frames
 		; also require relative response correction
-		if nstds gt 0 and strmatch(kcfg[p].imgtype,'object') eq 1 and links[irrsp] ge 0 then begin
+		if nstds gt 0 and strmatch(kcfg[p].imgtype,'object') eq 1 and $
+			strpos(kcfg[p].obstype,'direct') lt 0 and links[irrsp] ge 0 then begin
 			mcfg = kcwi_match_cfg(stdcfg,kcfg[p],ppar,mtags,count=std,/time)
 			if std eq 1 then begin
 				;
