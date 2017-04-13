@@ -66,6 +66,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps,verbose=verbose,display=displ
 		print,'Input file not found: ',ifil
 		return
 	endelse
+	kcfg.bgratnam = strtrim(kcfg.bgratnam,2)
 	;
 	; get image number string
 	imstr = string(imno,format='(i0'+strn(ppar.fdigits)+')')
@@ -264,7 +265,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps,verbose=verbose,display=displ
 	;
 	; over plot standard
 	yrng = get_plotlims(stdspec[gy])
-	plot,w,stdspec,title=sname+' Img #: '+imstr, $
+	plot,w,stdspec,title=sname+' Img #: '+imstr+' '+kcfg.bgratnam, $
 		xran=[wall0,wall1], /xs,xtickformat='(a1)', $
 		ytitle='!3Flam (erg s!U-1!N cm!U-2!N A!U-1!N)',yran=yrng,/ys, $
 		pos=[0.15,0.30,0.95,0.95]
