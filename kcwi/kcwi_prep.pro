@@ -710,7 +710,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				clink = -1
 				alink = -1
 				cstr = strn(kcfg[p].xbinsize) + strn(kcfg[p].ybinsize) + $
-					string(strtrim(kcfg[p].bgratnam,2),format='(a4)') + $
+					string(strtrim(kcfg[p].bgratnam,2),format='(a-4)') + $
 					strmid(kcfg[p].ifunam,0,1) + $
 					strtrim(string(kcfg[p].bcwave,format='(f10.1)'),2)
 				uncal = [ uncal, cstr ]
