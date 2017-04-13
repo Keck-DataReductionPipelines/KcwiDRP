@@ -648,7 +648,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;
 		; no sense flat fielding the dark frames
-		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.nfgrps gt 0 then begin
+		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
+			ppar.nfgrps gt 0 then begin
 			mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time,count=f)
 			if f eq 1 then begin
 				mffile = mcfg.groupfile
@@ -674,8 +675,9 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		; ASSOCIATE WITH CBARS AND ARC IMAGES (GEOM)
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;
-		; no sense creating a dark data cube
-		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.ncbars gt 0 and ppar.narcs gt 0 then begin
+		; no sense creating a dark data cube or matching direct image
+		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
+			ppar.ncbars gt 0 and ppar.narcs gt 0 then begin
 			mcfg = kcwi_match_cfg(ccfg,kcfg[p],ppar,mtags,imgtype='cbars',/time,count=c,/silent)
 			if c eq 1 then begin
 				;
