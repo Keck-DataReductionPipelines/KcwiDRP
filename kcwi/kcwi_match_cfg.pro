@@ -32,7 +32,6 @@
 ;	IMGTYPE	- set to KCWI image type to restrict match to: bias, dark, etc.
 ;	OBJECT	- set this to match target object or set to string to match
 ;			object name in string, implies IMGTYPE='object'
-;	CWI	- set this to return the match closest in sky coordinate to the target
 ;	TIME	- set this to return the match closest in time to the target
 ;	AFTER	- set this to return the match closest in time after the target
 ;	BEFORE	- set this to return the match closest in time before the target
@@ -56,7 +55,7 @@
 ;-
 function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 	imgtype=imgtype, object=object, $
-	cwi=cwi, time=time, after=after, before=before, $
+	time=time, after=after, before=before, $
 	count=count, silent=silent
 	;
 	; setup
@@ -137,7 +136,7 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 				; float-like types
 				4:
 				5: begin
-					if abs(kcfg[i].(tnum[j]) - tcfg.(tnum[j])) gt 0.01 then begin
+					if abs(kcfg[i].(tnum[j]) - tcfg.(tnum[j])) gt 0.02 then begin
 						match = (1 eq 0)
 					endif
 					break
@@ -208,33 +207,7 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 		;
 		; get minimum tdelt
 		mintdelt = min(abs(tdelt[mcfgi]))
-		;
-		; check cwi keyword
-		if keyword_set(cwi) then begin
-			;
-			; coord match only good for a limited time
-			good = where(abs(tdelt) lt 0.07d, ngood)
-			;
-			; do we have good points in time window?
-			if ngood gt 0 then begin
-				;
-				; get minimum coord offset within window
-				mincdelt = min(cdelt[good])
-				;
-				; get closest in sky coords within time window
-				mcfgi = where(mstat eq 1 and cdelt ge 0. and cdelt eq mincdelt, count)
-				;
-				; no singular match?: use closest in time instead
-				if count ne 1 then $
-					mcfgi = where(mstat eq 1 and abs(tdelt) eq mintdelt, count)
-			;
-			; no good points in time window?: use closest in time instead
-			endif else begin
-				mcfgi = where(mstat eq 1 and abs(tdelt) eq mintdelt, count)
-			endelse
-		;
-		; now check time keyword
-		endif else if keyword_set(time) then begin
+		if keyword_set(time) then begin
 			mcfgi = where(mstat eq 1 and abs(tdelt) eq mintdelt, count)
 		;
 		; before keyword
