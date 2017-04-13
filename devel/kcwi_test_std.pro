@@ -336,7 +336,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps,verbose=verbose,display=displ
 				string(refl*100.,form='(i3)')+'% refl. * '+ $
 				string(atm*100.,form='(i2)')+'% atmos.'
 		endif else $
-			tlab = eaf+' '+kcfg.bgratnam+tel+' at AIRMASS = '+ $
+			tlab = eaf+' '+kcfg.bgratnam+' '+tel+' at AIRMASS = '+ $
 			strtrim(string(kcfg.airmass,form='(f7.3)'),2)
 		if not keyword_set(ps) then $
 			read,'next: ',q
