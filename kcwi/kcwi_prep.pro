@@ -523,6 +523,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	; default tags to match in the KCWI_CFG struct
 	mtags = ['XBINSIZE','YBINSIZE','GRATID','GRANGLE','FILTNUM', $
 		 'CAMANG','NASMASK','IFUNUM']
+	; tags for direct images
+	dtags = ['XBINSIZE','YBINSIZE','GRATID','FILTNUM','CAMANG','IFUNUM']
 	;
 	; set up links
 	nlinks = 9	; bias,dark.flat,cbar,arc,prof,sky,rrsp,std
@@ -718,7 +720,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		; no sense creating a dark direct image
 		if strpos(kcfg[p].obstype,'direct') ge 0 and strmatch(kcfg[p].imgtype,'dark') ne 1 and $
 			ppar.ndirect gt 0 and ppar.ndarcs gt 0 then begin
-			mcfg = kcwi_match_cfg(dccfg,kcfg[p],ppar,mtags,imgtype='arcbars',/time,count=c,/silent)
+			mcfg = kcwi_match_cfg(dccfg,kcfg[p],ppar,dtags,imgtype='arcbars',/time,count=c,/silent)
 			if c eq 1 then begin
 				;
 				; record arcbars filename
