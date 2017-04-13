@@ -133,8 +133,10 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 		cfg.imgtype	= 'dark'
 		cfg.obstype	= 'zero'
 		cfg.exptime	= cfg.telapse
-	endif else if strpos(caltype,'arc') ge 0 then begin
+	endif else if strcmp(caltype,'arcflat') eq 1 then begin
 		cfg.imgtype	= 'arc'
+		cfg.obstype	= 'cal'
+	endif else if strcmp(caltype,'arc') eq 1 then begin
 		cfg.obstype	= 'cal'
 	endif else if strcmp(caltype,'cbars') eq 1 then begin
 		cfg.obstype	= 'cal'
