@@ -24,7 +24,10 @@
 ;	None
 ;
 ; KEYWORDS:
-;	None
+;	INSTRUMENT - set to show instrumental instead of overall efficiency
+;	PS	- set to output postscript file
+;	VERBOSE	- set for more output
+;	DISPLAY	- set for more plots
 ;
 ; PROCEDURE:
 ;
@@ -34,7 +37,8 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2014-APR-22	Initial Revision
 ;-
-pro kcwi_test_std,imno,instrument=instrument,ps=ps,verbose=verbose,display=display
+pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
+	verbose=verbose,display=display
 	;
 	; setup
 	pre = 'KCWI_TEST_STD'
@@ -256,7 +260,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps,verbose=verbose,display=displ
 	; make a hardcopy if requested
 	if keyword_set(ps) then begin
 		font_store=!p.font
-		psfile,sname+'_'+imstr
+		psfile,sname+'_'+kcfg.bgratnam+'_'+imstr
 		deepcolor
 		!p.background=colordex('white')
 		!p.color=colordex('black')

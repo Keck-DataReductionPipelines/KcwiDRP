@@ -1,3 +1,5 @@
+account for vignetting in bars images
+use arcbars for direct geometry solution
 more control of la_cosmic parameters to the user?
 implement saveplots option & date-stamping plots
 implement nod-and-shuffle scattered light fitting/removal
