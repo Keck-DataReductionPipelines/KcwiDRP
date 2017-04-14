@@ -226,7 +226,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	kcwi_correct_extin, scub, hdr, ppar
 	;
 	; get slice spectra
-	slspec = total(scub[*,gx0:gx1,*],1)
+	slspec = total(scub[*,gx0:gx1,*],2)
 	;
 	; summed observed standard spectra
 	obsspec = total(slspec[sl0:sl1,*],1)
