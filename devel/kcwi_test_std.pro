@@ -211,7 +211,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	endfor
 	;
 	; get slice spectra
-	slspec = total(scub[*,gx0:gx1,*],1)
+	slspec = total(scub[*,gx0:gx1,*],2)
 	;
 	; standard spectra
 	stdspec = total(slspec[sl0:sl1,*],1)
