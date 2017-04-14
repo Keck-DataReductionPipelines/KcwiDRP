@@ -118,10 +118,10 @@ for i=0,23 do begin
 	slice = warp[0:xcut<(wsz[0]-1),0:lastpix<(wsz[1]-1)]
 	if i eq 0 then begin
 		sz = size(slice,/dim)
-		cube = fltarr(sz[0],24,sz[1])
+		cube = fltarr(24,sz[0],sz[1])
 		diag_cube = fltarr(sz[0],sz[1],24)
 	endif
-	cube[*,i,*] = reverse(slice,1)
+	cube[i,*,*] = slice	;reverse(slice,1)
 	diag_cube[*,*,i] = slice
 	if ppar.verbose eq 1 then $
 		print,strn(i)+' ',format='($,a)'
@@ -130,9 +130,6 @@ if ppar.verbose eq 1 then begin
 	print,'Done.',format='($,a)'
 	print,''
 endif
-;
-; correct orientation
-cube = rotate(cube,1)
 ;
 ; update header
 chdr = hdr
