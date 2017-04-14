@@ -197,7 +197,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	for i=sl0,sl1 do begin
 		skyspec = fltarr(sz[2])
 		for j = 0,sz[2]-1 do begin
-			skyv = reform(icub[gx0:gx1,i,j])
+			skyv = reform(icub[i,gx0:gx1,j])
 			gsky = where(xx le (cx-skywin) or xx ge (cx+skywin))
 			sky = median(skyv[gsky])
 			skyspec[j] = sky
