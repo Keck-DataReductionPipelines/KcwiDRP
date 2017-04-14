@@ -131,13 +131,16 @@ if ppar.verbose eq 1 then begin
 	print,''
 endif
 ;
+; correct orientation
+cube = rotate(cube,1)
+;
 ; update header
 chdr = hdr
 ;
 ; image dimensions
 sxaddpar,chdr,'NAXIS',3
-sxaddpar,chdr,'NAXIS1',sz[0]
-sxaddpar,chdr,'NAXIS2',24
+sxaddpar,chdr,'NAXIS1',24
+sxaddpar,chdr,'NAXIS2',sz[0]
 sxaddpar,chdr,'NAXIS3',sz[1],' length of data axis 3',after='NAXIS2'
 ;
 ; spatial scale and zero point
@@ -235,10 +238,10 @@ endelse
 ;
 ; get reference pixels
 if ppar.crpix1 le 0. then $
-	crpix1 = sz[0]/2. $	; spatial slit direction
+	crpix1 = 12. $		; spatial slice direction: 24/2
 else	crpix1 = ppar.crpix1
 if ppar.crpix2 le 0. then $
-	crpix2 = 12. $		; spatial slice direction: 24/2
+	crpix2 = sz[0]/2. $	; spatial slit direction
 else	crpix2 = ppar.crpix2
 if ppar.crpix3 le 0. then $
 	crpix3 = 1. $		; wavelength direction
