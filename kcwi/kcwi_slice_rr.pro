@@ -82,14 +82,20 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 	; read in image
 	;
 	; first try profile corrected data cube
-	icub = kcwi_read_image(kcfg.imgnum,ppar,'_icubep',hdr,/calib,status=stat)
+	rrfil = kcwi_get_imname(ppar,kcfg.imgnum,'_icubep',/reduced)
 	;
-	; if not try data cube
-	if stat ne 0 then $
-		icub = kcwi_read_image(kcfg.imgnum,ppar,'_icube',hdr,/calib,status=stat)
+	; if not check for data cube
+	if not file_test(rrfil) then $
+		rrfil = kcwi_get_imname(ppar,kcfg.imgnum,'_icube',/reduced)
 	;
 	; neither were available
-	if stat ne 0 then return
+	if not file_test(rrfil) then begin
+		kcwi_print_info,ppar,pre,'No rr cube available',/error
+		return
+	endif
+	;
+	; read in cube
+	icub = mrdfits(rrfil,0,hdr,/fscale,/silent)
 	;
 	; get size
 	sz = size(icub,/dim)
