@@ -156,7 +156,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	doplots = (ppar.display ge 2)
 	;
 	; find standard
-	tot = total(icub[gx0:gx1,*,y0:y1],3)
+	tot = total(icub[*,gx0:gx1,y0:y1],3)
 	xx = findgen(gx1-gx0)+gx0
 	mxsl = -1
 	mxsg = 0.
@@ -189,11 +189,11 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	for i=sl0,sl1 do begin
 		skyspec = fltarr(sz[2])
 		for j = 0,sz[2]-1 do begin
-			skyv = reform(icub[gx0:gx1,i,j])
+			skyv = reform(icub[i,gx0:gx1,j])
 			good = where(xx le (cx-skywin) or xx ge (cx+skywin))
 			sky = median(skyv[good])
 			skyspec[j] = sky
-			scub[*,i,j] = icub[*,i,j] - sky
+			scub[i,*,j] = icub[i,*,j] - sky
 		endfor
 		if doplots then begin
 			yrng = get_plotlims(skyspec[gy])
@@ -211,7 +211,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	endfor
 	;
 	; get slice spectra
-	slspec = total(scub[gx0:gx1,*,*],1)
+	slspec = total(scub[*,gx0:gx1,*],1)
 	;
 	; standard spectra
 	stdspec = total(slspec[sl0:sl1,*],1)
