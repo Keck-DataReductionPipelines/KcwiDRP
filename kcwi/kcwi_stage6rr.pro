@@ -331,10 +331,10 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 						;
 						; loop over x for each slice
 						for ix = 0, sz[0]-1 do begin
-							img[ix,is,*] = img[ix,is,*] / rrob[is,*]
+							img[is,ix,*] = img[is,ix,*] / rrob[is,*]
 							;
 							; variance is multiplied by rr squared
-							var[ix,is,*] = var[ix,is,*] / rrob[is,*]^2
+							var[is,ix,*] = var[is,ix,*] / rrob[is,*]^2
 						endfor
 					endfor
 					;
@@ -375,7 +375,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 						;
 						; do correction
 						for is=0,23 do for ix = 0, sz[0]-1 do $
-							sky[ix,is,*] = sky[ix,is,*] / rrob[is,*]
+							sky[is,ix,*] = sky[is,ix,*] / rrob[is,*]
 						;
 						; update header
 						sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
@@ -395,7 +395,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 						;
 						; do correction
 						for is=0,23 do for ix = 0, sz[0]-1 do $
-							obj[ix,is,*] = obj[ix,is,*] / rrob[is,*]
+							obj[is,ix,*] = obj[is,ix,*] / rrob[is,*]
 						;
 						; update header
 						sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)

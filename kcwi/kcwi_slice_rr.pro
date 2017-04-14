@@ -146,7 +146,7 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 	irs = ppar.refslice >0<23
 	;
 	; extract reference slice response
-	test = reform(icub[gx0:gx1,irs,y0:y1])
+	test = reform(icub[irs,gx0:gx1,y0:y1])
 	refr = median(test,dim=1)
 	;
 	; plot results if requested
@@ -183,7 +183,7 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 		endif else begin
 			;
 			; full wavelength sample (avoiding edges)
-			test  = reform(icub[gx0:gx1,i,y0:y1])
+			test  = reform(icub[i,gx0:gx1,y0:y1])
 			rr = median(test,dim=1)
 			nrr = rr/refr
 			fco = polyfit(y[y0:y1],nrr,5)

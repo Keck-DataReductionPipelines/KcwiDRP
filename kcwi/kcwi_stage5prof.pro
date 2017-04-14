@@ -237,17 +237,17 @@ pro kcwi_stage5prof,ppfname,linkfname,help=help,select=select, $
 					sz = size(img,/dimension)
 					;
 					; check dimension compatability
-					if sz[0] ne mpsz[0] then $
+					if sz[1] ne mpsz[1] then $
 						kcwi_print_info,ppar,pre,'image/profile size mis-match: img x, prof x', $
-							sz[0],mpsz[0],format='(a,2i7)',/warning
+							sz[1],mpsz[1],format='(a,2i7)',/warning
 					;
 					; adjust mprof accordingly
-					if sz[0] gt mpsz[0] then begin
-						tmp = fltarr(sz[0],24) + 1.
-						tmp[0:(mpsz[0]-1),*] = mprof
+					if sz[1] gt mpsz[1] then begin
+						tmp = fltarr(24,sz[1]) + 1.
+						tmp[*,0:(mpsz[1]-1)] = mprof
 						mprof = tmp
-					endif else if sz[0] lt mpsz[0] then begin
-						mprof = mprof[0:(sz[0]-1),*]
+					endif else if sz[1] lt mpsz[1] then begin
+						mprof = mprof[*,0:(sz[1]-1)]
 					endif
 					;
 					; read variance, mask images
@@ -273,10 +273,10 @@ pro kcwi_stage5prof,ppfname,linkfname,help=help,select=select, $
 					; do correction
 					for is=0,23 do begin
 						for iy = 0, sz[2]-1 do begin
-							img[*,is,iy] = img[*,is,iy] / mprof[*,is]
+							img[is,*,iy] = img[is,*,iy] / mprof[is,*]
 							;
 							; variance is multiplied by prof squared
-							var[*,is,iy] = var[*,is,iy] * mprof[*,is]^2
+							var[is,*,iy] = var[is,*,iy] * mprof[is,*]^2
 						endfor
 					endfor
 					;
@@ -317,7 +317,7 @@ pro kcwi_stage5prof,ppfname,linkfname,help=help,select=select, $
 						;
 						; do correction
 						for is=0,23 do for iy = 0, sz[2]-1 do $
-							sky[*,is,iy] = sky[*,is,iy] / mprof[*,is]
+							sky[is,*,iy] = sky[is,*,iy] / mprof[is,*]
 						;
 						; update header
 						sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
@@ -337,7 +337,7 @@ pro kcwi_stage5prof,ppfname,linkfname,help=help,select=select, $
 						;
 						; do correction
 						for is=0,23 do for iy = 0, sz[2]-1 do $
-							obj[*,is,iy] = obj[*,is,iy] / mprof[*,is]
+							obj[is,*,iy] = obj[is,*,iy] / mprof[is,*]
 						;
 						; update header
 						sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)

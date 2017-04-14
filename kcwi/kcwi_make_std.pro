@@ -165,12 +165,12 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	doplots = (ppar.display ge 2)
 	;
 	; find standard in slices
-	tot = total(icub[gx0:gx1,*,y0:y1],3)
+	tot = total(icub[*,gx0:gx1,y0:y1],3)
 	xx = findgen(gx1-gx0)+gx0
 	mxsl = -1
 	mxsg = 0.
 	for i=0,23 do begin
-		mo = moment(tot[*,i])
+		mo = moment(tot[i,*])
 		if sqrt(mo[1]) gt mxsg then begin
 			mxsg = sqrt(mo[1])
 			mxsl = i
@@ -182,7 +182,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	sl1 = (mxsl+3)<23
 	;
 	; get x position of std
-	cx = (pkfind(tot[*,mxsl],npeaks,thresh=0.99))[0] + gx0
+	cx = (pkfind(tot[mxsl,*],npeaks,thresh=0.99))[0] + gx0
 	;
 	; log results
 	kcwi_print_info,ppar,pre,'Std slices; max, sl0, sl1, spatial cntrd', $
@@ -201,7 +201,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			gsky = where(xx le (cx-skywin) or xx ge (cx+skywin))
 			sky = median(skyv[gsky])
 			skyspec[j] = sky
-			scub[*,i,j] = icub[*,i,j] - sky
+			scub[i,*,j] = icub[i,*,j] - sky
 		endfor
 		if doplots then begin
 			yrng = get_plotlims(skyspec[gy])
@@ -226,7 +226,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	kcwi_correct_extin, scub, hdr, ppar
 	;
 	; get slice spectra
-	slspec = total(scub[gx0:gx1,*,*],1)
+	slspec = total(scub[*,gx0:gx1,*],1)
 	;
 	; summed observed standard spectra
 	obsspec = total(slspec[sl0:sl1,*],1)

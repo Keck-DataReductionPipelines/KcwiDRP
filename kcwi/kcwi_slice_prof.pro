@@ -145,7 +145,7 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 	endif
 	;
 	; profiles
-	profs = fltarr(sz[0],24)
+	profs = fltarr(24,sz[0])
 	;
 	; good range
 	gx0 = ppar.slicex0/kcfg.xbinsize
@@ -165,7 +165,7 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 	for i=0,23 do begin
 		;
 		; full wavelength sample (avoiding edges)
-		test  = reform(icub[*,i,y0:y3])
+		test  = reform(icub[i,*,y0:y3])
 		prof  = total(test,2)/float(n_elements(test[0,*]))
 		mo = moment(prof[g])
 		mn = mo[0]
@@ -176,9 +176,9 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 		if kcfg.nasmask ne 1 then begin
 			;
 			; three wavelength samples
-			test1 = reform(icub[*,i,y0:y1])
-			test2 = reform(icub[*,i,y1:y2])
-			test3 = reform(icub[*,i,y2:y3])
+			test1 = reform(icub[i,*,y0:y1])
+			test2 = reform(icub[i,*,y1:y2])
+			test3 = reform(icub[i,*,y2:y3])
 			;
 			prof1 = total(test1,2)/float(n_elements(test1[0,*]))
 			prof2 = total(test2,2)/float(n_elements(test2[0,*]))
@@ -197,7 +197,7 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 		endif else $
 			kcwi_print_info,ppar,pre,'',i,mn,sg, $
 				format='(a,i4,2x,2f9.4)'
-		profs[*,i] = (prof>lim)/mn 	; avoid zeros
+		profs[i,*] = (prof>lim)/mn 	; avoid zeros
 		;
 		q=''
 		if doplots ge 2 then begin

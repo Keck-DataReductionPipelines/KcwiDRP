@@ -281,10 +281,10 @@ pro kcwi_stage7std,ppfname,linkfname,help=help,select=select, $
 					; do calibration
 					for is=0,23 do begin
 						for ix = 0, sz[0]-1 do begin
-							img[ix,is,*] = (img[ix,is,*]/expt) * mscal
+							img[is,ix,*] = (img[is,ix,*]/expt) * mscal
 							;
 							; convert variance to flux units (squared)
-							var[ix,is,*] = (var[ix,is,*]/expt^2) * mscal^2
+							var[is,ix,*] = (var[is,ix,*]/expt^2) * mscal^2
 						endfor
 					endfor
 					;
@@ -331,7 +331,7 @@ pro kcwi_stage7std,ppfname,linkfname,help=help,select=select, $
 						;
 						; do correction
 						for is=0,23 do for ix = 0, sz[0]-1 do $
-							sky[ix,is,*] = (sky[ix,is,*]/expt) * mscal
+							sky[is,ix,*] = (sky[is,ix,*]/expt) * mscal
 						;
 						; update header
 						sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
@@ -355,7 +355,7 @@ pro kcwi_stage7std,ppfname,linkfname,help=help,select=select, $
 						;
 						; do correction
 						for is=0,23 do for ix = 0, sz[0]-1 do $
-							obj[ix,is,*] = (obj[ix,is,*]/expt) * mscal
+							obj[is,ix,*] = (obj[is,ix,*]/expt) * mscal
 						;
 						; update header
 						sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
