@@ -145,8 +145,8 @@ sxaddpar,dhdr,'IFUPA',crota*!RADEG,' IFU position angle (degrees)'
 sxaddpar,dhdr,'IFUROFF',kdgeom.rotoff,' IFU-SKYPA offset (degrees)'
 ;
 ; pixel scales
-cdelt1 = -kdgeom.pxscl*kdgeom.xbinsize	; RA degrees per px (column)
-cdelt2 = kdgeom.slscl			; Dec degrees per slice (row)
+cdelt1 = -kdgeom.slscl			; RA degrees per px (column)
+cdelt2 = kdgeom.pxscl*kdgeom.xbinsize	; Dec degrees per slice (row)
 ;
 ; did we get good coords?
 if nra ne 1 or ndec ne 1 or npa ne 1 then begin
