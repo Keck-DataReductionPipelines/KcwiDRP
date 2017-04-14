@@ -169,6 +169,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	sl0 = sxpar(eahdr,'INVSL0')
 	sl1 = sxpar(eahdr,'INVSL1')
 	cx = sxpar(eahdr,'INVSLX')
+	xx = findgen(gx1-gx0)+gx0
 	;
 	; log results
 	kcwi_print_info,ppar,pre,'Std slices; max, sl0, sl1, spatial cntrd', $
