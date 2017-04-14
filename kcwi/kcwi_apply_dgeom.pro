@@ -145,7 +145,7 @@ sxaddpar,dhdr,'IFUPA',crota*!RADEG,' IFU position angle (degrees)'
 sxaddpar,dhdr,'IFUROFF',kdgeom.rotoff,' IFU-SKYPA offset (degrees)'
 ;
 ; pixel scales
-cdelt1 = -kdgeom.slscl			; RA degrees per px (column)
+cdelt1 = -kdgeom.pxscl			; RA degrees per px (column)
 cdelt2 = kdgeom.pxscl*kdgeom.xbinsize	; Dec degrees per slice (row)
 ;
 ; did we get good coords?
