@@ -98,7 +98,7 @@ for i=0,23 do begin
 endfor
 maximy = yp1
 ;
-dimg = dimg[0:maximx, 0:maximy]
+dimg = transpose(dimg[0:maximx, 0:maximy])
 if ppar.verbose eq 1 then begin
 	print,'Done.',format='($,a)'
 	print,''
@@ -182,10 +182,10 @@ endelse
 ;
 ; get reference pixels
 if ppar.crpix1 le 0. then $
-	crpix1 = sz[0]/2. $	; spatial slit direction
+	crpix1 = ony/2. $	; spatial slice direction
 else	crpix1 = ppar.crpix1
 if ppar.crpix2 le 0. then $
-	crpix2 = 12. $		; spatial slice direction: 24/2
+	crpix2 = onx/2. $	; spatial slit direction
 else	crpix2 = ppar.crpix2
 ;
 ; WCS keywords
