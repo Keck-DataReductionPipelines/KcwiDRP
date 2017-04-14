@@ -314,11 +314,13 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		;
 		; plot effective area (cm^2)
 		yrng = get_plotlims(earea)
+		if yrng[0] lt 0. then yrng[0] = 0.0
 		maxea = max(earea)
 		mo = moment(earea)
 		if area gt 0 then begin
 			plot,w,earea, $
-				title=sname+' Img #: '+strn(kcfg.imgnum)+tlab, $
+				title=sname+' Img #: '+strn(kcfg.imgnum)+' '+ $
+				strtrim(kcfg.bgratnam,2)+' '+tlab, $
 				xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 				ytitle='Effective Area (cm^2/A)',ys=9, $
 				yran=yrng,xmargin=[11,8]
