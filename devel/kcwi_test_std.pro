@@ -326,7 +326,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		; ea file starts the title
 		fdecomp,eafil,disk,dir,eaf,ext
 		if strpos(tel,'Keck') ge 0 then begin
-			area = 779127.d0	; Keck effective area in cm^2
+			area = 760000.d0	; Keck effective area in cm^2
 			if keyword_set(instrument) then $
 				refl = 0.658		; reflectivity (3-bounce @ 87% per bounce)
 		endif else if strpos(tel,'5m') ge 0 then begin
