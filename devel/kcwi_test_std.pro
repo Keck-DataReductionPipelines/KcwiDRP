@@ -95,6 +95,16 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		return
 	endif
 	;
+	; check for effective area curve
+	eafil = ppar.reddir + ppar.froot + $
+		string(kcfg.imgnum,format='(i0'+strn(ppar.fdigits)+')') + $
+		'_ea.fits'
+	if not file_test(eafil) then begin
+		kcwi_print_info,ppar,pre,'EA file not found',/error
+		return
+	endif
+	rdfits1dspec,eafil,wea,ea,eahdr
+	;
 	; read in image (already extinction corrected)
 	icub = kcwi_read_image(kcfg.imgnum,ppar,'_icubes',hdr,/calib,status=stat)
 	if stat ne 0 then begin
@@ -154,25 +164,11 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	; display status
 	doplots = (ppar.display ge 2)
 	;
-	; find standard
-	tot = total(icub[*,gx0:gx1,y0:y1],3)
-	xx = findgen(gx1-gx0)+gx0
-	mxsl = -1
-	mxsg = 0.
-	for i=0,23 do begin
-		mo = moment(tot[*,i])
-		if sqrt(mo[1]) gt mxsg then begin
-			mxsg = sqrt(mo[1])
-			mxsl = i
-		endif
-	endfor
-	;
-	; relevant slices
-	sl0 = (mxsl-3)>0
-	sl1 = (mxsl+3)<23
-	;
-	; get x position of std
-	cx = (pkfind(tot[*,mxsl],npeaks,thresh=0.99))[0] + gx0
+	; get standard image params
+	mxsl = sxpar(eahdr,'INVSLMX')
+	sl0 = sxpar(eahdr,'INVSL0')
+	sl1 = sxpar(eahdr,'INVSL1')
+	cx = sxpar(eahdr,'INVSLX')
 	;
 	; log results
 	kcwi_print_info,ppar,pre,'Std slices; max, sl0, sl1, spatial cntrd', $
@@ -303,80 +299,73 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
 	oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
 	;
-	; check for effective area curve
-	eafil = ppar.reddir + ppar.froot + $
-		string(kcfg.imgnum,format='(i0'+strn(ppar.fdigits)+')') + $
-		'_ea.fits'
-	if file_test(eafil) then begin
-		rdfits1dspec,eafil,wea,ea,hdr
-		;
-		; get reference area
-		tel = strtrim(sxpar(hdr,'telescop', count=ntel),2)
-		if ntel le 0 then tel = 'Keck II'
-		;
-		; average extinction correction (atmosphere)
-		atm = 1./( sxpar(hdr,'avexcor')>1. )
-		;
-		; defaults
-		area = -1.0
-		refl = 1.0
-		;
-		; ea file starts the title
-		fdecomp,eafil,disk,dir,eaf,ext
-		if strpos(tel,'Keck') ge 0 then begin
-			area = 760000.d0	; Keck effective area in cm^2
-			if keyword_set(instrument) then $
-				refl = 0.658		; reflectivity (3-bounce @ 87% per bounce)
-		endif else if strpos(tel,'5m') ge 0 then begin
-			area = 194165.d0	; Hale 5m area in cm^2
-			if keyword_set(instrument) then $
-				refl = 0.757		; reflectivity (2-bounce)
-		endif
-		if keyword_set(instrument) then begin
-			area = area * refl * atm
-			tlab = eaf+'  '+kcfg.bgratnam+' '+tel+' * '+ $
-				string(refl*100.,form='(i3)')+'% refl. * '+ $
-				string(atm*100.,form='(i2)')+'% atmos.'
-		endif else $
-			tlab = eaf+' '+kcfg.bgratnam+' '+tel+' at AIRMASS = '+ $
-			strtrim(string(kcfg.airmass,form='(f7.3)'),2)
-		if not keyword_set(ps) then $
-			read,'next: ',q
-		yrng = get_plotlims(ea)
-		if yrng[0] lt 0. then yrng[0] = 0.
-		goo = where(wea gt wgoo0 and wea lt wgoo1, ngoo)
-		if ngoo gt 5 then begin
-			maxea = max(ea[goo])
-			mo = moment(ea[goo])
-		endif else begin
-			maxea = max(ea)
-			mo = moment(ea)
-		endelse
-		if area gt 0 then begin
-			plot,wea,ea,xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
-				ytitle='!3EA (cm!U2!N)',title=tlab,ys=9, $
-				yran=yrng,xmargin=[11,8]
-			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
-				thick=3
-			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
-				thick=3
-			oplot,!x.crange,[maxea,maxea],linesty=2
-			oplot,!x.crange,[mo[0],mo[0]],linesty=3
-			axis,yaxis=1,yrange=100.*(!y.crange/area),ys=1, $
-				ytitle='Efficiency (%)'
-		endif else begin
-			plot,wea,ea,xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
-				ytitle='!3EA (cm!U2!N)', yran=yrng, /ys, $
-				title=tlab
-			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
-				thick=3
-			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
-				thick=3
-			oplot,!x.crange,[maxea,maxea],linesty=2
-			oplot,!x.crange,[mo[0],mo[0]],linesty=3
-		endelse
+	; now plot efficiency and effective area
+	;
+	; get reference area
+	tel = strtrim(sxpar(hdr,'telescop', count=ntel),2)
+	if ntel le 0 then tel = 'Keck II'
+	;
+	; average extinction correction (atmosphere)
+	atm = 1./( sxpar(hdr,'avexcor')>1. )
+	;
+	; defaults
+	area = -1.0
+	refl = 1.0
+	;
+	; ea file starts the title
+	fdecomp,eafil,disk,dir,eaf,ext
+	if strpos(tel,'Keck') ge 0 then begin
+		area = 760000.d0	; Keck effective area in cm^2
+		if keyword_set(instrument) then $
+			refl = 0.658		; reflectivity (3-bounce @ 87% per bounce)
+	endif else if strpos(tel,'5m') ge 0 then begin
+		area = 194165.d0	; Hale 5m area in cm^2
+		if keyword_set(instrument) then $
+			refl = 0.757		; reflectivity (2-bounce)
+	endif
+	if keyword_set(instrument) then begin
+		area = area * refl * atm
+		tlab = eaf+'  '+kcfg.bgratnam+' '+tel+' * '+ $
+			string(refl*100.,form='(i3)')+'% refl. * '+ $
+			string(atm*100.,form='(i2)')+'% atmos.'
 	endif else $
-		kcwi_print_info,ppar,pre,'EA file not found',eafil,/warning
+		tlab = eaf+' '+kcfg.bgratnam+' '+tel+' at AIRMASS = '+ $
+		strtrim(string(kcfg.airmass,form='(f7.3)'),2)
+	if not keyword_set(ps) then $
+		read,'next: ',q
+	yrng = get_plotlims(ea)
+	if yrng[0] lt 0. then yrng[0] = 0.
+	goo = where(wea gt wgoo0 and wea lt wgoo1, ngoo)
+	if ngoo gt 5 then begin
+		maxea = max(ea[goo])
+		mo = moment(ea[goo])
+	endif else begin
+		maxea = max(ea)
+		mo = moment(ea)
+	endelse
+	if area gt 0 then begin
+		plot,wea,ea,xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
+			ytitle='!3EA (cm!U2!N)',title=tlab,ys=9, $
+			yran=yrng,xmargin=[11,8]
+		oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
+			thick=3
+		oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
+			thick=3
+		oplot,!x.crange,[maxea,maxea],linesty=2
+		oplot,!x.crange,[mo[0],mo[0]],linesty=3
+		axis,yaxis=1,yrange=100.*(!y.crange/area),ys=1, $
+			ytitle='Efficiency (%)'
+	endif else begin
+		plot,wea,ea,xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
+			ytitle='!3EA (cm!U2!N)', yran=yrng, /ys, $
+			title=tlab
+		oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
+			thick=3
+		oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
+			thick=3
+		oplot,!x.crange,[maxea,maxea],linesty=2
+		oplot,!x.crange,[mo[0],mo[0]],linesty=3
+	endelse
 	;
 	; check if we are making hardcopy
 	if keyword_set(ps) then begin
