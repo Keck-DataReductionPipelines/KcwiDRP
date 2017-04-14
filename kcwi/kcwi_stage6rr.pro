@@ -330,7 +330,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 						rrob[is,oby0:oby1] = mrr[is,rry0:rry1]	; replace with good
 						;
 						; loop over x for each slice
-						for ix = 0, sz[0]-1 do begin
+						for ix = 0, sz[1]-1 do begin
 							img[is,ix,*] = img[is,ix,*] / rrob[is,*]
 							;
 							; variance is multiplied by rr squared
@@ -374,7 +374,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 						sky = mrdfits(sfil,0,skyhdr,/fscale,/silent)
 						;
 						; do correction
-						for is=0,23 do for ix = 0, sz[0]-1 do $
+						for is=0,23 do for ix = 0, sz[1]-1 do $
 							sky[is,ix,*] = sky[is,ix,*] / rrob[is,*]
 						;
 						; update header
@@ -394,7 +394,7 @@ pro kcwi_stage6rr,ppfname,linkfname,help=help,select=select, $
 						obj = mrdfits(nfil,0,objhdr,/fscale,/silent)
 						;
 						; do correction
-						for is=0,23 do for ix = 0, sz[0]-1 do $
+						for is=0,23 do for ix = 0, sz[1]-1 do $
 							obj[is,ix,*] = obj[is,ix,*] / rrob[is,*]
 						;
 						; update header
