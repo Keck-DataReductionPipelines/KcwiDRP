@@ -223,16 +223,20 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	doplots = (ppar.display ge 2)
 	;
 	; apply extinction correction
+	ucub = scub	; uncorrected cube
 	kcwi_correct_extin, scub, hdr, ppar
 	;
 	; get slice spectra
 	slspec = total(scub[*,gx0:gx1,*],2)
+	ulspec = total(ucub[*,gx0:gx1,*],2)
 	;
 	; summed observed standard spectra
 	obsspec = total(slspec[sl0:sl1,*],1)
+	ubsspec = total(ulspec[sl0:sl1,*],1)
 	;
 	; convert to e-/second
 	obsspec = obsspec / expt
+	ubsspec = ubsspec / expt
 	;
 	; read in standard
 	sdat = mrdfits(spath,1,shdr)
@@ -268,9 +272,13 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		format='(a,f5.1,1x,a)'
 	;
 	; smooth to this resolution
-	if kcfg.nasmask then $
-		obsspec = gaussfold(w,obsspec,fwhm) $
-	else	obsspec = gaussfold(w,obsspec,fwhm,lammin=wgoo0,lammax=wgoo1)
+	if kcfg.nasmask then begin
+		obsspec = gaussfold(w,obsspec,fwhm)
+		ubsspec = gaussfold(w,ubsspec,fwhm)
+	endif else begin
+		obsspec = gaussfold(w,obsspec,fwhm,lammin=wgoo0,lammax=wgoo1)
+		ubsspec = gaussfold(w,ubsspec,fwhm,lammin=wgoo0,lammax=wgoo1)
+	endelse
 	;
 	; resample standard onto our wavelength grid
 	linterp,swl,sflx,w,rsflx
@@ -282,7 +290,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	rspho = 5.03411250d+07 * rsflx * w * dw
 	;
 	; get effective area
-	earea = obsspec / rspho
+	earea = ubsspec / rspho
 	;
 	; fit inverse sensitivity
 	t=where(w ge wgoo0 and w le wgoo1, nt)
