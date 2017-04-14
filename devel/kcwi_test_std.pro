@@ -146,7 +146,6 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	; good spatial range
 	gx0 = ppar.slicex0/kcfg.xbinsize
 	gx1 = ppar.slicex1/kcfg.xbinsize
-	x = indgen(sz[0])
 	;
 	; log results
 	kcwi_print_info,ppar,pre,'Invsens. Pars: X0, X1, Y0, Y1, Wav0, Wav1', $
@@ -167,7 +166,6 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 			mxsl = i
 		endif
 	endfor
-	mxsl = 11
 	;
 	; relevant slices
 	sl0 = (mxsl-3)>0
@@ -249,13 +247,13 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	kcwi_print_info,ppar,pre,'reference spectrum FWHM used',fwhm, $
 		format='(a,f5.1)'
 	;
-	; resample onto our wavelength grid
-	linterp,swl,sflx,w,rsflx
-	;
 	; get a smoothed version
 	if kcfg.nasmask then $
 		stdsmoo = gaussfold(w,stdspec,fwhm) $
 	else	stdsmoo = gaussfold(w,stdspec,fwhm,lammin=wgoo0,lammax=wgoo1)
+	;
+	; resample onto our wavelength grid
+	linterp,swl,sflx,w,rsflx
 	;
 	; make a hardcopy if requested
 	if keyword_set(ps) then begin
