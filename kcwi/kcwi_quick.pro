@@ -345,6 +345,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	;
 	; trim object name
 	kcfg.object = strtrim(kcfg.object,2)
+	kcfg.targname = strtrim(kcfg.targname,2)
 	;
 	; exclude biases and test images from process list
 	proc = where(strmatch(kcfg.imgtype,'bias') ne 1 and $
@@ -792,7 +793,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 				kcwi_print_info,ppar,pre,'sky file = '+skfile
 			endif else begin
 				kcwi_print_info,ppar,pre,'No sky obs with same object name', $
-					kcfg[p].object,format='(a,2x,a)',/warning
+					kcfg[p].targname,format='(a,2x,a)',/warning
 				slink = -1
 			endelse
 			;

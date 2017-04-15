@@ -83,7 +83,7 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 		; did we specify an object in the keyword?
 		if size(object,/type) eq 7 then $
 			tobj = strtrim(object,2) $
-		else	tobj = strtrim(tcfg.object,2)	; no? use target object
+		else	tobj = strtrim(tcfg.targname,2)	; no? use target object
 	endif	else	tobj = ''
 	;
 	; how big is our pool?
@@ -183,7 +183,7 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 				if strmatch(strtrim(kcfg[i].imgtype,2),'object') eq 1 then begin
 					;
 					; does the string appear?
-					if strpos(kcfg[i].object,tobj) lt 0 then $
+					if strpos(kcfg[i].targname,tobj) lt 0 then $
 						mstat[i] = 0
 				endif else mstat[i] = 0
 			endif

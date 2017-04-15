@@ -62,7 +62,9 @@ maximx = 0
 ;
 ; image number
 imgnum = sxpar(hdr,'FRAMENO')
-object = sxpar(hdr,'OBJECT')
+object = sxpar(hdr,'TARGNAME',count=ntarg)
+if ntarg le 0 then $
+	object = sxpar(hdr,'OBJECT')
 imgtyp = sxpar(hdr,'CALTYPE')
 ;
 ; log

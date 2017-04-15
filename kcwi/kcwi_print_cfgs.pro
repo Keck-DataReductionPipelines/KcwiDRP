@@ -98,7 +98,7 @@ pro kcwi_print_cfgs,kcfg,imsum, $
 		;
 		; add object info
 		if strpos(kcfg[i].imgtype,'object') ge 0 then begin
-			imsum = imsum + string(strtrim(kcfg[i].object,2),form='(2x,a)')
+			imsum = imsum + string(strtrim(kcfg[i].targname,2),form='(2x,a)')
 		endif
 		if not keyword_set(silent) then print,imsum
 		if keyword_set(outfile) then begin

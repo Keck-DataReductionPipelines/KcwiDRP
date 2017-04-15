@@ -80,7 +80,7 @@ function kcwi_find_stds,kcfg,ppar,nstds
 	endfor
 	;
 	; get observation names
-	obnames = strlowcase(strtrim(kcfg.object,2))
+	obnames = strcompress(strlowcase(strtrim(kcfg.targname,2)),/remove)
 	obstat = strcmp(strtrim(kcfg.imgtype,2),'object')
 	;
 	; set up a status array
