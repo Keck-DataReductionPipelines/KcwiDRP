@@ -908,16 +908,18 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	endfor	; loop over images
 	;
 	; check for un calibrated observations
+	print,''
 	if n_elements(uncal) gt 1 then begin
 		uncal = uncal[1:(n_elements(uncal)-1)]
 		uncal = uncal[sort(uncal)]
 		uncal = uncal[uniq(uncal)]
 		nuncal = n_elements(uncal)
-		print,''
 		kcwi_print_info,ppar,pre,'Number of uncalibrated configurations',nuncal
 		for i = 0,nuncal-1 do $
 			kcwi_print_info,ppar,pre,'Uncalibrated configuration',uncal[i]
-	endif
+	endif else begin
+		kcwi_print_info,ppar,pre,'All configurations calibrated'
+	endelse
 	;
 	; report
 	eltime = systime(1) - startime
