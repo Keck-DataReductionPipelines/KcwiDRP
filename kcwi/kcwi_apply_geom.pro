@@ -193,8 +193,8 @@ endelse
 ; Position Angle ( = SKYPA) in degrees
 ; Plus an offset between rotator and IFU (may be zero)
 skypa = sxpar(hdr,'ROTPOSN',count=npa) + sxpar(hdr,'ROTREFAN')
-crota = (skypa + kgeom.rotoff) / !RADEG
-sxaddpar,chdr,'IFUPA',crota*!RADEG,' IFU position angle (degrees)'
+crota = -(skypa + kgeom.rotoff) / !RADEG
+sxaddpar,chdr,'IFUPA',skypa,' IFU position angle (degrees)'
 sxaddpar,chdr,'IFUROFF',kgeom.rotoff,' IFU-SKYPA offset (degrees)'
 ;
 ; pixel scales
