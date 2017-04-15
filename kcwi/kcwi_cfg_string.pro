@@ -1,4 +1,4 @@
-pro kcwi_cfg_string,kcfg
+function kcwi_cfg_string,kcfg
 	nc = n_elements(kcfg)
 	cstr = strarr(nc)
 	for i=0,nc-1 do $
