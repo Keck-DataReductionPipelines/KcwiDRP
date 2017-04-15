@@ -562,10 +562,11 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			; BEGIN STAGE 1-E: COSMIC RAY REJECTION AND MASKING
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
-			; ONLY perform next step on OBJECT, DARK, and CFLAT images (and if requested)
+			; ONLY perform next step on OBJECT, DARK, CFLAT and DFLAT images (and if requested)
 			if (strmatch(kcfg.imgtype,'object') eq 1 or $
 			    strmatch(kcfg.imgtype,'dark') eq 1 or $
-			    strmatch(kcfg.imgtype,'cflat') eq 1) and ppar.crzap eq 1 then begin
+			    strmatch(kcfg.imgtype,'cflat') eq 1 or $
+			    strmatch(kcfg.imgtype,'dflat') eq 1) and ppar.crzap eq 1 then begin
 			    	;
 			    	; default sigclip
 			    	sigclip = 4.5

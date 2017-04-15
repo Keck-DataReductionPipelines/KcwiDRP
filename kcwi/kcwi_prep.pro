@@ -348,6 +348,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	; exclude biases and test images from process list
 	proc = where(strmatch(kcfg.imgtype,'bias') ne 1 and $
 		     strmatch(kcfg.imgtype,'test') ne 1 and $
+		     strmatch(kcfg.imgtype,'unknown') ne 1 and $
 		     strmatch(kcfg.imgtype,'image') ne 1,nproc)
 	;
 	; if includetest set just exclude biases
