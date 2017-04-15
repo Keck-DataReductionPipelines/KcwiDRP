@@ -710,10 +710,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				    kcfg[p].obsfname,/warning
 				clink = -1
 				alink = -1
-				cstr = strn(kcfg[p].xbinsize) + strn(kcfg[p].ybinsize) + $
-					string(strtrim(kcfg[p].bgratnam,2),format='(a-4)') + $
-					strmid(kcfg[p].ifunam,0,1) + $
-					strtrim(string(kcfg[p].bcwave,format='(f10.1)'),2)
+				cstr = kcwi_cfg_string(kcfg[p])[0]
 				uncal = [ uncal, cstr ]
 			endelse
 			;
@@ -755,9 +752,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				    kcfg[p].obsfname,/warning
 				clink = -1
 				alink = -1
-				cstr = strn(kcfg[p].xbinsize) + strn(kcfg[p].ybinsize) + $
-					strtrim(kcfg[p].bgratnam,2) + strmid(kcfg[p].ifunam,0,1) + $
-					strtrim(string(kcfg[p].bcwave,format='(f10.1)'),2)
+				cstr = kcwi_cfg_string(kcfg[p])[0]
 				uncal = [ uncal, cstr ]
 			endelse
 			;

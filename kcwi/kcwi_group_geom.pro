@@ -120,6 +120,9 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 		;
 		; arcs
 		acfg = afg[amatch[good]]
+		for i=0,ngeom-1 do $
+			kcwi_print_info,ppar,pre,'Geom config', $
+				kcwi_cfg_string(ccfg[i])[0]
 	endif else begin
 		acfg = -1
 		ccfg = -1
