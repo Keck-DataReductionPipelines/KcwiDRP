@@ -109,8 +109,8 @@ dhdr = hdr
 ;
 ; image dimensions
 sxaddpar,dhdr,'NAXIS',2
-sxaddpar,dhdr,'NAXIS1',maximx
-sxaddpar,dhdr,'NAXIS2',maximy
+sxaddpar,dhdr,'NAXIS1',maximy
+sxaddpar,dhdr,'NAXIS2',maximx
 ;
 ; pixel scales
 sxaddpar,dhdr,'PXSCL', kdgeom.pxscl*kdgeom.xbinsize,' Pixel scale along slice'
@@ -182,10 +182,10 @@ endelse
 ;
 ; get reference pixels
 if ppar.crpix1 le 0. then $
-	crpix1 = ony/2. $	; spatial slice direction
+	crpix1 = maximy/2. $	; spatial slice direction
 else	crpix1 = ppar.crpix1
 if ppar.crpix2 le 0. then $
-	crpix2 = onx/2. $	; spatial slit direction
+	crpix2 = maximx/2. $	; spatial slit direction
 else	crpix2 = ppar.crpix2
 ;
 ; WCS keywords
