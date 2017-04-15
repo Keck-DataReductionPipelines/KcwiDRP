@@ -136,7 +136,7 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 				; float-like types
 				4:
 				5: begin
-					if abs(kcfg[i].(tnum[j]) - tcfg.(tnum[j])) gt 0.02 then begin
+					if abs(kcfg[i].(tnum[j]) - tcfg.(tnum[j])) gt 0.05 then begin
 						match = (1 eq 0)
 					endif
 					break
