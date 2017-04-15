@@ -76,6 +76,7 @@
 ;	2014-APR-06	Now makes mask and variance images for all types
 ;	2014-MAY-01	Handles aborted nod-and-shuffle observations
 ;	2014-SEP-29	Added infrastructure to handle selected processing
+;	2017-APR-15	Added cosmic ray exposure time threshhold (60s)
 ;-
 pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 	proc_imgnums=proc_imgnums, proc_biasnums=proc_biasnums, $
@@ -84,6 +85,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 	; setup
 	pre = 'KCWI_STAGE1'
 	startime=systime(1)
+	crexthresh = 60.
 	q = ''	; for queries
 	;
 	; help request
@@ -582,35 +584,47 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 					else	sigclip = 4.5
 				endif
 				;
-				; call kcwi_la_cosmic
-				kcwi_la_cosmic,img,ppar,crmsk,readn=avrn,gain=1.,objlim=4.,sigclip=sigclip, $
-					ntcosmicray=ncrs
-				;
-				; update main header
-				sxaddpar,hdr,'CRCLEAN','T',' cleaned cosmic rays?'
-				sxaddpar,hdr,'NCRCLEAN',ncrs,' number of cosmic rays cleaned'
-				sxaddpar,hdr,'HISTORY','  KCWI_LA_COSMIC '+systime(0)
-				;
-				; write out cleaned object image
-				if ppar.saveintims eq 1 then begin
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_cr',/nodir)
-					kcwi_write_image,img,hdr,ofil,ppar
-				endif
-				;
-				; update CR mask header
-				mskhdr = hdr
-				sxdelpar,mskhdr,'BUNIT'
-				sxaddpar,mskhdr,'BSCALE',1.
-				sxaddpar,mskhdr,'BZERO',0
-				sxaddpar,mskhdr,'MASKIMG','T',' mask image?'
-				sxaddpar,mskhdr,'CRCLEAN','T',' cleaned cosmic rays?'
-				sxaddpar,mskhdr,'NCRCLEAN',ncrs,' number of cosmic rays cleaned'
-				;
-				; write out CR mask image
-				if ppar.saveintims eq 1 then begin
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_crmsk',/nodir)
-					kcwi_write_image,crmsk,mskhdr,ofil,ppar
-				endif
+				; check exposure threshhold
+				if kcfg.xposure gt crexthresh then begin
+					;
+					; call kcwi_la_cosmic
+					kcwi_la_cosmic,img,ppar,crmsk,readn=avrn,gain=1.,objlim=4., $
+						sigclip=sigclip,ntcosmicray=ncrs
+					;
+					; update main header
+					sxaddpar,hdr,'CRCLEAN','T',' cleaned cosmic rays?'
+					sxaddpar,hdr,'NCRCLEAN',ncrs,' number of cosmic rays cleaned'
+					sxaddpar,hdr,'HISTORY','  KCWI_LA_COSMIC '+systime(0)
+					;
+					; write out cleaned object image
+					if ppar.saveintims eq 1 then begin
+						ofil = kcwi_get_imname(ppar,imgnum[i],'_cr',/nodir)
+						kcwi_write_image,img,hdr,ofil,ppar
+					endif
+					;
+					; update CR mask header
+					mskhdr = hdr
+					sxdelpar,mskhdr,'BUNIT'
+					sxaddpar,mskhdr,'BSCALE',1.
+					sxaddpar,mskhdr,'BZERO',0
+					sxaddpar,mskhdr,'MASKIMG','T',' mask image?'
+					sxaddpar,mskhdr,'CRCLEAN','T',' cleaned cosmic rays?'
+					sxaddpar,mskhdr,'NCRCLEAN',ncrs,' number of cosmic rays cleaned'
+					;
+					; write out CR mask image
+					if ppar.saveintims eq 1 then begin
+						ofil = kcwi_get_imname(ppar,imgnum[i],'_crmsk',/nodir)
+						kcwi_write_image,crmsk,mskhdr,ofil,ppar
+					endif
+				endif else begin
+					;
+					; not cosmic ray cleaned: below exposure threshhold
+					kcwi_print_info,ppar,pre, $
+						'cosmic ray cleaning skipped, exposure time < ', $
+						crexthresh,/warning
+					sxaddpar,hdr,'CRCLEAN','F',' cleaned cosmic rays?'
+					crmsk = 0.
+				endelse
 			endif else begin
 				if ppar.crzap ne 1 then $
 					kcwi_print_info,ppar,pre,'cosmic ray cleaning skipped',/warning
