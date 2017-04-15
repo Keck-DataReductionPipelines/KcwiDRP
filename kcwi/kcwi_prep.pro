@@ -637,7 +637,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				dlink = mcfg.groupnum
 				;
 				; log
-				kcwi_print_info,ppar,pre,'master dark file = '+mdfile
+				kcwi_print_info,ppar,pre,'master dark file = '+$
+					mdfile
 			endif else begin
 				kcwi_print_info,ppar,pre, $
 					'cannot unambiguously associate with any master dark: '+ $
@@ -916,7 +917,9 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		uncal = uncal[sort(uncal)]
 		uncal = uncal[uniq(uncal)]
 		nuncal = n_elements(uncal)
-		kcwi_print_info,ppar,pre,'Number of uncalibrated configurations',nuncal
+		kcwi_print_info,ppar,pre, $
+			'Number of uncalibrated configurations',nuncal, $
+			format='(a,i5)'
 		for i = 0,nuncal-1 do $
 			kcwi_print_info,ppar,pre,'Uncalibrated configuration',uncal[i]
 	endif else begin

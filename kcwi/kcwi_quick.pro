@@ -338,6 +338,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	printf,ll,'Plot display level: ',ppar.display
 	if keyword_set(saveplots) then $
 		printf,ll,'Saving plots'
+
 	kcwi_print_info,ppar,pre,'Number of input images',nf
 	;
 	; trim imgtype tag
@@ -350,6 +351,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	; exclude biases and test images from process list
 	proc = where(strmatch(kcfg.imgtype,'bias') ne 1 and $
 		     strmatch(kcfg.imgtype,'test') ne 1 and $
+		     strmatch(kcfg.imgtype,'unknown') ne 1 and $
 		     strmatch(kcfg.imgtype,'image') ne 1,nproc)
 	;
 	; if includetest set just exclude biases
@@ -509,13 +511,15 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 	ppar.ppfname = 'kcwi.ppar'
 	kcwi_write_ppar,ppar,/archive
 	;
-	; now set input dir to output for subsequent stages
-	;ppar.reddir = odir
-	;
 	; set up configuration matching: here is our list of 
 	; default tags to match in the KCWI_CFG struct
 	mtags = ['XBINSIZE','YBINSIZE','GRATID','GRANGLE','FILTNUM', $
 		 'CAMANG','NASMASK','IFUNUM']
+	; tags for direct images
+	dtags = ['XBINSIZE','YBINSIZE','GRATID','FILTNUM','CAMANG','IFUNUM']
+	;
+	; uncalibrated objects?
+	uncal = ['']
 	;
 	; set up links
 	nlinks = 9	; bias,dark.flat,cbar,arc,prof,sky,rrsp,std
@@ -625,8 +629,6 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 				; log
 				kcwi_print_info,ppar,pre,'master dark file = '+$
 					mdfile
-			;
-			; handle the ambiguous case or when no dark frames were taken
 			endif else begin
 				kcwi_print_info,ppar,pre, $
 				    'cannot unambiguously associate with any master dark: '+ $
@@ -671,7 +673,8 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;
 		; no sense creating a dark data cube
-		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.ncbars gt 0 and ppar.narcs gt 0 then begin
+		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
+			ppar.ncbars gt 0 and ppar.narcs gt 0 then begin
 			mcfg = kcwi_match_cfg(ccfg,kcfg[p],ppar,mtags,imgtype='cbars',/time,count=c,/silent)
 			if c eq 1 then begin
 				;
@@ -698,6 +701,8 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 				    kcfg[p].obsfname,/warning
 				clink = -1
 				alink = -1
+				cstr = (kcwi_cfg_string(kcfg[p])[0]
+				uncal = [ uncal, cstr ]
 			endelse
 			;
 			; set cbars and arc links
@@ -712,7 +717,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		; no sense creating a dark direct image
 		if strpos(kcfg[p].obstype,'direct') ge 0 and strmatch(kcfg[p].imgtype,'dark') ne 1 and $
 			ppar.ndirect gt 0 and ppar.ndarcs gt 0 then begin
-			mcfg = kcwi_match_cfg(dccfg,kcfg[p],ppar,mtags,imgtype='arcbars',/time,count=c,/silent)
+			mcfg = kcwi_match_cfg(dccfg,kcfg[p],ppar,dtags,imgtype='arcbars',/time,count=c,/silent)
 			if c eq 1 then begin
 				;
 				; record arcbars filename
@@ -738,6 +743,8 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 				    kcfg[p].obsfname,/warning
 				clink = -1
 				alink = -1
+				cstr = (kcwi_cfg_string(kcfg[p]))[0]
+				uncal = [ uncal, cstr ]
 			endelse
 			;
 			; set cbars and arc links
@@ -751,8 +758,8 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; no point profile correcting dark frames
 		; also require geometry solution
-		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.nprofs gt 0 and $
-			links[icbar] ge 0 and links[iarc] ge 0 then begin
+		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype, 'direct') lt 0 and $
+			ppar.nprofs gt 0 and links[icbar] ge 0 and links[iarc] ge 0 then begin
 			mcfg = kcwi_match_cfg(pcfg,kcfg[p],ppar,mtags,count=s,/time)
 			if s eq 1 then begin
 				;
@@ -807,8 +814,8 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; no sense response correcting dark frames
 		; also require geometry solution
-		if strmatch(kcfg[p].imgtype,'dark') ne 1 and ppar.nrrs gt 0 and $
-			links[icbar] ge 0 and links[iarc] ge 0 then begin
+		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
+			ppar.nrrs gt 0 and links[icbar] ge 0 and links[iarc] ge 0 then begin
 			;
 			; twilight flats
 			if ntrrs gt 0 then $
@@ -868,7 +875,8 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; correct only object frames
 		; also require relative response correction
-		if nstds gt 0 and strmatch(kcfg[p].imgtype,'object') eq 1 and links[irrsp] ge 0 then begin
+		if nstds gt 0 and strmatch(kcfg[p].imgtype,'object') eq 1 and $
+			strpos(kcfg[p].obstype,'direct') lt 0 and links[irrsp] ge 0 then begin
 			mcfg = kcwi_match_cfg(stdcfg,kcfg[p],ppar,mtags,count=std,/time)
 			if std eq 1 then begin
 				;
@@ -889,6 +897,23 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 		; write out links
 		printf,kl,kcfg[p].imgnum,links,imsum,format='(10i9,2x,a)'
 	endfor	; loop over images
+	;
+	; check for un calibrated observations
+	print,''
+	printf,ll,""
+	if n_elements(uncal) gt 1 then begin
+		uncal = uncal[1:(n_elements(uncal)-1)]
+		uncal = uncal[sort(uncal)]
+		uncal = uncal[uniq(uncal)]
+		nuncal = n_elements(uncal)
+		kcwi_print_info,ppar,pre, $
+			'Number of uncalibrated configurations',nuncal, $
+			format='(a,i5)'
+		for i = 0,nuncal-1 do $
+			kcwi_print_info,ppar,pre,'Uncalibrated configuration',uncal[i]
+	endif else begin
+		kcwi_print_info,ppar,pre,'All configurations calibrated'
+	endelse
 	;
 	; close link file
 	free_lun,kl
