@@ -909,6 +909,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	;
 	; check for un calibrated observations
 	print,''
+	printf,ll,""
 	if n_elements(uncal) gt 1 then begin
 		uncal = uncal[1:(n_elements(uncal)-1)]
 		uncal = uncal[sort(uncal)]
