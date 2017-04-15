@@ -89,7 +89,7 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 			if nm eq 1 then begin
 				;
 				; are we close in image number?
-				if abs(cfg[i].imgnum - afg[j].imgnum) lt 3 then begin
+				if abs(cfg[i].imgnum - afg[j].imgnum) lt 4 then begin
 					bmatch[i] = i
 					if strpos(cfg[i].gratid,'BH') ge 0 then begin
 						if afg[j].lmp1stat eq 1 and afg[j].lmp1shst eq 1 then begin

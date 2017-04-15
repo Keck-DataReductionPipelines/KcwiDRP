@@ -918,6 +918,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		uncal = uncal[sort(uncal)]
 		uncal = uncal[uniq(uncal)]
 		nuncal = n_elements(uncal)
+		print,''
 		kcwi_print_info,ppar,pre,'Number of uncalibrated configurations',nuncal
 		for i = 0,nuncal-1 do $
 			kcwi_print_info,ppar,pre,'Uncalibrated configuration',uncal[i]
