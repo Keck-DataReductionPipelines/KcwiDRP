@@ -201,7 +201,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 		kgeom.bclean = 1
 		;
 		; output disperison
-		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
+		kgeom.dwout = 0.125 * float(kcfg.ybinsize)
 	endif
 	;
 	; grating parameters BH2
@@ -214,7 +214,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 		kgeom.bclean = 0
 		;
 		; output disperison
-		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
+		kgeom.dwout = 0.125 * float(kcfg.ybinsize)
 	endif
 	;
 	; grating parameters BH3
@@ -227,7 +227,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 		kgeom.bclean = 0
 		;
 		; output disperison
-		kgeom.dwout = 0.095 * float(kcfg.ybinsize)
+		kgeom.dwout = 0.125 * float(kcfg.ybinsize)
 	endif
 	;
 	; grating parameters BM
@@ -240,7 +240,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 		kgeom.bclean = 0
 		;
 		; output disperison
-		kgeom.dwout = 0.38 * float(kcfg.ybinsize)
+		kgeom.dwout = 0.25 * float(kcfg.ybinsize)
 	endif
 	;
 	; grating parameters BL
