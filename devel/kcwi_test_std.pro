@@ -113,7 +113,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	endif
 	;
 	; check standard
-	sname = strlowcase(strtrim(sxpar(hdr,'object'),2))
+	sname = strcompress(strlowcase(strtrim(kcfg.targname,2)),/remove)
 	;
 	; is standard file available?
 	spath = !KCWI_DATA + '/stds/'+sname+'.fits'
