@@ -42,7 +42,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	;
 	; setup
 	pre = 'KCWI_TEST_STD'
-	version = repstr('$Revision: v0.2.10-40-g60c9d44 $ $Date: Mon Feb 15 09:27:24 2016 -0800 $','$','')
+	version = kcwi_drp_version()
 	q=''
 	;
 	; check input
@@ -255,7 +255,8 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	; make a hardcopy if requested
 	if keyword_set(ps) then begin
 		font_store=!p.font
-		psfile,sname+'_'+kcfg.bgratnam+'_'+imstr
+		psname = sname+'_'+kcfg.bgratnam+'_'+imstr
+		psfile, psname
 		deepcolor
 		!p.background=colordex('white')
 		!p.color=colordex('black')
@@ -372,6 +373,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	if keyword_set(ps) then begin
 		!p.font=font_store
 		psclose
+		kcwi_print_info,ppar,pre,'Plotting to ',psname
 	endif
 	;
 	return
