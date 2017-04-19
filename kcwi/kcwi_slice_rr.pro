@@ -135,10 +135,8 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 	lim = 1.e-1
 	;
 	; good spatial range
-	gx0 = ppar.slicex0/kcfg.xbinsize
-	gx1 = ppar.slicex1/kcfg.xbinsize
-	x = indgen(sz[0])
-	g = where(x ge gx0 and x le gx1)
+	gx0 = 1
+	gx1 = sz[1] - 2
 	;
 	;
 	; log results

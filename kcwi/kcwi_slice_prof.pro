@@ -145,12 +145,12 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 	endif
 	;
 	; profiles
-	profs = fltarr(24,sz[0])
+	profs = fltarr(24,sz[1])
 	;
 	; good range
-	gx0 = ppar.slicex0/kcfg.xbinsize
-	gx1 = ppar.slicex1/kcfg.xbinsize
-	x = indgen(sz[0])
+	gx0 = 1
+	gx1 = sz[1] - 2
+	x = indgen(sz[1])
 	g = where(x ge gx0 and x le gx1)
 	;
 	; log

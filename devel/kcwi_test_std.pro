@@ -154,8 +154,8 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	w = w0 + y*dw
 	;
 	; good spatial range
-	gx0 = ppar.slicex0/kcfg.xbinsize
-	gx1 = ppar.slicex1/kcfg.xbinsize
+	gx0 = 1
+	gx1 = sz[1] - 2
 	;
 	; log results
 	kcwi_print_info,ppar,pre,'Invsens. Pars: X0, X1, Y0, Y1, Wav0, Wav1', $
