@@ -379,6 +379,8 @@ if kgeom.refbar ge 0 and kgeom.refbar lt 120 then $
 	refb = kgeom.refbar $
 else	refb = 57	; default
 delx = 0.
+;
+; maybe use i=2,4 to avoid vignetted first bar?
 for i=1,4 do begin
 	bb = (refb-2) + i
 	delx = delx + barx[bb] - barx[bb-1]

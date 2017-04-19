@@ -60,13 +60,28 @@ pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
 	; image number
 	imgnum = sxpar(hdr,'imgnum')
 	;
+	; binning
+	bstr = strtrim(sxpar(hdr,'binning'),2)
+	;
+	; grating
+	gratnam = strtrim(sxpar(hdr,'bgratnam'),2)
+	;
+	; central wavelength
+	cwav = strtrim(string(sxpar(hdr,'bcwave'),format='(f8.1)'),2)
+	;
 	; initialize flat
 	flat = fltarr(sz) + 1.
 	;
 	; Spline order
 	if keyword_set(splord) then $
 		splo = splord $
-	else	splo = 31
+	else	begin
+		splo = 35
+		if strpos(gratnam,'BM') ge 0 then $
+			splo = 39 $
+		else if strpos(gratnam,'BL') ge 0 then $
+			splo = 45
+	endelse
 	splo = long(splo)
 	;
 	; is the nod-and-shuffle mask in?
@@ -193,9 +208,10 @@ pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
 		endif
 		;
 		; plot
+		tlab = bstr+' '+gratnam+' '+cwav+' Image: '+strn(imgnum) + $
+			', Col: '+string(i,format='(i4)')
 		xrng=get_plotlims(x+y0)
-		plot,x+y0,y,title='Image: '+strn(imgnum)+ $
-			', Col: '+string(i,format='(i4)'), $
+		plot,x+y0,y,title=tlab, $
 			charsi=si,charthi=th,xthi=th,ythi=th, $
 			xran=xrng,/xs,xtitle='Row', $
 			yran=yrng,/ys,ytitle='e-/px'

@@ -76,9 +76,9 @@ y1 = (sz[1]-1) + pad
 pimg[*,y0:y1] = img
 ;
 ; get slice size
-sli = where(kgeom.slice eq 0 and kgeom.xi gt 0)
-xw = kgeom.xw[sli]
-xcut = fix(4.*kgeom.refdelx + 2.*kgeom.x0out)
+xcut = fix(5.*kgeom.refdelx)
+x0out = fix(kgeom.refdelx/2.) + fix(3 / kgeom.xbinsize)
+x1out = x0out + xcut
 ;
 ; log values
 kcwi_print_info,ppar,pre,'Slice dimensions (x,y)',xcut+1l,lastpix+1l, $
@@ -96,7 +96,6 @@ kcwi_print_info,ppar,pre,'Slicing and dicing image '+strn(imgnum)+': '+object+'.
 ;
 ; loop over slices
 for i=0,23 do begin
-	sli = where(kgeom.slice eq i)
 	;
 	; coefficients
         kwx = kgeom.kwx[*,*,i]
@@ -117,13 +116,13 @@ for i=0,23 do begin
 			format='(a,2i13)',/warning
 	;
 	; trim slice
-	slice = warp[0:xcut<(wsz[0]-1),0:lastpix<(wsz[1]-1)]
+	slice = warp[x0out:x1out,0:lastpix<(wsz[1]-1)]
 	if i eq 0 then begin
 		sz = size(slice,/dim)
 		cube = fltarr(24,sz[0],sz[1])
 		diag_cube = fltarr(sz[0],sz[1],24)
 	endif
-	cube[i,*,*] = slice	;reverse(slice,1)
+	cube[i,*,*] = slice
 	diag_cube[*,*,i] = slice
 	if ppar.verbose eq 1 then $
 		print,strn(i)+' ',format='($,a)'

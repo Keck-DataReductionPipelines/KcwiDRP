@@ -1,3 +1,4 @@
+trim output cube
 make overscan subtraction optional (only when no bias)
 account for vignetting in bars images
 use arcbars for direct geometry solution
