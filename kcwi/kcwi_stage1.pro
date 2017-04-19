@@ -327,11 +327,14 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			; BEGIN STAGE 1-B: OVERSCAN SUBTRACTION
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
+			; only do overscan subtraction if no bias is available
+			do_oscan = (strcmp(strtrim(sxpar(hdr,'BIASSUB'),2),'F') eq 1)
+			;
 			; number of overscan pixels in each row
 			oscan_pix	= bsec[0,0,1] - bsec[0,0,0]
 			;
 			; do we have enough overscan to get good statistics?
-			if oscan_pix ge ppar.minoscanpix then begin
+			if do_oscan and oscan_pix ge ppar.minoscanpix then begin
 				;
 				; loop over amps
 				for ia = 0, namps-1 do begin
@@ -437,8 +440,11 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 					ofil = kcwi_get_imname(ppar,imgnum[i],'_o',/nodir)
 					kcwi_write_image,img,hdr,ofil,ppar
 				endif
-			endif else begin	; no overscan to subtract
-				kcwi_print_info,ppar,pre,'not enough overscan pixels to subtract',oscan_pix,/warning
+			endif else begin	; not doing oscan sub
+				if do_oscan then $
+					kcwi_print_info,ppar,pre,'not enough overscan pixels to subtract', $
+						oscan_pix,/warning $
+				else	kcwi_print_info,ppar,pre,'skipping oscan sub, already bias subtracted'
 				sxaddpar,hdr,'OSCANSUB','F',' overscan subtracted?'
 			endelse
 			;

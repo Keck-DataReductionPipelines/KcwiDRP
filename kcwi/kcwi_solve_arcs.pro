@@ -115,7 +115,9 @@ endif
 ;
 ; plot results
 if ppar.display ge 1 then begin
-	window,0,title='kcwi_solve_arcs'
+	if !d.window lt 0 then $
+		window,0,title=kcwi_drp_version() $
+	else	wset,0
 	!p.multi=[0,1,2]
 	si = 1.5
 	ys = reform(cntcoeff[0,*])

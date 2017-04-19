@@ -76,11 +76,11 @@ pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
 	if keyword_set(splord) then $
 		splo = splord $
 	else	begin
-		splo = 35
+		splo = 39
 		if strpos(gratnam,'BM') ge 0 then $
-			splo = 39 $
+			splo = 45 $
 		else if strpos(gratnam,'BL') ge 0 then $
-			splo = 45
+			splo = 51
 	endelse
 	splo = long(splo)
 	;

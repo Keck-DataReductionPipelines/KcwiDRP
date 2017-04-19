@@ -1,5 +1,4 @@
-trim output cube
-make overscan subtraction optional (only when no bias)
+look into flat fitting algorithm: seeing striations in self-flatted cflats
 account for vignetting in bars images
 use arcbars for direct geometry solution
 more control of la_cosmic parameters to the user?
@@ -7,11 +6,12 @@ implement saveplots option & date-stamping plots
 implement nod-and-shuffle scattered light fitting/removal
 add option to re-scale the sky for aborted nod-and-shuffel obs
 propogate missing geom cal files foward into prof and rr links
-look into flat fitting algorithm: seeing striations in self-flatted cflats
 set spatial good range keywords based on continuum flat data cube
 set header params for trough limits during profile correction
 think about the impact of flexure correction on the slicex0 and slicex1 params
 add differential atmospheric refraction correction
+#19-APR-2017 DONE make overscan subtraction optional (only when no bias)
+#19-APR-2017 DONE trim output cube
 #12-APR-2017 DONE match direct mode data across time
 #12-APR-2017 DONE direct tpat should have imgtype object
 #27-APR-2015 DONE add annotation for wave_*.ps plots for central and limit wavelengths

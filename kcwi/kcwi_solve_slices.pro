@@ -74,7 +74,9 @@ endif
 ; diagnostic plots
 display = (ppar.display ge 4)
 if display then begin
-	window,0,title='kcwi_solve_slices'
+	if !d.window lt 0 then $
+		window,0,title=kcwi_drp_version() $
+	else	wset,0
 	!p.multi=[0,1,2]
 endif
 ;

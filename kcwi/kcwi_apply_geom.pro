@@ -20,7 +20,7 @@
 ;	Kgeom	- KCWI_GEOM struct after KCWI_SOLVE_ARCS has been run
 ;
 ; INPUT KEYWORDS:
-;	VERBOSE - extra output
+;	WARPOUT - output warped image set
 ;
 ; OUTPUTS:
 ;	Cube	- 3-D data cube image [slice,x,wavelength]
@@ -43,7 +43,7 @@
 ;       2015-APR-25     Added CWI flexure hooks (MM)
 ;	2016-OCT-05	Removed CWI flexure routines
 ;-
-pro kcwi_apply_geom,img,hdr,kgeom,ppar,cube,chdr,diag_cube=diag_cube
+pro kcwi_apply_geom,img,hdr,kgeom,ppar,cube,chdr,warpout=warpout
 ;
 ; startup
 pre = 'KCWI_APPLY_GEOM'
@@ -76,12 +76,10 @@ y1 = (sz[1]-1) + pad
 pimg[*,y0:y1] = img
 ;
 ; get slice size
-xcut = fix(5.*kgeom.refdelx)
-x0out = fix(kgeom.refdelx/2.) + fix(3 / kgeom.xbinsize)
-x1out = x0out + xcut
+slsize = fix(5.*kgeom.refdelx) + 1
 ;
 ; log values
-kcwi_print_info,ppar,pre,'Slice dimensions (x,y)',xcut+1l,lastpix+1l, $
+kcwi_print_info,ppar,pre,'Slice dimensions (x,y)',slsize+1l,lastpix+1l, $
 	format='(a,2i9)'
 ;
 ; image number
@@ -103,27 +101,31 @@ for i=0,23 do begin
 	;
 	; perform the resampling here
         warp = poly_2d(pimg,kwx,kwy,2,cubic=-0.5)
+	;
+	; output warped image if requested
+	if keyword_set(warpout) and $
+		strcmp(strtrim(sxpar(hdr,'CALTYPE'),2),'cbars') eq 1 and $
+		strcmp(strtrim(sxpar(hdr,'BUNIT'),2),'electrons') eq 1 then $
+			mwrfits,warp,'warp'+string(i,form='(i02)')+'.fits',hdr
         ;
 	; check dimensions
 	wsz = size(warp,/dim)
 	;
 	; are we too big?
-	if i eq 0 and xcut ge wsz[0] then $
-		kcwi_print_info,ppar,pre,'xcut gt xsize',xcut,wsz[0], $
+	if i eq 0 and slsize ge wsz[0] then $
+		kcwi_print_info,ppar,pre,'slice size gt xsize',slsize,wsz[0], $
 			format='(a,2i13)',/warning
 	if i eq 0 and lastpix ge wsz[1] then $
 		kcwi_print_info,ppar,pre,'lastpix gt ysize',lastpix,wsz[1], $
 			format='(a,2i13)',/warning
 	;
 	; trim slice
-	slice = warp[x0out:x1out,0:lastpix<(wsz[1]-1)]
+	slice = warp[0:slsize,0:lastpix<(wsz[1]-1)]
 	if i eq 0 then begin
 		sz = size(slice,/dim)
 		cube = fltarr(24,sz[0],sz[1])
-		diag_cube = fltarr(sz[0],sz[1],24)
 	endif
 	cube[i,*,*] = slice
-	diag_cube[*,*,i] = slice
 	if ppar.verbose eq 1 then $
 		print,strn(i)+' ',format='($,a)'
 endfor

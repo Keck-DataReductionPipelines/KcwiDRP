@@ -134,7 +134,9 @@ endfor
 ;
 ; setup for display (if requested)
 if do_plots ge 2 then begin
-	window,0,title='kcwi_extract_arcs'
+	if !d.window lt 0 then $
+		window,0,title=kcwi_drp_version() $
+	else	wset,0
 	deepcolor
 	!p.background=colordex('white')
 	!p.color=colordex('black')
@@ -194,9 +196,6 @@ kgeom.baroff = boff
 ; Kgeom timestamp
 kgeom.progid = pre
 kgeom.timestamp = systime(1)
-;
-; clean up
-if ppar.display ge 2 then wdelete,0
 ;
 return
 end

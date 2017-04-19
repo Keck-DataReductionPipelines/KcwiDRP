@@ -49,7 +49,9 @@ display = (ppar.display ge 2)
 ddisplay = (ppar.display ge 3)
 
 if ppar.display ge 2 then begin
-	window,0,title='kcwi_fit_center'
+	if !d.window lt 0 then $
+		window,0,title=kcwi_drp_version() $
+	else	wset,0
 	deepcolor
 	!p.multi=0
 	!p.background=colordex('white')

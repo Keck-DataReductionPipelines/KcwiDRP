@@ -113,7 +113,9 @@ do_plots = ppar.display
 ;
 ; prepare plots, if needed
 if do_plots ge 1 then begin
-	window,0,title='kcwi_trace_cbars'
+	if !d.window lt 0 then $
+		window,0,title=kcwi_drp_version() $
+	else	wset,0
 	deepcolor
 	!p.background=colordex('white')
 	!p.color=colordex('black')
@@ -388,6 +390,7 @@ endfor
 delx = delx / 4.0
 kgeom.refdelx = delx
 kgeom.refoutx = barx[refb] + (findgen(5)-2.) * delx
+kgeom.x0out = fix(delx/2.) + 1
 ;
 ; log results
 kcwi_print_info,ppar,pre,'reference delta x',kgeom.refdelx
