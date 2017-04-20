@@ -10,6 +10,7 @@ set spatial good range keywords based on continuum flat data cube
 set header params for trough limits during profile correction
 think about the impact of flexure correction on the slicex0 and slicex1 params
 add differential atmospheric refraction correction
+#20-APR-2017 DONE implement bad pixel masking
 #19-APR-2017 DONE make overscan subtraction optional (only when no bias)
 #19-APR-2017 DONE trim output cube
 #12-APR-2017 DONE match direct mode data across time

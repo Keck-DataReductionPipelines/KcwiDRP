@@ -328,10 +328,10 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
 			; only do overscan subtraction if no bias is available
-			do_oscan = (strcmp(strtrim(sxpar(hdr,'BIASSUB'),2),'F') eq 1)
+			do_oscan = (sxpar(hdr,'BIASSUB') eq 0)
 			;
 			; number of overscan pixels in each row
-			oscan_pix	= bsec[0,0,1] - bsec[0,0,0]
+			oscan_pix = bsec[0,0,1] - bsec[0,0,0]
 			;
 			; do we have enough overscan to get good statistics?
 			if do_oscan and oscan_pix ge ppar.minoscanpix then begin
@@ -653,18 +653,59 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			; be sure that output image scaling will work
 			msk[0] = 1b
 			;
-			; get defect list
+			; start with no bad pixels
 			nbpix = 0
 			bpx = [0]
 			bpy = [0]
 			;
-			; fix bad pixels
-			if nbpix gt 0 then begin
-				for ib=0,nbpix do begin
-					print,ib
-					msk[bpx[ib],bpy[ib]] = 2b
+			; get defect list
+			bcfil = !KCWI_DATA + 'badcol_' + strtrim(kcfg.ampmode,2) + '_' + $
+				strn(kcfg.xbinsize) + 'x' + strn(kcfg.ybinsize) + '.dat'
+			if file_test(bcfil) then begin
+				;
+				; report the bad col file
+				kcwi_print_info,ppar,pre,'using bad column file: '+bcfil
+				;
+				; read it
+				readcol,bcfil,bcx0,bcx1,bcy0,bcy1,form='i,i,i,i',comment='#',/silent
+				;
+				; correct to IDL zero bias
+				bcx0 -= 1
+				bcx1 -= 1
+				bcy0 -= 1
+				bcy1 -= 1
+				;
+				; number of bad column entries
+				nbc = n_elements(bcx0)
+				for j = 0,nbc-1 do begin
+					if bcx0 ge 0 and bcx0 lt sz[0] and $
+					   bcx1 ge 0 and bcx1 lt sz[0] and $
+				   	   bcy0 ge 0 and bcy0 lt sz[1] and $
+					   bcy1 ge 0 and bcy1 lt sz[1] then begin
+					   	;
+					   	; number of x pixels we are fixin'
+						nx = (bcx1[j] - bcx0[j]) + 1
+						;
+						; now do the job!
+						for by = bcy0[j],bcy1[j] do begin
+							;
+							; get average value across bad column(s)
+							gval = (img[bcx0[j]-1,by] + img[bcx1[j]+1,by]) / 2. 
+							for bx = bcx0[j],bcx1[j] do begin
+								img[bx,by] = gval
+								msk[bx,by] = 2b
+								nbpix += nx
+							endfor
+						endfor
+			   		endif else begin
+						kcwi_print_info,ppar,pre,'bad range for bad column!',/warning
+					endelse
 				endfor
-			endif
+			endif else begin
+				kcwi_print_info,ppar,pre, 'no bad column file for ' + $
+					strtrim(kcfg.ampmode,2) + ' ' + $
+					strn(kcfg.xbinsize) + 'x' + strn(kcfg.ybinsize)
+			endelse
 			;
 			; does cosmic ray mask image and header already exist?
 			if n_elements(crmsk) gt 1 then begin
