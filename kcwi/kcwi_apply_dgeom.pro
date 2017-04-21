@@ -58,6 +58,7 @@ sz = size(img,/dim)
 onx = 180 / kdgeom.xbinsize
 ony = 300 / kdgeom.ybinsize
 dimg = fltarr(onx,ony)
+npix = fltarr(onx,ony)
 maximx = 0
 ;
 ; image number
@@ -95,9 +96,16 @@ for i=0,23 do begin
 		yp1 = w*2
 	endelse
 	dimg[0:nxx-1,yp0:yp1] += res[0:nxx-1,yc-w:yc+w]
+	npix[0:nxx-1,yp0:yp1] += 1.
 	if ppar.verbose eq 1 then $
 		print,strn(i)+' ',format='($,a)'
 endfor
+;
+; normalize
+t = where(npix eq 0., nt)
+if nt gt 0 then $
+	npix[t] = 1.
+dimg = dimg/npix
 maximy = yp1
 ;
 dimg = transpose(dimg[0:maximx, 0:maximy])

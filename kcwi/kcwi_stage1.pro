@@ -628,7 +628,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 					; not cosmic ray cleaned: below exposure threshhold
 					kcwi_print_info,ppar,pre, $
 						'cosmic ray cleaning skipped, exposure time < ', $
-						crexthresh,/warning
+						crexthresh,format='(a,f6.1)',/warning
 					sxaddpar,hdr,'CRCLEAN','F',' cleaned cosmic rays?'
 					crmsk = 0.
 				endelse

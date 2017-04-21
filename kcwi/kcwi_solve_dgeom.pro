@@ -230,8 +230,7 @@ for isl = 0, sl-1 do begin
 	kdgeom.wid[isl] = fix(w/2.)>1
 	;
 	; extract trace from bar image
-	xx = lindgen( fix(max(xf)-min(xf)) + 20/xbin ) + $
-		      long(min(xf)-14/xbin)
+	xx = lindgen(fix(max(xf)-min(xf))) + long(min(xf))
 	nxx = n_elements(xx)
 	x0 = xx[0]
 	x1 = xx[nxx-1]

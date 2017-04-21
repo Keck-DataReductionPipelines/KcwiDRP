@@ -880,6 +880,22 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 			links[irrsp] = rlink
 		endif	; only object frames and nrrs gt 0
 		;
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		; ASSOCIATE WITH DIRECT RELATIVE RESPONSE OBSERVATIONS
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;
+		; Use arc image for direct relative response
+		if strpos(kcfg[p].obstype,'direct') ge 0 and $
+			links[icbar] ge 0 and links[iarc] ge 0 then begin
+			links[irrsp] = links[iarc]
+			;
+			; log
+			kcwi_print_info,ppar,pre,'direct relative response file = '+arfile
+			;
+			; if we are direct, but there is no arc file
+			; just leave the link as set above (-1)
+		endif
+		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; ASSOCIATE WITH STANDARD STAR OBSERVATIONS
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
