@@ -129,7 +129,7 @@ for i=4,nx-4 do begin
 		cnt = cntrd1d(iy,col[iy])
 		err = fltarr(n_elements(iy)) + kdgeom.rdnoise
 		if kdgeom.do_gauss then begin
-			while n_elements(iy) lt 5 do begin
+			while n_elements(iy) lt 9 do begin
 				iy = [min(iy)-1, iy, max(iy)+1]
 				err = [kdgeom.rdnoise, err, kdgeom.rdnoise]
 			endwhile
@@ -209,7 +209,8 @@ deepcolor
 !p.color=colordex('black')
 plot,[0,1],[0,1],xtitle='X pixel',xran=[0,nx],/xs, $
 	ytitle='Y pixel',yran=[minimy,maximy], $
-	/nodata,title='Direct Traces for Image # '+strn(kdgeom.arcimgnum)
+	/nodata,title='Direct '+strtrim(kdgeom.ifunam,2)+ $
+	' Slicer Traces for Image # '+strn(kdgeom.arcimgnum)
 ;
 ; now get spatial extent of arc images
 ;
@@ -222,6 +223,15 @@ for isl = 0, sl-1 do begin
 	xf = xf[good]
 	yf = yf[good]
 	wf = wf[good]
+	;
+	; trim outliers
+	ims,yf,ymn,ysg,ywt
+	good = where(ywt eq 1, ngood)
+	if ngood gt 10 then begin
+		xf = xf[good]
+		yf = yf[good]
+		wf = wf[good]
+	endif
 	oplot,xf,yf,psym=4
 	c = poly_fit(xf,yf,1)
 	angle = atan(c[1]) / !DTOR

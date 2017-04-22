@@ -1,4 +1,32 @@
-# Copyright (c) 2013-2016, California Institute of Technology, all rights reserved
+# Copyright (c) 2013-2017, California Institute of Technology, all rights reserved
+
+2017-Apr-21: v0.3.2 - Sixteenth beta release
+
+- Many improvements to direct mode pipeline including more robust tracing and
+	a new direct relative response stage (kcwi_stage6drr).
+
+- Added bad column fixing for ALL, TBO ccd amp modes (more to come).
+
+- Now trim output data cubes.
+
+- Set exposure time threshhold for CR rejection of 60s.
+
+- Tested WCS against real sky data and updated.
+
+- Restructured data cube for more rational WCS application.
+
+- Added Keck extinction curve to calibrations.
+
+- Now kcwi_prep reports on uncalibrated geometry configurations.
+
+- Improvements to target name keyword handling
+
+- Adjusted output dispersions to be closer to native dispersions.
+
+- Fixed bugs in kcwi_quick and tested on commish data.
+
+- Now outputs a reverse geom image *_wavemap.fits to show wavelength mapping.
+
 
 2017-Apr-06: v0.3.1 - Fifteenth beta release
 

@@ -5,7 +5,7 @@ Copyright (c) 2017, California Institute of Technology.  All rights reserved.
         KCWI Data Extraction and Reduction Pipeline (KDERP) README
 
 
-Fifteenth beta release; Version: 0.3.1 Date: 2017/04/06
+Sixteenth beta release; Version: 0.3.2 Date: 2017/04/21
 
 Caveat Emptor!  Use at your own risk!  In active development!
 
@@ -529,6 +529,20 @@ IDL> kcwi_print_cfgs,kcfg,/header
 
 
 4. NEW FEATURES:
+
+Direct Mode Reductions
+
+These are mostly transparent to the user with the exception of the relative
+response stage.  For direct mode observations, the user should use the
+routine kcwi_stage6drr.pro instead of kcwi_stage6rr.pro.  There is no
+profile or standard star step for direct mode observations as of now.
+
+Reverse Geometry Map Image
+
+Now stage 4 (geom) outputs a *_wavemap.fits file for each geometry
+solution.  This is an image with the same format as the *_int.fits image,
+but for each slice the pixel value is equal to the mapped wavelength at
+that position in the image.
 
 Quick Look Pipeline
 
