@@ -29,6 +29,7 @@ endif
 ; read in quantities from the geometry.
 ; trying to avoid using these inside of the code proper
   imno = kgeom.cbarsimgnum
+  arcno = kgeom.arcimgnum
   nx = kgeom.nx
   ny = kgeom.ny
   ypad = kgeom.ypad
@@ -100,8 +101,46 @@ endif
 
   endfor
 
+  ;
+  ; get header
+  hdr = headfits(kgeom.cbarsfname)
+  ;
+  ; update header
+  ;
+  ; spatial scale and zero point
+  sxaddpar,hdr,'BARSEP',kgeom.refdelx,' separation of bars (binned pix)'
+  sxaddpar,hdr,'BAR0',kgeom.x0out,' first bar pixel position'
+  ;
+  ; wavelength ranges
+  sxaddpar,hdr, 'WAVALL0', kgeom.waveall0, ' Low inclusive wavelength'
+  sxaddpar,hdr, 'WAVALL1', kgeom.waveall1, ' High inclusive wavelength'
+  sxaddpar,hdr, 'WAVGOOD0',kgeom.wavegood0, ' Low good wavelength'
+  sxaddpar,hdr, 'WAVGOOD1',kgeom.wavegood1, ' High good wavelength'
+  sxaddpar,hdr, 'WAVMID',kgeom.wavemid, ' middle wavelength'
+  ;
+  ; wavelength solution RMS
+  sxaddpar,hdr,'AVWVSIG',kgeom.avewavesig,' Avg. bar wave sigma (Ang)'
+  sxaddpar,hdr,'SDWVSIG',kgeom.stdevwavesig,' Stdev. bar wave sigma (Ang)'
+  ;
+  ; geometry solution RMS
+  xmo = moment(kgeom.xrsd,/nan)
+  ymo = moment(kgeom.yrsd,/nan)
+  sxaddpar,hdr, 'GEOXGSG', xmo[0], ' Global geometry X sigma (pix)'
+  sxaddpar,hdr, 'GEOYGSG', ymo[0], ' Global geometry Y sigma (pix)'
+  ;
+  ; pixel scales
+  sxaddpar,hdr,'PXSCL', kgeom.pxscl*kgeom.xbinsize,' Pixel scale along slice'
+  sxaddpar,hdr,'SLSCL', kgeom.slscl,' Pixel scale purpendicular to slices'
+  ;
+  ; geometry origins
+  sxaddpar,hdr, 'CBARSFL', kgeom.cbarsfname,' Continuum bars image'
+  sxaddpar,hdr, 'ARCFL',   kgeom.arcfname, ' Arc image'
+  sxaddpar,hdr, 'CBARSNO', kgeom.cbarsimgnum,' Continuum bars image number'
+  sxaddpar,hdr, 'ARCNO',   kgeom.arcimgnum, ' Arc image number'
+  sxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file'
+
   ; write the file
   kcwi_print_info,ppar,pre,"Writing",outfile,/info
-  mwrfits, reverse_image,outfile,/create
+  mwrfits, reverse_image, outfile, hdr,/create
   kcwi_print_info,ppar,pre,"Generated reverse map.",/info
 end

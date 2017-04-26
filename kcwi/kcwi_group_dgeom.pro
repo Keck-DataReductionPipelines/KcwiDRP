@@ -61,9 +61,9 @@ pro kcwi_group_dgeom, kcfg, ppar, ccfg, acfg
 		ppar.ndarcs = narc
 		ppar.ndirect = 0
 		if narc le 0 then $
-			kcwi_print_info,ppar,pre,'no arcs found!',/error
+			kcwi_print_info,ppar,pre,'no direct arcs found!'
 		if nbar le 0 then $
-			kcwi_print_info,ppar,pre,'no arcbars found!',/error
+			kcwi_print_info,ppar,pre,'no direct arcbars found!'
 		return
 	endif
 	;

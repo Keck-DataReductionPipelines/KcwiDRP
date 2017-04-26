@@ -223,12 +223,12 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			; log
 			kcwi_print_info,ppar,pre,'number of amplifiers',namps
 			;
-			; initialize to default value
-			mbias_rn = fltarr(4) + ppar.readnoise
-			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			; BEGIN STAGE 1-A: BIAS SUBTRACTION
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			;
+			; initialize master bias readnoise to default value
+			mbias_rn = fltarr(4) + ppar.readnoise
 			;
 			; set default values
 			mbias = 0.
@@ -306,7 +306,6 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			; handle the case when no bias frames were taken
 			endif else begin
 				kcwi_print_info,ppar,pre,'cannot associate with any master bias: '+kcfg.obsfname,/warning
-				kcwi_print_info,ppar,pre,'using default readnoise',ppar.readnoise,/warning
 				sxaddpar,hdr,'BIASSUB','F',' bias subtracted?'
 			endelse
 			;
@@ -337,6 +336,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			if do_oscan and oscan_pix ge ppar.minoscanpix then begin
 				;
 				; loop over amps
+				avrn = 0.
 				for ia = 0, namps-1 do begin
 					;
 					; overscan x range - buffer avoids edge effects
@@ -350,6 +350,16 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 					; row range (y)
 					osy0	= bsec[ia,1,0]
 					osy1	= bsec[ia,1,1]
+					;
+					; get gain
+					gain = sxpar(hdr,'GAIN'+strn(ia+1),count=ngain)
+					if ngain eq 0 then gain = sxpar(hdr,'CCDGAIN')
+					;
+					; get readnoise
+					mo = moment(reform(img[osx0:osx1,osy0:osy1]))
+					mbias_rn[ia] = gain * sqrt(mo[1])
+					sxaddpar,hdr,'OSCNRN'+strn(ia+1),mbias_rn[ia],' amp'+strn(ia+1)+' RN in e- from oscan'
+					avrn = avrn + mbias_rn[ia]
 					;
 					; collapse each row
 					osvec = median(img[osx0:osx1,osy0:osy1],dim=1)
@@ -415,6 +425,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 					endfor
 					;
 					; log
+					kcwi_print_info,ppar,pre,'overscan readnoise in e- for amp '+strn(ia+1), mbias_rn[ia]
 					kcwi_print_info,ppar,pre,'overscan '+strtrim(string(ia+1),2)+'/'+ $
 						strtrim(string(namps),2)+' (x0,x1,y0,y1): '+ $
 						    strtrim(string(osx0),2)+','+strtrim(string(osx1),2)+ $
@@ -431,6 +442,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 						if strupcase(strmid(q,0,1)) eq 'Q' then doplots = 0
 					endif
 				endfor	; loop over amps
+				avrn = avrn / float(namps)
 				;
 				; update header
 				sxaddpar,hdr,'OSCANSUB','T',' overscan subtracted?'
@@ -441,10 +453,12 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 					kcwi_write_image,img,hdr,ofil,ppar
 				endif
 			endif else begin	; not doing oscan sub
-				if do_oscan then $
+				if do_oscan then begin
 					kcwi_print_info,ppar,pre,'not enough overscan pixels to subtract', $
-						oscan_pix,/warning $
-				else	kcwi_print_info,ppar,pre,'skipping oscan sub, already bias subtracted'
+						oscan_pix,/warning
+					kcwi_print_info,ppar,pre,'using default readnoise',ppar.readnoise,/warning
+				endif else $
+					kcwi_print_info,ppar,pre,'skipping oscan sub, already bias subtracted'
 				sxaddpar,hdr,'OSCANSUB','F',' overscan subtracted?'
 			endelse
 			;
@@ -678,10 +692,10 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 				; number of bad column entries
 				nbc = n_elements(bcx0)
 				for j = 0,nbc-1 do begin
-					if bcx0 ge 0 and bcx0 lt sz[0] and $
-					   bcx1 ge 0 and bcx1 lt sz[0] and $
-				   	   bcy0 ge 0 and bcy0 lt sz[1] and $
-					   bcy1 ge 0 and bcy1 lt sz[1] then begin
+					if bcx0[j] ge 3 and bcx0[j] lt sz[0]-3 and $
+					   bcx1[j] ge 3 and bcx1[j] lt sz[0]-3 and $
+				   	   bcy0[j] ge 0 and bcy0[j] lt sz[1] and $
+					   bcy1[j] ge 0 and bcy1[j] lt sz[1] then begin
 					   	;
 					   	; number of x pixels we are fixin'
 						nx = (bcx1[j] - bcx0[j]) + 1
@@ -689,8 +703,12 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 						; now do the job!
 						for by = bcy0[j],bcy1[j] do begin
 							;
-							; get average value across bad column(s)
-							gval = (img[bcx0[j]-1,by] + img[bcx1[j]+1,by]) / 2. 
+							; get median of six pixels straddling baddies
+							vals = [img[bcx0[j]-3,by], img[bcx0[j]-2,by], img[bcx0[j]-1,by], $
+								img[bcx1[j]+3,by], img[bcx1[j]+2,by], img[bcx1[j]+1,by]]
+							gval = median(vals)
+							;
+							; substitute good value in and set mask
 							for bx = bcx0[j],bcx1[j] do begin
 								img[bx,by] = gval
 								msk[bx,by] = 2b
@@ -763,7 +781,7 @@ pro kcwi_stage1,ppfname,linkfname,help=help,select=select, $
 			sxaddpar,varhdr,'BUNIT','variance',' brightness units'
 			;
 			; log
-			kcwi_print_info,ppar,pre,'average variance = '+strtrim(string(avvar),2)
+			kcwi_print_info,ppar,pre,'average variance (e-) = '+strtrim(string(avvar),2)
 			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			; END   STAGE 1-G: CREATE VARIANCE IMAGE

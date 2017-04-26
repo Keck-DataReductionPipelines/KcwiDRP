@@ -577,7 +577,12 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		if ppar.nbgrps gt 0 then begin
 			tlist = ['xbinsize','ybinsize','ampmode','ccdmode']
-			mcfg = kcwi_match_cfg(bcfg,kcfg[p],ppar,tlist,count=b)
+			;
+			; we don't really need these to be bias-subtracted
+			sile = (strmatch(kcfg[p].imgtype,'cbars') or $
+				strmatch(kcfg[p].imgtype,'arc'))
+			mcfg = kcwi_match_cfg(bcfg,kcfg[p],ppar,tlist, $
+				count=b,silent=sile)
 			;
 			; multiple matches, take the closest one in sequence
 			if b gt 1 then begin
@@ -658,7 +663,13 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		; no sense flat fielding the dark frames
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
 			ppar.nfgrps gt 0 then begin
-			mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time,count=f)
+			;
+			; we don't really need these to be flat-fielded
+			sile = (strmatch(kcfg[p].imgtype,'cbars') or $
+				strmatch(kcfg[p].imgtype,'arcbars') or $
+				strmatch(kcfg[p].imgtype,'arc'))
+			mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time, $
+				count=f,silent=sile)
 			if f eq 1 then begin
 				mffile = mcfg.groupfile
 				flink = mcfg.groupnum
