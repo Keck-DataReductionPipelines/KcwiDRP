@@ -57,7 +57,7 @@ if ntel le 0 then telescope='Keck II'
 ;	exma - extinction in magnitudes per airmass
 if strpos(telescope,'Keck') ge 0 then begin
 	exfl = !KCWI_DATA + 'extin/snfext.dat'
-	readcol,exfl,exwl,exma,form='f,f'
+	readcol,exfl,exwl,exma,form='f,f',/silent
 ;
 ; get Palomar extinction coefficients (Hayes & Latham, 1975)
 ; units are:
