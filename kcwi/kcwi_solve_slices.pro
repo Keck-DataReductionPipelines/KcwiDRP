@@ -102,9 +102,11 @@ for i=0,23 do begin
 	;
 	; fit
 	polywarp,xi,yi,xw,yw,degree,kwx,kwy,/double,status=status
+	deg2d=[2,4]
+	mod_polywarp,xi,yi,xw,yw,deg2d,kmwx,kmwy,/double,status=status
 	;
 	; get residuals
-	kcwi_geom_resid,xi,yi,xw,yw,degree,kwx,kwy,xrsd,yrsd
+	kcwi_geom_resid,xi,yi,xw,yw,deg2d,kmwx,kmwy,xrsd,yrsd
 	;
 	; check status
 	if status ne 0 then $
@@ -112,8 +114,8 @@ for i=0,23 do begin
 			/warning
 	;
 	; insert into kgeom
-	kgeom.kwx[0:degree,0:degree,i] = kwx
-	kgeom.kwy[0:degree,0:degree,i] = kwy
+	kgeom.kwx[0:deg2d[1],0:deg2d[0],i] = kmwx
+	kgeom.kwy[0:deg2d[1],0:deg2d[0],i] = kmwy
 	;
 	; insert residuals
 	xmo = moment(xrsd,/nan)

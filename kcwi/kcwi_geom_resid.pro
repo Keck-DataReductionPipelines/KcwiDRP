@@ -55,15 +55,15 @@ endif
 ;
 kwxsz = size(kwx,/dim)
 kwysz = size(kwy,/dim)
-if kwxsz[0] ne degree+1 or kwxsz[1] ne degree+1 or $
-   kwysz[0] ne degree+1 or kwysz[1] ne degree+1 then begin
+if kwxsz[0] ne degree[1]+1 or kwxsz[1] ne degree[0]+1 or $
+   kwysz[0] ne degree[1]+1 or kwysz[1] ne degree[0]+1 then begin
    print,pre,': ERROR - 2D coeff array dimension error'
    return
 endif
 ;
 xp=0.
 yp=0.
-for i=0,degree do for j=0,degree do begin
+for i=0,degree[1] do for j=0,degree[0] do begin
 	xp = xp + kwx[i,j]*xw^j*yw^i
 	yp = yp + kwy[i,j]*xw^j*yw^i
 endfor
