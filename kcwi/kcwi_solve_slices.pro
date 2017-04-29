@@ -101,7 +101,7 @@ for i=0,23 do begin
 	yw = kgeom.yw[sli]
 	;
 	; fit
-	polywarp,xi,yi,xw,yw,degree,kwx,kwy,/double,status=status
+	;polywarp,xi,yi,xw,yw,degree,kwx,kwy,/double,status=status
 	deg2d=[2,4]
 	mod_polywarp,xi,yi,xw,yw,deg2d,kmwx,kmwy,/double,status=status
 	;
@@ -122,8 +122,8 @@ for i=0,23 do begin
 	ymo = moment(yrsd,/nan)
 	kgeom.xrsd[i] = sqrt(xmo[1])
 	kgeom.yrsd[i] = sqrt(ymo[1])
-	kcwi_print_info,ppar,pre,'X, Y avg pixel residual for slice: ',i,kgeom.xrsd[i],kgeom.yrsd[i], $
-		format='(a,i3,2f9.3)'
+	kcwi_print_info,ppar,pre,'X, Y avg pixel residual for slice: ', $
+		i,kgeom.xrsd[i],kgeom.yrsd[i], format='(a,i3,2f9.3)'
 	;
 	; plot if requested
 	if display then begin
@@ -139,8 +139,10 @@ for i=0,23 do begin
 			yran=yrng,/ys,ytitle='X rsd (pix)'
 		oplot,!x.crange,[0,0],linesty=0
 		oplot,!x.crange,[xmo[0],xmo[0]],linesty=2
-		oplot,!x.crange,[xmo[0]+kgeom.xrsd[i],xmo[0]+kgeom.xrsd[i]],linesty=2
-		oplot,!x.crange,[xmo[0]-kgeom.xrsd[i],xmo[0]-kgeom.xrsd[i]],linesty=2
+		oplot,!x.crange,[xmo[0]+kgeom.xrsd[i],xmo[0]+kgeom.xrsd[i]], $
+			linesty=2
+		oplot,!x.crange,[xmo[0]-kgeom.xrsd[i],xmo[0]-kgeom.xrsd[i]], $
+			linesty=2
 		;
 		; y residuals
 		yw = yw*kgeom.dwout + kgeom.wave0out
@@ -151,8 +153,10 @@ for i=0,23 do begin
 			yran=yrng,/ys,ytitle='Y rsd (pix)'
 		oplot,!x.crange,[0,0],linesty=0
 		oplot,!x.crange,[ymo[0],ymo[0]],linesty=2
-		oplot,!x.crange,[ymo[0]+kgeom.yrsd[i],ymo[0]+kgeom.yrsd[i]],linesty=2
-		oplot,!x.crange,[ymo[0]-kgeom.yrsd[i],ymo[0]-kgeom.yrsd[i]],linesty=2
+		oplot,!x.crange,[ymo[0]+kgeom.yrsd[i],ymo[0]+kgeom.yrsd[i]], $
+			linesty=2
+		oplot,!x.crange,[ymo[0]-kgeom.yrsd[i],ymo[0]-kgeom.yrsd[i]], $
+			linesty=2
 		read,'Next? (Q - quit plotting, <cr> - next): ',q
 		if strupcase(strmid(q,0,1)) eq 'Q' then display = (1 eq 0)
 	endif	; display

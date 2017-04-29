@@ -91,7 +91,7 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 				; are we close in image number?
 				if abs(cfg[i].imgnum - afg[j].imgnum) lt 4 then begin
 					bmatch[i] = i
-					if strpos(cfg[i].gratid,'BH') ge 0 then begin
+					if strpos(cfg[i].gratid,'BH') ge 0 or strpos(cfg[i].gratid,'BL') ge 0 then begin
 						if afg[j].lmp1stat eq 1 and afg[j].lmp1shst eq 1 then begin
 							kcwi_print_info,ppar,pre,"For "+cfg[i].gratid+" grating, choosing lamp",afg[j].lmp1nam
 							amatch[i] = j
