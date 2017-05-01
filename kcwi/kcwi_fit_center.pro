@@ -152,6 +152,13 @@ xvals = dindgen(specsz[0])-x0
 minrow = (1*specsz[0])/3
 maxrow = (2*specsz[0])/3
 ;
+; Unless we are working on the BL grating.  In this case pick the
+; central 3 fifths
+if strpos(grating,'BL') ge 0 then begin
+	minrow = (1*specsz[0])/5
+	maxrow = (4*specsz[0])/5
+endif
+;
 ; the corresponding preliminary wavelengths
 prelim_wvl = cwvl + xvals*prelim_disp
 prelim_minwvl = min( [prelim_wvl[minrow],prelim_wvl[maxrow]] )

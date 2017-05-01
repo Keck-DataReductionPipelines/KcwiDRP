@@ -40,8 +40,7 @@
 ;-
 ;
 pro kcwi_plot_arcfits, specs, kgeom, ppar, cntcoeff, fincoeff, sigmas, $
-	fwaves, dwaves, $
-	tweak=tweak, plot_file=plot_file
+	fwaves, dwaves, tweak=tweak, plot_file=plot_file, ftype=ftype
 
 pre = 'KCWI_PLOT_ARCFITS'
 q=''
@@ -71,9 +70,13 @@ if keyword_set(tweak) and not nasmask then $
 	degree = kgeom.lastdegree
 ;
 ; fit type
-if nasmask then $
-	fittype = 'Central' $
-else	fittype = 'FullCCD'
+if keyword_set(ftype) then begin
+	fittype = ftype
+endif else begin
+	if nasmask then $
+		fittype = 'Central' $
+	else	fittype = 'FullCCD'
+endelse
 ;
 ; load the reference atlas spectrum.
 kcwi_read_atlas,kgeom,ppar,refspec,refwvl,refdisp

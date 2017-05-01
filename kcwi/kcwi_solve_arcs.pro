@@ -72,6 +72,9 @@ if ppar.display ge 1 then begin
 	si=1.5
 endif
 ;
+; peak matching
+pkdel = ppar.pkdel
+;
 ; which image number
 imgnum = kgeom.arcimgnum
 ;
@@ -185,6 +188,12 @@ endif else begin
 	minrow = lastrow
 	maxrow = specsz[0]-lastrow-1
 	ftype = 'FullCCD'
+	if strpos(grating,'BL') ge 0 then begin
+		edgespace = [0.00]
+		ftype = 'LowRes'
+		lastdegree = degree
+		pkdel = pkdel * 2.0
+	endif
 endelse				; no nasmask
 ;
 ; find wavelength range
@@ -247,7 +256,7 @@ if keyword_set(tweak) then begin
 	else	kcwi_print_info,ppar,pre,'using '+strn(niter)+' iterations to tweak higher order terms'
 	;
 	kcwi_print_info,ppar,pre,'Spectral line finding/matching thresh (frac. of res.): PkDel', $
-		ppar.pkdel,format='(a,2x,f7.3)'
+		pkdel,format='(a,2x,f7.3)'
 	;
 	; start with central fit coefficients
 	twkcoeff = cntcoeff
@@ -322,7 +331,7 @@ if keyword_set(tweak) then begin
 	kcwi_print_info,ppar,pre,'Atlas threshhold in percent of max',fix(fthr*100.)
 	kcwi_print_info,ppar,pre,'Number of clean atlas lines found',twk_ref_npks,$
 		format='(a,i4)'
-	kcwi_print_info,ppar,pre,'Matching width in Angstroms',ppar.pkdel*refdisp,$
+	kcwi_print_info,ppar,pre,'Matching width in Angstroms',pkdel*refdisp,$
 		format='(a,f6.4)'
 	;
 	if ppar.display ge 3 then begin
@@ -433,7 +442,7 @@ if keyword_set(tweak) then begin
 				mn = min(diff,dim=1,mi)
 				;
 				; here we match the peaks to one another. 
-				pkd = ppar.pkdel > 1.0
+				pkd = pkdel > 1.0
 				;
 				; never let this get smaller than a single atlas pixel
 				pkm = pkd*refdisp	; match thresh in Angstroms
@@ -454,7 +463,7 @@ if keyword_set(tweak) then begin
 					endwhile
 					;
 					; report any adjustments
-					if pkd ne ppar.pkdel then begin
+					if pkd ne pkdel then begin
 						print,''
 						print,'Bar: ',b,', pkdel updated to ',pkd, '; ',orig_nmp, $
 							' --> ',nmatchedpeaks,' peaks', $
@@ -861,7 +870,7 @@ kgeom.timestamp = systime(1)
 ;
 ; plot diagnostics of arc fits
 kcwi_plot_arcfits,specs,kgeom,ppar,cntcoeff,fincoeff,sigmas,fwaves,dwaves, $
-	tweak=tweak,plot_file=plot_file
+	tweak=tweak,plot_file=plot_file,ftype=ftype
 ;
 ; finally, let's make a diagnostic summary plot
 if ppar.display ge 1 then begin
