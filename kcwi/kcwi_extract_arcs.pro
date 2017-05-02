@@ -132,6 +132,22 @@ for i=0,ns-1 do begin
 	spec(*,i) = vec
 endfor
 ;
+; get arc header
+hdr = headfits(kgeom.arcfname)
+sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
+;
+; geometry origins
+sxaddpar,hdr, 'CBARSFL', kgeom.cbarsfname,' Continuum bars image'
+sxaddpar,hdr, 'ARCFL',   kgeom.arcfname, ' Arc image'
+sxaddpar,hdr, 'CBARSNO', kgeom.cbarsimgnum,' Continuum bars image number'
+sxaddpar,hdr, 'ARCNO',   kgeom.arcimgnum, ' Arc image number'
+sxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file'
+;
+; write out arcs
+outfile = kcwi_get_imname(ppar,kgeom.arcimgnum,"_arcs",/reduced)
+kcwi_print_info,ppar,pre,'Writing',outfile,/info,format='(a,1x,a)'
+mwrfits,spec,outfile,hdr,/create
+;
 ; setup for display (if requested)
 if do_plots ge 2 then begin
 	if !d.window lt 0 then $

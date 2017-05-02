@@ -140,7 +140,7 @@ endif
   sxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file'
 
   ; write the file
-  kcwi_print_info,ppar,pre,"Writing",outfile,/info
+  kcwi_print_info,ppar,pre,"Writing",outfile,/info,format='(a,1x,a)'
   mwrfits, reverse_image, outfile, hdr,/create
   kcwi_print_info,ppar,pre,"Generated reverse map.",/info
 end
