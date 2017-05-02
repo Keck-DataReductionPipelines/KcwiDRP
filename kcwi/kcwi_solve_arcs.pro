@@ -16,6 +16,7 @@
 ;
 ; INPUTS:
 ;	Specs	- a array of arc spectra produced by KCWI_EXTRACT_ARCS
+;	Cntcoeff - Central fit coefficients (from kcwi_fit_center.pro)
 ;	Kgeom	- KCWI_GEOM struct from KCWI_TRACE_CBARS and KCWI_EXTRACT_ARCS
 ;	Ppar	- KCWI_PPAR pipeline parameter struct
 ;
@@ -55,10 +56,16 @@
 ;	2015-APR-22	Rework of peak finding
 ;-
 ;
-pro kcwi_solve_arcs, specs, kgeom, ppar, tweak=tweak, plot_file=plot_file
+pro kcwi_solve_arcs, specs, cntcoeff, kgeom, ppar, tweak=tweak, plot_file=plot_file
 
 pre = 'KCWI_SOLVE_ARCS'
 q=''
+;
+; check status of central fit
+if kgeom.status gt 0 then begin
+	kcwi_print_info,ppar,pre,'Cannot solve arcs',/error
+	return
+endif
 ;
 ; do we want to display stuff? 
 display = (ppar.display ge 2)
@@ -106,41 +113,6 @@ kcwi_print_info,ppar,pre,systime(0)
 kcwi_print_info,ppar,pre,'img, grat, filt, nasmsk, cwave', $
 	imgnum,grating,filter,nasmask,cwvl, $
 	format='(a,i6,2x,a-8,2x,a-8,i4,f12.3)'
-;
-; do initial fit of central third of ccd
-kcwi_fit_center,specs,kgeom,ppar,cntcoeff
-;
-; check status
-if kgeom.status gt 0 then begin
-	kcwi_print_info,ppar,pre,'Cannot solve arcs',/error
-	return
-endif
-;
-; plot results
-if ppar.display ge 1 then begin
-	if !d.window lt 0 then $
-		window,0,title=kcwi_drp_version() $
-	else	wset,0
-	!p.multi=[0,1,2]
-	si = 1.5
-	ys = reform(cntcoeff[0,*])
-	yrng = get_plotlims(ys)
-	plot,cntcoeff[0,*],psym=4,charsi=si,charthi=th,thick=th, $
-		title = imglab+' Central Fit Coef0', $
-		xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
-		ythick=th,ytitle='Ang',yrange=yrng,/ys
-	kcwi_oplot_slices
-	ys = reform(cntcoeff[1,*])
-	yrng = get_plotlims(ys)
-	plot,cntcoeff[1,*],psym=4,charsi=si,charthi=th,thick=th, $
-		title = imglab+' Central Fit Coef1', $
-		xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
-		ythick=th,ytitle='Ang/px',yrange=yrng,/ys
-	kcwi_oplot_slices
-	if ppar.display ge 3 or (ppar.display ge 2 and nasmask) then $
-		read,'next: ',q
-	!p.multi=0
-endif
 ;
 ; we will be initially using a third degree fit to the peak positions:
 degree = 3

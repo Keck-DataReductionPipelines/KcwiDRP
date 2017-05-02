@@ -46,9 +46,10 @@
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2014-SEP-18	Initial Revision
+;	2017-MAY-02	Added interactive option
 ;-
 ;
-pro kcwi_solve_geom,spec,kgeom,ppar, fitdisp=fitdisp, help=help
+pro kcwi_solve_geom,spec,kgeom,ppar, interactive=interactive, help=help
 ;
 ; startup
 pre = 'KCWI_SOLVE_GEOM'
@@ -56,7 +57,7 @@ q = ''
 ;
 ; check inputs
 if n_params(0) lt 2 or keyword_set(help) then begin
-	print,pre+': Info - Usage: '+pre+', ArcSpec, Kgeom'
+	print,pre+': Info - Usage: '+pre+', ArcSpec, Kgeom, Ppar, /INTERACTIVE, /HELP'
 	return
 endif
 ;
@@ -76,8 +77,17 @@ p_fmt = '(i0'+strn(ppar.fdigits)+')'
 plfil = ppar.reddir+'wave_cb' + string(kgeom.cbarsimgnum,p_fmt) + $
 		       '_arc' + string(kgeom.arcimgnum,p_fmt)
 ;
-; solve arc spectra
-kcwi_solve_arcs,spec,kgeom,ppar,/tweak,plot_file=plfil
+; do initial fit of central third of ccd
+kcwi_fit_center,spec,kgeom,ppar,cntcoeff
+;
+; solve arc spectra interactively
+if keyword_set(interactive) then begin
+	kcwi_solve_arcs_inter,spec,cntcoeff,kgeom,ppar,plot_file=plfil
+;
+; solve arc spectra automagically
+endif else begin
+	kcwi_solve_arcs,spec,cntcoeff,kgeom,ppar,/tweak,plot_file=plfil
+endelse
 ;
 ; solve transformation on slice-by-slice basis
 kcwi_solve_slices,ppar,kgeom

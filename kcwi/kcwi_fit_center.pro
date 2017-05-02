@@ -71,8 +71,18 @@ gamma = 4.0d		; mean out-of-plane angle for diffraction.
 imgnum = kgeom.arcimgnum
 imglab = 'Img # '+strn(imgnum)
 ;
+; which slicer?
+ifunum = kgeom.ifunum
+ifunam = kgeom.ifunam
+;
 ; which grating? 
 grating = kgeom.gratid
+;
+; which filter? 
+filter = kgeom.filter
+;
+; is the N&S mask in?
+nasmask = kgeom.nasmask
 ;
 ; central wavelength?
 cwvl = kgeom.cwave
@@ -453,7 +463,40 @@ if total(barstat) gt n_elements(barstat)/2 then begin
 	kcwi_print_info,ppar,pre,'Too many bar fit failures', $
 		fix(total(barstat)),/error
 	kgeom.status = 4
-endif else	kgeom.status = 0
+endif else begin
+	kgeom.status = 0
+	;
+	; plot results
+	if ppar.display ge 1 then begin
+		;
+		; image label
+		imglab = 'Img # '+strn(imgnum)+' ('+kgeom.refname+') Sl: '+ $
+			strtrim(ifunam,2)+ ' Fl: '+strtrim(filter,2)+' Gr: '+ $
+			strtrim(grating,2)
+		if !d.window lt 0 then $
+			window,0,title=kcwi_drp_version() $
+		else	wset,0
+		!p.multi=[0,1,2]
+		si = 1.5
+		ys = reform(centcoeff[0,*])
+		yrng = get_plotlims(ys)
+		plot,centcoeff[0,*],psym=4,charsi=si,charthi=th,thick=th, $
+			title = imglab+' Central Fit Coef0', $
+			xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
+			ythick=th,ytitle='Ang',yrange=yrng,/ys
+		kcwi_oplot_slices
+		ys = reform(centcoeff[1,*])
+		yrng = get_plotlims(ys)
+		plot,centcoeff[1,*],psym=4,charsi=si,charthi=th,thick=th, $
+			title = imglab+' Central Fit Coef1', $
+			xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
+			ythick=th,ytitle='Ang/px',yrange=yrng,/ys
+		kcwi_oplot_slices
+		if ppar.display ge 3 or (ppar.display ge 2 and nasmask) then $
+			read,'next: ',q
+		!p.multi=0
+	endif
+endelse
 ;
 return
 end		; kcwi_fit_center

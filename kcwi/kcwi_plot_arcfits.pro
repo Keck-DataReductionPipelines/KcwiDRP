@@ -12,7 +12,7 @@
 ;	Data reduction for the Keck Cosmic Web Imager (KCWI).
 ;
 ; CALLING SEQUENCE:
-;	KCWI_PLOT_ARCFITS, Specs, Kgeom, Ppar, CntCoeff, FinCoeff, Sigmas
+;	KCWI_PLOT_ARCFITS, Specs, Kgeom, Ppar, CntCoeff, FinCoeff, Sigmas, Fwaves, Dwaves
 ;
 ; INPUTS:
 ;	Specs	- a array of arc spectra produced by KCWI_EXTRACT_ARCS
@@ -21,11 +21,14 @@
 ;	CntCoeff - Coefficients from fits to central region
 ;	FinCoeff - Coefficients from fits to full region
 ;	Sigmas	- Line center residuals (Ang) of fits
+;	Fwaves	- Final fit wavelengths of matched lines
+;	Dwaves	- Final difference between fit and atlas wavelengths
 ;
 ; INPUT KEYWORDS:
 ;	TWEAK	- set to indicate the fits are from iteratively tweaked fits
 ;	PLOT_FILE - if set to a string, will be used to produce postscript 
 ;		output of diagnostic plots
+;	Ftype	- Label describing fit type: FullCCD, Central, etc.
 ;
 ; SIDE EFFECTS:
 ;	outputs postscript plot file specified in PLOT_FILE
