@@ -265,9 +265,9 @@ kcwi_print_info,ppar,pre,'atlas disp (A/pix)',refdisp,form='(a,1x,f9.3)'
 ; set spectra fitting width
 ; BL is well sampled, but other
 ; gratings need a bigger window
-if strpos(grating,'BL') ge 0 then $
-	fwid = avwsg $
-else	fwid = avwfwhm
+if strpos(grating,'BH') ge 0 then $
+	fwid = avwfwhm $
+else	fwid = avwsg
 ;
 ; generate an Atlas line list
 ;
@@ -285,7 +285,9 @@ for pp = 0,n_elements(spec_cent)-1 do begin
 	; fit Atlas peak in wavelength
 	ffs = where(refwvl gt spec_cent[pp]-avwsg and $
 		    refwvl lt spec_cent[pp]+avwsg, nffs)
+	!quiet = 1	; supress curvefit error messages
 	yf = gaussfit(refwvl[ffs],refspec[ffs],a,nterms=3)
+	!quiet = 0	; turn error messages back on
 	pka = (where(refspec[ffs] eq max(refspec[ffs])))[0]
 	woff = abs(refwvl[ffs[pka]] - a[1])/refdisp
 	wrat = a[2]/avwsg
@@ -298,7 +300,9 @@ for pp = 0,n_elements(spec_cent)-1 do begin
 	; fit Spec peak in X pixels
 	ffs = where(subwvals gt spec_cent[pp]-avwsg and $
 		    subwvals lt spec_cent[pp]+avwsg, nffs)
+	!quiet = 1	; supress curvefit error messages
 	yf = gaussfit(subxvals[ffs],subyvals[ffs],a,nterms=3)
+	!quiet = 0	; turn error messages back on
 	if a[2] gt nffs then $
 		is_good = (1 eq 0)
 	sp_pk_x = a[1]
@@ -423,8 +427,10 @@ for b = 0,119 do begin
 			ffs = where(subwvals gt refws[pp]-fwid and $
 				    subwvals lt refws[pp]+fwid, nffs)
 			if nffs gt 5 then begin
+				!quiet = 1	; supress curvefit error msgs
 				yf = gaussfit(subxvals[ffs],subyvals[ffs],a, $
 						nterms=3)
+				!quiet = 0	; turn error messages back on
 				if finite(a[1]) and a[2] lt nffs then $
 					fitxs[pp] = a[1]
 			endif
