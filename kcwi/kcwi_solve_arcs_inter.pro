@@ -67,12 +67,17 @@ if kgeom.status gt 0 then begin
 	return
 endif
 ;
+; do we want to display stuff?
+display = (ppar.display gt 2)
+;
 ; set up plots
-deepcolor
-!p.background=colordex('white')
-!p.color=colordex('black')
-th=2.0
-si=1.5
+if ppar.display ge 1 then begin
+	deepcolor
+	!p.background=colordex('white')
+	!p.color=colordex('black')
+	th=2.0
+	si=1.5
+endif
 ;
 ; peak matching
 pkdel = ppar.pkdel
@@ -217,19 +222,6 @@ twk_maxrow = fix(specsz[0]*0.99)
 ; use reference bar
 b = refbar
 ;
-; check for extant list
-atllist = ppar.reddir+ppar.froot+string(imgnum,'(i0'+strn(ppar.fdigits)+')')+'_atlas.txt'
-use_list = (1 eq 0)
-if file_test(atllist) then begin
-	print,'Found existing line list: ',atllist
-	q=''
-	read,'Enter <cr> to use or anything else to re-generate: ',q
-	if strlen(q) le 0 then begin
-		use_list = (1 eq 1)
-		kcwi_print_info,ppar,pre,'Using existing line list',atllist
-	endif
-endif
-;
 ; fill out the arrays we are working with.
 subxvals = xvals[twk_minrow:twk_maxrow]
 subyvals = smooth(reform(specs[twk_minrow:twk_maxrow,b]),3)
@@ -242,120 +234,114 @@ slope_thresh = 0.7*smooth_width/2./100.0	; more severe for object
 fthr = 0.15					; start at 15% of max
 ampl_thresh  = max(subyvals) * fthr
 spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
-	ampl_thresh,peak_width,count=spec_npks)
+		      ampl_thresh,peak_width,count=spec_npks)
+;
+; adjust smoothing width to maximize number of lines
 newlines = spec_npks
 oldlines = newlines
 while abs(newlines - oldlines) lt 10 and smooth_width gt 2 do begin
 	smooth_width -= 1
 	oldlines = newlines
 	spec_cent = findpeaks(subwvals,subyvals,smooth_width, $
-		slope_thresh,ampl_thresh,count=spec_npks)
+			      slope_thresh,ampl_thresh,count=spec_npks)
 	newlines = spec_npks
 endwhile
 ;
+; final smoothing width
 smooth_width += 1
+kcwi_print_info,ppar,pre,'using a smoothing width (px) of', $
+	smooth_width,format='(a,1x,f13.2)'
+;
+; set to get the most lines
 ampl_thresh = 0.
 spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
 	ampl_thresh,peak_width,count=spec_npks,avsg=avwsg)
+avwfwhm = avwsg * 2.355
 kcwi_print_info,ppar,pre,'starting with ',spec_npks,' lines.'
+kcwi_print_info,ppar,pre,'avg line width (A)',avwsg,form='(a,1x,f9.3)'
+kcwi_print_info,ppar,pre,'avg line FWHM (A)',avwfwhm,form='(a,1x,f9.3)'
+kcwi_print_info,ppar,pre,'atlas disp (A/pix)',refdisp,form='(a,1x,f9.3)'
 ;
-; generate a line list if not using an existing one
-if not use_list then begin
-	kcwi_print_info,ppar,pre,'starting with a smoothing width (px) of', $
-		smooth_width,format='(a,1x,f13.2)'
+; set spectra fitting width
+; BL is well sampled, but other
+; gratings need a bigger window
+if strpos(grating,'BL') ge 0 then $
+	fwid = avwsg $
+else	fwid = avwfwhm
+;
+; generate an Atlas line list
+;
+; setup wavelength fitting arrays
+refxs = fltarr(1000)-1.
+refws = fltarr(1000)-1.
+refwd = fltarr(1000)-1.
+refof = fltarr(1000)-1.
+fi = 0		; fit line index
+;
+; examine lines
+for pp = 0,n_elements(spec_cent)-1 do begin
+	is_good = (1 eq 1)
 	;
-	; set up line plots (one each for atlas and spectrum)
-	!p.multi = [0,2,1]
-	atitle = 'Atlas ('+kgeom.refname+')'
-	stitle = 'Spec (bar '+strn(b)+')'
+	; fit Atlas peak in wavelength
+	ffs = where(refwvl gt spec_cent[pp]-avwsg and $
+		    refwvl lt spec_cent[pp]+avwsg, nffs)
+	yf = gaussfit(refwvl[ffs],refspec[ffs],a,nterms=3)
+	pka = (where(refspec[ffs] eq max(refspec[ffs])))[0]
+	woff = abs(refwvl[ffs[pka]] - a[1])/refdisp
+	wrat = a[2]/avwsg
+	if abs(spec_cent[pp]-a[1]) gt 5. or woff gt 1.5 or $
+	   wrat gt 1.0 then $
+		is_good = (1 eq 0)
+	at_pk_wl = a[1]
+	;print,'Atlas (width, offset): ',wrat,woff,form='(a,2f9.3)'
 	;
-	; setup wavelength fitting arrays
-	refxs = fltarr(1000)-1.
-	refws = fltarr(1000)-1.
-	fi = 0		; fit line index
+	; fit Spec peak in X pixels
+	ffs = where(subwvals gt spec_cent[pp]-avwsg and $
+		    subwvals lt spec_cent[pp]+avwsg, nffs)
+	yf = gaussfit(subxvals[ffs],subyvals[ffs],a,nterms=3)
+	if a[2] gt nffs then $
+		is_good = (1 eq 0)
+	sp_pk_x = a[1]
 	;
-	; examine lines
-	for pp = 0,n_elements(spec_cent)-1 do begin
-		is_good = (1 eq 1)
-		;
-		; get atlas region
-		rwvs = where(refwvl gt spec_cent[pp]-30. and $
-		     	refwvl lt spec_cent[pp]+30.,nrwvs)
-		plot,refwvl[rwvs],refspec[rwvs],psym=10,title=atitle, $
-			xtitle='Angstroms',/xs,ytitle='Flux'
-		;
-		; fit Atlas peak
-		ffs = where(refwvl gt spec_cent[pp]-avwsg and $
-		    	refwvl lt spec_cent[pp]+avwsg, nffs)
-		yf = gaussfit(refwvl[ffs],refspec[ffs],a,nterms=3)
-		if abs(spec_cent[pp]-a[1]) gt 5. or a[2] gt 5. then $
-			is_good = (1 eq 0)
-		at_pk_wl = a[1]
-		oplot,refwvl[ffs],yf,color=colordex('G')
-		oplot,[at_pk_wl,at_pk_wl],!y.crange
-		;
-		; get spec region
-		swvs = where(subwvals gt spec_cent[pp]-30. and $
-		     	subwvals lt spec_cent[pp]+30.,nswvs)
-		plot,subxvals[swvs],subyvals[swvs],psym=10,title=stitle, $
-			xtitle='Pixels',/xs,ytitle='Flux'
-		;
-		; fit Spec peak
-		ffs = where(subwvals gt spec_cent[pp]-avwsg and $
-		    	subwvals lt spec_cent[pp]+avwsg, nffs)
-		yf = gaussfit(subxvals[ffs],subyvals[ffs],a,nterms=3)
-		if a[2] gt nffs then $
-			is_good = (1 eq 0)
-		sp_pk_x = a[1]
-		oplot,subxvals[ffs],yf,color=colordex('G')
-		oplot,[sp_pk_x,sp_pk_x],!y.crange
-		;
-		; are we good?
-		if is_good then begin
-			q=''
-			read,'<cr> - skip, f - fit: ',q
-			;
-			; perform action
-			if strtrim(strupcase(q),2) eq 'F' then begin
-				refxs[fi] = sp_pk_x
-				refws[fi] = at_pk_wl
-				fi += 1
-				print,'X, WL: ',sp_pk_x,at_pk_wl,form='(a,2f9.3)'
-			endif
-		endif	; are we good?
-	endfor	; examine lines
-	;
-	; get fit lines
-	good = where(refws gt 0., ngood)
+	; are we good?
+	if is_good then begin
+		refxs[fi] = sp_pk_x
+		refws[fi] = at_pk_wl
+		refwd[fi] = wrat
+		refof[fi] = woff
+		fi += 1
+	endif	; are we good?
+endfor	; examine lines
+;
+; get fit lines
+good = where(refws gt 0., ngood)
+refws = refws[good]
+refxs = refxs[good]
+refwd = refwd[good]
+refof = refof[good]
+;
+; preliminary fit
+newcoeff = poly_fit(refxs,refws,degree,yfit=fitw)
+;
+; get residual stats
+diff = refws - fitw
+ims, diff, rmn, rsg, rwgt
+bad = where(rwgt le 0, nbad)
+;
+; clean outliers
+if nbad gt 0 then begin
+	good = where(rwgt gt 0, ngood)
 	refws = refws[good]
 	refxs = refxs[good]
-	;
-	; preliminary fit
+	refwd = refwd[good]
+	refof = refof[good]
 	newcoeff = poly_fit(refxs,refws,degree,yfit=fitw)
-	;
-	; get residual stats
-	diff = refws - fitw
-	ims, diff, rmn, rsg, rwgt
-	bad = where(rwgt le 0, nbad)
-	;
-	; clean outliers
-	if nbad gt 0 then begin
-		good = where(rwgt gt 0, ngood)
-		refws = refws[good]
-		refxs = refxs[good]
-		newcoeff = poly_fit(refxs,refws,degree,yfit=fitw)
-	endif else ngood = n_elements(refws)
-	diff = refws - fitw
-	;
-	; account for cleaning zero-point wavelength
-	mo = moment(diff)
-	diff = diff - mo[0]
-endif else begin
-	readcol,atllist,refws,refxs,diff,format='f,f,f',comment='#',/silent
-	newcoeff = poly_fit(refxs,refws,degree,yfit=fitw)
-	ngood = n_elements(refxs)
-	nbad = 0
-endelse
+endif else ngood = n_elements(refws)
+diff = refws - fitw
+;
+; account for cleaning zero-point wavelength
+mo = moment(diff)
+diff = diff - mo[0]
 ;
 ; final RMS
 mo = moment(diff)
@@ -366,49 +352,57 @@ fwaves[b,0:(ngood-1)] = fitw
 dwaves[b,0:(ngood-1)] = diff
 rwaves[b,0:(ngood-1)] = refws
 xcents[b,0:(ngood-1)] = refxs
+barstat[b] = 0
+barrej[b] = nbad
 ;
 ; log stats
 kcwi_print_info,ppar,pre,ftype+' Fit: Bar#,Npks,RMS,Coefs', $
 	b,ngood,sigmas[b],newcoeff[0:degree], $
 	format='(a,2i5,2x,f7.3,f9.2,f8.4,'+strn((degree-1)>1)+'g13.5)'
 ;
-; plot residuals
-!p.multi=0
-yran = get_plotlims(diff)
-if abs(newcoeff[1]) gt 0.4 then $
-	yrng = [yran[0]<(-0.4),yran[1]>0.4] $
-else	yrng = [yran[0]<(-0.2),yran[1]>0.2]
-plot,refws,diff,psym=4,charsi=si,charthi=th,thick=th, $
-	title='Atlas - Spec residuals (bar '+strn(b)+')', $
-	xthick=th, xtitle='Wavelength (A)', $
-	ythick=th, ytitle='Atlas - Spec (A)', yrange=yrng, /ys
-oplot,!x.crange,[0,0], linesty=2, color=colordex('blue')
-oplot,!x.crange,[sigmas[b],sigmas[b]],linesty=1,color=colordex('blue')
-oplot,!x.crange,-[sigmas[b],sigmas[b]],linesty=1,color=colordex('blue')
-kcwi_legend,["RMS = "+string(sigmas[b],form='(f7.3)')+' Ang', $
-	     'NMatch = '+strn(ngood), $
-	     'NRej = '+strn(nbad)],charsi=si,charthi=th
+; store resulting coeffs
 twkcoeff[*,b] = 0.
 twkcoeff[0:degree,b] = newcoeff
-read,'next: ',q
+;
+; plot residuals
+if ppar.display ge 1 then begin
+	!p.multi=0
+	yran = get_plotlims(diff)
+	if abs(newcoeff[1]) gt 0.4 then $
+		yrng = [yran[0]<(-0.4),yran[1]>0.4] $
+	else	yrng = [yran[0]<(-0.2),yran[1]>0.2]
+	plot,refws,diff,psym=4,charsi=si,charthi=th,thick=th, $
+		title=imglab+' (bar '+strn(b)+' REF)', $
+		xthick=th, xtitle='Wavelength (A)', $
+		ythick=th, ytitle='Atlas - Spec (A)', yrange=yrng, /ys
+	oplot,!x.crange,[0,0], linesty=2, color=colordex('blue')
+	oplot,!x.crange,[sigmas[b],sigmas[b]],linesty=1,color=colordex('blue')
+	oplot,!x.crange,-[sigmas[b],sigmas[b]],linesty=1,color=colordex('blue')
+	kcwi_legend,["RMS = "+string(sigmas[b],form='(f7.3)')+' Ang', $
+		     'NMatch = '+strn(ngood), $
+		     'NRej = '+strn(nbad)],charsi=si,charthi=th
+endif
+if display then $
+	read,'next: ',q
 ;
 ; write out atlas line list
-if not use_list then begin
-	atllist = ppar.reddir+ppar.froot+string(imgnum,'(i0'+strn(ppar.fdigits)+')')+'_atlas.txt'
-	openw,al,atllist,/get_lun
-	printf,al,'# '+pre+': Atlas lines (Ang) printed on '+systime(0)
-	printf,al,'# Atlas filename: '+kgeom.refspec
-	printf,al,'# Cont Bars filename: '+kgeom.cbarsfname
-	printf,al,'# Arc filename: '+kgeom.arcfname
-	printf,al,'# Reference bar: '+string(refbar)
-	printf,al,'# RMS of fit: '+string(rsg,form='(f9.3)')
-	for j=0,ngood-1 do printf,al,refws[j],refxs[j],diff[j],format='(3f12.3)'
-	free_lun,al
-	kcwi_print_info,ppar,pre,'Atlas lines written to',atllist,format='(a,a)'
-endif
+atllist = ppar.reddir+ppar.froot+string(imgnum,'(i0'+strn(ppar.fdigits)+')')+'_atlas.txt'
+openw,al,atllist,/get_lun
+printf,al,'# '+pre+': Atlas lines (Ang) printed on '+systime(0)
+printf,al,'# Atlas filename: '+kgeom.refspec
+printf,al,'# Cont Bars filename: '+kgeom.cbarsfname
+printf,al,'# Arc filename: '+kgeom.arcfname
+printf,al,'# Reference bar: '+string(refbar)
+printf,al,'# RMS of fit: '+string(rsg,form='(f9.3)')
+printf,al,'# Avg Spec Width (A): '+string(avwsg,form='(f9.3)')
+printf,al,'# Atlas disp (A/px): '+string(refdisp,form='(f9.3)')
+printf,al,'#    RefWave     SpecPix    FitResid     LWidRat     LOffRat'
+for j=0,ngood-1 do printf,al,refws[j],refxs[j],diff[j], $
+			     refwd[j],refof[j],format='(5f12.3)'
+free_lun,al
+kcwi_print_info,ppar,pre,'Atlas lines written to',atllist,format='(a,a)'
 ;
 ; now loop over other bars
-display = (1 eq 1)
 for b = 0,119 do begin
 	;
 	; setup wavelength fitting arrays
@@ -426,15 +420,14 @@ for b = 0,119 do begin
 		for pp = 0,n_elements(refws)-1 do begin
 			;
 			; fit Spec peak
-			ffs = where(subwvals gt refws[pp]-avwsg and $
-				    subwvals lt refws[pp]+avwsg, nffs)
+			ffs = where(subwvals gt refws[pp]-fwid and $
+				    subwvals lt refws[pp]+fwid, nffs)
 			if nffs gt 5 then begin
 				yf = gaussfit(subxvals[ffs],subyvals[ffs],a, $
 						nterms=3)
 				if finite(a[1]) and a[2] lt nffs then $
 					fitxs[pp] = a[1]
 			endif
-			
 		endfor	; loop over reference lines
 		;
 		; get fit lines
@@ -478,6 +471,10 @@ for b = 0,119 do begin
 			b,ngood,sigmas[b],newcoeff[0:degree], $
 			format='(a,2i5,2x,f7.3,f9.2,f8.4,'+strn((degree-1)>1)+'g13.5)'
 		;
+		; store resulting coeffs
+		twkcoeff[*,b] = 0.
+		twkcoeff[0:degree,b] = newcoeff
+		;
 		; plot residuals
 		if display then begin
 		  yran = get_plotlims(diff)
@@ -485,7 +482,7 @@ for b = 0,119 do begin
 			yrng = [yran[0]<(-0.4),yran[1]>0.4] $
 		  else	yrng = [yran[0]<(-0.2),yran[1]>0.2]
 		  plot,fitws,diff,psym=4,charsi=si,charthi=th,thick=th, $
-			title='Atlas - Spec residuals (bar '+strn(b)+')', $
+			title=imglab+' (bar '+strn(b)+')', $
 			xthick=th, xtitle='Wavelength (A)', $
 			ythick=th, ytitle='Atlas - Spec (A)',yrange=yrng,/ys
 		  oplot,!x.crange,[0,0],linestyle=2,color=colordex('blue')
@@ -499,29 +496,11 @@ for b = 0,119 do begin
 		  read,'Next? (Q - quit plotting, <cr> - next): ',q
 		  if strupcase(strmid(q,0,1)) eq 'Q' then display = (1 eq 0)
 		endif
-		twkcoeff[*,b] = 0.
-		twkcoeff[0:degree,b] = newcoeff
     	endif	; b ne refbar
 endfor
 ;
-;
-; now clean each slice of outlying bars
-if kgeom.bclean then begin
-;
-; only go interactive on last iteration
-	clnplot = 1
-	if clnplot then $
-		window,2,title='kcwi_clean_coeffs'
-	kcwi_clean_coeffs,twkcoeff,degree,ppar,plot=clnplot
-	if clnplot then $
-		wdelete,2
-endif
-;
-; use the tweaked coefficients
-usecoeff = twkcoeff
-;
 ; our final coefficients
-fincoeff = usecoeff
+fincoeff = twkcoeff
 ;
 ; get wavelength ranges
 y0wvs = fltarr(120)	; good wavelengths
