@@ -20,6 +20,7 @@
 ;	Ppar	- KCWI_PPAR pipeline parameter struct
 ;
 ; INPUT KEYWORDS:
+;	Interactive	- set to solve arcs interactively
 ;
 ; SIDE EFFECTS:
 ;	Modifies KCWI_GEOM struct by calculating new control points that
@@ -81,7 +82,7 @@ plfil = ppar.reddir+'wave_cb' + string(kgeom.cbarsimgnum,p_fmt) + $
 kcwi_fit_center,spec,kgeom,ppar,cntcoeff
 ;
 ; solve arc spectra interactively
-if keyword_set(interactive) then begin
+if ppar.waveinter eq 1 then begin
 	kcwi_solve_arcs_inter,spec,cntcoeff,kgeom,ppar,plot_file=plfil
 ;
 ; solve arc spectra automagically

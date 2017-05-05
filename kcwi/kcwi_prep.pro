@@ -34,6 +34,7 @@
 ;	NOCRREJECT	- set to skip cosmic ray rejection
 ;	NONASSUB	- set to skip nod-and-shuffle subtraction
 ;	CLEANCOEFFS	- set to override default clean of wave sol'n coeffs
+;	WAVEINTER	- set to select arc lines interactively
 ;	SAVEINTIMS	- set to save intermediate images (def: NO)
 ;	INCLUDETEST	- set to include test images in reduction (def: NO)
 ;	DOMEPRIORITY	- set to use dome flats over twilight flats (def: NO)
@@ -89,6 +90,7 @@
 ;			to generate file spec for input images
 ;	2014-JUN-03	checks file digits automatically if FDIGITS not set
 ;	2016-APR-04	changes specific to KCWI lab data
+;	2017-MAY-04	Added waveinter keyword
 ;-
 pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	froot=froot, $
@@ -100,6 +102,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	nocrreject=nocrreject, $
 	nonassub=nonassub, $
 	cleancoeffs=cleancoeffs, $
+	waveinter=waveinter, $
 	saveintims=saveintims, $
 	includetest=includetest, $
 	domepriority=domepriority, $
@@ -119,7 +122,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		print,pre+': Info - Usage: '+pre+', RawDir, ReducedDir, CalibDir, DataDir'
 		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, MINGROUPBIAS=N, MINOSCANPIX=N'
 		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
-		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /DOMEPRIORITY'
+		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /WAVEINTER, /DOMEPRIORITY'
 		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /HELP'
 		return
 	endif
@@ -271,6 +274,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		ppar.pkdel = pkdel
 	if keyword_set(cleancoeffs) then $
 		ppar.cleancoeffs = cleancoeffs
+	if keyword_set(waveinter) then $
+		ppar.waveinter = waveinter
 	if keyword_set(nocrreject) then $
 		ppar.crzap = 0 $
 	else	ppar.crzap = 1
@@ -315,6 +320,9 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	if ppar.cleancoeffs eq 1 then $
 		printf,ll,'Wavelength coefficient cleaning performed' $
 	else	printf,ll,'No Wavelength coefficient cleaning performed'
+	if ppar.waveinter eq 1 then $
+		printf,ll,'Select arc lines interactively' $
+	else	printf,ll,'Select arc lines automatically'
 	if keyword_set(saveintims) then $
 		printf,ll,'Saving intermediate images'
 	if keyword_set(includetest) then $

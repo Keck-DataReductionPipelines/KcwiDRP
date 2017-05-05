@@ -89,7 +89,8 @@ tmp = { kcwi_ppar, $
 	verbose:0, $		; extra output?
 	display:0, $		; display diagnostic plots?
 	saveplots:1, $		; save diagnostic plots?
-	cleancoeffs:-1, $	; clean wavelength coeffs of errant bars?
+	cleancoeffs:1, $	; clean wavelength coeffs of errant bars?
+	waveinter:0, $		; fit wavelengths interactively?
 ;
 ; Bias processing
 	mingroupbias:5, $	; minimum number of bias frames per group

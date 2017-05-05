@@ -1,5 +1,5 @@
 ; sth is pixel slope
-function findpeaks,x,y,wid,sth,ath,pkg,verbose=verbose,count=npks
+function findpeaks,x,y,wid,sth,ath,pkg,verbose=verbose,count=npks,avsg=avsg
 ;
 ; smooth derivative
 d = smooth(deriv(y),wid)
@@ -54,6 +54,7 @@ for i=pkg,nx-(pkg+1) do begin
 endfor			; loop over spectrum
 ;
 ; clean 3-sigma outlying Gaussian widths
+avsg = -1.
 if npks gt 0 then begin
 	pks = pks[1:*]
 	sgs = sgs[1:*]
@@ -61,9 +62,10 @@ if npks gt 0 then begin
 	ul = mo[0] + 3.*sqrt(mo[1])
 	ll = mo[0] - 3.*sqrt(mo[1])
 	good = where(sgs le ul and sgs ge ll, npks)
-	if npks gt 0 then $
-		pks = pks[good] $
-	else	pks = [-1.]
+	if npks gt 0 then begin
+		pks = pks[good]
+		avsg = mean(sgs[good])
+	endif else	pks = [-1.]
 endif
 return,pks
 end
