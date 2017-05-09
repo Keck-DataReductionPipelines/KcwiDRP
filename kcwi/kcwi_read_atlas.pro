@@ -51,7 +51,7 @@ if kcwi_verify_geom(kgeom,/init) ne 0 then return
 if kcwi_verify_ppar(ppar,/init) ne 0 then return
 ;
 ; canonical resolution?
-resolution = kgeom.resolution * float(kgeom.ybinsize)
+sigma = kgeom.resolution
 ;
 ; check if file is available
 if not file_test(kgeom.refspec,/read,/regular) then begin
@@ -71,8 +71,7 @@ refspec = atlas>0
 ;
 ; we want to degrade this spectrum to the instrument resolution
 xx = findgen(99)-50.0d
-fwhm = resolution/refdisp
-gaus = gaussian(xx,[1.0,0.0,fwhm/2.355])
+gaus = gaussian(xx,[1.0,0.0,sigma])
 gaus /= total(gaus)
 refspec = convolve(refspec,gaus)
 ;

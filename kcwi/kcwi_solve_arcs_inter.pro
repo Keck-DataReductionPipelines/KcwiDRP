@@ -106,7 +106,7 @@ nasmask = kgeom.nasmask
 cwvl = kgeom.cwave
 ;
 ; canonical resolution in Angstroms?
-resolution = kgeom.resolution * float(kgeom.ybinsize)
+resolution = kgeom.resolution
 ;
 ; log info
 kcwi_print_info,ppar,pre,systime(0)
@@ -119,9 +119,6 @@ degree = kgeom.lastdegree
 ;
 ; which is the reference bar?
 refbar = kgeom.refbar
-;
-; load the reference atlas spectrum.
-kcwi_read_atlas,kgeom,ppar,refspec,refwvl,refdisp
 ;
 ; input spectrum dimensions
 specsz = size(specs,/dim)
@@ -164,6 +161,7 @@ endelse				; no nasmask
 ftype = 'Inter'
 ;
 ; find wavelength range
+; and pascal shift coeffs
 mnwvs = fltarr(120)
 mxwvs = fltarr(120)
 for b=0,119 do begin
@@ -204,17 +202,6 @@ for b = 0, 119 do begin
 	;
 endfor	; b
 ;
-; first trim to the grating bandpass (and a buffer of 100 Ang). 
-qwvs = where(refwvl gt minwav-100. and $
-	     refwvl lt maxwav+100.,nqwvs)
-if nqwvs eq 0 then begin
-	kcwi_print_info,ppar,pre,'No wavelength overlap with atlas spectrum',/error
-	kgeom.status=5
-	return
-endif
-refspec = refspec[qwvs]
-refwvl = refwvl[qwvs]
-;
 ; what region of the ccd are we fitting
 twk_minrow = fix(specsz[0]*0.01)
 twk_maxrow = fix(specsz[0]*0.99)
@@ -228,29 +215,14 @@ subyvals = smooth(reform(specs[twk_minrow:twk_maxrow,b]),3)
 subwvals = poly(subxvals,twkcoeff[*,b])
 ;
 ; find good peaks in object spectrum
-smooth_width = fix(resolution/abs(twkcoeff[1,b]))>4	; in pixels
-peak_width   = fix(smooth_width*2.5)		; for fitting peaks
+;smooth_width = fix(resolution/abs(twkcoeff[1,b]))>4	; in pixels
+smooth_width = 4
+;peak_width   = fix(smooth_width*2.5)		; for fitting peaks
+peak_width = fix(resolution/abs(twkcoeff[1,b]))	; in pixels
+;slope_thresh = 0.7*smooth_width/resolution/100.0	; more severe for object
 slope_thresh = 0.7*smooth_width/2./100.0	; more severe for object
-fthr = 0.15					; start at 15% of max
-ampl_thresh  = max(subyvals) * fthr
-spec_cent = findpeaks(subwvals,subyvals,smooth_width,slope_thresh, $
-		      ampl_thresh,peak_width,count=spec_npks)
-;
-; adjust smoothing width to maximize number of lines
-newlines = spec_npks
-oldlines = newlines
-while abs(newlines - oldlines) lt 10 and smooth_width gt 2 do begin
-	smooth_width -= 1
-	oldlines = newlines
-	spec_cent = findpeaks(subwvals,subyvals,smooth_width, $
-			      slope_thresh,ampl_thresh,count=spec_npks)
-	newlines = spec_npks
-endwhile
-;
-; final smoothing width
-smooth_width += 1
-kcwi_print_info,ppar,pre,'using a smoothing width (px) of', $
-	smooth_width,format='(a,1x,f13.2)'
+kcwi_print_info,ppar,pre,'using a peak_width (px) of', $
+	peak_width,format='(a,1x,f9.5)'
 ;
 ; set to get the most lines
 ampl_thresh = 0.
@@ -260,60 +232,119 @@ avwfwhm = avwsg * 2.355
 kcwi_print_info,ppar,pre,'starting with ',spec_npks,' lines.'
 kcwi_print_info,ppar,pre,'avg line width (A)',avwsg,form='(a,1x,f9.3)'
 kcwi_print_info,ppar,pre,'avg line FWHM (A)',avwfwhm,form='(a,1x,f9.3)'
+;
+; load the reference atlas spectrum.
+kcwi_read_atlas,kgeom,ppar,refspec,refwvl,refdisp
+;
+; first trim to the grating bandpass (and a buffer of 100 Ang). 
+qwvs = where(refwvl gt minwav-100. and $
+	     refwvl lt maxwav+100.,nqwvs)
+if nqwvs eq 0 then begin
+	kcwi_print_info,ppar,pre,'No wavelength overlap with atlas spectrum',/error
+	kgeom.status=5
+	return
+endif
+refspec = refspec[qwvs]
+refwvl = refwvl[qwvs]
 kcwi_print_info,ppar,pre,'atlas disp (A/pix)',refdisp,form='(a,1x,f9.3)'
 ;
 ; set spectra fitting width
-; BL is well sampled, but other
+; BM, BL are well sampled, but other
 ; gratings need a bigger window
-if strpos(grating,'BH') ge 0 then $
+if strpos(grating,'BH') ge 0 or strpos(grating,'BM') ge 0 then $
 	fwid = avwfwhm $
 else	fwid = avwsg
 ;
 ; generate an Atlas line list
 ;
 ; setup wavelength fitting arrays
-refxs = fltarr(1000)-1.
-refws = fltarr(1000)-1.
-refwd = fltarr(1000)-1.
-refof = fltarr(1000)-1.
+refxs = fltarr(spec_npks)-1.
+refws = fltarr(spec_npks)-1.
+refwd = fltarr(spec_npks)-1.
+refof = fltarr(spec_npks)-1.
 fi = 0		; fit line index
 ;
 ; examine lines
-for pp = 0,n_elements(spec_cent)-1 do begin
+for pp = 0,spec_npks-1 do begin
 	is_good = (1 eq 1)
+	!p.multi=[0,2,1]
 	;
 	; fit Atlas peak in wavelength
-	ffs = where(refwvl gt spec_cent[pp]-avwsg and $
-		    refwvl lt spec_cent[pp]+avwsg, nffs)
-	!quiet = 1	; supress curvefit error messages
-	yf = gaussfit(refwvl[ffs],refspec[ffs],a,nterms=3)
-	!quiet = 0	; turn error messages back on
-	pka = (where(refspec[ffs] eq max(refspec[ffs])))[0]
-	woff = abs(refwvl[ffs[pka]] - a[1])/refdisp
-	wrat = a[2]/avwsg
-	if abs(spec_cent[pp]-a[1]) gt 5. or woff gt 1.5 or $
-	   wrat gt 1.0 then $
+	ffs = get_line_window(refwvl,refspec,spec_cent[pp],count=nffs)
+	if nffs gt 5 then begin
+		!quiet = 1	; supress curvefit error messages
+		yf = gaussfit(refwvl[ffs],refspec[ffs],a,nterms=3)
+		!quiet = 0	; turn error messages back on
+		pka = (where(refspec[ffs] eq max(refspec[ffs])))[0]
+		xoff = abs(refwvl[ffs[pka]] - a[1])/refdisp
+		woff = abs(spec_cent[pp]-a[1])
+		wrat = a[2]/fwid
+		if woff gt 5. or xoff gt 1.5 or wrat gt 1.0 then $
+			is_good = (1 eq 0)
+		at_pk_wl = a[1]
+		if is_good and display then begin
+		  wvs = where(refwvl gt spec_cent[pp]-30. and $
+			      refwvl lt spec_cent[pp]+30.)
+		  plot,refwvl[wvs],refspec[wvs],psym=10,title='Atlas', $
+			xtitle='Wave(A)',/xs,ytitle='Flux'
+		  oplot,refwvl[ffs],yf,color=colordex('G')
+		endif
+	endif else begin
 		is_good = (1 eq 0)
-	at_pk_wl = a[1]
-	;print,'Atlas (width, offset): ',wrat,woff,form='(a,2f9.3)'
+		xoff = -1.
+		woff = -1.
+		wrat = 0.
+	endelse
+	print,'Atlas: ',is_good,nffs,xoff,woff,wrat
 	;
 	; fit Spec peak in X pixels
-	ffs = where(subwvals gt spec_cent[pp]-avwsg and $
-		    subwvals lt spec_cent[pp]+avwsg, nffs)
-	!quiet = 1	; supress curvefit error messages
-	yf = gaussfit(subxvals[ffs],subyvals[ffs],a,nterms=3)
-	!quiet = 0	; turn error messages back on
-	if a[2] gt nffs then $
+	ffs = get_line_window(subwvals,subyvals,spec_cent[pp],count=nffs)
+	if nffs gt 5 then begin
+		!quiet = 1	; supress curvefit error messages
+		yf = gaussfit(subxvals[ffs],subyvals[ffs],a,nterms=3)
+		!quiet = 0	; turn error messages back on
+		pka = (where(subyvals[ffs] eq max(subyvals[ffs])))[0]
+		xoff = abs(subxvals[ffs[pka]] - a[1])
+		xrat = a[2]/(avwsg/abs(twkcoeff[1,b]))
+		if xrat gt 1.25 or not finite(a[1]) or a[2] gt nffs then $
+			is_good = (1 eq 0)
+		sp_pk_x = a[1]
+		if is_good and display then begin
+		  wvs = where(subwvals gt spec_cent[pp]-30. and $
+			      subwvals lt spec_cent[pp]+30.)
+		  plot,subxvals[wvs],subyvals[wvs],psym=10,title='Spec', $
+			xtitle='Wave(A)',/xs,ytitle='Flux'
+		  oplot,subxvals[ffs],yf,color=colordex('G')
+		endif
+	endif else begin
 		is_good = (1 eq 0)
-	sp_pk_x = a[1]
+		xoff = -1.
+		xrat = 0.
+	endelse
+	print,'Spec : ',is_good,nffs,xoff,xrat
+	print,' '
 	;
 	; are we good?
 	if is_good then begin
-		refxs[fi] = sp_pk_x
-		refws[fi] = at_pk_wl
-		refwd[fi] = wrat
-		refof[fi] = woff
-		fi += 1
+	   if display then begin
+		q = ''
+		read,'<cr> - skip, f - fit: ',q
+		if strupcase(strtrim(q,2)) eq 'F' then begin
+			refxs[fi] = sp_pk_x
+			refws[fi] = at_pk_wl
+			refwd[fi] = wrat
+			refof[fi] = woff
+			fi += 1
+		endif else if strupcase(strtrim(q,2)) eq 'Q' then begin
+			display = (1 eq 0)
+		endif
+	    endif else begin
+			refxs[fi] = sp_pk_x
+			refws[fi] = at_pk_wl
+			refwd[fi] = wrat
+			refof[fi] = woff
+			fi += 1
+	    endelse
 	endif	; are we good?
 endfor	; examine lines
 ;
@@ -424,8 +455,8 @@ for b = 0,119 do begin
 		for pp = 0,n_elements(refws)-1 do begin
 			;
 			; fit Spec peak
-			ffs = where(subwvals gt refws[pp]-fwid and $
-				    subwvals lt refws[pp]+fwid, nffs)
+			ffs = get_line_window(subwvals,subyvals,refws[pp], $
+						count=nffs)
 			if nffs gt 5 then begin
 				!quiet = 1	; supress curvefit error msgs
 				yf = gaussfit(subxvals[ffs],subyvals[ffs],a, $
@@ -591,9 +622,11 @@ kgeom.avewavesig = mom[0]
 kgeom.stdevwavesig = sqrt(mom[1])
 ;
 ; log results
+kcwi_print_info,ppar,pre,'ave/stddev bar wavelength sigma (Ang)', $
+	mom[0],sqrt(mom[1]),format='(a,f7.3,2x,f7.3)'
+kcwi_print_info,ppar,pre,'min/max bar wavelength sigma (Ang)', $
+	minmax(sigmas), format='(a,f7.3,2x,f7.3)'
 outliers = where(abs(sigmas-mom[0]) gt 3.*sqrt(mom[1]), noutliers)
-kcwi_print_info,ppar,pre,'min/max bar wavelength sigma (Ang)',minmax(sigmas), $
-	format='(a,f7.3,2x,f7.3)'
 if noutliers gt 0 then $
 	kcwi_print_info,ppar,pre,'> 3sig outlier bars present, may want to tweak ppar.pkdel: Imgnum, Bars', $
 		imgnum,outliers,format='(a,i7,2x,'+strn(noutliers)+'i5)',/warning
