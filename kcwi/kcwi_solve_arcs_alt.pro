@@ -3,7 +3,7 @@
 ;	reserved.
 ;+
 ; NAME:
-;	KCWI_SOLVE_ARCS_INTER
+;	KCWI_SOLVE_ARCS_ALT
 ;
 ; PURPOSE:
 ;	Solve the wavelength solutions for each bar of the arc spectrum
@@ -12,7 +12,7 @@
 ;	Data reduction for the Keck Cosmic Web Imager (KCWI).
 ;
 ; CALLING SEQUENCE:
-;	KCWI_SOLVE_ARCS_INTER, Specs, Cntcoeff, Kgeom, Ppar
+;	KCWI_SOLVE_ARCS_ALT, Specs, Cntcoeff, Kgeom, Ppar
 ;
 ; INPUTS:
 ;	Specs	- a array of arc spectra produced by KCWI_EXTRACT_ARCS
@@ -21,10 +21,6 @@
 ;	Ppar	- KCWI_PPAR pipeline parameter struct
 ;
 ; INPUT KEYWORDS:
-;	TWEAK	- set to iteratively adjust wavelength solution to improve 
-;			fit in outer thirds of wavelength range: for 
-;			nod-and-shuffle images only one iteration is performed
-;			and only to assess rms of fit (no actual tweak is done).
 ;	PLOT_FILE	- if set to a string, will be used to produce
 ;				postscript output of diagnostic plots
 ;
@@ -41,24 +37,12 @@
 ;
 ; MODIFICATION HISTORY:
 ;	Written by:	Matt Matuszewski
-;	2013-DEC-10	Initial Revision
-;	2013-DEC-12	Changes to make the cross-correlation more robust
-;	2014-MAR-19	Use KCWI_CLEAN_COEFFS to fix errant bars
-;	2014-MAR-20	Adjusts peak match thresh if no peaks matched, regardless of iteration number
-;	2014-MAR-28	Use central ccor peak for initial wave soln.
-;	2014-MAR-28	Check for scattered light in initial offset calc.
-;	2014-APR-07	Changed to a function returning status of fit
-;	2014-APR-07	Uses preliminary solution to determine wave range instead of filter
-;	2014-APR-07	Uses parabola fit to CC peak when no zero derivs are found
-;	2014-SEP-11	Converted function to pro with status in kgeom.status
-;	2014-SEP-16	Single iteration mode for assessing rms of fits (N&S)
-;	2014-NOV-06	Put stats (rms) after all tweaking done
-;	2015-APR-22	Rework of peak finding
+;	2017-MAY-10	Initial Revision
 ;-
 ;
-pro kcwi_solve_arcs_inter, specs, cntcoeff, kgeom, ppar, plot_file=plot_file
+pro kcwi_solve_arcs_alt, specs, cntcoeff, kgeom, ppar, plot_file=plot_file
 
-pre = 'KCWI_SOLVE_ARCS_INTER'
+pre = 'KCWI_SOLVE_ARCS_ALT'
 q=''
 ;
 ; check status of central fit
@@ -685,4 +669,4 @@ endif
 !p.multi=0
 ;
 return
-end		; kcwi_solve_arcs_inter
+end		; kcwi_solve_arcs_alt

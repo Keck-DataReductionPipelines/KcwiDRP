@@ -81,9 +81,9 @@ plfil = ppar.reddir+'wave_cb' + string(kgeom.cbarsimgnum,p_fmt) + $
 ; do initial fit of central third of ccd
 kcwi_fit_center,spec,kgeom,ppar,cntcoeff
 ;
-; solve arc spectra interactively
-if ppar.waveinter eq 1 then begin
-	kcwi_solve_arcs_inter,spec,cntcoeff,kgeom,ppar,plot_file=plfil
+; solve arc spectra with alternate method
+if ppar.wavealter eq 1 then begin
+	kcwi_solve_arcs_alt,spec,cntcoeff,kgeom,ppar,plot_file=plfil
 ;
 ; solve arc spectra automagically
 endif else begin
