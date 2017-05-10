@@ -126,7 +126,8 @@ tmp = { kcwi_geom, $
 	dwout:-9., $		; output dispersion (Ang/pix)
 	wavran:-9., $		; approximate wavelength range (Ang)
 	halfwidth:3, $		; instrumental half-width of resolution (Ang)
-	resolution:1., $	; gaussian sigma of instrumental resol. (Ang)
+	resolution:1., $	; Gaussian sigma of instrumental resol. (Ang)
+	atsig:1., $		; Gaussian sigma for convolving with atlas (Ang)
 	pxwindow:0, $		; window size for finding lines in pixels
 	waveall0:-9., $		; low wavelength that includes all data
 	waveall1:-9., $		; high wavelength that includes all data

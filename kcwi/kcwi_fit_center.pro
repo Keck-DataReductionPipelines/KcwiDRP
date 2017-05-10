@@ -87,9 +87,6 @@ nasmask = kgeom.nasmask
 ; central wavelength?
 cwvl = kgeom.cwave
 ;
-; canonical resolution?
-resolution = kgeom.resolution
-;
 ; any anomolous tilt in the grating?
 gratanom = kgeom.gratanom
 ;

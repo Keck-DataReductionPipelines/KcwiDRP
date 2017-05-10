@@ -51,7 +51,7 @@ if kcwi_verify_geom(kgeom,/init) ne 0 then return
 if kcwi_verify_ppar(ppar,/init) ne 0 then return
 ;
 ; canonical resolution?
-sigma = kgeom.resolution
+sigma = kgeom.atsig
 ;
 ; check if file is available
 if not file_test(kgeom.refspec,/read,/regular) then begin

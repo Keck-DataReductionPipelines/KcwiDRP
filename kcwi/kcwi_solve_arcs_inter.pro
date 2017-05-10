@@ -79,9 +79,6 @@ if ppar.display ge 1 then begin
 	si=1.5
 endif
 ;
-; peak matching
-pkdel = ppar.pkdel
-;
 ; which image number
 imgnum = kgeom.arcimgnum
 ;
@@ -106,7 +103,7 @@ nasmask = kgeom.nasmask
 cwvl = kgeom.cwave
 ;
 ; canonical resolution in Angstroms?
-resolution = kgeom.resolution
+resolution = kgeom.atsig
 ;
 ; log info
 kcwi_print_info,ppar,pre,systime(0)
@@ -154,9 +151,6 @@ endif else begin
 	lastrow = 50
 	minrow = lastrow
 	maxrow = specsz[0]-lastrow-1
-	if strpos(grating,'BL') ge 0 then begin
-		pkdel = pkdel * 2.0
-	endif
 endelse				; no nasmask
 ftype = 'Inter'
 ;
@@ -201,28 +195,24 @@ for b = 0, 119 do begin
 	specs[*,b] -= res[0]+res[1]*xvs+res[2]*xvs^2+res[3]*xvs^3
 	;
 endfor	; b
-;
-; what region of the ccd are we fitting
-twk_minrow = fix(specsz[0]*0.01)
-twk_maxrow = fix(specsz[0]*0.99)
 ; 
 ; use reference bar
 b = refbar
 ;
 ; fill out the arrays we are working with.
-subxvals = xvals[twk_minrow:twk_maxrow]
-subyvals = smooth(reform(specs[twk_minrow:twk_maxrow,b]),3)
+subxvals = xvals[minrow:maxrow]
+subyvals = smooth(reform(specs[minrow:maxrow,b]),3)
 subwvals = poly(subxvals,twkcoeff[*,b])
 ;
 ; find good peaks in object spectrum
 ;smooth_width = fix(resolution/abs(twkcoeff[1,b]))>4	; in pixels
 smooth_width = 4
 ;peak_width   = fix(smooth_width*2.5)		; for fitting peaks
-peak_width = fix(resolution/abs(twkcoeff[1,b]))	; in pixels
+peak_width = fix(resolution/abs(twkcoeff[1,b]))>4	; in pixels
 ;slope_thresh = 0.7*smooth_width/resolution/100.0	; more severe for object
 slope_thresh = 0.7*smooth_width/2./100.0	; more severe for object
 kcwi_print_info,ppar,pre,'using a peak_width (px) of', $
-	peak_width,format='(a,1x,f9.5)'
+	peak_width,format='(a,1x,i5)'
 ;
 ; set to get the most lines
 ampl_thresh = 0.
@@ -279,7 +269,7 @@ for pp = 0,spec_npks-1 do begin
 		xoff = abs(refwvl[ffs[pka]] - a[1])/refdisp
 		woff = abs(spec_cent[pp]-a[1])
 		wrat = a[2]/fwid
-		if woff gt 5. or xoff gt 1.5 or wrat gt 1.0 then $
+		if woff gt 5. or xoff gt 1.5 or wrat gt 1.1 then $
 			is_good = (1 eq 0)
 		at_pk_wl = a[1]
 		if is_good and display then begin
@@ -447,8 +437,8 @@ for b = 0,119 do begin
 	if b ne refbar then begin
 		;
 		; fill out the arrays we are working with.
-		subxvals = xvals[twk_minrow:twk_maxrow]
-		subyvals = smooth(reform(specs[twk_minrow:twk_maxrow,b]),3)
+		subxvals = xvals[minrow:maxrow]
+		subyvals = smooth(reform(specs[minrow:maxrow,b]),3)
 		subwvals = poly(subxvals,twkcoeff[*,b])
 		;
 		; loop over reference lines
@@ -628,8 +618,9 @@ kcwi_print_info,ppar,pre,'min/max bar wavelength sigma (Ang)', $
 	minmax(sigmas), format='(a,f7.3,2x,f7.3)'
 outliers = where(abs(sigmas-mom[0]) gt 3.*sqrt(mom[1]), noutliers)
 if noutliers gt 0 then $
-	kcwi_print_info,ppar,pre,'> 3sig outlier bars present, may want to tweak ppar.pkdel: Imgnum, Bars', $
-		imgnum,outliers,format='(a,i7,2x,'+strn(noutliers)+'i5)',/warning
+	kcwi_print_info,ppar,pre,'> 3sig outlier bars present: Imgnum, Bars', $
+		imgnum,outliers,format='(a,i7,2x,'+strn(noutliers)+'i5)', $
+		/warning
 ;
 ; central dispersion
 disp = dblarr(120)

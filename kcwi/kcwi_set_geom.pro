@@ -193,7 +193,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	;
 	; grating parameters BH1
 	if strtrim(kcfg.gratid,2) eq 'BH1' then begin
-		kgeom.resolution = 0.5 / 2.^float(kgeom.ifunum-1)
+		kgeom.atsig = 2.5
 		kgeom.ccwn = 360./kgeom.ybinsize
 		kgeom.rho = 3.751d
 		kgeom.adjang = 180.d
@@ -206,7 +206,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	;
 	; grating parameters BH2
 	if strtrim(kcfg.gratid,2) eq 'BH2' then begin
-		kgeom.resolution = 0.5 / 2.^float(kgeom.ifunum-1)
+		kgeom.atsig = 2.5
 		kgeom.ccwn = 100.		;360./kgeom.ybinsize
 		kgeom.rho = 3.255d
 		kgeom.adjang = 180.d
@@ -219,7 +219,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	;
 	; grating parameters BH3
 	if strtrim(kcfg.gratid,2) eq 'BH3' then begin
-		kgeom.resolution = 0.5 / 2.^float(kgeom.ifunum-1)
+		kgeom.atsig = 2.5
 		kgeom.ccwn = 100.		;360./kgeom.ybinsize
 		kgeom.rho = 2.80d
 		kgeom.adjang = 180.d
@@ -232,9 +232,9 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	;
 	; grating parameters BM
 	if strtrim(kcfg.gratid,2) eq 'BM' then begin
-		kgeom.resolution = 4.0
+		kgeom.atsig = 4.0
 		if kgeom.ifunum ge 2 then $
-			kgeom.resolution = 2.0
+			kgeom.atsig = 2.0
 		kgeom.ccwn = 75.		;260./kgeom.ybinsize
 		kgeom.rho = 1.900d
 		kgeom.adjang = 0.d
@@ -247,11 +247,11 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	;
 	; grating parameters BL
 	if strtrim(kcfg.gratid,2) eq 'BL' then begin
-		kgeom.resolution = 14.0
+		kgeom.atsig = 14.0
 		if kgeom.ifunum eq 2 then $
-			kgeom.resolution = 10.0
+			kgeom.atsig = 10.0
 		if kgeom.ifunum eq 3 then $
-			kgeom.resolution = 7.0
+			kgeom.atsig = 7.0
 		kgeom.ccwn = 75.		;320./kgeom.ybinsize
 		kgeom.rho = 0.870d
 		kgeom.adjang = 0.d
