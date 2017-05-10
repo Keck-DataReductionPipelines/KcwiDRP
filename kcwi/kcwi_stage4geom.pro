@@ -368,6 +368,12 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 							ofil = kcwi_get_imname(ppar,imgnum[i],'_icube',/nodir)
 							kcwi_write_image,cube,chdr,ofil,ppar
 							;
+							; check for arc and output diagnostic 2d image
+							if strcmp(kcfg.imgtype,'arc') eq 1 then begin
+								rcube = kcwi_get_imname(ppar,imgnum[i],'_icube',/reduced)
+								kcwi_flatten_cube,rcube
+							endif
+							;
 							; variance image
 							vfil = repstr(obfil,'_int','_var')
 							if file_test(vfil,/read) then begin

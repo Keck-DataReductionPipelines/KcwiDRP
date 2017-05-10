@@ -64,8 +64,7 @@ pro kcwi_flatten_cube,cfile
 				oim[i*sz[1]:(i+1)*sz[1]-1,*] = cub[i,*,*]
 			;
 			; get output name
-			fdecomp,cfile,disk,dir,root,ext
-			ofil = root+'_2d.fits'
+			ofil = repstr(cfile,'.fits','_2d.fits')
 			;
 			; get wavelength values
 			w0 = sxpar(hdr,'CRVAL3')

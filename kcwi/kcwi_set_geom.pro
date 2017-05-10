@@ -194,6 +194,8 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	; grating parameters BH1
 	if strtrim(kcfg.gratid,2) eq 'BH1' then begin
 		kgeom.atsig = 2.5
+		if kgeom.ifunum gt 2 then $
+			kgeom.atsig = 1.5
 		kgeom.ccwn = 360./kgeom.ybinsize
 		kgeom.rho = 3.751d
 		kgeom.adjang = 180.d
@@ -207,6 +209,8 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	; grating parameters BH2
 	if strtrim(kcfg.gratid,2) eq 'BH2' then begin
 		kgeom.atsig = 2.5
+		if kgeom.ifunum gt 2 then $
+			kgeom.atsig = 1.5
 		kgeom.ccwn = 100.		;360./kgeom.ybinsize
 		kgeom.rho = 3.255d
 		kgeom.adjang = 180.d
@@ -220,6 +224,8 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	; grating parameters BH3
 	if strtrim(kcfg.gratid,2) eq 'BH3' then begin
 		kgeom.atsig = 2.5
+		if kgeom.ifunum gt 2 then $
+			kgeom.atsig = 1.5
 		kgeom.ccwn = 100.		;360./kgeom.ybinsize
 		kgeom.rho = 2.80d
 		kgeom.adjang = 180.d
