@@ -136,7 +136,7 @@ endif else begin
 	minrow = lastrow
 	maxrow = specsz[0]-lastrow-1
 endelse				; no nasmask
-ftype = 'Inter'
+ftype = 'Alt'
 ;
 ; find wavelength range
 ; and pascal shift coeffs
