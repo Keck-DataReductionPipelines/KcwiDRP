@@ -136,9 +136,9 @@ if keyword_set(central) then begin
 	pks = peaks(xcor,3.,count=npk)
 	;
 	; what if we don't find any peaks?
-	if npk lt 0 then begin
+	if npk le 0 then begin
 		;
-		; this isn't good
+		; record the problem
 		status = 1
 		;
 		; just take peak cross-correlation value
@@ -154,7 +154,7 @@ if keyword_set(central) then begin
 		; do we have any central peaks?
 		if ncpks le 0 then begin
 			;
-			; this isn't good
+			; record the problem
 			status = 1
 			;
 			; just take peak cross-correlation value

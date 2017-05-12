@@ -396,8 +396,14 @@ for b = 0,119 do begin
 	else	pkd = pk	; use parabola fit when nzeros eq 0
 	;
 	; check status of cross-correlations
-	if total(dspstat) gt (nn+1)/2 then $
-		barstat[b] = 1
+	if total(dspstat) gt 0 then begin
+		kcwi_print_info,ppar,pre, $
+			string(fix(total(dspstat)),form='(i3)') + ' out of ' + $
+			string(nn,form='(i3)') + ' Xcors had issues', $
+			/warning
+		if total(dspstat) ge nn then $
+			barstat[b] = 1
+	endif
 	;
 	barshift[b] = interpol(shifts,maxidx,pkd,/spline) * refdisp
 	bardispp = interpol(disps,maxidx,pk,/spline)
