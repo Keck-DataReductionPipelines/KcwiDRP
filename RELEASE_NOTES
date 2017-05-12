@@ -1,5 +1,17 @@
 # Copyright (c) 2013-2017, California Institute of Technology, all rights reserved
 
+2017-May-12: v0.4.1 - Seventeenth beta release
+
+- New non-iterative wavelength solution that works well for all gratings and
+	slicers, old version available through keyword to kcwi_prep.
+
+- Now uses asymmetric slice fit with higher order in y direction.
+
+- Now outputs flattend cube in *_2d.fits for each arc as diagnostic.
+
+- Writes out extracted arc spectra in *_arcs.fits file.
+
+
 2017-Apr-21: v0.3.2 - Sixteenth beta release
 
 - Many improvements to direct mode pipeline including more robust tracing and
