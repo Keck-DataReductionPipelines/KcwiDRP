@@ -3,7 +3,7 @@
 ;	reserved.
 ;+
 ; NAME:
-;	KCWI_SOLVE_ARCS_ALT
+;	KCWI_SOLVE_ARCS
 ;
 ; PURPOSE:
 ;	Solve the wavelength solutions for each bar of the arc spectrum
@@ -12,7 +12,7 @@
 ;	Data reduction for the Keck Cosmic Web Imager (KCWI).
 ;
 ; CALLING SEQUENCE:
-;	KCWI_SOLVE_ARCS_ALT, Specs, Cntcoeff, Kgeom, Ppar
+;	KCWI_SOLVE_ARCS, Specs, Cntcoeff, Kgeom, Ppar
 ;
 ; INPUTS:
 ;	Specs	- a array of arc spectra produced by KCWI_EXTRACT_ARCS
@@ -40,9 +40,9 @@
 ;	2017-MAY-10	Initial Revision
 ;-
 ;
-pro kcwi_solve_arcs_alt, specs, cntcoeff, kgeom, ppar, plot_file=plot_file
+pro kcwi_solve_arcs, specs, cntcoeff, kgeom, ppar, plot_file=plot_file
 
-pre = 'KCWI_SOLVE_ARCS_ALT'
+pre = 'KCWI_SOLVE_ARCS'
 q=''
 ;
 ; check status of central fit
@@ -669,4 +669,4 @@ endif
 !p.multi=0
 ;
 return
-end		; kcwi_solve_arcs_alt
+end		; kcwi_solve_arcs
