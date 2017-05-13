@@ -369,7 +369,7 @@ pro kcwi_stage4geom,ppfname,linkfname,help=help,select=select, $
 							kcwi_write_image,cube,chdr,ofil,ppar
 							;
 							; check for arc and output diagnostic 2d image
-							if strcmp(kcfg.imgtype,'arc') eq 1 then begin
+							if strpos(kcfg.imgtype,'arc') ge 0 then begin
 								rcube = kcwi_get_imname(ppar,imgnum[i],'_icube',/reduced)
 								kcwi_flatten_cube,rcube
 							endif
