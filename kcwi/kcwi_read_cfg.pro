@@ -166,6 +166,16 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 		endif
 	endif
 	;
+	; check illumination for cals
+	if cfg.obstype eq 'cal' then begin
+		if cfg.lmp0stat and cfg.lmp0shst then $
+			cfg.lampname = cfg.lmp0nam
+		if cfg.lmp1stat and cfg.lmp1shst then $
+			cfg.lampname = cfg.lmp1nam
+		if cfg.lmp3stat then $
+			cfg.lampname = cfg.lmp3nam
+	endif
+	;
 	; verify imgtype, obstype
 	if strlen(strtrim(cfg.imgtype,2)) le 0 then cfg.imgtype='test'
 	if strlen(strtrim(cfg.obstype,2)) le 0 then cfg.obstype='test'

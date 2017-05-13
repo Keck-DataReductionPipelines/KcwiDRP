@@ -169,6 +169,7 @@ tmp = { kcwi_cfg, $
 	focpos:0l, $		; Camera focus encoder steps
 	focus:0., $		; Camera focus (mm)
 	nasmask:0, $		; is the Nod & Shuffle mask deployed?
+	lampname:'', $		; illumination source
 ;
 ; Master group properties
 	groupnum:-1l, $		; group image number
