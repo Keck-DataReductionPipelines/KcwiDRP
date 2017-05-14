@@ -224,7 +224,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 			; make sure it's a science image
 			test = sxpar(hdr,'NAMPSXY',count=nk)
 			if nk ge 1 then begin
-				froot = sxpar(hdr,'OUTFILE',count=nfr)
+				froot = strtrim(sxpar(hdr,'OUTFILE',count=nfr),2)
 				if nfr ge 1 then $
 					ppar.froot = froot
 			endif
