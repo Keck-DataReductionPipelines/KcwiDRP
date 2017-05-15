@@ -81,13 +81,13 @@ function kcwi_verify_dirs,ppar,rawdir,reddir,cdir,ddir, $
 	;
 	; check if reddir accessible
 	if keyword_set(readonly) then begin
-		if not file_test(reddir,/directory,/executable) then begin
+		if not file_test(reddir,/directory,/executable,/read) then begin
 			kcwi_print_info,ppar,pre,  $
 				'reduced image dir not readable',/error
 			return,2
 		endif
 	endif else begin
-		if not file_test(reddir,/directory,/executable,/write) then begin
+		if not file_test(reddir,/directory,/executable,/read,/write) then begin
 			kcwi_print_info,ppar,pre, $
 				'reduced image dir not read/writable',/error
 			return,2
@@ -95,10 +95,19 @@ function kcwi_verify_dirs,ppar,rawdir,reddir,cdir,ddir, $
 	endelse
 	;
 	; check if cdir accessible
-	if not file_test(cdir,/directory,/executable,/read,/write) then begin
-		kcwi_print_info,ppar,pre, 'calib dir not accessible',/error
-		return,3
-	endif
+	if keyword_set(readonly) then begin
+		if not file_test(cdir,/directory,/executable,/read) then begin
+			kcwi_print_info,ppar,pre, $
+				'calib dir not readable',/error
+			return,3
+		endif
+	endif else begin
+		if not file_test(cdir,/directory,/executable,/read,/write) then begin
+			kcwi_print_info,ppar,pre, $
+				'calib dir not read/writable',/error
+			return,3
+		endif
+	endelse
 	;
 	; check if ddir exists and is readable
 	if not file_test(ddir,/directory,/executable,/read) then begin
