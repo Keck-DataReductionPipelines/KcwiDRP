@@ -33,6 +33,7 @@
 ;
 ; KEYWORDS:
 ;	NOCREATE - set to prevent creation of output directory
+;	READONLY - set to skip test for writablity
 ;
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)
@@ -40,7 +41,8 @@
 ;	2014-APR-03	Added calib dir check
 ;	2015-FEB-20	Renamed in/out dirs to raw/red
 ;-
-function kcwi_verify_dirs,ppar,rawdir,reddir,cdir,ddir,nocreate=nocreate
+function kcwi_verify_dirs,ppar,rawdir,reddir,cdir,ddir, $
+	nocreate=nocreate, readonly=readonly
 	;
 	; setup
 	pre = 'KCWI_VERIFY_DIRS'
@@ -78,10 +80,19 @@ function kcwi_verify_dirs,ppar,rawdir,reddir,cdir,ddir,nocreate=nocreate
 	endif
 	;
 	; check if reddir accessible
-	if not file_test(reddir,/directory,/executable,/write) then begin
-		kcwi_print_info,ppar,pre, 'reduced image dir not accessible',/error
-		return,2
-	endif
+	if keyword_set(readonly) then begin
+		if not file_test(reddir,/directory,/executable) then begin
+			kcwi_print_info,ppar,pre,  $
+				'reduced image dir not readable',/error
+			return,2
+		endif
+	endif else begin
+		if not file_test(reddir,/directory,/executable,/write) then begin
+			kcwi_print_info,ppar,pre, $
+				'reduced image dir not read/writable',/error
+			return,2
+		endif
+	endelse
 	;
 	; check if cdir accessible
 	if not file_test(cdir,/directory,/executable,/read,/write) then begin

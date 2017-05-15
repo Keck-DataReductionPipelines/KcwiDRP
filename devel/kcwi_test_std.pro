@@ -90,7 +90,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	endif
 	;
 	; directories
-	if kcwi_verify_dirs(ppar,rawdir,reddir,cdir,ddir) ne 0 then begin
+	if kcwi_verify_dirs(ppar,rawdir,reddir,cdir,ddir,/read) ne 0 then begin
 		kcwi_print_info,ppar,pre,'Directory error, returning',/error
 		return
 	endif
