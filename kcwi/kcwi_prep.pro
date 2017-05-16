@@ -584,7 +584,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		; ASSOCIATE WITH MASTER BIAS IMAGE
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		if ppar.nbgrps gt 0 then begin
-			tlist = ['xbinsize','ybinsize','ampmode','ccdmode']
+			tlist = ['xbinsize','ybinsize','ampmode', $
+				 'ccdmode','gainmul']
 			;
 			; we don't really need these to be bias-subtracted
 			sile = (strmatch(kcfg[p].imgtype,'cbars') or $

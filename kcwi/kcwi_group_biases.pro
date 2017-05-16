@@ -80,10 +80,11 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 		; loop over biases and gather groups
 		for i=1,nbiases-1 do begin
 			;
-			; check binning, ccdmode, ampmode, and sequence
+			; check binning, ccdmode, ampmode, gainmul, and sequence
 			if kcfg[biases[i]].xbinsize ne gcfg.xbinsize or $
 			   kcfg[biases[i]].ybinsize ne gcfg.ybinsize or $
 			   kcfg[biases[i]].ccdmode ne gcfg.ccdmode or $
+			   kcfg[biases[i]].gainmul ne gcfg.gainmul or $
 			   (kcfg[biases[i]].imgnum - last) ne 1 or $
 			   strcmp(kcfg[biases[i]].ampmode,gcfg.ampmode) ne 1 then begin
 				;
@@ -171,6 +172,7 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 				bcfg[g].ampmode		= kcfg[b].ampmode
 				bcfg[g].nvidinp		= kcfg[b].nvidinp
 				bcfg[g].ccdmode		= kcfg[b].ccdmode
+				bcfg[g].gainmul		= kcfg[b].gainmul
 				;
 				; use first image number in group
 				gi = kcfg[b].imgnum

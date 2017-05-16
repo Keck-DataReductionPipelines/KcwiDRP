@@ -119,6 +119,7 @@ tmp = { kcwi_cfg, $
 	gain2:0.145, $		; gain for amp 2 in electrons/DN
 	gain3:0.145, $		; gain for amp 3 in electrons/DN
 	gain4:0.145, $		; gain for amp 4 in electrons/DN
+	gainmul:10, $		; gain multiplier (1, 2, 5, 10)
 	nampsxy:'1 1', $	; number of amplifiers in x and y
 	ampmode:'LL', $		; amplifier mode: LL,LR,UL,UR,DUP,DLO,QUAD
 	nvidinp:0, $		; number of amps (video inputs)
