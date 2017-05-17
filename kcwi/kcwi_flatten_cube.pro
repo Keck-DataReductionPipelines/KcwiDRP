@@ -119,7 +119,7 @@ pro kcwi_flatten_cube,cfile
 			sxaddpar,hdr,'CDELT2',dw,' Wavelength Angstroms per pixel'
 			;
 			; write it out
-			mwrfits,oim,ofil,hdr,/create
+			mwrfits,oim,ofil,hdr,/create,/iscale
 		endif else begin
 			print,pre+': not a 3-D image cube - ', cfile
 		endelse

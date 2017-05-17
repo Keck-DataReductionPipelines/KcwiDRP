@@ -146,7 +146,7 @@ sxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file'
 ; write out arcs
 outfile = kcwi_get_imname(ppar,kgeom.arcimgnum,"_arcs",/reduced)
 kcwi_print_info,ppar,pre,'Writing',outfile,/info,format='(a,1x,a)'
-mwrfits,spec,outfile,hdr,/create
+mwrfits,spec,outfile,hdr,/create,/iscale
 ;
 ; setup for display (if requested)
 if do_plots ge 2 then begin

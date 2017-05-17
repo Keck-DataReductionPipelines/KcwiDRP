@@ -141,6 +141,6 @@ endif
 
   ; write the file
   kcwi_print_info,ppar,pre,"Writing",outfile,/info,format='(a,1x,a)'
-  mwrfits, reverse_image, outfile, hdr,/create
+  mwrfits, reverse_image, outfile, hdr,/create,/iscale
   kcwi_print_info,ppar,pre,"Generated reverse map.",/info
 end
