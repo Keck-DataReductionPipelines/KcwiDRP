@@ -1,5 +1,20 @@
 # Copyright (c) 2013-2017, California Institute of Technology, all rights reserved
 
+2017-May-19: v0.4.2 - Eighteenth beta release
+
+- 'NASMASK' state no longer used to match configurations.
+
+- match biases on 'gainmul' keyword.
+
+- in data/stds added KECK formatted starlist kderp_stds_starlist.txt.
+
+- made flattened cube of all arc images a standard output diagnostic.
+
+- made ThAr the reference for geometry on all configs until FeAr lamp replaced.
+
+- show illumination type in image summary.
+
+
 2017-May-12: v0.4.1 - Seventeenth beta release
 
 - New non-iterative wavelength solution that works well for all gratings and

@@ -9,6 +9,7 @@ propogate missing geom cal files foward into prof and rr links
 set header params for trough limits during profile correction
 think about the impact of flexure correction on the slicex0 and slicex1 params
 add differential atmospheric refraction correction
+#19-MAY-2017 DONE mechanism for using full-frame cals on N&S frames.
 #20-APR-2017 DONE implement bad pixel masking
 #19-APR-2017 DONE make overscan subtraction optional (only when no bias)
 #19-APR-2017 DONE trim output cube

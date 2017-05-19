@@ -532,7 +532,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	; set up configuration matching: here is our list of 
 	; default tags to match in the KCWI_CFG struct
 	mtags = ['XBINSIZE','YBINSIZE','GRATID','GRANGLE','FILTNUM', $
-		 'CAMANG','NASMASK','IFUNUM']
+		 'CAMANG','IFUNUM']
 	; tags for direct images
 	dtags = ['XBINSIZE','YBINSIZE','GRATID','FILTNUM','CAMANG','IFUNUM']
 	;
