@@ -399,8 +399,7 @@ for b = 0,119 do begin
 	if total(dspstat) gt 0 then begin
 		kcwi_print_info,ppar,pre, $
 			string(fix(total(dspstat)),form='(i3)') + ' out of ' + $
-			string(nn,form='(i3)') + ' Xcors had issues', $
-			/warning
+			string(nn,form='(i3)') + ' Xcors had issues'
 		if total(dspstat) ge nn then $
 			barstat[b] = 1
 	endif

@@ -146,13 +146,10 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	kgeom.trimy1 = kgeom.ny
 	kgeom.ypad = 1400 / kgeom.ybinsize
 	kgeom.nasmask = kcfg.nasmask
-	if kcfg.nasmask eq 1 then begin
-		kgeom.goody0 = kcfg.nsobjr0 + 18
-		kgeom.goody1 = kcfg.nsobjr1 - 18
-		kgeom.trimy0 = kcfg.nsobjr0 - 18
-		kgeom.trimy1 = kcfg.nsobjr1 + 18
-		kgeom.ypad = 0
-	endif
+	kgeom.goodmy0 = kcfg.nsobjr0
+	kgeom.goodmy1 = kcfg.nsobjr1 - 18 / kgeom.ybinsize
+	kgeom.trimmy0 = kcfg.nsobjr0
+	kgeom.trimmy1 = kcfg.nsobjr1 - 18 / kgeom.ybinsize
 	;
 	; get noise model
 	rdnoise = 0.

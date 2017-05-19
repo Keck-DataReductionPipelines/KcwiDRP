@@ -84,10 +84,17 @@ kcwi_print_info,ppar,pre,'Slice dimensions (x,y)',slsize+1l,lastpix+1l, $
 ;
 ; image number
 imgnum = sxpar(hdr,'FRAMENO')
+;
+; object name
 object = sxpar(hdr,'TARGNAME',count=ntarg)
 if ntarg le 0 then $
 	object = sxpar(hdr,'OBJECT')
+;
+; image type
 imgtyp = sxpar(hdr,'CALTYPE')
+;
+; mask
+nasmask = (strpos(sxpar(hdr,'BNASNAM'),'Mask') ge 0)
 ;
 ; log
 kcwi_print_info,ppar,pre,'Slicing and dicing image '+strn(imgnum)+': '+object+'...'
@@ -148,10 +155,17 @@ sxaddpar,chdr,'BARSEP',kgeom.refdelx,' separation of bars (binned pix)'
 sxaddpar,chdr,'BAR0',kgeom.x0out,' first bar pixel position'
 ;
 ; wavelength ranges
-sxaddpar,chdr, 'WAVALL0', kgeom.waveall0, ' Low inclusive wavelength'
-sxaddpar,chdr, 'WAVALL1', kgeom.waveall1, ' High inclusive wavelength'
-sxaddpar,chdr, 'WAVGOOD0',kgeom.wavegood0, ' Low good wavelength'
-sxaddpar,chdr, 'WAVGOOD1',kgeom.wavegood1, ' High good wavelength'
+if nasmask then begin
+	sxaddpar,chdr, 'WAVALL0', kgeom.waveallm0, ' Low inclusive wavelength'
+	sxaddpar,chdr, 'WAVALL1', kgeom.waveallm1, ' High inclusive wavelength'
+	sxaddpar,chdr, 'WAVGOOD0',kgeom.wavegoodm0, ' Low good wavelength'
+	sxaddpar,chdr, 'WAVGOOD1',kgeom.wavegoodm1, ' High good wavelength'
+endif else begin
+	sxaddpar,chdr, 'WAVALL0', kgeom.waveall0, ' Low inclusive wavelength'
+	sxaddpar,chdr, 'WAVALL1', kgeom.waveall1, ' High inclusive wavelength'
+	sxaddpar,chdr, 'WAVGOOD0',kgeom.wavegood0, ' Low good wavelength'
+	sxaddpar,chdr, 'WAVGOOD1',kgeom.wavegood1, ' High good wavelength'
+endelse
 sxaddpar,chdr, 'WAVMID',kgeom.wavemid, ' middle wavelength'
 ;
 ; wavelength solution RMS

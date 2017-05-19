@@ -518,15 +518,19 @@ y0wvs = fltarr(120)	; good wavelengths
 y1wvs = fltarr(120)
 t0wvs = fltarr(120)	; trim wavelengths
 t1wvs = fltarr(120)
+ym0wvs = fltarr(120)	; masked good wavelengths
+ym1wvs = fltarr(120)
+tm0wvs = fltarr(120)	; masked trim wavelengths
+tm1wvs = fltarr(120)
 for b=0,119 do begin
-	wy0 = poly(kgeom.goody0,fincoeff[*,b])
-	y0wvs[b] = wy0
-	wy1 = poly(kgeom.goody1,fincoeff[*,b])
-	y1wvs[b] = wy1
-	wt0 = poly(kgeom.trimy0,fincoeff[*,b])
-	t0wvs[b] = wt0
-	wt1 = poly(kgeom.trimy1,fincoeff[*,b])
-	t1wvs[b] = wt1
+	y0wvs[b] = poly(kgeom.goody0,fincoeff[*,b])
+	y1wvs[b] = poly(kgeom.goody1,fincoeff[*,b])
+	t0wvs[b] = poly(kgeom.trimy0,fincoeff[*,b])
+	t1wvs[b] = poly(kgeom.trimy1,fincoeff[*,b])
+	ym0wvs[b] = poly(kgeom.goodmy0,fincoeff[*,b])
+	ym1wvs[b] = poly(kgeom.goodmy1,fincoeff[*,b])
+	tm0wvs[b] = poly(kgeom.trimmy0,fincoeff[*,b])
+	tm1wvs[b] = poly(kgeom.trimmy1,fincoeff[*,b])
 endfor
 y0max = max(y0wvs)
 y0min = min(y0wvs)
@@ -534,17 +538,29 @@ y1max = max(y1wvs)
 y1min = min(y1wvs)
 trim0 = min(t0wvs)
 trim1 = max(t1wvs)
+ym0max = max(ym0wvs)
+ym0min = min(ym0wvs)
+ym1max = max(ym1wvs)
+ym1min = min(ym1wvs)
+trimm0 = min(tm0wvs)
+trimm1 = max(tm1wvs)
 ;
 ; check for negative dispersion
 if trim0 gt trim1 then begin
 	trim0 = min(t1wvs)
 	trim1 = max(t0wvs)
+	trimm0 = min(tm1wvs)
+	trimm1 = max(tm0wvs)
 endif
 ;
 wavgood0 = min([y0max,y1max])
 wavgood1 = max([y0min,y1min])
 wavall0  = min([y0min,y1min])
 wavall1  = max([y0max,y1max])
+wavgoodm0 = min([ym0max,ym1max])
+wavgoodm1 = max([ym0min,ym1min])
+wavallm0  = min([ym0min,ym1min])
+wavallm1  = max([ym0max,ym1max])
 ;
 ; mid-wavelength
 wavmid = total([wavgood0,wavgood1,wavall0,wavall1])/4.
@@ -572,6 +588,10 @@ kgeom.waveall0 = wavall0
 kgeom.waveall1 = wavall1
 kgeom.wavegood0 = wavgood0
 kgeom.wavegood1 = wavgood1
+kgeom.waveallm0 = wavallm0
+kgeom.waveallm1 = wavallm1
+kgeom.wavegoodm0 = wavgoodm0
+kgeom.wavegoodm1 = wavgoodm1
 kgeom.wavemid = wavmid
 ;
 ; make sure wavelengths are on fiducial scale and

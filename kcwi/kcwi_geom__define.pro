@@ -114,6 +114,10 @@ tmp = { kcwi_geom, $
 	goody1:0, $		; highest good y pixel in spectrum
 	trimy0:0, $		; lowest y pixel to include in output
 	trimy1:0, $		; highest y pixel to include in output
+	goodmy0:0, $		; lowest good y pixel in masked spectrum
+	goodmy1:0, $		; highest good y pixel in masked spectrum
+	trimmy0:0, $		; lowest y pixel to include in masked output
+	trimmy1:0, $		; highest y pixel to include in masked output
 ;
 ; cross correlation parameters
 	ccwn:100., $		; cross correlation window for bar-to-bar offset
@@ -133,6 +137,10 @@ tmp = { kcwi_geom, $
 	waveall1:-9., $		; high wavelength that includes all data
 	wavegood0:-9., $	; low wavelength that includes all good data
 	wavegood1:-9., $	; high wavelength that includes all good data
+	waveallm0:-9., $	; low wavelength that includes all masked data
+	waveallm1:-9., $	; high wavelength that includes all masked data
+	wavegoodm0:-9., $	; low wavelength that includes all good masked data
+	wavegoodm1:-9., $	; high wavelength that includes all good masked data
 	wavemid:-9., $		; wavelength in the middle of the ranges
 	wavefid:3000., $	; fiducial wavelength for aligning all solns.
 ;

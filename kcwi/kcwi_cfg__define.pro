@@ -130,12 +130,6 @@ tmp = { kcwi_cfg, $
 	naxis1:0, $		; length of data axis 1
 	naxis2:0, $		; length of data axis 2
 ;
-; Nod-and-shuffle rows (in trimmed image)
-	nsskyr0:0, $		; Sky region row 0 (bottom, pix)
-	nsskyr1:0, $		; Sky region row 1 (top, pix)
-	nsobjr0:0, $		; Object region row 0 (bottom, pix)
-	nsobjr1:0, $		; Object region row 1 (top, pix)
-;
 ; Wavelength values for reduced data
 	crval3:0., $		; wavelength zeropoint
 	crpix3:0., $		; wavelength reference pixel
@@ -150,6 +144,12 @@ tmp = { kcwi_cfg, $
 	xbinsize:1, $		; binning in x
 	ybinsize:1, $		; binning in y
 	exptime:-9., $		; exposure time (either xposure or telapse)
+;
+; Nod-and-shuffle rows (in trimmed image)
+	nsskyr0:0, $		; Sky region row 0 (bottom, pix)
+	nsskyr1:0, $		; Sky region row 1 (top, pix)
+	nsobjr0:0, $		; Object region row 0 (bottom, pix)
+	nsobjr1:0, $		; Object region row 1 (top, pix)
 ;
 ; Input file properties
 	obsfname:'', $		; input observation FITS file name (sans dir)
