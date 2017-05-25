@@ -396,7 +396,7 @@ for b = 0,119 do begin
 	else	pkd = pk	; use parabola fit when nzeros eq 0
 	;
 	; check status of cross-correlations
-	if total(dspstat) gt 0 then begin
+	if total(dspstat) gt fix(nn/2) then begin
 		kcwi_print_info,ppar,pre, $
 			string(fix(total(dspstat)),form='(i3)') + ' out of ' + $
 			string(nn,form='(i3)') + ' Xcors had issues'

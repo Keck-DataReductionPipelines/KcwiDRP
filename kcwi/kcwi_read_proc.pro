@@ -23,7 +23,7 @@
 ;
 ; KEYWORDS:
 ;	COUNT	- contains number of images read
-;	VERBOSE - set this to get extra screen output
+;	VERBOSE	- set for more output
 ;
 ; RETURNS:
 ;	KCWI_PPAR struct array, one for each image in proc file
@@ -35,7 +35,7 @@
 ;	2017-MAY-24	Initial version
 ;-
 function kcwi_read_proc,ppar,procf,imgs, $
-	verbose=verbose,count=count,select=select
+		count=count,select=select,verbose=verbose
 ;
 ; setup
 	pre = 'KCWI_READ_PROC'
@@ -82,20 +82,38 @@ function kcwi_read_proc,ppar,procf,imgs, $
 ; open proc file
 	openr,il,procf,/get_lun
 ;
+; print header if requested
+	if keyword_set(verbose) then begin
+		print,'# '+pre+'  '+systime(0)
+		print,'# R   = CCD Readout Speed: 0 - slow, 1 - fast'
+		print,'# SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes'
+		print,'#     Img  Bin AMPS R SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
+	endif
+;
 ; skip past header to first image record
 	rec = '#'
-	while strpos(rec,'#') ge 0 do readf,il,rec
 ;
 ; loop over input
 	while not eof(il) do begin
-		count += 1
-		;
-		; image number for this record
-		imgs = [imgs,fix(gettok(rec,' '))]
-		;
-		; get params for this record
-		opar = [opar,ppar]
+;
+; skip past header or commented key,value pairs
+		while not eof(il) and $
+			(strpos(rec,'#') ge 0 or $
+		         strpos(rec,'=') ge 0) do readf,il,rec
 		if not eof(il) then begin
+			;
+			; new image to process
+			count += 1
+			;
+			; print it if requested
+			if keyword_set(verbose) then $
+				print,rec
+			;
+			; image number for this record
+			imgs = [imgs,fix(gettok(rec,' '))]
+			;
+			; get params for this record
+			opar = [opar,ppar]
 			;
 			; read next record
 			readf,il,rec

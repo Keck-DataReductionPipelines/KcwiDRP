@@ -52,7 +52,7 @@
 ;	Outputs a set of files in ODIR: 
 ;		1) a master pipeline parameter file, kcwi.ppar, with paramters
 ;			for running the pipeline.
-;		2) a master link file, kcwi.link, with associations for running 
+;		2) a master proc file, kcwi.proc, with associations for running 
 ;			subsequent stages of the pipeline (KCWI_STAGE{N}).
 ;		3) pipeline paramter (*.ppar) files for generating master 
 ;			calibration images (mbias, mdark, mflat) for each 
@@ -62,7 +62,7 @@
 ;		5) a log file, kcwi_prep.log, that logs all steps executed in 
 ;			this stage and records execution time.
 ; NOTE:
-;	The kcwi.link file can be edited to override the automated associations
+;	The kcwi.proc file can be edited to override the automated associations
 ;	prior to running the next stage in the pipeline.
 ;
 ; PROCEDURE:
@@ -876,7 +876,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				'direct relative response file = '+drrfile
 			;
 			; if we are direct, but there is no arc file
-			; just leave the link as set above (-1)
+			; just leave the file as set above ('')
 			printf,kp,'masterrr='+odir+drrfile
 		endif
 		;
@@ -932,7 +932,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	kcwi_print_info,ppar,pre,'run time in seconds',eltime
 	kcwi_print_info,ppar,pre,'finished on '+systime(0)
 	;
-	; close log, link, and proc files
+	; close log and proc files
 	free_lun,ll,kp
 	;
 	return
