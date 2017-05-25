@@ -49,6 +49,7 @@ pro kcwi_group_flats, kcfg, ppar, fcfg
 	;
 	; setup
 	pre = 'KCWI_GROUP_FLATS'
+	ppar.nfgrps = 0
 	;
 	; instantiate and init a KCWI_CFG struct for the flat groups
 	F = {kcwi_cfg}
@@ -69,10 +70,6 @@ pro kcwi_group_flats, kcfg, ppar, fcfg
 		;
 		; get flat groups split by comma
 		fgroups = strsplit(flist,',',/extract,count=ngroups)
-		;
-		; record number of groups
-		ppar.nfgrps = ngroups
-		ppar.flatexists = 1
 		;
 		; setup KCWI_CFG struct for groups
 		fcfg = replicate(fcfg, ngroups)
@@ -117,6 +114,7 @@ pro kcwi_group_flats, kcfg, ppar, fcfg
 			fcfg[i].grouppar	= pp.ppfname
 			;
 			; status
+			pp.nfgrps		= 1
 			pp.initialized		= 1
 			pp.progid		= pre
 			fcfg[i].initialized	= 1
@@ -124,6 +122,10 @@ pro kcwi_group_flats, kcfg, ppar, fcfg
 			; write out ppar file
 			kcwi_write_ppar,pp
 		endfor	; loop over flat groups
+		;
+		; report number of flat groups
+		ppar.nfgrps = ngroups
+		kcwi_print_info,ppar,pre,'Number of flat groups',ngroups
 	endif else $
 		kcwi_print_info,ppar,pre,'no flat frames found',/warning
 	;

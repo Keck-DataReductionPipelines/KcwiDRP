@@ -43,6 +43,7 @@ pro kcwi_group_dgeom, kcfg, ppar, ccfg, acfg
 	;
 	; setup
 	pre = 'KCWI_GROUP_DGEOM'
+	ppar.ndggrps = 0
 	;
 	; check input
 	if kcwi_verify_cfg(kcfg) ne 0 then return
@@ -58,8 +59,6 @@ pro kcwi_group_dgeom, kcfg, ppar, ccfg, acfg
 	if narc le 0 or nbar le 0 then begin
 		;
 		; record results
-		ppar.ndarcs = narc
-		ppar.ndirect = 0
 		if narc le 0 then $
 			kcwi_print_info,ppar,pre,'no direct arcs found!'
 		if nbar le 0 then $
@@ -116,10 +115,9 @@ pro kcwi_group_dgeom, kcfg, ppar, ccfg, acfg
 		kcwi_print_info,ppar,pre,'no direct geom image sets found',/warning
 	endelse
 	;
-	; record results
-	ppar.ndarcs = ndirect
-	ppar.ndirect = ndirect
-	if ndirect gt 0 then ppar.dgeomexists = 1
+	; report number of direct geom groups
+	ppar.ndggrps = ndirect
+	kcwi_print_info,ppar,pre,'Number of direct geom groups',ndirect
 	;
 	return
 end

@@ -49,6 +49,7 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 	;
 	; setup
 	pre = 'KCWI_GROUP_DARKS'
+	ppar.ndgrps = 0
 	;
 	; instantiate and init a KCWI_CFG struct for the dark groups
 	D = {kcwi_cfg}
@@ -74,16 +75,20 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 		; set up first group
 		gcfg = kcfg[dg[0]]
 		groups[gind,p] = dg[0]
+		last = gcfg.imgnum
 		p += 1
 		;
 		; loop over dark images and gather groups
 		for i=1,ndg-1 do begin
 			;
-			; check exposure time, binning, ccdmode and ampmode
+			; check exposure time, binning, ccdmode, ampmode,
+			; gainmul and sequence
 			if abs(kcfg[dg[i]].telapse - gcfg.telapse) gt 0.01 or $
 			       kcfg[dg[i]].xbinsize ne gcfg.xbinsize or $
 			       kcfg[dg[i]].ybinsize ne gcfg.ybinsize or $
 			       kcfg[dg[i]].ccdmode ne gcfg.ccdmode or $
+			       kcfg[dg[i]].gainmul ne gcfg.gainmul or $
+			       (kcfg[dg[i]].imgnum - last) ne 1 or $
 			       strcmp(kcfg[dg[i]].ampmode,gcfg.ampmode) ne 1 then begin
 				;
 				; new group
@@ -99,12 +104,14 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 				; first member of new group
 				gcfg = kcfg[dg[i]]
 				groups[gind,p] = dg[i]
+				last = gcfg.imgnum
 				p += 1
 			endif else begin
 				;
 				; next member of group
 				gcfg = kcfg[dg[i]]
 				groups[gind,p] = dg[i]
+				last = kcfg[dg[i]].imgnum
 				p += 1
 				;
 				; check for member overflow
@@ -117,10 +124,6 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 		;
 		; number of groups
 		ngroups = gind + 1
-		;
-		; record number of groups
-		ppar.ndgrps = ngroups
-		ppar.darkexists = 1
 		;
 		; setup KCWI_CFG struct for groups
 		dcfg = replicate(dcfg, ngroups)
@@ -164,6 +167,7 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 				dcfg[g].ybinsize	= kcfg[d].ybinsize
 				dcfg[g].ampmode		= kcfg[d].ampmode
 				dcfg[g].ccdmode		= kcfg[d].ccdmode
+				dcfg[g].gainmul		= kcfg[d].gainmul
 				;
 				; use first image number in group
 				gi = kcfg[d].imgnum
@@ -181,6 +185,7 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 				dcfg[g].grouppar	= pp.ppfname
 				;
 				; status
+				pp.ndgrps		= 1
 				pp.initialized		= 1
 				pp.progid		= pre
 				dcfg[g].initialized	= 1
@@ -198,7 +203,6 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 			;
 			; return an uninitialized, single KCWI_CFG struct
 			dcfg = dcfg[0]
-			ppar.darkexists = 0
 			kcwi_print_info,ppar,pre,'no dark groups with >= ', $
 				ppar.mingroupdark, ' images.',/warning
 		;
@@ -212,8 +216,9 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 				' images.', format='(a,i3,a,i3,a)'
 		endif	; otherwise, we are OK as is
 		;
-		; update number of grouops
+		; report number of dark groups
 		ppar.ndgrps = g
+		kcwi_print_info,ppar,pre,'Number of dark groups',g
 	;
 	; no dark frames found
 	endif else $

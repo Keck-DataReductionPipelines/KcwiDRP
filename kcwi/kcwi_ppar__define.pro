@@ -61,7 +61,7 @@ tmp = { kcwi_ppar, $
 ;
 ; output filename
 	ppfname:'kcwi.ppar', $	; pipeline parameter set name, e.g. 'm81.ppar'
-	lnfname:'kcwi.link', $	; processing links file name, e.g. 'm81.link'
+	prfname:'kcwi.proc', $	; processing control file name, e.g. 'm81.proc'
 ;
 ; processing directories
 	rawdir:'./', $		; directory containing raw images
@@ -73,14 +73,9 @@ tmp = { kcwi_ppar, $
 ; processing files
 	filespec:'image????.fit*', $	; input file spec
 	froot:'kcwi', $		; filename root string
-	fdigits:4, $		; number of digits in image numbers
-;
-; Image numbers
-	npims:0, $		; number of primary images
-	imnum:'', $		; object image numbers (rangelist)
+	fdigits:5, $		; number of digits in image numbers
 ;
 ; processing switches
-	biasskip1:0, $		; skip first bias frame? (for CWI)
 	crzap:1, $		; remove cosmic rays?
 	nassub:1, $		; perform nod-and-shuffle subtraction?
 	saveintims:0, $		; save intermediate images?
@@ -93,12 +88,12 @@ tmp = { kcwi_ppar, $
 	waveiter:0, $		; use iterative method to fit wavelengths?
 ;
 ; Bias processing
+	biasskip1:0, $		; skip first bias frame? (for CWI)
 	mingroupbias:5, $	; minimum number of bias frames per group
-	biasexists:0, $		; bias frames exists?
 	masterbias:'', $	; master bias filename
-	biases:'', $		; List of bias images (rangelist)
-	nbgrps:0, $		; number of bias groups
+	biases:'', $		; rangelist of bias image numbers
 	readnoise:3.0, $	; default readnoise in e-
+	nbgrps:0, $		; number of bias groups
 ;
 ; Overscan subtraction
 	minoscanpix:70,$	; minimum overscan pixels required
@@ -106,33 +101,26 @@ tmp = { kcwi_ppar, $
 ;
 ; Dark frame subtraction
 	mingroupdark:3, $	; minimum number of dark frames per group
-	darkexists:0, $		; dark frame exists?
 	masterdark:'', $	; master dark filename
-	darks:'', $		; List of dark images (rangelist)
+	darks:'', $		; rangelist of dark image numbers
 	ndgrps:0, $		; number of dark groups
 ;
 ; Flat processing
-	flatexists:0, $		; flat frame exists?
 	masterflat:'', $	; master flat filename
-	cflats:'', $		; List of continuum flat images (rangelist)
+	cflats:'', $		; rangelist of cont flat image numbers
 	nfgrps:0, $		; number of flat groups
 ;
 ; Geometry processing
-	ngeom:0, $		; number of geometry groups
-	geomexists:0, $		; geometry frames exist?
-	ncbars:0, $		; number of continuum bars images
-	cbars:'', $		; List of continuum bars images (rangelist)
+	geomcbar:'', $		; master continuum bars filename
+	geomarc:'', $		; master arc filename
+	nggrps:0, $		; number of geom groups
 ;
 ; Direct mode processing
-	ndirect:0, $		; number of direct groups
-	dgeomexists:0, $	; direct geometry frames exist?
-	ndarcs:0, $		; number of direct arc images
-	darcs:'', $		; List of direct arc images (rangelist)
+	dgeombar:'', $		; master direct image arc filename
+	dgeomarc:'', $		; master direct image arc filename
+	ndggrps:0, $		; number of direct geom groups
 ;
 ; Wavelength processing
-	narcs:0, $		; number of arc images
-	arcs:'', $		; List of arc images (rangelist)
-	arcbars:'', $		; List of arc bars images (rangelist)
 	taperfrac:0.2, $	; cosine bell taper fraction for x-correlation
 	pkdel:2.0, $		; match thresh in fraction of resolution
 	atlas:'', $		; wavelength atlas
@@ -147,27 +135,22 @@ tmp = { kcwi_ppar, $
 	slicex0:30, $		; safe lower spatial limit for slices (unbin px)
 	slicex1:144, $		; safe upper spatial limit for slices (unbin px)
 	psfwid:30, $		; nominal window for point src. (unbin px)
-	profexists:0, $		; slice profile frame exists?
-	nprofs:0, $		; number of slice profile images
-	profs:'', $		; List of slice profile images
+	masterprof:'', $	; master profile image filename
+;
+; Sky processing
+	mastersky:'', $		; master sky image filename
 ;
 ; Relative response processing
 	refslice:11, $		; reference slice
-	rrexists:0, $		; relative response frame exists?
 	masterrr:'', $		; master relative response filename
-	nrgrps:0, $		; number of relative response groups
-	nrrs:0, $		; number of relative response images
-	rrs:'', $		; List of relative response images (rangelist)
+;
+; Standard star calibration
+	masterstd:'', $		; master standard star filename
 ;
 ; Output data cube overrides - use these to override default values
 	wave0:-9., $		; wavelength minimum in Angstroms
 	wave1:-9., $		; wavelength maximum in Angstroms
 	dw:-9., $		; wavelength step in Angstroms/pixel
-;
-; Sky processing
-	nskys:0, $		; number of sky images
-	skyexists:0, $		; sky observation exists?
-	skys:'', $		; List of sky observations (rangelist)
 ;
 ; ppar state
 	initialized:0, $	; initialized? 0 - no, 1 - yes

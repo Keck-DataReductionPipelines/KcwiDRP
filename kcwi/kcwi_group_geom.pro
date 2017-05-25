@@ -43,6 +43,7 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 	;
 	; setup
 	pre = 'KCWI_GROUP_GEOM'
+	ppar.nggrps = 0
 	;
 	; check input
 	if kcwi_verify_cfg(kcfg) ne 0 then return
@@ -58,9 +59,6 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 	if narc le 0 or nbar le 0 then begin
 		;
 		; record results
-		ppar.ncbars = nbar
-		ppar.narcs = narc
-		ppar.ngeom = 0
 		if narc le 0 then $
 			kcwi_print_info,ppar,pre,'no arcs found!',/error
 		if nbar le 0 then $
@@ -131,11 +129,9 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 		kcwi_print_info,ppar,pre,'no geom image sets found',/warning
 	endelse
 	;
-	; record results
-	ppar.ncbars = ngeom
-	ppar.narcs = ngeom
-	ppar.ngeom = ngeom
-	if ngeom gt 0 then ppar.geomexists = 1
+	; report number of geom groups
+	ppar.nggrps = ngeom
+	kcwi_print_info,ppar,pre,'Number of geom groups',ngeom
 	;
 	return
 end
