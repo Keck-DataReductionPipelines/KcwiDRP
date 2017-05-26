@@ -151,7 +151,7 @@ pro kcwi_stage6drr,procfname,ppfname,help=help,verbose=verbose, display=display
 				;
 				; do we have a rr link?
 				do_rr = (1 eq 0)
-				if strtrim(kpars[i].masterrr ne '' then begin
+				if strtrim(kpars[i].masterrr,2) ne '' then begin
 					;
 					; master rr file name
 					mrfile = kpars[i].masterrr
@@ -246,8 +246,7 @@ pro kcwi_stage6drr,procfname,ppfname,help=help,verbose=verbose, display=display
 			endelse
 		;
 		; end check if input file exists
-		endif else $
-			kcwi_print_info,ppar,pre,'input file not found: '+obfil,/warning
+		endif
 	endfor	; loop over images
 	;
 	; report

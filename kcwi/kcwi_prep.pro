@@ -645,7 +645,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 			endelse
 			;
 			; print proc
-			printf,kp,'masterflat='+odir+mffile
+			if mffile ne '' then $
+				printf,kp,'masterflat='+odir+mffile
 		endif	; only object and cflat frames and nfgrps gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
