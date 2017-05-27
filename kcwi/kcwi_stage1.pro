@@ -579,7 +579,8 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					;
 					; call kcwi_la_cosmic
 					kcwi_la_cosmic,img,kpars[i],crmsk,readn=avrn,gain=1.,objlim=4., $
-						sigclip=sigclip,ntcosmicray=ncrs
+						sigclip=sigclip,ntcosmicray=ncrs, $
+						psfmodel='gaussy', psffwhm=2.5, psfsize=7
 					;
 					; update main header
 					sxaddpar,hdr,'CRCLEAN','T',' cleaned cosmic rays?'
