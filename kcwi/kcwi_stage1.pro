@@ -126,8 +126,13 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 	printf,ll,'Ppar file: '+ppar.ppfname
 	printf,ll,'Master proc file: '+procfname
 	printf,ll,'Min oscan pix: '+strtrim(string(ppar.minoscanpix),2)
-	if ppar.crzap eq 0 then $
+	if ppar.crzap eq 0 then begin
 		printf,ll,'No cosmic ray rejection performed'
+	endif else begin
+		printf,ll,'Cosmic ray PSF model: '+ppar.crpsfmod
+		printf,ll,'Cosmic ray PSF FWHM (px): ',ppar.crpsffwhm
+		printf,ll,'Cosmic ray PSF size (px): ',ppar.crpsfsize
+	endelse
 	if ppar.nassub eq 0 then $
 		printf,ll,'No nod-and-shuffle sky subtraction performed'
 	if ppar.saveintims eq 1 then $
@@ -580,7 +585,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					; call kcwi_la_cosmic
 					kcwi_la_cosmic,img,kpars[i],crmsk,readn=avrn,gain=1.,objlim=4., $
 						sigclip=sigclip,ntcosmicray=ncrs, $
-						psfmodel='gaussy', psffwhm=2.5, psfsize=7
+						psfmodel=ppar.crpsfmod, $
+						psffwhm=ppar.crpsffwhm, $
+						psfsize=ppar.crpsfsize
 					;
 					; update main header
 					sxaddpar,hdr,'CRCLEAN','T',' cleaned cosmic rays?'

@@ -653,6 +653,10 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		; ASSOCIATE WITH CBARS AND ARC IMAGES (GEOM)
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;
+		; init
+		cbfile = ''
+		arfile = ''
+		;
 		; no sense creating a dark data cube or matching direct image
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
 			ppar.nggrps gt 0 then begin

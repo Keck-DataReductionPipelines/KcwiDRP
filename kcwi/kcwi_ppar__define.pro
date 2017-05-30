@@ -99,6 +99,11 @@ tmp = { kcwi_ppar, $
 	minoscanpix:70,$	; minimum overscan pixels required
 	oscanbuf:20, $		; overscan edge buffer
 ;
+; Cosmic Ray rejection
+	crpsfmod:'', $		; cosmic ray PSF model: ('', 'gaussy')
+	crpsffwhm:2.5, $	; cosmic ray PSF FWHM: px
+	crpsfsize:7, $		; cosmic ray PSF size: px
+;
 ; Dark frame subtraction
 	mingroupdark:3, $	; minimum number of dark frames per group
 	masterdark:'', $	; master dark filename
