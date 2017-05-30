@@ -380,7 +380,14 @@ while(not sstop) do begin
 		ncosmicray = ncosmicray + npix
 		inputmask = (1.0 - 10000.0*maskwork)*imgwork
 		inputmask = lacos_replace(inputmask, !VALUES.F_NAN,'INDEF',-9999)
-		med5 = djs_median(inputmask,width=5,boundary='reflect')*maskwork
+		if keyword_set(psfmodel) then begin
+			if strpos(psfmodel,'gaussy') ge 0 then begin
+				med5 = fmedian_slow(inputmask,11,2, $
+						missing=!values.f_nan)*maskwork
+			endif
+		endif else $
+			med5 = djs_median(inputmask,width=5, $
+					  boundary='reflect')*maskwork
 		inputmask = [0]
 		output = (1.0 - maskwork)*imgwork + med5
 		med5 = [0]
