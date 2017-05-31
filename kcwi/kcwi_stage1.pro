@@ -108,9 +108,6 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 	if n_elements(display) eq 1 then $
 		ppar.display = display
 	;
-	; read proc file
-	kpars = kcwi_read_proc(ppar,procfname,imgnum,count=nproc)
-	;
 	; log file
 	lgfil = reddir + 'kcwi_stage1.log'
 	filestamp,lgfil,/arch
@@ -123,8 +120,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 	printf,ll,'Calib dir: '+cdir
 	printf,ll,'Data dir: '+ddir
 	printf,ll,'Filespec: '+ppar.filespec
-	printf,ll,'Ppar file: '+ppar.ppfname
-	printf,ll,'Master proc file: '+procfname
+	printf,ll,'Ppar file: '+ppfname
 	printf,ll,'Min oscan pix: '+strtrim(string(ppar.minoscanpix),2)
 	if ppar.crzap eq 0 then begin
 		printf,ll,'No cosmic ray rejection performed'
@@ -144,6 +140,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 	printf,ll,'Verbosity level   : ',ppar.verbose
 	printf,ll,'Display level     : ',ppar.display
 	;
+	; read proc file
+	kpars = kcwi_read_proc(ppar,procfname,imgnum,count=nproc)
+	;
 	; plot status
 	doplots = (ppar.display ge 1)
 	;
@@ -154,23 +153,23 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 	for i=0,nproc-1 do begin
 		;
 		; raw image to process
-		obfil = kcwi_get_imname(ppar,imgnum[i],/raw,/exist)
+		obfil = kcwi_get_imname(kpars[i],imgnum[i],/raw,/exist)
 		kcfg = kcwi_read_cfg(obfil)
 		;
 		; final reduced output file
-		ofil = kcwi_get_imname(ppar,imgnum[i],'_int',/reduced)
+		ofil = kcwi_get_imname(kpars[i],imgnum[i],'_int',/reduced)
 		;
 		; trim image type
 		kcfg.imgtype = strtrim(kcfg.imgtype,2)
 		;
 		; check if file exists or if we want to overwrite it
-		if ppar.clobber eq 1 or not file_test(ofil) then begin
+		if kpars[i].clobber eq 1 or not file_test(ofil) then begin
 			;
 			; print image summary
 			kcwi_print_cfgs,kcfg,imsum,/silent
 			if strlen(imsum) gt 0 then begin
 				for k=0,1 do junk = gettok(imsum,' ')
-				imsum = string(i,'/',nproc,format='(i3,a1,i3)')+' '+imsum
+				imsum = string(i+1,'/',nproc,format='(i3,a1,i3)')+' '+imsum
 			endif
 			print,""
 			print,imsum
@@ -185,7 +184,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			sz = size(img,/dimension)
 			;
 			; get ccd geometry
-			kcwi_map_ccd,hdr,asec,bsec,dsec,tsec,direc,namps=namps,trimmed_size=tsz,verbose=ppar.verbose
+			kcwi_map_ccd,hdr,asec,bsec,dsec,tsec,direc,namps=namps,trimmed_size=tsz,verbose=kpars[i].verbose
 			;
 			; check amps
 			if namps le 0 then begin
@@ -239,9 +238,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					;
 					; build master bias
 					bpar = kcwi_read_ppar(mbppfn)
-					bpar.loglun  = ppar.loglun
-					bpar.verbose = ppar.verbose
-					bpar.display = ppar.display
+					bpar.loglun  = kpars[i].loglun
+					bpar.verbose = kpars[i].verbose
+					bpar.display = kpars[i].display
 					kcwi_make_bias,bpar
 				endif
 				;
@@ -287,9 +286,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			img = img - mbias
 			;
 			; output file, if requested and if bias subtracted
-			if ppar.saveintims eq 1 and do_bias then begin
-				ofil = kcwi_get_imname(ppar,imgnum[i],'_b',/nodir)
-				kcwi_write_image,img,hdr,ofil,ppar
+			if kpars[i].saveintims eq 1 and do_bias then begin
+				ofil = kcwi_get_imname(kpars[i],imgnum[i],'_b',/nodir)
+				kcwi_write_image,img,hdr,ofil,kpars[i]
 			endif
 			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -307,15 +306,15 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			oscan_pix = bsec[0,0,1] - bsec[0,0,0]
 			;
 			; do we have enough overscan to get good statistics?
-			if do_oscan and oscan_pix ge ppar.minoscanpix then begin
+			if do_oscan and oscan_pix ge kpars[i].minoscanpix then begin
 				;
 				; loop over amps
 				avrn = 0.
 				for ia = 0, namps-1 do begin
 					;
 					; overscan x range - buffer avoids edge effects
-					osx0	= bsec[ia,0,0] + ppar.oscanbuf
-					osx1	= bsec[ia,0,1] - ppar.oscanbuf
+					osx0	= bsec[ia,0,0] + kpars[i].oscanbuf
+					osx1	= bsec[ia,0,1] - kpars[i].oscanbuf
 					;
 					; range in x to subtract overscan from
 					dsx0	= dsec[ia,0,0]
@@ -410,7 +409,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						', '+strtrim(string(mnrs),2)+', '+strtrim(string(sdrs),2)
 					;
 					; make interactive if display greater than 1
-					if doplots and ppar.display ge 2 then begin
+					if doplots and kpars[i].display ge 2 then begin
 						q = ''
 						read,'Next? (Q-quit plotting, <cr>-next): ',q
 						if strupcase(strmid(q,0,1)) eq 'Q' then doplots = 0
@@ -422,9 +421,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				sxaddpar,hdr,'OSCANSUB','T',' overscan subtracted?'
 				;
 				; output file, if requested
-				if ppar.saveintims eq 1 then begin
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_o',/nodir)
-					kcwi_write_image,img,hdr,ofil,ppar
+				if kpars[i].saveintims eq 1 then begin
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_o',/nodir)
+					kcwi_write_image,img,hdr,ofil,kpars[i]
 				endif
 			endif else begin	; not doing oscan sub
 				if do_oscan then begin
@@ -491,9 +490,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			kcwi_print_info,ppar,pre,'trimmed image size: '+strtrim(string(sz[0]),2)+'x'+strtrim(string(sz[1]),2)
 			;
 			; output file, if requested
-			if ppar.saveintims eq 1 then begin
-				ofil = kcwi_get_imname(ppar,imgnum[i],'_t',/nodir)
-				kcwi_write_image,img,hdr,ofil,ppar
+			if kpars[i].saveintims eq 1 then begin
+				ofil = kcwi_get_imname(kpars[i],imgnum[i],'_t',/nodir)
+				kcwi_write_image,img,hdr,ofil,kpars[i]
 			endif
 			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -543,9 +542,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			kcwi_print_info,ppar,pre,'amplifier gains (e/DN)',gainstr, format='(a,1x,a)'
 			;
 			; output gain-corrected image
-			if ppar.saveintims eq 1 then begin
-				ofil = kcwi_get_imname(ppar,imgnum[i],'_e',/nodir)
-				kcwi_write_image,img,hdr,ofil,ppar
+			if kpars[i].saveintims eq 1 then begin
+				ofil = kcwi_get_imname(kpars[i],imgnum[i],'_e',/nodir)
+				kcwi_write_image,img,hdr,ofil,kpars[i]
 			endif
 			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -585,9 +584,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					; call kcwi_la_cosmic
 					kcwi_la_cosmic,img,kpars[i],crmsk,readn=avrn,gain=1.,objlim=4., $
 						sigclip=sigclip,ntcosmicray=ncrs, $
-						psfmodel=ppar.crpsfmod, $
-						psffwhm=ppar.crpsffwhm, $
-						psfsize=ppar.crpsfsize
+						psfmodel=kpars[i].crpsfmod, $
+						psffwhm=kpars[i].crpsffwhm, $
+						psfsize=kpars[i].crpsfsize
 					;
 					; update main header
 					sxaddpar,hdr,'CRCLEAN','T',' cleaned cosmic rays?'
@@ -595,9 +594,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,hdr,'HISTORY','  KCWI_LA_COSMIC '+systime(0)
 					;
 					; write out cleaned object image
-					if ppar.saveintims eq 1 then begin
-						ofil = kcwi_get_imname(ppar,imgnum[i],'_cr',/nodir)
-						kcwi_write_image,img,hdr,ofil,ppar
+					if kpars[i].saveintims eq 1 then begin
+						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_cr',/nodir)
+						kcwi_write_image,img,hdr,ofil,kpars[i]
 					endif
 					;
 					; update CR mask header
@@ -610,9 +609,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,mskhdr,'NCRCLEAN',ncrs,' number of cosmic rays cleaned'
 					;
 					; write out CR mask image
-					if ppar.saveintims eq 1 then begin
-						ofil = kcwi_get_imname(ppar,imgnum[i],'_crmsk',/nodir)
-						kcwi_write_image,crmsk,mskhdr,ofil,ppar
+					if kpars[i].saveintims eq 1 then begin
+						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_crmsk',/nodir)
+						kcwi_write_image,crmsk,mskhdr,ofil,kpars[i]
 					endif
 				endif else begin
 					;
@@ -769,7 +768,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
 			; ONLY perform next step on OBJECT images
-			if ppar.nassub eq 1 and strmatch(kcfg.imgtype,'object') eq 1 and $
+			if kpars[i].nassub eq 1 and strmatch(kcfg.imgtype,'object') eq 1 and $
 				kcfg.nasmask eq 1 and kcfg.shuffmod eq 1 then begin
 				;
 				; check panel limits
@@ -866,12 +865,12 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						skyrow0,skyrow1,objrow0,objrow1,format='(a,4i6)'
 					;
 					; write out sky image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_sky',/nodir)
-					kcwi_write_image,sky,skyhdr,ofil,ppar
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_sky',/nodir)
+					kcwi_write_image,sky,skyhdr,ofil,kpars[i]
 					;
 					; write out obj image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_obj',/nodir)
-					kcwi_write_image,obj,objhdr,ofil,ppar
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_obj',/nodir)
+					kcwi_write_image,obj,objhdr,ofil,kpars[i]
 				endif else $
 					kcwi_print_info,ppar,pre, $
 						'nod-and-shuffle sky/obj row mismatch (no subtraction done)',/warning
@@ -934,21 +933,21 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;
 			;
 			; write out mask image
-			ofil = kcwi_get_imname(ppar,imgnum[i],'_msk',/nodir)
-			kcwi_write_image,msk,mskhdr,ofil,ppar
+			ofil = kcwi_get_imname(kpars[i],imgnum[i],'_msk',/nodir)
+			kcwi_write_image,msk,mskhdr,ofil,kpars[i]
 			;
 			; output variance image
-			ofil = kcwi_get_imname(ppar,imgnum[i],'_var',/nodir)
-			kcwi_write_image,var,varhdr,ofil,ppar
+			ofil = kcwi_get_imname(kpars[i],imgnum[i],'_var',/nodir)
+			kcwi_write_image,var,varhdr,ofil,kpars[i]
 			;
 			; write out final intensity image
-			ofil = kcwi_get_imname(ppar,imgnum[i],'_int',/nodir)
-			kcwi_write_image,img,hdr,ofil,ppar
+			ofil = kcwi_get_imname(kpars[i],imgnum[i],'_int',/nodir)
+			kcwi_write_image,img,hdr,ofil,kpars[i]
 		;
 		; end check if output file exists already
 		endif else begin
 			kcwi_print_info,ppar,pre,'file not processed: '+obfil+' type: '+kcfg.imgtype,/warning
-			if ppar.clobber eq 0 and file_test(ofil) then $
+			if kpars[i].clobber eq 0 and file_test(ofil) then $
 				kcwi_print_info,ppar,pre,'processed file exists already',/warning
 		endelse
 	endfor	; loop over images

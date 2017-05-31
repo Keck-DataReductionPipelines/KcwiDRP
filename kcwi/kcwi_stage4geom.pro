@@ -89,9 +89,6 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 	if n_elements(display) eq 1 then $
 		ppar.display = display
 	;
-	; read proc file
-	kpars = kcwi_read_proc(ppar,procfname,imgnum,count=nproc)
-	;
 	; log file
 	lgfil = reddir + 'kcwi_stage4geom.log'
 	filestamp,lgfil,/arch
@@ -104,12 +101,14 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 	printf,ll,'Calib dir: '+cdir
 	printf,ll,'Data dir: '+ddir
 	printf,ll,'Filespec: '+ppar.filespec
-	printf,ll,'Ppar file: '+ppar.ppfname
-	printf,ll,'Master proc file: '+procfname
+	printf,ll,'Ppar file: '+ppfname
 	if ppar.clobber then $
 		printf,ll,'Clobbering existing images'
 	printf,ll,'Verbosity level   : ',ppar.verbose
 	printf,ll,'Plot display level: ',ppar.display
+	;
+	; read proc file
+	kpars = kcwi_read_proc(ppar,procfname,imgnum,count=nproc)
 	;
 	; gather configuration data on each observation in reddir
 	kcwi_print_info,ppar,pre,'Number of input images',nproc
@@ -120,15 +119,15 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 		; image to process
 		;
 		; check for flat fielded image first
-		obfil = kcwi_get_imname(ppar,imgnum[i],'_intf',/reduced)
+		obfil = kcwi_get_imname(kpars[i],imgnum[i],'_intf',/reduced)
 		;
 		; if not check for dark subtracted image
 		if not file_test(obfil) then $
-			obfil = kcwi_get_imname(ppar,imgnum[i],'_intd',/reduced)
+			obfil = kcwi_get_imname(kpars[i],imgnum[i],'_intd',/reduced)
 		;
 		; if not just get stage1 output image
 		if not file_test(obfil) then $
-			obfil = kcwi_get_imname(ppar,imgnum[i],'_int',/reduced)
+			obfil = kcwi_get_imname(kpars[i],imgnum[i],'_int',/reduced)
 		;
 		; check if input file exists
 		if file_test(obfil) then begin
@@ -143,14 +142,14 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 			;
 			; final output file
 			if strpos(kcfg.obstype,'direct') ge 0 then $
-				ofil = kcwi_get_imname(ppar,imgnum[i],'_img',/reduced) $
-			else	ofil = kcwi_get_imname(ppar,imgnum[i],'_icube',/reduced)
+				ofil = kcwi_get_imname(kpars[i],imgnum[i],'_img',/reduced) $
+			else	ofil = kcwi_get_imname(kpars[i],imgnum[i],'_icube',/reduced)
 			;
 			; get image type
 			kcfg.imgtype = strtrim(kcfg.imgtype,2)
 			;
 			; check if output file exists already
-			if ppar.clobber eq 1 or not file_test(ofil) then begin
+			if kpars[i].clobber eq 1 or not file_test(ofil) then begin
 				;
 				; print image summary
 				kcwi_print_cfgs,kcfg,imsum,/silent
@@ -210,14 +209,14 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 							kdgeom.initialized = 1
 							;
 							; populate it with goodness
-							kcwi_set_dgeom,kdgeom,acfg,ppar
+							kcwi_set_dgeom,kdgeom,acfg,kpars[i]
 							kdgeom.arcfname = arf
 							kdgeom.arcimgnum = acfg.imgnum
 							kdgeom.cbarsfname = cbf
 							kdgeom.cbarsimgnum = ccfg.imgnum
 							;
 							; get direct geometry
-							kcwi_solve_dgeom,kdgeom,ppar
+							kcwi_solve_dgeom,kdgeom,kpars[i]
 							;
 							; log bad solution
 							if kdgeom.status ne 0 then begin
@@ -227,7 +226,7 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 								do_geom = (1 eq 1)
 							;
 							; write out result
-							kcwi_write_dgeom,ppar,kdgeom
+							kcwi_write_dgeom,kpars[i],kdgeom
 						;
 						; dispersed image geometry
 						endif else begin
@@ -241,7 +240,7 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 							kgeom.initialized = 1
 							;
 							; populate it with goodness
-							kcwi_set_geom,kgeom,ccfg,ppar,atlas=atlas,atname=atname
+							kcwi_set_geom,kgeom,ccfg,kpars[i],atlas=atlas,atname=atname
 							kgeom.cbarsfname = cbf
 							kgeom.cbarsimgnum = ccfg.imgnum
 							kgeom.arcfname = arf
@@ -251,7 +250,7 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 							cbars = mrdfits(cbf,0,chdr,/fscale,/silent)
 							;
 							; trace the bars
-							kcwi_trace_cbars,cbars,kgeom,ppar,status=stat
+							kcwi_trace_cbars,cbars,kgeom,kpars[i],status=stat
 							;
 							; check status, if < 0 don't proceed
 							if stat ge 0 then begin
@@ -263,13 +262,13 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 								arc = mrdfits(arf,0,ahdr,/fscale,/silent)
 								;
 								; extract along bars
-								kcwi_extract_arcs,arc,kgeom,spec,ppar
+								kcwi_extract_arcs,arc,kgeom,spec,kpars[i]
 								;
 								; log
 								kcwi_print_info,ppar,pre,'extracted arc spectra from arc image',arf,format='(a,a)'
 								;
 								; do the solution
-								kcwi_solve_geom,spec,kgeom,ppar
+								kcwi_solve_geom,spec,kgeom,kpars[i]
 								;
 								; log bad solution
 								if kgeom.status ne 0 then begin
@@ -283,10 +282,10 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 							endelse
 							;
 							; write out result
-							kcwi_write_geom,ppar,kgeom
+							kcwi_write_geom,kpars[i],kgeom
 							;
 							; output a wavemap image which gives the wavelength at each pixel
-							kcwi_reverse_geom,kgeom,ppar
+							kcwi_reverse_geom,kgeom,kpars[i]
 						endelse	; dispersed image geometry
 						;
 						; time for geometry
@@ -308,23 +307,23 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
                                                 ;
 						; apply direct geometry
 						if do_direct then begin
-							kcwi_apply_dgeom,img,hdr,kdgeom,ppar,dimg,dhdr
+							kcwi_apply_dgeom,img,hdr,kdgeom,kpars[i],dimg,dhdr
 							;
 							; write out intensity image
-							ofil = kcwi_get_imname(ppar,imgnum[i],'_img',/nodir)
-							kcwi_write_image,dimg,dhdr,ofil,ppar
+							ofil = kcwi_get_imname(kpars[i],imgnum[i],'_img',/nodir)
+							kcwi_write_image,dimg,dhdr,ofil,kpars[i]
 						;
 						; apply dispersed geometry
 						endif else begin
-                                                	kcwi_apply_geom,img,hdr,kgeom,ppar,cube,chdr                               
+                                                	kcwi_apply_geom,img,hdr,kgeom,kpars[i],cube,chdr                               
 							;
 							; write out intensity cube
-							ofil = kcwi_get_imname(ppar,imgnum[i],'_icube',/nodir)
-							kcwi_write_image,cube,chdr,ofil,ppar
+							ofil = kcwi_get_imname(kpars[i],imgnum[i],'_icube',/nodir)
+							kcwi_write_image,cube,chdr,ofil,kpars[i]
 							;
 							; check for arc and output diagnostic 2d image
 							if strpos(kcfg.imgtype,'arc') ge 0 then begin
-								rcube = kcwi_get_imname(ppar,imgnum[i],'_icube',/reduced)
+								rcube = kcwi_get_imname(kpars[i],imgnum[i],'_icube',/reduced)
 								kcwi_flatten_cube,rcube
 							endif
 							;
@@ -334,11 +333,11 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 								var = mrdfits(vfil,0,varhdr,/fscale,/silent)
 								;
 								sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
-                                                        	kcwi_apply_geom,var,varhdr,kgeom,ppar,vcub,vchdr
+                                                        	kcwi_apply_geom,var,varhdr,kgeom,kpars[i],vcub,vchdr
 								;
 								; write out variance cube
-								ofil = kcwi_get_imname(ppar,imgnum[i],'_vcube',/nodir)
-								kcwi_write_image,vcub,vchdr,ofil,ppar
+								ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vcube',/nodir)
+								kcwi_write_image,vcub,vchdr,ofil,kpars[i]
 							endif else $
 								kcwi_print_info,ppar,pre,'no variance image found',/warning
 							;
@@ -348,38 +347,38 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 								msk = float(mrdfits(mfil,0,mskhdr,/silent))
 								;
                                                         	sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
-                                                        	kcwi_apply_geom,msk,mskhdr,kgeom,ppar,mcub,mchdr   
+                                                        	kcwi_apply_geom,msk,mskhdr,kgeom,kpars[i],mcub,mchdr   
 								;
 								; write out mask cube
-								ofil = kcwi_get_imname(ppar,imgnum[i],'_mcube',/nodir)
-								kcwi_write_image,mcub,mchdr,ofil,ppar
+								ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mcube',/nodir)
+								kcwi_write_image,mcub,mchdr,ofil,kpars[i]
 							endif else $
 								kcwi_print_info,ppar,pre,'no mask image found',/warning
 							;
 							; check for nod-and-shuffle sky images
-							sfil = kcwi_get_imname(ppar,imgnum[i],'_sky',/reduced)
+							sfil = kcwi_get_imname(kpars[i],imgnum[i],'_sky',/reduced)
 							if file_test(sfil,/read) then begin
 								sky = mrdfits(sfil,0,skyhdr,/fscale,/silent)
 								;
 								sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
-                                                        	kcwi_apply_geom,sky,skyhdr,kgeom,ppar,scub,schdr
+                                                        	kcwi_apply_geom,sky,skyhdr,kgeom,kpars[i],scub,schdr
 								;
 								; write out sky cube
-								ofil = kcwi_get_imname(ppar,imgnum[i],'_scube',/nodir)
-								kcwi_write_image,scub,schdr,ofil,ppar
+								ofil = kcwi_get_imname(kpars[i],imgnum[i],'_scube',/nodir)
+								kcwi_write_image,scub,schdr,ofil,kpars[i]
 							endif
 							;
 							; check for nod-and-shuffle obj images
-							nfil = kcwi_get_imname(ppar,imgnum[i],'_obj',/reduced)
+							nfil = kcwi_get_imname(kpars[i],imgnum[i],'_obj',/reduced)
 							if file_test(nfil,/read) then begin
 								obj = mrdfits(nfil,0,objhdr,/fscale,/silent)
 								;
                                                         	sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
-                                                        	kcwi_apply_geom,obj,objhdr,kgeom,ppar,ocub,ochdr
+                                                        	kcwi_apply_geom,obj,objhdr,kgeom,kpars[i],ocub,ochdr
 								;
 								; write out obj cube
-								ofil = kcwi_get_imname(ppar,imgnum[i],'_ocube',/nodir)
-								kcwi_write_image,ocub,ochdr,ofil,ppar
+								ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocube',/nodir)
+								kcwi_write_image,ocub,ochdr,ofil,kpars[i]
 							endif
 						endelse	; end apply dispersed geometry
 					; end if do_geom
@@ -400,7 +399,7 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 			; end check if output file exists already
 			endif else begin
 				kcwi_print_info,ppar,pre,'file not processed: '+obfil+' type: '+kcfg.imgtype,/warning
-				if ppar.clobber eq 0 and file_test(ofil) then $
+				if kpars[i].clobber eq 0 and file_test(ofil) then $
 					kcwi_print_info,ppar,pre,'processed file exists already',/warning
 			endelse
 		;

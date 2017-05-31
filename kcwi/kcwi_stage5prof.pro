@@ -89,9 +89,6 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 	if n_elements(display) eq 1 then $
 		ppar.display = display
 	;
-	; read proc file
-	kpars = kcwi_read_proc(ppar,procfname,imgnum,count=nproc)
-	;
 	; log file
 	lgfil = reddir + 'kcwi_stage5prof.log'
 	filestamp,lgfil,/arch
@@ -104,12 +101,14 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 	printf,ll,'Calib dir: '+cdir
 	printf,ll,'Data dir: '+ddir
 	printf,ll,'Filespec: '+ppar.filespec
-	printf,ll,'Ppar file: '+ppar.ppfname
-	printf,ll,'Master proc file: '+procfname
+	printf,ll,'Ppar file: '+ppfname
 	if ppar.clobber then $
 		printf,ll,'Clobbering existing images'
 	printf,ll,'Verbosity level   : ',ppar.verbose
 	printf,ll,'Plot display level: ',ppar.display
+	;
+	; read proc file
+	kpars = kcwi_read_proc(ppar,procfname,imgnum,count=nproc)
 	;
 	; gather configuration data on each observation in reddir
 	kcwi_print_info,ppar,pre,'Number of input images',nproc
@@ -118,7 +117,7 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 	for i=0,nproc-1 do begin
 		;
 		; image to process (require output from kcwi_stage4geom)
-		obfil = kcwi_get_imname(ppar,imgnum[i],'_icube',/reduced)
+		obfil = kcwi_get_imname(kpars[i],imgnum[i],'_icube',/reduced)
 		;
 		; check if input file exists
 		if file_test(obfil) then begin
@@ -127,13 +126,13 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 			kcfg = kcwi_read_cfg(obfil)
 			;
 			; final output file
-			ofil = kcwi_get_imname(ppar,imgnum[i],'_icubep',/reduced)
+			ofil = kcwi_get_imname(kpars[i],imgnum[i],'_icubep',/reduced)
 			;
 			; trim image type
 			kcfg.imgtype = strtrim(kcfg.imgtype,2)
 			;
 			; check of output file exists already
-			if ppar.clobber eq 1 or not file_test(ofil) then begin
+			if kpars[i].clobber eq 1 or not file_test(ofil) then begin
 				;
 				; print image summary
 				kcwi_print_cfgs,kcfg,imsum,/silent
@@ -185,7 +184,7 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 						pcfg = kcwi_read_cfg(pinfile)
 						;
 						; build master prof
-						kcwi_slice_prof,pcfg,ppar
+						kcwi_slice_prof,pcfg,kpars[i]
 					endif
 					;
 					; read in master prof
@@ -254,8 +253,8 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,mskhdr,'MPIMNO',mpimgno,' master prof image number'
 					;
 					; write out mask image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_mcubep',/nodir)
-					kcwi_write_image,msk,mskhdr,ofil,ppar
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mcubep',/nodir)
+					kcwi_write_image,msk,mskhdr,ofil,kpars[i]
 					;
 					; update header
 					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
@@ -264,8 +263,8 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,varhdr,'MPIMNO',mpimgno,' master prof image number'
 					;
 					; output variance image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_vcubep',/nodir)
-					kcwi_write_image,var,varhdr,ofil,ppar
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vcubep',/nodir)
+					kcwi_write_image,var,varhdr,ofil,kpars[i]
 					;
 					; update header
 					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
@@ -274,8 +273,8 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,hdr,'MPIMNO',mpimgno,' master prof image number'
 					;
 					; write out final intensity image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_icubep',/nodir)
-					kcwi_write_image,img,hdr,ofil,ppar
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_icubep',/nodir)
+					kcwi_write_image,img,hdr,ofil,kpars[i]
 					;
 					; check for nod-and-shuffle sky image
 					sfil = repstr(obfil,'_icube','_scube')
@@ -293,8 +292,8 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,skyhdr,'MPIMNO',mpimgno,' master prof image number'
 						;
 						; write out final intensity image
-						ofil = kcwi_get_imname(ppar,imgnum[i],'_scubep',/nodir)
-						kcwi_write_image,sky,hdr,ofil,ppar
+						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_scubep',/nodir)
+						kcwi_write_image,sky,hdr,ofil,kpars[i]
 					endif
 					;
 					; check for nod-and-shuffle obj image
@@ -313,8 +312,8 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,objhdr,'MPIMNO',mpimgno,' master prof image number'
 						;
 						; write out final intensity image
-						ofil = kcwi_get_imname(ppar,imgnum[i],'_ocubep',/nodir)
-						kcwi_write_image,obj,hdr,ofil,ppar
+						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocubep',/nodir)
+						kcwi_write_image,obj,hdr,ofil,kpars[i]
 					endif
 					;
 					; handle the case when no prof frames were taken
@@ -326,7 +325,7 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 			; end check if output file exists already
 			endif else begin
 				kcwi_print_info,ppar,pre,'file not processed: '+obfil+' type: '+kcfg.imgtype,/warning
-				if ppar.clobber eq 0 and file_test(ofil) then $
+				if kpars[i].clobber eq 0 and file_test(ofil) then $
 					kcwi_print_info,ppar,pre,'processed file exists already',/warning
 			endelse
 		;

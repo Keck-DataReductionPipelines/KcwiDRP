@@ -88,9 +88,6 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 	if n_elements(display) eq 1 then $
 		ppar.display = display
 	;
-	; read proc file
-	kpars = kcwi_read_proc(ppar,procfname,imgnum,count=nproc)
-	;
 	; log file
 	lgfil = reddir + 'kcwi_stage7std.log'
 	filestamp,lgfil,/arch
@@ -103,12 +100,14 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 	printf,ll,'Calib dir: '+cdir
 	printf,ll,'Data dir: '+ddir
 	printf,ll,'Filespec: '+ppar.filespec
-	printf,ll,'Ppar file: '+ppar.ppfname
-	printf,ll,'Master proc file: '+procfname
+	printf,ll,'Ppar file: '+ppfname
 	if ppar.clobber then $
 		printf,ll,'Clobbering existing images'
 	printf,ll,'Verbosity level   : ',ppar.verbose
 	printf,ll,'Plot display level: ',ppar.display
+	;
+	; read proc file
+	kpars = kcwi_read_proc(ppar,procfname,imgnum,count=nproc)
 	;
 	; gather configuration data on each observation in reddireddir
 	kcwi_print_info,ppar,pre,'Number of input images',nproc
@@ -119,7 +118,7 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 		; image to process
 		;
 		; require output from kcwi_stage6rr
-		obfil = kcwi_get_imname(ppar,imgnum[i],'_icuber',/reduced)
+		obfil = kcwi_get_imname(kpars[i],imgnum[i],'_icuber',/reduced)
 		;
 		; check if input file exists
 		if file_test(obfil) then begin
@@ -128,13 +127,13 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 			kcfg = kcwi_read_cfg(obfil)
 			;
 			; final output file
-			ofil = kcwi_get_imname(ppar,imgnum[i],'_icubes',/reduced)
+			ofil = kcwi_get_imname(kpars[i],imgnum[i],'_icubes',/reduced)
 			;
 			; trim image type
 			kcfg.imgtype = strtrim(kcfg.imgtype,2)
 			;
 			; check if output file exists already
-			if ppar.clobber eq 1 or not file_test(ofil) then begin
+			if kpars[i].clobber eq 1 or not file_test(ofil) then begin
 				;
 				; print image summary
 				kcwi_print_cfgs,kcfg,imsum,/silent
@@ -186,7 +185,7 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 						scfg = kcwi_read_cfg(sinfile)
 						;
 						; build master std
-						kcwi_make_std,scfg,ppar
+						kcwi_make_std,scfg,kpars[i]
 					endif
 					;
 					; read in master std
@@ -246,7 +245,7 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 					endelse
 					;
 					; correct extinction
-					kcwi_correct_extin,img,hdr,ppar
+					kcwi_correct_extin,img,hdr,kpars[i]
 					;
 					; do calibration
 					for is=0,23 do begin
@@ -266,8 +265,8 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,mskhdr,'BUNIT','FLAM',' brightness units'
 					;
 					; write out mask image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_mcubes',/nodir)
-					kcwi_write_image,msk,mskhdr,ofil,ppar
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mcubes',/nodir)
+					kcwi_write_image,msk,mskhdr,ofil,kpars[i]
 					;
 					; update header
 					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
@@ -277,8 +276,8 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,varhdr,'BUNIT','FLAM',' brightness units'
 					;
 					; output variance image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_vcubes',/nodir)
-					kcwi_write_image,var,varhdr,ofil,ppar
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vcubes',/nodir)
+					kcwi_write_image,var,varhdr,ofil,kpars[i]
 					;
 					; update header
 					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
@@ -288,8 +287,8 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,hdr,'BUNIT','FLAM',' brightness units'
 					;
 					; write out final calibrated image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_icubes',/nodir)
-					kcwi_write_image,img,hdr,ofil,ppar
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_icubes',/nodir)
+					kcwi_write_image,img,hdr,ofil,kpars[i]
 					;
 					; check for nod-and-shuffle sky image
 					sfil = repstr(obfil,'_icube','_scube')
@@ -297,7 +296,7 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 						sky = mrdfits(sfil,0,skyhdr,/fscale,/silent)
 						;
 						; correct extinction
-						kcwi_correct_extin,sky,skyhdr,ppar
+						kcwi_correct_extin,sky,skyhdr,kpars[i]
 						;
 						; do correction
 						for is=0,23 do for ix = 0, sz[1]-1 do $
@@ -311,8 +310,8 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,skyhdr,'BUNIT','FLAM',' brightness units'
 						;
 						; write out final intensity image
-						ofil = kcwi_get_imname(ppar,imgnum[i],'_scubes',/nodir)
-						kcwi_write_image,sky,hdr,ofil,ppar
+						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_scubes',/nodir)
+						kcwi_write_image,sky,hdr,ofil,kpars[i]
 					endif
 					;
 					; check for nod-and-shuffle obj image
@@ -321,7 +320,7 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 						obj = mrdfits(nfil,0,objhdr,/fscale,/silent)
 						;
 						; correct extinction
-						kcwi_correct_extin,obj,objhdr,ppar
+						kcwi_correct_extin,obj,objhdr,kpars[i]
 						;
 						; do correction
 						for is=0,23 do for ix = 0, sz[1]-1 do $
@@ -335,8 +334,8 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,objhdr,'BUNIT','FLAM',' brightness units'
 						;
 						; write out final intensity image
-						ofil = kcwi_get_imname(ppar,imgnum[i],'_ocubes',/nodir)
-						kcwi_write_image,obj,hdr,ofil,ppar
+						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocubes',/nodir)
+						kcwi_write_image,obj,hdr,ofil,kpars[i]
 					endif
 					;
 					; handle the case when no std frames were taken
@@ -348,7 +347,7 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 			; end check if output file exists already
 			endif else begin
 				kcwi_print_info,ppar,pre,'file not processed: '+obfil+' type: '+kcfg.imgtype,/warning
-				if ppar.clobber eq 0 and file_test(ofil) then $
+				if kpars[i].clobber eq 0 and file_test(ofil) then $
 					kcwi_print_info,ppar,pre,'processed file exists already',/warning
 			endelse
 		;

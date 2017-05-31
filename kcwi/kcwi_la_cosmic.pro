@@ -391,7 +391,7 @@ while(not sstop) do begin
 		nchop = nchop + 1
 	endfor
 
-	kcwi_print_info,ppar,pre,'found ' + strtrim(string(ncosmicray)) + ' cosmic rays in iteration ' + strtrim(string(iter)),info=2
+	kcwi_print_info,ppar,pre,'found ' + strtrim(string(ncosmicray)) + ' cosmic rays in iteration ' + strtrim(string(iter))
 	if (ncosmicray eq 0) then sstop = 1
 	iter = iter + 1
 	if (iter gt niter) then sstop = 1

@@ -89,9 +89,6 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 	if n_elements(display) eq 1 then $
 		ppar.display = display
 	;
-	; read proc file
-	kpars = kcwi_read_proc(ppar,procfname,imgnum,count=nproc)
-	;
 	; log file
 	lgfil = reddir + 'kcwi_stage2dark.log'
 	filestamp,lgfil,/arch
@@ -104,12 +101,14 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 	printf,ll,'Calib dir: '+cdir
 	printf,ll,'Data dir: '+ppar.datdir
 	printf,ll,'Filespec: '+ppar.filespec
-	printf,ll,'Ppar file: '+ppar.ppfname
-	printf,ll,'Master proc file: '+procfname
+	printf,ll,'Ppar file: '+ppfname
 	if ppar.clobber then $
 		printf,ll,'Clobbering existing images'
 	printf,ll,'Verbosity level   : ',ppar.verbose
 	printf,ll,'Display level     : ',ppar.display
+	;
+	; read proc file
+	kpars = kcwi_read_proc(ppar,procfname,imgnum,count=nproc)
 	;
 	; gather configuration data on each observation in reddir
 	kcwi_print_info,ppar,pre,'Number of input images',nproc
@@ -118,7 +117,7 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 	for i=0,nproc-1 do begin
 		;
 		; image to process (in reduced dir)
-		obfil = kcwi_get_imname(ppar,imgnum[i],'_int',/reduced)
+		obfil = kcwi_get_imname(kpars[i],imgnum[i],'_int',/reduced)
 		;
 		; check if input file exists
 		if file_test(obfil) then begin
@@ -127,13 +126,13 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 			kcfg = kcwi_read_cfg(obfil)
 			;
 			; final output file
-			ofil = kcwi_get_imname(ppar,imgnum[i],'_intd',/reduced)
+			ofil = kcwi_get_imname(kpars[i],imgnum[i],'_intd',/reduced)
 			;
 			; trim image type
 			kcfg.imgtype = strtrim(kcfg.imgtype,2)
 			;
 			; check if output file exists already
-			if ppar.clobber eq 1 or not file_test(ofil) then begin
+			if kpars[i].clobber eq 1 or not file_test(ofil) then begin
 				;
 				; print image summary
 				kcwi_print_cfgs,kcfg,imsum,/silent
@@ -157,7 +156,7 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 				exptime = kcfg.exptime
 				;
 				; read variance, mask images
-				vfil = kcwi_get_imname(ppar,imgnum[i],'_var', $
+				vfil = kcwi_get_imname(kpars[i],imgnum[i],'_var', $
 							/reduced)
 				if file_test(vfil) then begin
 					var = mrdfits(vfil,0,varhdr,/fscale, $
@@ -170,7 +169,7 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 					    'variance image not found for: '+ $
 					    obfil,/warning
 				endelse
-				mfil = kcwi_get_imname(ppar,imgnum[i],'_msk', $
+				mfil = kcwi_get_imname(kpars[i],imgnum[i],'_msk', $
 							/reduced)
 				if file_test(mfil) then begin
 					msk = mrdfits(mfil,0,mskhdr,/silent)
@@ -218,9 +217,9 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 						;
 						; build master dark
 					 	dpar = kcwi_read_ppar(mdppfn)
-						dpar.loglun  = ppar.loglun
-						dpar.verbose = ppar.verbose
-						dpar.display = ppar.display
+						dpar.loglun  = kpars[i].loglun
+						dpar.verbose = kpars[i].verbose
+						dpar.display = kpars[i].display
 						kcwi_make_dark,dpar
 					endif
 					;
@@ -261,8 +260,8 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,mskhdr,'DARKSCL',fac,' dark scale factor'
 					;
 					; write out mask image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_mskd',/nodir)
-					kcwi_write_image,msk,mskhdr,ofil,ppar
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mskd',/nodir)
+					kcwi_write_image,msk,mskhdr,ofil,kpars[i]
 					;
 					; update header
 					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
@@ -271,8 +270,8 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,varhdr,'DARKSCL',fac,' dark scale factor'
 					;
 					; output variance image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_vard',/nodir)
-					kcwi_write_image,var,varhdr,ofil,ppar
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vard',/nodir)
+					kcwi_write_image,var,varhdr,ofil,kpars[i]
 					;
 					; update header
 					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
@@ -281,8 +280,8 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,hdr,'DARKSCL',fac,' dark scale factor'
 					;
 					; write out final intensity image
-					ofil = kcwi_get_imname(ppar,imgnum[i],'_intd',/nodir)
-					kcwi_write_image,img,hdr,ofil,ppar
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_intd',/nodir)
+					kcwi_write_image,img,hdr,ofil,kpars[i]
 					;
 					; handle the case when no dark frames were taken
 				endif else begin
@@ -297,7 +296,7 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 			; end check if output file exists already
 			endif else begin
 				kcwi_print_info,ppar,pre,'file not processed: '+obfil+' type: '+kcfg.imgtype,/warning
-				if ppar.clobber eq 0 and file_test(ofil) then $
+				if kpars[i].clobber eq 0 and file_test(ofil) then $
 					kcwi_print_info,ppar,pre,'processed file exists already: '+ofil,/warning
 			endelse
 		;

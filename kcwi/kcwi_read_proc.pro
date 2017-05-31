@@ -72,6 +72,7 @@ function kcwi_read_proc,ppar,procf,imgs, $
 		kcwi_print_info,ppar,pre,'file not accessible: ',procf,/error
 		return,-1
 	endif
+	kcwi_print_info,ppar,pre,'Master proc file',procf,form='(a,a)'
 ;
 ; initialize
 	opar = [ppar]
@@ -82,12 +83,15 @@ function kcwi_read_proc,ppar,procf,imgs, $
 ; open proc file
 	openr,il,procf,/get_lun
 ;
-; print header if requested
-	if keyword_set(verbose) then begin
-		print,'# '+pre+'  '+systime(0)
-		print,'# R   = CCD Readout Speed: 0 - slow, 1 - fast'
-		print,'# SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes'
-		print,'#     Img  Bin AMPS R SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
+; print header
+	kcwi_print_info,ppar,pre,systime(0)
+	if ppar.verbose ge 3 then begin
+		kcwi_print_info,ppar,pre, $
+			'R   = CCD Readout Speed: 0 - slow, 1 - fast',info=3
+		kcwi_print_info,ppar,pre, $
+			'SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes',info=3
+		kcwi_print_info,ppar,pre, $
+			'      Img  Bin AMPS R SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object',info=3
 	endif
 ;
 ; skip past header to first image record
@@ -105,9 +109,9 @@ function kcwi_read_proc,ppar,procf,imgs, $
 			; new image to process
 			count += 1
 			;
-			; print it if requested
-			if keyword_set(verbose) then $
-				print,rec
+			; log it
+			if ppar.verbose ge 3 then $
+				kcwi_print_info,ppar,pre,rec,info=3
 			;
 			; image number for this record
 			imgs = [imgs,fix(gettok(rec,' '))]
@@ -121,6 +125,10 @@ function kcwi_read_proc,ppar,procf,imgs, $
 			; process key,value pairs
 			while strpos(rec,'=') ge 0 do begin
 			    if strpos(rec,'#') lt 0 then begin
+			    	;
+				; log record
+				if ppar.verbose ge 3 then $
+					kcwi_print_info,ppar,pre,rec,info=3
 				;
 				; parse keyword
 				tag = strupcase(gettok(rec,'='))
