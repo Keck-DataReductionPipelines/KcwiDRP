@@ -74,6 +74,10 @@ pro kcwi_group_flats, kcfg, ppar, fcfg
 		; setup KCWI_CFG struct for groups
 		fcfg = replicate(fcfg, ngroups)
 		;
+		; report number of flat groups
+		ppar.nfgrps = ngroups
+		kcwi_print_info,ppar,pre,'Number of flat groups',ngroups
+		;
 		; loop over flat groups
 		for i=0,ngroups-1 do begin
 			;
@@ -122,10 +126,6 @@ pro kcwi_group_flats, kcfg, ppar, fcfg
 			; write out ppar file
 			kcwi_write_ppar,pp
 		endfor	; loop over flat groups
-		;
-		; report number of flat groups
-		ppar.nfgrps = ngroups
-		kcwi_print_info,ppar,pre,'Number of flat groups',ngroups
 	endif else $
 		kcwi_print_info,ppar,pre,'no flat frames found',/warning
 	;
