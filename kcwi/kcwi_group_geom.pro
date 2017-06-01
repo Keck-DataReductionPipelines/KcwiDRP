@@ -128,7 +128,7 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 			kcwi_print_info,ppar,pre,'BarImg, Geom config, lamp', $
 				ccfg[i].imgnum, $
 				', '+(kcwi_cfg_string(ccfg[i]))[0] +', '+lamp[i], $
-				format='(a,i7,2x,a)'
+				format='(a,i7,a)'
 	endif else begin
 		acfg = -1
 		ccfg = -1
