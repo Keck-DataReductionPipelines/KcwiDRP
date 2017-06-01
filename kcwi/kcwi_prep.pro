@@ -52,7 +52,7 @@
 ;	Outputs a set of files in ODIR: 
 ;		1) a master pipeline parameter file, kcwi.ppar, with paramters
 ;			for running the pipeline.
-;		2) a master link file, kcwi.link, with associations for running 
+;		2) a master proc file, kcwi.proc, with associations for running 
 ;			subsequent stages of the pipeline (KCWI_STAGE{N}).
 ;		3) pipeline paramter (*.ppar) files for generating master 
 ;			calibration images (mbias, mdark, mflat) for each 
@@ -62,7 +62,7 @@
 ;		5) a log file, kcwi_prep.log, that logs all steps executed in 
 ;			this stage and records execution time.
 ; NOTE:
-;	The kcwi.link file can be edited to override the automated associations
+;	The kcwi.proc file can be edited to override the automated associations
 ;	prior to running the next stage in the pipeline.
 ;
 ; PROCEDURE:
@@ -373,78 +373,54 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	endif
 	;
 	; gather configuration data on each observation in caldir
-	;calcfg = kcwi_read_cfgs(caldir,filespec=fspec,count=ncal,/silent)
-	;
-	; combine them with local calibrations which take precedence
-	;if ncal gt 0 then begin
-	;	kcwi_print_info,ppar,pre,'Including library calibrations from',caldir
-	;	calcfg = [calcfg,kcfg]
-	;
-	; if nothing found, then we assume that we will use local images
-	;endif else begin
-		kcwi_print_info,ppar,pre,'Using only local calibrations'
-		cals = where(strpos(kcfg.obstype,'cal') ge 0 or $
-			     strpos(kcfg.obstype,'zero') ge 0, ncal)
-		if ncal gt 0 then begin
-			calcfg = kcfg[cals]
-		endif else begin
-			calcfg = kcfg
-			ncal = nf
-		endelse
-	;endelse
+	cals = where(strpos(kcfg.obstype,'cal') ge 0 or $
+		     strpos(kcfg.obstype,'zero') ge 0, ncal)
+	if ncal gt 0 then begin
+		calcfg = kcfg[cals]
+	endif else begin
+		calcfg = kcfg
+		ncal = nf
+	endelse
 	kcwi_print_info,ppar,pre,'Number of images in calibration pool',ncal,$
 		format='(a,i5)'
 	;
 	; find slice profile images
 	profs = where(strcmp(calcfg.imgtype,'object') eq 1 and $
-		( calcfg.skyobs eq 1 or (calcfg.nasmask eq 1 and calcfg.shuffmod eq 1) ), nprofs)
+		( calcfg.skyobs eq 1 or (calcfg.nasmask eq 1 and $
+					 calcfg.shuffmod eq 1) ), nprofs)
 	; twilight flats may be better for this
 	;profs = where(strcmp(calcfg.imgtype,'tflat') eq 1, nprofs)
-	if nprofs gt 0 then begin
-		ppar.profexists = 1
-		ppar.nprofs = nprofs
-		rangepar,calcfg[profs].imgnum,rlst
-		ppar.profs = rlst
-	endif else kcwi_print_info,ppar,pre,'no slice profile observations found',/warning
+	if nprofs le 0 then $
+		kcwi_print_info,ppar,pre, $
+			'no slice profile observations found',/warning
 	;
 	; find relative response images
 	trrs = where(strcmp(calcfg.imgtype,'tflat') eq 1, ntrrs)
 	drrs = where(strcmp(calcfg.imgtype,'dflat') eq 1, ndrrs)
 	if ntrrs gt 0 or ndrrs gt 0 then begin
-		ppar.rrexists = 1
-		ppar.nrrs = ntrrs + ndrrs
+		nrrs = ntrrs + ndrrs
 		if ntrrs gt 0 then begin
 			rrs = trrs
 			if ndrrs gt 0 then $
 				rrs = [rrs, drrs]
 		endif else 	rrs = drrs
 		nrrs = n_elements(rrs)
-		rangepar,calcfg[rrs].imgnum,rlst
-		ppar.rrs = rlst
 	endif else begin
 		nrrs = 0
-		kcwi_print_info,ppar,pre,'no relative response images found',/warning
+		kcwi_print_info,ppar,pre, $
+			'no relative response images found',/warning
 	endelse
 	;
 	; find sky observation images
 	skys = where(kcfg.skyobs eq 1, nskys)
-	if nskys gt 0 then begin
-		ppar.skyexists = 1
-		ppar.nskys = nskys
-		rangepar,kcfg[skys].imgnum,rlst
-		ppar.skys = rlst
-	endif else kcwi_print_info,ppar,pre,'no sky observations found',/warning
+	if nskys le 0 then $
+		kcwi_print_info,ppar,pre,'no sky observations found',/warning
 	;
 	; find standard star observation images
 	stds = kcwi_find_stds(kcfg,ppar,nstds)
 	if nstds le 0 then $
-		kcwi_print_info,ppar,pre,'no standard star images found',/warning
-	;
-	; get image numbers to be processed
-	imnums = kcfg[proc].imgnum
-	rangepar,imnums,imlist
-	ppar.imnum = imlist
-	ppar.npims = nproc
+		kcwi_print_info,ppar,pre, $
+			'no standard star images found',/warning
 	;
 	; report
 	kcwi_print_info,ppar,pre,'processing '+strtrim(strn(nproc),2)+' images'
@@ -454,46 +430,25 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	kcwi_group_biases,calcfg,ppar,bcfg
 	;
-	; do we have any bias groups?
-	if ppar.nbgrps le 0 then $
-		kcwi_print_info,ppar,pre,'no bias groups found',/warning
-	kcwi_print_info,ppar,pre,'Number of bias groups', ppar.nbgrps
-	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP DARKS
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	kcwi_group_darks,calcfg,ppar,dcfg
-	;
-	; do we have any dark groups?
-	if ppar.ndgrps le 0 then $
-		kcwi_print_info,ppar,pre,'no dark groups found',/warning
-	kcwi_print_info,ppar,pre,'Number of dark groups', ppar.ndgrps
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP FLATS
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	kcwi_group_flats,calcfg,ppar,fcfg
 	;
-	; do we have any flat groups?
-	if ppar.nfgrps le 0 then $
-		kcwi_print_info,ppar,pre,'no flat groups found',/warning
-	kcwi_print_info,ppar,pre,'Number of flat groups', ppar.nfgrps
-	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP DIRECT ARCBARS AND ARC FILES (DGEOM)
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	kcwi_group_dgeom,calcfg,ppar,dccfg,dacfg
-	if ppar.ndirect le 0 then $
-		kcwi_print_info,ppar,pre,'no direct geom groups found',/warning
-	kcwi_print_info,ppar,pre,'Number of direct geom groups', ppar.ndirect
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP CBARS AND ARC FILES (GEOM)
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	kcwi_group_geom,calcfg,ppar,ccfg,acfg
-	if ppar.ngeom le 0 then $
-		kcwi_print_info,ppar,pre,'no geom groups found',/warning
-	kcwi_print_info,ppar,pre,'Number of geom groups', ppar.ngeom
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP SLICE PROFILE OBSERVATIONS
@@ -529,6 +484,9 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	ppar.ppfname = 'kcwi.ppar'
 	kcwi_write_ppar,ppar,/archive
 	;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; MATCH EACH OBSERVATION TO CORRESPONDING CAL OBJECT
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; set up configuration matching: here is our list of 
 	; default tags to match in the KCWI_CFG struct
 	mtags = ['XBINSIZE','YBINSIZE','GRATID','GRANGLE','FILTNUM', $
@@ -539,31 +497,27 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	; uncalibrated objects?
 	uncal = ['']
 	;
-	; set up links
-	nlinks = 9	; bias,dark.flat,cbar,arc,prof,sky,rrsp,std
-	ibias = 0
-	idark = 1
-	iflat = 2
-	icbar = 3
-	iarc =  4
-	iprof = 5
-	isky  = 6
-	irrsp = 7
-	istd  = 8
+	; proc filename
+	procfile = odir+'kcwi.proc'
 	;
-	; open master link files and ppar files
-	filestamp,odir+'kcwi.link',/arch
-	openw,kl,odir+'kcwi.link',/get_lun
-	printf,kl,'#     Img    Mbias    Mdark    Mflat    Cbars      Arc     Prof      Sky     Rrsp      Std  Imgpars'
+	; log what we are doing
+	kcwi_print_info,ppar,pre,'Writing automatic cal associations to: ' + $
+		procfile
+	kcwi_print_info,ppar,pre,'Edit this file to customize cal associations'
+	;
+	; open master proc file
+	filestamp,procfile,/arch
+	openw,kp,procfile,/get_lun
+	printf,kp,'# '+pre+'  '+systime(0)
+	printf,kp,'# R   = CCD Readout Speed: 0 - slow, 1 - fast'
+	printf,kp,'# SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes'
+	printf,kp,'#     Img  Bin AMPS R SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
 	;
 	; loop over images
 	for i=0,nproc-1 do begin
 		;
 		; pointer to image to process
 		p = proc[i]
-		;
-		; link numbers
-		links = lonarr(nlinks)-1
 		;
 		; get image summary
 		kcwi_print_cfgs,kcfg[p],imsum,/silent
@@ -579,6 +533,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		flush,ll
 		if verbose ge 1 then $
 			print,imsumo
+		printf,kp,kcfg[p].imgnum,imsum,format='(i9,2x,a)'
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; ASSOCIATE WITH MASTER BIAS IMAGE
@@ -598,7 +553,6 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				zdel = abs(mcfg.groupnum - kcfg[p].imgnum)
 				zind = (where(zdel eq min(zdel)))[0]
 				mbfile = mcfg[zind].groupfile
-				blink = mcfg[zind].groupnum
 				;
 				; log
 				kcwi_print_info,ppar,pre,'master bias file = '+$
@@ -607,7 +561,6 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 			; only one match
 			endif else if b eq 1 then begin
 				mbfile = mcfg.groupfile
-				blink = mcfg.groupnum
 				;
 				; log
 				kcwi_print_info,ppar,pre,'master bias file = '+$
@@ -618,12 +571,12 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				kcwi_print_info,ppar,pre,$
 				     'cannot associate with any master bias: '+ $
 				     kcfg[p].obsfname,/warning
-				mbfile = '-'
-				blink = -1
+				mbfile = ''
 			endelse
 			;
-			; set bias link
-			links[ibias] = blink
+			; print proc
+			if mbfile ne '' then $
+				printf,kp,'masterbias='+odir+mbfile
 		endif	; ppar.nbgrps gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -648,7 +601,6 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				endif else $
 					mcfg = mcfg[tind]
 				mdfile = mcfg.groupfile
-				dlink = mcfg.groupnum
 				;
 				; log
 				kcwi_print_info,ppar,pre,'master dark file = '+$
@@ -657,12 +609,11 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				kcwi_print_info,ppar,pre, $
 					'cannot unambiguously associate with any master dark: '+ $
 					kcfg[p].obsfname,/warning
-				mdfile = '-'
-				dlink = -1
+				mdfile = ''
 			endelse
 			;
-			; set dark link
-			links[idark] = dlink
+			; print proc
+			printf,kp,'masterdark='+odir+mdfile
 		endif	; only object frames and ndgrps gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -681,7 +632,6 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				count=f,silent=sile)
 			if f eq 1 then begin
 				mffile = mcfg.groupfile
-				flink = mcfg.groupnum
 				;
 				; log
 				kcwi_print_info,ppar,pre,'master flat file = ' + mffile
@@ -691,35 +641,37 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				kcwi_print_info,ppar,pre, $
 					'cannot unambiguously associate with any master flat: '+ $
 					kcfg[p].obsfname,/warning
-				mffile = '-'
-				flink = -1
+				mffile = ''
 			endelse
 			;
-			; set flat link
-			links[iflat] = flink
+			; print proc
+			if mffile ne '' then $
+				printf,kp,'masterflat='+odir+mffile
 		endif	; only object and cflat frames and nfgrps gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; ASSOCIATE WITH CBARS AND ARC IMAGES (GEOM)
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;
+		; init
+		cbfile = ''
+		arfile = ''
+		;
 		; no sense creating a dark data cube or matching direct image
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
-			ppar.ncbars gt 0 and ppar.narcs gt 0 then begin
+			ppar.nggrps gt 0 then begin
 			mcfg = kcwi_match_cfg(ccfg,kcfg[p],ppar,mtags,imgtype='cbars',/time,count=c,/silent)
 			if c eq 1 then begin
 				;
 				; record cbars filename
-				cbfile = mcfg.obsfname
-				clink  = mcfg.imgnum
+				cbfile = strmid(mcfg.obsfname,0,strpos(mcfg.obsfname,'.fit'))+'_int.fits'
 				;
 				; now find matched arc
-				m = where(ccfg.imgnum eq clink)
+				m = where(ccfg.imgnum eq mcfg.imgnum)
 				mcf2 = acfg[m]
 				;
 				; record arc filename
-				arfile = mcf2.obsfname
-				alink  = mcf2.imgnum
+				arfile = strmid(mcf2.obsfname,0,strpos(mcf2.obsfname,'.fit'))+'_int.fits'
 				;
 				; log
 				kcwi_print_info,ppar,pre,'cbars file = '+cbfile
@@ -730,15 +682,17 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				kcwi_print_info,ppar,pre, $
 				    'cannot unambiguously find geom images (arc, cbars) for object image: '+ $
 				    kcfg[p].obsfname,/warning
-				clink = -1
-				alink = -1
+				cbfile = ''
+				arfile = ''
 				cstr = (kcwi_cfg_string(kcfg[p]))[0]
 				uncal = [ uncal, cstr ]
 			endelse
 			;
-			; set cbars and arc links
-			links[icbar] = clink
-			links[iarc]  = alink
+			; print proc
+			if cbfile ne '' and arfile ne '' then begin
+				printf,kp,'geomcbar='+odir+cbfile
+				printf,kp,'geomarc='+odir+arfile
+			endif
 		endif	; only object and cflat frames and ncbars gt 0 and narcs gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -747,21 +701,19 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; no sense creating a dark direct image
 		if strpos(kcfg[p].obstype,'direct') ge 0 and strmatch(kcfg[p].imgtype,'dark') ne 1 and $
-			ppar.ndirect gt 0 and ppar.ndarcs gt 0 then begin
+			ppar.ndggrps gt 0 then begin
 			mcfg = kcwi_match_cfg(dccfg,kcfg[p],ppar,dtags,imgtype='arcbars',/time,count=c,/silent)
 			if c eq 1 then begin
 				;
 				; record arcbars filename
-				cbfile = mcfg.obsfname
-				clink  = mcfg.imgnum
+				cbfile = strmid(mcfg.obsfname,0,strpos(mcfg.obsfname,'.fit'))+'_int.fits'
 				;
 				; now find matched arc
-				m = where(dccfg.imgnum eq clink)
+				m = where(dccfg.imgnum eq mcfg.imgnum)
 				mcf2 = dacfg[m]
 				;
 				; record arc filename
-				arfile = mcf2.obsfname
-				alink  = mcf2.imgnum
+				arfile = strmid(mcf2.obsfname,0,strpos(mcf2.obsfname,'.fit'))+'_int.fits'
 				;
 				; log
 				kcwi_print_info,ppar,pre,'arcbars file = '+cbfile
@@ -772,15 +724,17 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				kcwi_print_info,ppar,pre, $
 				    'cannot unambiguously find direct geom images (arc, arcbars) for object image: '+ $
 				    kcfg[p].obsfname,/warning
-				clink = -1
-				alink = -1
+				cbfile = ''
+				arfile = ''
 				cstr = (kcwi_cfg_string(kcfg[p]))[0]
 				uncal = [ uncal, cstr ]
 			endelse
 			;
-			; set cbars and arc links
-			links[icbar] = clink
-			links[iarc]  = alink
+			; print proc
+			if cbfile ne '' and arfile ne '' then begin
+				printf,kp,'geomcbar='+odir+cbfile
+				printf,kp,'geomarc='+odir+arfile
+			endif
 		endif	; only object and cflat frames and ncbars gt 0 and narcs gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -789,28 +743,32 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; no point profile correcting dark frames
 		; also require geometry solution
-		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
-			ppar.nprofs gt 0 and links[icbar] ge 0 and links[iarc] ge 0 then begin
-			mcfg = kcwi_match_cfg(pcfg,kcfg[p],ppar,mtags,count=s,/time)
+		if strmatch(kcfg[p].imgtype,'dark') ne 1 and $
+		   strpos(kcfg[p].obstype,'direct') lt 0 and $
+		   nprofs gt 0 and cbfile ne '' and arfile ne '' then begin
+			mcfg = kcwi_match_cfg(pcfg,kcfg[p],ppar,mtags, $
+						count=s,/time)
 			if s eq 1 then begin
 				;
 				; record slice profile observation filename
-				pfile = mcfg.obsfname
-				plink = mcfg.imgnum
+				pfile = strmid(mcfg.obsfname,0,strpos(mcfg.obsfname,'.fit'))+'_prof.fits'
 				;
 				; log
-				kcwi_print_info,ppar,pre,'slice profile file = '+pfile
+				kcwi_print_info,ppar,pre, $
+					'slice profile file = '+pfile
 				;
-				; handle the ambiguous case or when no slice profile image can be found
+				; handle the ambiguous case or 
+				; when no slice profile image can be found
 			endif else begin
 				kcwi_print_info,ppar,pre, $
-				    'cannot unambiguously find slice profile image for object image: '+ $
+    'cannot unambiguously associate slice profile image for object image: '+ $
 				    kcfg[p].obsfname,/warning
-				plink = -1
+				pfile = ''
 			endelse
 			;
-			; set prof link
-			links[iprof] = plink
+			; print proc
+			if pfile ne '' then $
+				printf,kp,'masterprof='+odir+pfile
 		endif	; only object frames and nprofs gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -819,24 +777,27 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; only object frames can have sky observations
 		if strmatch(kcfg[p].imgtype,'object') eq 1 and $
-		   kcfg[p].skyobs eq 0 and ppar.nskys gt 0 then begin
-			mcfg = kcwi_match_cfg(scfg,kcfg[p],ppar,mtags,/object,/time,count=s,/silent,cwi=cwi)
+		   kcfg[p].skyobs eq 0 and nskys gt 0 then begin
+			mcfg = kcwi_match_cfg(scfg,kcfg[p],ppar,mtags, $
+					/object,/time,count=s,/silent,cwi=cwi)
 			if s eq 1 then begin
 				;
 				; record sky filename
 				skfile = mcfg.obsfname
-				slink  = mcfg.imgnum
 				;
 				; log
 				kcwi_print_info,ppar,pre,'sky file = '+skfile
 			endif else begin
-				kcwi_print_info,ppar,pre,'No sky obs with same object name', $
-					kcfg[p].targname,format='(a,2x,a)',/warning
-				slink = -1
+				kcwi_print_info,ppar,pre, $
+					'No sky obs with same object name', $
+					kcfg[p].targname,format='(a,2x,a)', $
+					/warning
+				skfile = ''
 			endelse
 			;
-			; set sky link
-			links[isky] = slink
+			; print proc
+			if skyfile ne '' then $
+				printf,kp,'mastersky='+odir+skfile
 		endif	; only object frames and nskys gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -845,17 +806,20 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; no sense response correcting dark frames
 		; also require geometry solution
-		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
-			ppar.nrrs gt 0 and links[icbar] ge 0 and links[iarc] ge 0 then begin
+		if strmatch(kcfg[p].imgtype,'dark') ne 1 and $
+		   strpos(kcfg[p].obstype,'direct') lt 0 and $
+		   nrrs gt 0 and cbfile ne '' and arfile ne '' then begin
 			;
 			; twilight flats
 			if ntrrs gt 0 then $
-				mtcfg = kcwi_match_cfg(rtcfg,kcfg[p],ppar,mtags,count=rt,/time) $
+				mtcfg = kcwi_match_cfg(rtcfg,kcfg[p],ppar, $
+							mtags,count=rt,/time) $
 			else	rt = 0
 			;
 			; dome flats
 			if ndrrs gt 0 then $
-				mdcfg = kcwi_match_cfg(rdcfg,kcfg[p],ppar,mtags,count=rd,/time) $
+				mdcfg = kcwi_match_cfg(rdcfg,kcfg[p],ppar, $
+							mtags,count=rd,/time) $
 			else	rd = 0
 			;
 			; do we have a choice?
@@ -887,18 +851,19 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 			if r eq 1 then begin
 				;
 				; record twilight or dome flat filename
-				rrfile = mcfg.obsfname
-				rlink  = mcfg.imgnum
+				rrfile = strmid(mcfg.obsfname,0,strpos(mcfg.obsfname,'.fit'))+'_rr.fits'
 				;
 				; log
-				kcwi_print_info,ppar,pre,'relative response file = '+rrfile
+				kcwi_print_info,ppar,pre, $
+					'relative response file = '+rrfile
 			endif else begin
-				rlink = -1
+				rrfile = ''
 			endelse
 			;
-			; set rrsp link
-			links[irrsp] = rlink
-		endif	; only object frames and nrrs gt 0
+			; print proc
+			if rrfile ne '' then $
+				printf,kp,'masterrr='+odir+rrfile
+		endif else rrfile = ''	; only object frames and nrrs gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; ASSOCIATE WITH DIRECT RELATIVE RESPONSE OBSERVATIONS
@@ -906,14 +871,18 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; Use arc image for direct relative response
 		if strpos(kcfg[p].obstype,'direct') ge 0 and $
-			links[icbar] ge 0 and links[iarc] ge 0 then begin
-			links[irrsp] = links[iarc]
+			cbfile ne '' and arfile ne '' then begin
+			;
+			; get master rr filename
+			drrfile = repstr(arfile,'_int','_drr')
 			;
 			; log
-			kcwi_print_info,ppar,pre,'direct relative response file = '+arfile
+			kcwi_print_info,ppar,pre, $
+				'direct relative response file = '+drrfile
 			;
 			; if we are direct, but there is no arc file
-			; just leave the link as set above (-1)
+			; just leave the file as set above ('')
+			printf,kp,'masterrr='+odir+drrfile
 		endif
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -922,27 +891,26 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		;
 		; correct only object frames
 		; also require relative response correction
-		if nstds gt 0 and strmatch(kcfg[p].imgtype,'object') eq 1 and $
-			strpos(kcfg[p].obstype,'direct') lt 0 and links[irrsp] ge 0 then begin
-			mcfg = kcwi_match_cfg(stdcfg,kcfg[p],ppar,mtags,count=std,/time)
+		if strmatch(kcfg[p].imgtype,'object') eq 1 and $
+		   strpos(kcfg[p].obstype,'direct') lt 0 and $
+		   rrfile ne '' then begin
+			mcfg = kcwi_match_cfg(stdcfg,kcfg[p],ppar,mtags, $
+						count=std,/time)
 			if std eq 1 then begin
 				;
 				; record stadard observation filename
-				stdfile = mcfg.obsfname
-				stdlink = mcfg.imgnum
+				stdfile = strmid(mcfg.obsfname,0,strpos(mcfg.obsfname,'.fit'))+'_invsens.fits'
 				;
 				; log
 				kcwi_print_info,ppar,pre,'standard star observation file = '+stdfile
 			endif else begin
-				stdlink = -1
+				stdfile = ''
 			endelse
 			;
-			; set rrsp link
-			links[istd] = stdlink
+			; print proc
+			if stdfile ne '' then $
+				printf,kp,'masterstd='+odir+stdfile
 		endif	; only object frames
-		;
-		; write out links
-		printf,kl,kcfg[p].imgnum,links,imsum,format='(10i9,2x,a)'
 	endfor	; loop over images
 	;
 	; check for un calibrated observations
@@ -969,8 +937,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	kcwi_print_info,ppar,pre,'run time in seconds',eltime
 	kcwi_print_info,ppar,pre,'finished on '+systime(0)
 	;
-	; close log and link files
-	free_lun,ll,kl
+	; close log and proc files
+	free_lun,ll,kp
 	;
 	return
 end	; kcwi_prep

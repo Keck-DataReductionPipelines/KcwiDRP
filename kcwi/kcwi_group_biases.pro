@@ -49,6 +49,7 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 	;
 	; setup
 	pre = 'KCWI_GROUP_BIASES'
+	ppar.nbgrps = 0
 	;
 	; instantiate and init a KCWI_CFG struct for the bias groups
 	B = {kcwi_cfg}
@@ -122,10 +123,6 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 		; number of groups
 		ngroups = gind + 1
 		;
-		; record number of groups
-		ppar.nbgrps = ngroups
-		ppar.biasexists = 1
-		;
 		; setup KCWI_CFG struct for groups
 		bcfg = replicate(bcfg, ngroups)
 		;
@@ -189,6 +186,7 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 				bcfg[g].grouppar	= pp.ppfname
 				;
 				; status
+				pp.nbgrps		= 1
 				pp.initialized		= 1
 				pp.progid		= pre
 				bcfg[g].initialized	= 1
@@ -206,7 +204,6 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 			;
 			; return an uninitialized, single KCWI_CFG struct
 			bcfg = bcfg[0]
-			ppar.biasexists = 0
 			kcwi_print_info,ppar,pre,'no bias groups with >= ', $
 				ppar.mingroupbias, ' images.',/warning
 		;
@@ -220,8 +217,9 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 				' images.', format='(a,i3,a,i3,a)'
 		endif	; otherwise, we are OK as is
 		;
-		; update number of groups
+		; report number of bias groups
 		ppar.nbgrps = g
+		kcwi_print_info,ppar,pre,'Number of bias groups',g
 	;
 	; no bias frames found
 	endif else $

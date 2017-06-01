@@ -396,7 +396,7 @@ for b = 0,119 do begin
 	else	pkd = pk	; use parabola fit when nzeros eq 0
 	;
 	; check status of cross-correlations
-	if total(dspstat) gt 0 then begin
+	if total(dspstat) gt fix(nn/2) then begin
 		kcwi_print_info,ppar,pre, $
 			string(fix(total(dspstat)),form='(i3)') + ' out of ' + $
 			string(nn,form='(i3)') + ' Xcors had issues'
@@ -494,7 +494,7 @@ endif else begin
 			xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
 			ythick=th,ytitle='Ang/px',yrange=yrng,/ys
 		kcwi_oplot_slices
-		if ppar.display ge 3 or (ppar.display ge 2 and nasmask) then $
+		if ppar.display ge 2 then $
 			read,'next: ',q
 		!p.multi=0
 	endif

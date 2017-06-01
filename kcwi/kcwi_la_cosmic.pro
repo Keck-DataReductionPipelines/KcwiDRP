@@ -121,6 +121,7 @@
 pro kcwi_la_cosmic, img, ppar, mask, sigclip=sigclip, $
                gain=gain, readn=readn, skyval=skyval,objlim=objlim, $
                niter=niter,sigfrac=sigfrac, $
+	       psfmodel=psfmodel, psffwhm=psffwhm, psfsize=psfsize, $
                statsec=statsec,zeroindexed=zeroindexed,$
                isbig=isbig, blocksize=blocksize, $
 	       ntcosmicray=ntcosmicray
@@ -323,7 +324,25 @@ while(not sstop) do begin
 		firstsel = sigmap
 		firstsel = firstsel * (firstsel GT sigclip)
 		firstsel = firstsel * (firstsel LT 0.1) + (firstsel GE 0.1)
-		med3 = djs_median(imgwork,width=3,boundary='reflect')
+		; inject kernel convolution here instead of next line
+		if keyword_set(psfmodel) then begin
+			if strpos(psfmodel,'gaussy') ge 0 then begin
+				if keyword_set(psffwhm) then $
+					pfwhm = psffwhm $
+				else	pfwhm = 2.5
+				if keyword_set(psfsize) then $
+					psize = psfsize $
+				else	psize = 7
+				psfk = gaussykernel(pfwhm, psize)
+				med3 = CONVOL(imgwork, psfk, 1, $
+						/CENTER,/EDGE_TRUNCATE)
+			endif else begin
+				kcwi_print_info,ppar,pre,'bad psf model', $
+						psfmodel,/error
+				return
+			endelse
+		endif else $
+			med3 = djs_median(imgwork,width=3,boundary='reflect')
 		med7 = djs_median(med3,width=7,boundary='reflect')
 
 		med3 = (temporary(med3) - med7)/noise
@@ -372,7 +391,7 @@ while(not sstop) do begin
 		nchop = nchop + 1
 	endfor
 
-	kcwi_print_info,ppar,pre,'found ' + strtrim(string(ncosmicray)) + ' cosmic rays in iteration ' + strtrim(string(iter)),info=2
+	kcwi_print_info,ppar,pre,'found ' + strtrim(string(ncosmicray)) + ' cosmic rays in iteration ' + strtrim(string(iter))
 	if (ncosmicray eq 0) then sstop = 1
 	iter = iter + 1
 	if (iter gt niter) then sstop = 1

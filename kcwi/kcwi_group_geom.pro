@@ -43,6 +43,7 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 	;
 	; setup
 	pre = 'KCWI_GROUP_GEOM'
+	ppar.nggrps = 0
 	;
 	; check input
 	if kcwi_verify_cfg(kcfg) ne 0 then return
@@ -58,9 +59,6 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 	if narc le 0 or nbar le 0 then begin
 		;
 		; record results
-		ppar.ncbars = nbar
-		ppar.narcs = narc
-		ppar.ngeom = 0
 		if narc le 0 then $
 			kcwi_print_info,ppar,pre,'no arcs found!',/error
 		if nbar le 0 then $
@@ -75,6 +73,7 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 	; collect matches
 	bmatch = lonarr(nbar) - 1L
 	amatch = lonarr(nbar) - 1L
+	lamp   = strarr(nbar)
 	;
 	; loop over bars images and gather geom pairs
 	for i=0,nbar-1 do begin
@@ -95,14 +94,14 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 					   strpos(cfg[i].gratid,'BL') ge 0 or $
 					   strpos(cfg[i].gratid,'BM') ge 0 then begin
 						if afg[j].lmp1stat eq 1 and afg[j].lmp1shst eq 1 then begin
-							kcwi_print_info,ppar,pre,"For "+cfg[i].gratid+" grating, choosing lamp",afg[j].lmp1nam
 							amatch[i] = j
+							lamp[i] = afg[j].lmp1nam
 						endif else $
 							if amatch[i] lt 0 then amatch[i] = j
 					endif else begin
 						if afg[j].lmp0stat eq 1 and afg[j].lmp0shst eq 1 then begin
-							kcwi_print_info,ppar,pre,"For "+cfg[i].gratid+" grating, choosing lamp",afg[j].lmp0nam
 							amatch[i] = j
+							lamp[i] = afg[j].lmp0nam
 						endif else $
 							if amatch[i] lt 0 then amatch[i] = j
 					endelse
@@ -116,26 +115,29 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 	;
 	; collect the good calibs
 	if ngeom gt 0 then begin
+		kcwi_print_info,ppar,pre,'Number of geom groups',ngeom
 		;
 		; cbars
 		ccfg = cfg[bmatch[good]]
 		;
 		; arcs
 		acfg = afg[amatch[good]]
+		;
+		; lamps
+		lamp = lamp[good]
 		for i=0,ngeom-1 do $
-			kcwi_print_info,ppar,pre,'Geom config', $
-				(kcwi_cfg_string(ccfg[i]))[0]
+			kcwi_print_info,ppar,pre,'BarImg, Geom config, lamp', $
+				ccfg[i].imgnum, $
+				', '+(kcwi_cfg_string(ccfg[i]))[0] +', '+lamp[i], $
+				format='(a,i7,a)'
 	endif else begin
 		acfg = -1
 		ccfg = -1
-		kcwi_print_info,ppar,pre,'no geom image sets found',/warning
+		kcwi_print_info,ppar,pre,'no geom groups found',/warning
 	endelse
 	;
-	; record results
-	ppar.ncbars = ngeom
-	ppar.narcs = ngeom
-	ppar.ngeom = ngeom
-	if ngeom gt 0 then ppar.geomexists = 1
+	; report number of geom groups
+	ppar.nggrps = ngeom
 	;
 	return
 end
