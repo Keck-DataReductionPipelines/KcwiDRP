@@ -125,8 +125,8 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 		; lamps
 		lamp = lamp[good]
 		for i=0,ngeom-1 do $
-			kcwi_print_info,ppar,pre,'Geom config, lamp', $
-				(kcwi_cfg_string(ccfg[i]))[0] +', '+lamp[i]
+			kcwi_print_info,ppar,pre,'BarImg, Geom config, lamp', $
+				strn(ccfg[i].imgnum)+', '+(kcwi_cfg_string(ccfg[i]))[0] +', '+lamp[i]
 	endif else begin
 		acfg = -1
 		ccfg = -1
