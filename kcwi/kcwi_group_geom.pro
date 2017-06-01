@@ -115,6 +115,7 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 	;
 	; collect the good calibs
 	if ngeom gt 0 then begin
+		kcwi_print_info,ppar,pre,'Number of geom groups',ngeom
 		;
 		; cbars
 		ccfg = cfg[bmatch[good]]
@@ -132,12 +133,11 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 	endif else begin
 		acfg = -1
 		ccfg = -1
-		kcwi_print_info,ppar,pre,'no geom image sets found',/warning
+		kcwi_print_info,ppar,pre,'no geom groups found',/warning
 	endelse
 	;
 	; report number of geom groups
 	ppar.nggrps = ngeom
-	kcwi_print_info,ppar,pre,'Number of geom groups',ngeom
 	;
 	return
 end

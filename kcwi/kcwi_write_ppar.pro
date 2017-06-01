@@ -106,10 +106,6 @@ pro kcwi_write_ppar,ppar,force=force,archive=archive
 ; get struct tags
 	keys = tag_names(ppar)
 ;
-; store loglun
-	loglun = ppar.loglun
-	ppar.loglun = -1
-;
 ; test timestamp, set it to now if not set
 	if ppar.timestamp le 0 then ppar.timestamp = systime(1)
 ;
@@ -163,9 +159,6 @@ pro kcwi_write_ppar,ppar,force=force,archive=archive
 	free_lun,ol
 	kcwi_print_info,ppar,pre,ppar.ppfname + ' written in directory ' + $
 		ppar.reddir
-;
-; restore loglun
-	ppar.loglun = loglun
 ;
 	return
 end

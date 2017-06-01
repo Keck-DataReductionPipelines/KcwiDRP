@@ -373,25 +373,14 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	endif
 	;
 	; gather configuration data on each observation in caldir
-	;calcfg = kcwi_read_cfgs(caldir,filespec=fspec,count=ncal,/silent)
-	;
-	; combine them with local calibrations which take precedence
-	;if ncal gt 0 then begin
-	;	kcwi_print_info,ppar,pre,'Including library calibrations from',caldir
-	;	calcfg = [calcfg,kcfg]
-	;
-	; if nothing found, then we assume that we will use local images
-	;endif else begin
-		kcwi_print_info,ppar,pre,'Using only local calibrations'
-		cals = where(strpos(kcfg.obstype,'cal') ge 0 or $
-			     strpos(kcfg.obstype,'zero') ge 0, ncal)
-		if ncal gt 0 then begin
-			calcfg = kcfg[cals]
-		endif else begin
-			calcfg = kcfg
-			ncal = nf
-		endelse
-	;endelse
+	cals = where(strpos(kcfg.obstype,'cal') ge 0 or $
+		     strpos(kcfg.obstype,'zero') ge 0, ncal)
+	if ncal gt 0 then begin
+		calcfg = kcfg[cals]
+	endif else begin
+		calcfg = kcfg
+		ncal = nf
+	endelse
 	kcwi_print_info,ppar,pre,'Number of images in calibration pool',ncal,$
 		format='(a,i5)'
 	;
@@ -495,6 +484,9 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	ppar.ppfname = 'kcwi.ppar'
 	kcwi_write_ppar,ppar,/archive
 	;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; MATCH EACH OBSERVATION TO CORRESPONDING CAL OBJECT
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; set up configuration matching: here is our list of 
 	; default tags to match in the KCWI_CFG struct
 	mtags = ['XBINSIZE','YBINSIZE','GRATID','GRANGLE','FILTNUM', $
@@ -505,9 +497,17 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	; uncalibrated objects?
 	uncal = ['']
 	;
+	; proc filename
+	procfile = odir+'kcwi.proc'
+	;
+	; log what we are doing
+	kcwi_print_info,ppar,pre,'Writing automatic cal associations to: ' + $
+		procfile
+	kcwi_print_info,ppar,pre,'Edit this file to customize cal associations'
+	;
 	; open master proc file
-	filestamp,odir+'kcwi.proc',/arch
-	openw,kp,odir+'kcwi.proc',/get_lun
+	filestamp,procfile,/arch
+	openw,kp,procfile,/get_lun
 	printf,kp,'# '+pre+'  '+systime(0)
 	printf,kp,'# R   = CCD Readout Speed: 0 - slow, 1 - fast'
 	printf,kp,'# SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes'
