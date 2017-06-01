@@ -494,7 +494,7 @@ endif else begin
 			xthick=th,xtitle='Bar #', xrange=[-1,120],/xs, $
 			ythick=th,ytitle='Ang/px',yrange=yrng,/ys
 		kcwi_oplot_slices
-		if ppar.display ge 3 or (ppar.display ge 2 and nasmask) then $
+		if ppar.display ge 2 then $
 			read,'next: ',q
 		!p.multi=0
 	endif

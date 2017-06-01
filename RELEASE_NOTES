@@ -1,5 +1,15 @@
 # Copyright (c) 2013-2017, California Institute of Technology, all rights reserved
 
+2017-Jun-01: v0.5.0 - Nineteenth beta release
+
+- removed link file paradigm for process control and replaced with a proc file 
+	that uses keyword/value pairs for calibration associations.
+
+- added optional psf model 'gaussy' for cr rejection that doesn't eat sky lines.
+
+- general cleanup and reordering of log file outputs.
+
+
 2017-May-19: v0.4.2 - Eighteenth beta release
 
 - 'NASMASK' state no longer used to match configurations.
@@ -7,8 +17,6 @@
 - match biases on 'gainmul' keyword.
 
 - in data/stds added KECK formatted starlist kderp_stds_starlist.txt.
-
-- made flattened cube of all arc images a standard output diagnostic.
 
 - made ThAr the reference for geometry on all configs until FeAr lamp replaced.
 
