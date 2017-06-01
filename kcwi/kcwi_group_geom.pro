@@ -73,6 +73,7 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 	; collect matches
 	bmatch = lonarr(nbar) - 1L
 	amatch = lonarr(nbar) - 1L
+	lamp   = strarr(nbar)
 	;
 	; loop over bars images and gather geom pairs
 	for i=0,nbar-1 do begin
@@ -93,14 +94,14 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 					   strpos(cfg[i].gratid,'BL') ge 0 or $
 					   strpos(cfg[i].gratid,'BM') ge 0 then begin
 						if afg[j].lmp1stat eq 1 and afg[j].lmp1shst eq 1 then begin
-							kcwi_print_info,ppar,pre,"For "+cfg[i].gratid+" grating, choosing lamp",afg[j].lmp1nam
 							amatch[i] = j
+							lamp[i] = afg[j].lmp1nam
 						endif else $
 							if amatch[i] lt 0 then amatch[i] = j
 					endif else begin
 						if afg[j].lmp0stat eq 1 and afg[j].lmp0shst eq 1 then begin
-							kcwi_print_info,ppar,pre,"For "+cfg[i].gratid+" grating, choosing lamp",afg[j].lmp0nam
 							amatch[i] = j
+							lamp[i] = afg[j].lmp0nam
 						endif else $
 							if amatch[i] lt 0 then amatch[i] = j
 					endelse
@@ -120,9 +121,12 @@ pro kcwi_group_geom, kcfg, ppar, ccfg, acfg
 		;
 		; arcs
 		acfg = afg[amatch[good]]
+		;
+		; lamps
+		lamp = lamp[good]
 		for i=0,ngeom-1 do $
-			kcwi_print_info,ppar,pre,'Geom config', $
-				(kcwi_cfg_string(ccfg[i]))[0]
+			kcwi_print_info,ppar,pre,'Geom config, lamp', $
+				(kcwi_cfg_string(ccfg[i]))[0] +', '+lamp[i]
 	endif else begin
 		acfg = -1
 		ccfg = -1
