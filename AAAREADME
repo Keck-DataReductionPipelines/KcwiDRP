@@ -563,6 +563,23 @@ IDL> kcwi_print_cfgs,kcfg,/header
 
 4. NEW FEATURES:
 
+New Cosmic Ray Removal Method
+
+The ability to account for an object PSF has been added to the routine
+kcwi_la_cosmic.pro.  This was motivated by observing that parts of night
+sky lines can sometimes be flagged as cosmic rays and removed from the
+stage1 intensity image.  We have added a PSF model option called 'gaussy'
+which accounts for real objects that have a Gaussian profile in the y
+direction, like night sky lines.  In most cases, the night sky lines are
+not important, but in the case where they serve as a reference or some
+other purpos, we recommed using this model to minimize their removal.  This
+model can be invoked using the kcwi.ppar file by setting the parameter
+CRPSFMOD to 'gaussy' (it defaults to '').  Other relevant parameters for
+this method are CRPSFFWHM, which specifies the FWHM of the Gaussian model of
+real objects (defaults to 2.5px), and CRPSFSIZE, which specifies the overal
+size of the model PSF (defaults to 7px).  Be aware that real cosmic rays
+that have a horizontal trace will be harder to remove using this method.
+
 Flatten Cube to 2-D image
 
 The new routine, kcwi_flatten_cube.pro, takes each slice and packs them

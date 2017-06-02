@@ -325,6 +325,9 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 							if strpos(kcfg.imgtype,'arc') ge 0 then begin
 								rcube = kcwi_get_imname(kpars[i],imgnum[i],'_icube',/reduced)
 								kcwi_flatten_cube,rcube
+								kcwi_print_info,ppar,pre,'wrote image file', $
+									repstr(rcube,'.fits','_2d.fits'), $
+									format='(a,a)'
 							endif
 							;
 							; variance image

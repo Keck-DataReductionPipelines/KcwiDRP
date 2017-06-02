@@ -122,7 +122,7 @@ for i=0,23 do begin
 	ymo = moment(yrsd,/nan)
 	kgeom.xrsd[i] = sqrt(xmo[1])
 	kgeom.yrsd[i] = sqrt(ymo[1])
-	kcwi_print_info,ppar,pre,'X, Y avg pixel residual for slice: ', $
+	kcwi_print_info,ppar,pre,'X, Y avg pixel residual for slice', $
 		i,kgeom.xrsd[i],kgeom.yrsd[i], format='(a,i3,2f9.3)'
 	;
 	; plot if requested
@@ -165,8 +165,8 @@ endfor	; loop over slices
 ; global average
 xmo = moment(kgeom.xrsd,/nan)
 ymo = moment(kgeom.yrsd,/nan)
-kcwi_print_info,ppar,pre,'X, Y global pixel residuals: ',i,xmo[0],ymo[0], $
-	format='(a,i3,2f9.3)'
+kcwi_print_info,ppar,pre,'X, Y mean pixel residuals',xmo[0],ymo[0], $
+	format='(a,2f9.3)'
 ;
 ; Kgeom timestamp
 kgeom.progid = pre
