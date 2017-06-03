@@ -160,7 +160,7 @@ endif else begin
 	lastrow = 50
 	minrow = lastrow
 	maxrow = specsz[0]-lastrow-1
-	ftype = 'FullCCD'
+	ftype = 'Iter'
 	if strpos(grating,'BL') ge 0 then begin
 		edgespace = [0.00]
 		ftype = 'LowRes'

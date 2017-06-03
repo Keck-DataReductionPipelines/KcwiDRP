@@ -136,7 +136,7 @@ endif else begin
 	minrow = lastrow
 	maxrow = specsz[0]-lastrow-1
 endelse				; no nasmask
-ftype = 'Alt'
+ftype = 'Std'
 ;
 ; find wavelength range
 ; and pascal shift coeffs
@@ -269,7 +269,7 @@ for pp = 0,spec_npks-1 do begin
 		woff = -1.
 		wrat = 0.
 	endelse
-	print,'Atlas: ',is_good,nffs,xoff,woff,wrat
+	;print,'Atlas: ',is_good,nffs,xoff,woff,wrat
 	;
 	; fit Spec peak in X pixels
 	ffs = get_line_window(subwvals,subyvals,spec_cent[pp],count=nffs)
@@ -295,8 +295,8 @@ for pp = 0,spec_npks-1 do begin
 		xoff = -1.
 		xrat = 0.
 	endelse
-	print,'Spec : ',is_good,nffs,xoff,xrat
-	print,' '
+	;print,'Spec : ',is_good,nffs,xoff,xrat
+	;print,' '
 	;
 	; are we good?
 	if is_good then begin
