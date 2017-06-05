@@ -1,5 +1,4 @@
 ;------------------------------------------------------------------------------
-;
 ;+
 ; NAME:
 ;   kcwi_la_cosmic
@@ -9,9 +8,11 @@
 ;     gain estimation to work properly.
 ;
 ; CALLING SEQUENCE:
-;   kcwi_la_cosmic, img, mask, [sigclip=, gain=, readn=, $
-;               skyval=,objlim=, niter=,sigfrac=,statsec=, $
-;               zeroindexed=,masksuffix=, isbig=,blocksize=]
+;   kcwi_la_cosmic, img, ppar, mask, [sigclip=, gain=, readn=, $
+;               skyval=, objlim=, niter=, sigfrac=, statsec=, $
+;               zeroindexed=, isbig=, blocksize=, $
+;		psfmodel=, psffwhm=, psfsize=, $
+;		bigkernel=, bigykernel=]
 ;
 ; INPUTS:
 ;   img:	float 2-d array
@@ -23,17 +24,20 @@
 ;   readn       Readnoise of CCD (default=0.0)
 ;   skyval      Avg. of sky level already subtracted off the images (array)
 ;   objlim      Detection threshold for objects (not crs)
+;   bigkernel	Set to use 5x5 kernel instead of 3x3
+;   bigykernel	Set to use 5x5 y preferring kernel instead of 3x3
+;   psfmodel	Set to either '' for none, or 'gaussy' for Gaussian Y PSF
+;   psffwhm	Set to PSF FWHM in pixels (default=2.5)
+;   psfsize     Set to PSF size in pixel (default=7)
 ;   niter       How many passes to take
 ;   sigfrac     Sigfrac: see PASP paper
 ;   statsec     image region for statistics
 ;                string which can be of the form "[23:45,100:300]" or
 ;                                                 [*,100:400], etc.
 ;   zeroindexed Is the image region zeroindexed?
-;   masksuffix  Suffix to automatically determine mask output name
-;   outsuff     Suffix to automatically determine output image name
-;   blocksize   Size of working blocks.  Keep in integer multiples of 512
 ;   isbig       Tell the routine to chop up the images in to more
 ;                manageable sections of size blocksize x blocksize
+;   blocksize   Size of working blocks.  Keep in integer multiples of 512
 ;   ntcosmicray output containing the total number of cosmic rays found
 ; OUTPUTS:
 ;	mask	byte 2-d array with value of 1 for CR pixels, 0 otherwise
@@ -81,24 +85,11 @@
 ;        So that a 2k x 2k image will take ~80s per interation.
 
 
-; EXAMPLES:
-;   1. Remove the cosmic rays from a debiased flat-fielded HST STIS/Clear image
-;   hst1.fits and created a replaced image called hst1-cleaned.fits
-;   with a mask file called mask.fits. Set the read noise to be 4.46 e-
-;   and the gain to be = 1.0 (e-/DN)
+; EXAMPLE:
+;   1. Remove the cosmic rays from an image and create a mask image.
+;   Set the read noise to be 4.46 e- and the gain to be = 1.0 (e-/DN)
 ;
-;      IDL> la_cosmic, ['hst1.fits'], masklist=['mask.fits'], $
-;                      outsuffix="-cleaned", readn=4.46, gain=1.0
-;
-;   2. Remove the cosmic rays from all images starting with the name
-;   hst and create masks "hst*-mask.fits" and output images
-;   "hst*-out.fits". Set sigclip = 4. Let la_cosmic determine the gain
-;   from a region of [50:100,*] (indexed exactly as in IRAF, ie. unity
-;   indexed).
-;
-;      IDL> la_cosmic, 'hst*.fits', outsuffix="-out",
-;                masksuffix="-mask",statsec="[50:100,*]",zeroindexed=0, 
-;                gain = -1, sigclip = 4.0
+;      IDL> la_cosmic, img, ppar, mask, readn=4.46, gain=1.0
 ;
 ; BUGS:
 ;
@@ -108,7 +99,7 @@
 ;  2. Speed scaling of the routine works well until the point that
 ;     the images are too large to store entirely in memory.  Could write
 ;     a little section which chops up the image in to manageable
-;     chunks and pastes those chuncks together...
+;     chunks and pastes those chunks together...
 ;
 ; REVISION HISTORY:
 ;   20-May-2001  Written by Joshua Bloom, Caltech (jsb@astro.caltech.edu)
@@ -116,14 +107,16 @@
 ;		(neill@srl.caltech.edu)
 ;   09-JUL-2013  Added timing output
 ;   17-SEP-2013  Now use ppar to pass loglun, verbose and use kcwi_print_info
+;   05-JUN-2017  Added larger and asymmetric kernels
 ;-
 ;------------------------------------------------------------------------------
 pro kcwi_la_cosmic, img, ppar, mask, sigclip=sigclip, $
-               gain=gain, readn=readn, skyval=skyval,objlim=objlim, $
-               niter=niter,sigfrac=sigfrac, $
+               gain=gain, readn=readn, skyval=skyval, objlim=objlim, $
+               niter=niter, sigfrac=sigfrac, $
 	       psfmodel=psfmodel, psffwhm=psffwhm, psfsize=psfsize, $
-               statsec=statsec,zeroindexed=zeroindexed,$
+               statsec=statsec, zeroindexed=zeroindexed,$
                isbig=isbig, blocksize=blocksize, $
+	       bigkernel=bigkernel, bigykernel=bigykernel, $
 	       ntcosmicray=ntcosmicray
 
 ;; set some sensible defaults
@@ -141,6 +134,11 @@ if keyword_set(blocksize)	then isbig	= 1
 if not keyword_set(blocksize)	then blocksize	= 512l
 if not keyword_set(statsec)	then statsec	= "[*,*]"
 if not keyword_set(zeroindexed)	then zeroindexed= 1
+if keyword_set(bigkernel)	then bigkernel  = 1 else bigkernel = 0
+if keyword_set(bigykernel)	then begin
+	bigkernel = 1
+	bigykernel = 1
+endif
 
 ;; ppar
 if kcwi_verify_ppar(ppar) ne 0 then $
@@ -161,9 +159,37 @@ kcwi_print_info,ppar,pre,'initial gain, readnoise: ' + $
 		strtrim(string(gain),2)+', '+strtrim(string(readn),2)
 kcwi_print_info,ppar,pre,'Obj thresh, sigma clip : ' + $
 		strtrim(string(objlim),2)+', '+strtrim(string(sigclip),2)
-;; make the kernel as an array of 3x3
-lakernel= [[0.0, -1.0, 0.0],[-1.0,4.0,-1.0],[0.0,-1.0,0.0]]
-gkernel	= [[1,1,1],[1,1,1],[1,1,1]]
+if keyword_set(psfmodel) then $
+	kcwi_print_info,ppar,pre,'Using PSF model : '+psfmodel
+;; the kernel as an array of 3x3
+lakernel3=[[ 0.0,-1.0, 0.0], $
+	   [-1.0, 4.0,-1.0], $
+	   [ 0.0,-1.0, 0.0]]
+;; the kernel as an array of 5x5
+lakernel5=[[ 0., 0.,-1., 0., 0.], $
+	   [ 0.,-1.,-2.,-1., 0.], $
+	   [-1.,-2.,16.,-2.,-1.], $
+	   [ 0.,-1.,-2.,-1., 0.], $
+	   [ 0., 0.,-1., 0., 0.]]
+;; the kernel as an array of 5x5 but preferring the y direction
+lakernel5y=[[ 0., 0., 0., 0., 0.], $
+	    [ 0.,-1.,-2.,-1., 0.], $
+	    [-1.,-2.,14.,-2.,-1.], $
+	    [ 0.,-1.,-2.,-1., 0.], $
+	    [ 0., 0., 0., 0., 0.]]
+if bigkernel then begin
+	kcwi_print_info,ppar,pre,'using 5x5 kernel'
+	if keyword_set(bigykernel) then begin
+		kcwi_print_info,ppar,pre,'attempting to preserve sky lines'
+		lakernel = lakernel5y
+	endif else $
+		lakernel = lakernel5
+	gkernel	= intarr(5,5) + 1
+endif else begin
+	kcwi_print_info,ppar,pre,'using 3x3 kernel'
+	lakernel = lakernel3
+	gkernel	= intarr(3,3) + 1
+endelse
 ;; array setups
 xsize	= long(n_elements(img[*,0]))
 ysize	= long(n_elements(img[0,*]))
@@ -380,10 +406,18 @@ while(not sstop) do begin
 		ncosmicray = ncosmicray + npix
 		inputmask = (1.0 - 10000.0*maskwork)*imgwork
 		inputmask = lacos_replace(inputmask, !VALUES.F_NAN,'INDEF',-9999)
-		med5 = djs_median(inputmask,width=5,boundary='reflect')*maskwork
+		if keyword_set(bigkernel) then begin
+			med7 = djs_median(inputmask,width=7, $
+					  boundary='reflect')*maskwork
+			output = (1.0 - maskwork)*imgwork + med7
+			med7 = [0]
+		endif else begin
+			med5 = djs_median(inputmask,width=5, $
+					  boundary='reflect')*maskwork
+			output = (1.0 - maskwork)*imgwork + med5
+			med5 = [0]
+		endelse
 		inputmask = [0]
-		output = (1.0 - maskwork)*imgwork + med5
-		med5 = [0]
 		img[regx[xchop,0]:regx[xchop,1],regy[ychop,0]:regy[ychop,1]] = $
 			output[0:(tmpxsize-1),0:(tmpysize-1)]
 		mask[regx[xchop,0]:regx[xchop,1],regy[ychop,0]:regy[ychop,1]] = $
