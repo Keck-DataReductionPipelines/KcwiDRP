@@ -586,11 +586,23 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						sigclip=sigclip,ntcosmicray=ncrs, $
 						psfmodel=kpars[i].crpsfmod, $
 						psffwhm=kpars[i].crpsffwhm, $
-						psfsize=kpars[i].crpsfsize
+						psfsize=kpars[i].crpsfsize, $
+						bigkernel=kpars[i].crbigkern, $
+						bigykernel=kpars[i].crbigykern
 					;
 					; update main header
 					sxaddpar,hdr,'CRCLEAN','T',' cleaned cosmic rays?'
 					sxaddpar,hdr,'NCRCLEAN',ncrs,' number of cosmic rays cleaned'
+					if kpars[i].crbigykern then $
+						sxaddpar,hdr,'CRKERN','5x5asymY',' cosmic ray kernel' $
+					else if kpars[i].crbigkern then $
+						sxaddpar,hdr,'CRKERN','5x5',' cosmic ray kernel' $
+					else	sxaddpar,hdr,'CRKERN','3x3',' cosmic ray kernel'
+					if kpars[i].crpsfmod ne '' then begin
+						sxaddpar,hdr,'CRPSFMOD',kpars[i].crpsfmod,' CR object PSF model'
+						sxaddpar,hdr,'CRPSFSIZ',kpars[i].crpsfsize,' CR object PSF size (px)'
+						sxaddpar,hdr,'CRPSFWHM',kpars[i].crpsffwhm,' CR object PSF FWHM (px)'
+					endif
 					sxaddpar,hdr,'HISTORY','  KCWI_LA_COSMIC '+systime(0)
 					;
 					; write out cleaned object image

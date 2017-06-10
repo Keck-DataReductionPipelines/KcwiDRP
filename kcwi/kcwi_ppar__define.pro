@@ -103,6 +103,8 @@ tmp = { kcwi_ppar, $
 	crpsfmod:'', $		; cosmic ray PSF model: ('', 'gaussy')
 	crpsffwhm:2.5, $	; cosmic ray PSF FWHM: px
 	crpsfsize:7, $		; cosmic ray PSF size: px
+	crbigkern:0, $		; use 5x5 kernel instead of 3x3
+	crbigykern:0, $		; use 5x5 kernel favoring Y axis
 ;
 ; Dark frame subtraction
 	mingroupdark:3, $	; minimum number of dark frames per group

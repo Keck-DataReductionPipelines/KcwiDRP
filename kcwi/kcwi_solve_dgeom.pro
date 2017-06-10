@@ -102,7 +102,8 @@ for i=4,nx-4 do begin
 			nxp = 0
 			print,'Slice: ',sl
 			if sl gt 23 then begin
-				kcwi_print_info,ppar,pre,'Slice overflow',sl,/warn
+				kcwi_print_info,ppar,pre,'Slice overflow',sl, $
+					/warn
 				break
 			endif
 		endif
