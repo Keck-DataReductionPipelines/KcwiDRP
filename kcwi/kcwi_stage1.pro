@@ -180,6 +180,10 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			; read in image
 			img = mrdfits(obfil,0,hdr,/fscale,/silent)
 			;
+			; update header
+			sxaddpar,hdr,'HISTORY','  '+kcwi_drp_version()
+			sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
+			;
 			; get dimensions
 			sz = size(img,/dimension)
 			;
@@ -533,8 +537,6 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			endfor
 			;
 			; update header
-			sxaddpar,hdr,'HISTORY','  '+kcwi_drp_version()
-			sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 			sxaddpar,hdr,'GAINCOR','T',' gain corrected?'
 			sxaddpar,hdr,'BUNIT','electrons',' brightness units'
 			;
@@ -708,6 +710,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					endelse
 				endfor
 			endif else begin
+				bcfil = ''
 				kcwi_print_info,ppar,pre, 'no bad column file for ' + $
 					strtrim(kcfg.ampmode,2) + ' ' + $
 					strn(kcfg.xbinsize) + 'x' + strn(kcfg.ybinsize)
@@ -729,10 +732,18 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;
 			; update headers
 			; image
-			sxaddpar,hdr,'BPCLEAN','T',' cleaned bad pixels?'
+			if strlen(bcfil) gt 0 then begin
+				sxaddpar,hdr,'BPCLEAN','T',' cleaned bad pixels?'
+				sxaddpar,hdr,'BPFILE',bcfil,' bad pixel map filename'
+			endif else $
+				sxaddpar,hdr,'BPCLEAN','F',' cleaned bad pixels?'
 			sxaddpar,hdr,'NBPCLEAN',nbpix,' number of bad pixels cleaned'
 			; mask
-			sxaddpar,mskhdr,'BPCLEAN','T',' cleaned bad pixels?'
+			if strlen(bcfil) gt 0 then begin
+				sxaddpar,mskhdr,'BPCLEAN','T',' cleaned bad pixels?'
+				sxaddpar,mskhdr,'BPFILE',bcfil,' bad pixel map filename'
+			endif else $
+				sxaddpar,mskhdr,'BPCLEAN','F',' cleaned bad pixels?'
 			sxaddpar,mskhdr,'NBPCLEAN',nbpix,' number of bad pixels cleaned'
 			;
 			; log
