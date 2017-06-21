@@ -169,6 +169,7 @@ function kcwi_read_proc,ppar,procf,imgs, $
 			endwhile	; process key,value pairs
 		endif	; not eof(il)
 	endwhile	; not eof(il)
+	free_lun,il
 ;
 ; trim arrays
 	good = where(imgs ge 0, ngood)
