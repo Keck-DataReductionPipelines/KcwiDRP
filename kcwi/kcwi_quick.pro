@@ -701,7 +701,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 				    kcfg[p].obsfname,/warning
 				clink = -1
 				alink = -1
-				cstr = (kcwi_cfg_string(kcfg[p])[0]
+				cstr = (kcwi_cfg_string(kcfg[p],/long,/delim)[0]
 				uncal = [ uncal, cstr ]
 			endelse
 			;
@@ -743,7 +743,7 @@ pro kcwi_quick,rawdir,reduceddir,calibdir,datadir, $
 				    kcfg[p].obsfname,/warning
 				clink = -1
 				alink = -1
-				cstr = (kcwi_cfg_string(kcfg[p]))[0]
+				cstr = (kcwi_cfg_string(kcfg[p],/long,/delim))[0]
 				uncal = [ uncal, cstr ]
 			endelse
 			;

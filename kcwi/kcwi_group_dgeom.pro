@@ -108,7 +108,7 @@ pro kcwi_group_dgeom, kcfg, ppar, ccfg, acfg
 		acfg = afg[amatch[good]]
 		for i=0,ndirect-1 do $
 			kcwi_print_info,ppar,pre,'Direct config', $
-				(kcwi_cfg_string(ccfg[i]))[0]
+				(kcwi_cfg_string(ccfg[i],/long,/delim))[0]
 	endif else begin
 		acfg = -1
 		ccfg = -1

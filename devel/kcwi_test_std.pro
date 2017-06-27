@@ -70,7 +70,9 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		print,'Input file not found: ',ifil
 		return
 	endelse
+	cfg = kcwi_cfg_string(kcfg,/delim,/long)
 	kcfg.bgratnam = strtrim(kcfg.bgratnam,2)
+	kcfg.ifunam = strtrim(kcfg.ifunam,2)
 	;
 	; get image number string
 	imstr = string(imno,format='(i0'+strn(ppar.fdigits)+')')
@@ -106,7 +108,8 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	rdfits1dspec,eafil,wea,ea,eahdr
 	;
 	; read in image (already extinction corrected)
-	icub = kcwi_read_image(kcfg.imgnum,ppar,'_icubes',hdr,/calib,status=stat)
+	icub = kcwi_read_image(kcfg.imgnum,ppar,'_icubes',hdr,/calib, $
+								status=stat)
 	if stat ne 0 then begin
 		kcwi_print_info,ppar,pre,'could not read input file',/error
 		return
@@ -118,7 +121,8 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	; is standard file available?
 	spath = !KCWI_DATA + '/stds/'+sname+'.fits'
 	if not file_test(spath) then begin
-		kcwi_print_info,ppar,pre,'standard star data file not found for: '+sname,/error
+		kcwi_print_info,ppar,pre, $
+			'standard star data file not found for: '+sname,/error
 		return
 	endif
 	kcwi_print_info,ppar,pre,'testing inverse sensitivity curve for '+sname
@@ -220,7 +224,8 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	; get region of interest
 	sroi = where(swl ge wall0 and swl le wall1, nsroi)
 	if nsroi le 0 then begin
-		kcwi_print_info,ppar,pre,'no standard wavelengths in common',/error
+		kcwi_print_info,ppar,pre,'no standard wavelengths in common', $
+									/error
 		return
 	;
 	; very sparsely sampled w.r.t. object
@@ -255,7 +260,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	; make a hardcopy if requested
 	if keyword_set(ps) then begin
 		font_store=!p.font
-		psname = sname+'_'+kcfg.bgratnam+'_'+imstr
+		psname = sname+'_'+kcfg.bgratnam+'_'+kcfg.ifunam+'_'+imstr
 		psfile, psname
 		deepcolor
 		!p.background=colordex('white')
@@ -265,7 +270,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	;
 	; over plot standard
 	yrng = get_plotlims(stdspec[gy])
-	plot,w,stdspec,title=sname+' Img #: '+imstr+' '+kcfg.bgratnam, $
+	plot,w,stdspec,title=sname+' Img #: '+imstr+' '+cfg, $
 		xran=[wall0,wall1], /xs,xtickformat='(a1)', $
 		ytitle='!3Flam (erg s!U-1!N cm!U-2!N A!U-1!N)',yran=yrng,/ys, $
 		pos=[0.15,0.30,0.95,0.95]
@@ -286,7 +291,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	;
 	; annotate residuals on main plot
 	kcwi_legend,['<Resid> = '+strtrim(string(mo[0],format='(g13.3)'),2) + $
-		' +- '+strtrim(string(sqrt(mo[1]),format='(g13.3)'),2)+' Flam', $
+		' +- '+strtrim(string(sqrt(mo[1]),format='(g13.3)'),2)+' Flam',$
 		'<Resid> = '+strtrim(string(fmo[0],format='(f8.2)'),2) + $
 		' +- '+strtrim(string(sqrt(fmo[1]),format='(f8.2)'),2)+' %'], $
 		/clear,clr_color=!p.background,/bottom;,/right
@@ -319,32 +324,36 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	if strpos(tel,'Keck') ge 0 then begin
 		area = 760000.d0	; Keck effective area in cm^2
 		if keyword_set(instrument) then $
-			refl = 0.658		; reflectivity (3-bounce @ 87% per bounce)
+			refl = 0.658	; reflectivity (3-bounce @ 87% per)
 	endif else if strpos(tel,'5m') ge 0 then begin
 		area = 194165.d0	; Hale 5m area in cm^2
 		if keyword_set(instrument) then $
-			refl = 0.757		; reflectivity (2-bounce)
+			refl = 0.757	; reflectivity (2-bounce)
 	endif
 	if keyword_set(instrument) then begin
 		area = area * refl * atm
-		tlab = eaf+'  '+kcfg.bgratnam+' '+tel+' * '+ $
+		tlab = eaf+'  '+cfg+' '+tel+' * '+ $
 			string(refl*100.,form='(i3)')+'% refl. * '+ $
 			string(atm*100.,form='(i2)')+'% atmos.'
 	endif else $
-		tlab = eaf+' '+kcfg.bgratnam+' '+tel+' at AIRMASS = '+ $
+		tlab = eaf+' '+cfg+' '+tel+' at AIRMASS = '+ $
 		strtrim(string(kcfg.airmass,form='(f7.3)'),2)
 	if not keyword_set(ps) then $
 		read,'next: ',q
-	yrng = get_plotlims(ea)
-	if yrng[0] lt 0. then yrng[0] = 0.
 	goo = where(wea gt wgoo0 and wea lt wgoo1, ngoo)
 	if ngoo gt 5 then begin
 		maxea = max(ea[goo])
 		mo = moment(ea[goo])
+		yrng = get_plotlims(ea[goo])
+		sea = smooth(ea[goo],250)
+		res = poly_fit(wea[goo],sea,5,yfit=fea)
 	endif else begin
 		maxea = max(ea)
 		mo = moment(ea)
+		sea = -1
+		res = -1
 	endelse
+	if yrng[0] lt 0. then yrng[0] = 0.
 	if area gt 0 then begin
 		plot,wea,ea,xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 			ytitle='!3EA (cm!U2!N)',title=tlab,ys=9, $
@@ -368,6 +377,10 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		oplot,!x.crange,[maxea,maxea],linesty=2
 		oplot,!x.crange,[mo[0],mo[0]],linesty=3
 	endelse
+	;
+	; overplot fit
+	if ngoo gt 5 then $
+		oplot,wea[goo],fea,thick=5,color=colordex('blue')
 	;
 	; check if we are making hardcopy
 	if keyword_set(ps) then begin

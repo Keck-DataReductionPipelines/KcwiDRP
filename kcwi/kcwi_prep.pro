@@ -684,7 +684,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				    kcfg[p].obsfname,/warning
 				cbfile = ''
 				arfile = ''
-				cstr = (kcwi_cfg_string(kcfg[p]))[0]
+				cstr = (kcwi_cfg_string(kcfg[p],/long,/deim))[0]
 				uncal = [ uncal, cstr ]
 			endelse
 			;
@@ -726,7 +726,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				    kcfg[p].obsfname,/warning
 				cbfile = ''
 				arfile = ''
-				cstr = (kcwi_cfg_string(kcfg[p]))[0]
+				cstr = (kcwi_cfg_string(kcfg[p],/long,/deim))[0]
 				uncal = [ uncal, cstr ]
 			endelse
 			;

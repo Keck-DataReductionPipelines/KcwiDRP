@@ -92,6 +92,8 @@ tmp = { kcwi_cfg, $
 	bnasnam:'', $		; Blue mask position name
 	bnaspos:0, $		; Blue mask position
 	shufrows:0, $		; Number of CCD rows shuffled
+	calpnam:'', $		; Cal position name ('Sky', 'Polar', 'Lens')
+	callang:0., $		; Cal polarizer angle
 	ifunum:0, $		; Slicer number (0-5, -1=unknown)
 	ifunam:'', $		; Slicer name ("Small", etc.)
 	cwave:0., $		; central wavelength (Ang)
