@@ -346,7 +346,8 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		mo = moment(ea[goo])
 		yrng = get_plotlims(ea[goo])
 		sea = smooth(ea[goo],250)
-		res = poly_fit(wea[goo],sea,5,yfit=fea)
+		sex = wea[goo] - min(wea[goo])
+		res = poly_fit(sex,sea,5,yfit=fea,/double)
 	endif else begin
 		maxea = max(ea)
 		mo = moment(ea)
