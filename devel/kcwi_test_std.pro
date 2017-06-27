@@ -351,6 +351,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	endif else begin
 		maxea = max(ea)
 		mo = moment(ea)
+		yrng = get_plotlims(ea)
 		sea = -1
 		res = -1
 	endelse

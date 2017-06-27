@@ -77,14 +77,17 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	ofil = kcwi_get_imname(ppar,kcfg.imgnum,'_invsens',/reduced)
 	if file_test(ofil) then begin
 		if ppar.clobber ne 1 then begin
-			kcwi_print_info,ppar,pre,'output file already exists',ofil,/error
+			kcwi_print_info,ppar,pre, $
+				'output file already exists',ofil,/error
 			return
 		endif else $
-			kcwi_print_info,ppar,pre,'output file will be overwritten',ofil,/warning
+			kcwi_print_info,ppar,pre, $
+				'output file will be overwritten',ofil,/warning
 	endif
 	;
 	; read in image
-	icub = kcwi_read_image(kcfg.imgnum,ppar,'_icuber',hdr,/calib,status=stat)
+	icub = kcwi_read_image(kcfg.imgnum,ppar,'_icuber',hdr,/calib, $
+								status=stat)
 	if stat ne 0 then begin
 		kcwi_print_info,ppar,pre,'could not read input file',/error
 		return
@@ -96,10 +99,12 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; is standard file available?
 	spath = !KCWI_DATA + '/stds/'+sname+'.fits'
 	if not file_test(spath) then begin
-		kcwi_print_info,ppar,pre,'standard star data file not found for: '+sname,/error
+		kcwi_print_info,ppar,pre, $
+			'standard star data file not found for: '+sname,/error
 		return
 	endif
-	kcwi_print_info,ppar,pre,'generating effective inverse sensitivity curve from '+sname
+	kcwi_print_info,ppar,pre, $
+		'generating effective inverse sensitivity curve from '+sname
 	;
 	; get size
 	sz = size(icub,/dim)
@@ -112,7 +117,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; get exposure time
 	expt = sxpar(hdr,'XPOSURE')
 	if expt eq 0. then begin
-		kcwi_print_info,ppar,pre,'no exposure time found, setting to 1s',/warn
+		kcwi_print_info,ppar,pre, $
+			'no exposure time found, setting to 1s',/warn
 		expt = 1.
 	endif else $
 		kcwi_print_info,ppar,pre,'Using exposure time of',expt,/info
@@ -245,7 +251,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; get region of interest
 	sroi = where(swl ge wall0 and swl le wall1, nsroi)
 	if nsroi le 0 then begin
-		kcwi_print_info,ppar,pre,'no standard wavelengths in common',/error
+		kcwi_print_info,ppar,pre, $
+			'no standard wavelengths in common',/error
 		return
 	;
 	; very sparsely sampled w.r.t. object
@@ -266,8 +273,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	sflx = sflx[sroi]
 	sfw = sfw[sroi]
 	fwhm = max(sfw)
-	kcwi_print_info,ppar,pre,'reference spectrum FWHM used',fwhm,'Angstroms', $
-		format='(a,f5.1,1x,a)'
+	kcwi_print_info,ppar,pre,'reference spectrum FWHM used',fwhm, $
+					'Angstroms', format='(a,f5.1,1x,a)'
 	;
 	; smooth to this resolution
 	if kcfg.nasmask then begin
@@ -290,17 +297,14 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; get effective area
 	earea = ubsspec / rspho
 	;
-	; fit inverse sensitivity
+	; fit smoothed inverse sensitivity
 	t=where(w ge wgoo0 and w le wgoo1, nt)
 	if nt gt 0 then begin
+		sf = smooth(invsen[t],250)
 		wf = w - min(w)
-		sf = invsen
-		wgt = (invsen - invsen) + 1.
-		bad = where(w lt wgoo0 or w gt wgoo1, nbad)
-		if nbad gt 0 then wgt[bad] = 0.
 		;
 		; polynomial fit
-		res = polyfit(wf,sf,5,yfit,weight=wgt)
+		res = poly_fit(wf[t],sf,5,/double)
 		finvsen = poly(wf,res)
 	endif else begin
 		kcwi_print_info,ppar,pre,'no good wavelengths to fit',/error
@@ -319,10 +323,20 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		read,'Next: ',q
 		;
 		; plot effective area (cm^2)
-		yrng = get_plotlims(earea)
+		goo = where(w gt wgoo0 and w lt wgoo1, ngoo)
+		if ngoo gt 5 then begin
+			maxea = max(earea[goo])
+			mo = moment(earea[goo])
+			yrng = get_plotlims(earea[goo])
+			sea = smooth(earea[goo],250)
+			sex = w[goo] - min(w[goo])
+			res = poly_fit(sex,sea,5,yfit=fea,/double)
+		endif else begin
+			maxea = max(earea)
+			mo = moment(earea)
+			yrng = get_plotlims(earea)
+		endelse
 		if yrng[0] lt 0. then yrng[0] = 0.0
-		maxea = max(earea)
-		mo = moment(earea)
 		if area gt 0 then begin
 			plot,w,earea, $
 				title=sname+' Img #: '+strn(kcfg.imgnum)+' '+ $
@@ -349,6 +363,10 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			oplot,!x.crange,[maxea,maxea],linesty=2
 			oplot,!x.crange,[mo[0],mo[0]],linesty=3
 		endelse
+		;
+		; overplot fit
+		if ngoo gt 5 then $
+			oplot,w[goo],fea,thick=5,color=colordex('blue')
 		read,'Next: ',q
 	endif
 	;
@@ -409,6 +427,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; write out inverse sensitivity file
 	ofil = kcwi_get_imname(ppar,kcfg.imgnum,'_invsens',/nodir)
 	kcwi_write_image,invsen,hdr,ofil,ppar
+	;kcwi_write_image,finvsen,hdr,ofil,ppar
 	;
 	; update effective area header
 	sxaddpar,hdr,'INVSENS','F',' effective inv. sens. spectrum?'
