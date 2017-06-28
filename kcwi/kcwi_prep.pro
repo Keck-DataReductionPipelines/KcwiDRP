@@ -18,7 +18,6 @@
 ; OPTIONAL INPUTS:
 ;	RawDir		- input raw directory (string) defaults to current dir
 ;	ReducedDir	- reduced data directory (string) defaults to './redux/'
-;	CalibDir	- calib source directory (string) defaults to !KCWI_DATA + 'calib/'
 ;	DataDir		- KCWI data directory (string) defaults to !KCWI_DATA
 ;
 ; KEYWORDS:
@@ -28,6 +27,7 @@
 ;	MINGROUPBIAS	- minimum number of bias images per group (def: 5)
 ;	MINGROUPDARK	- minimum number of dark images per group (def: 3)
 ;	MINOSCANPIX	- minimum number of overscan pixels for subtraction (def: 70)
+;	ALTCALDIR	- alternate source directory for calibrations (string)
 ; Wavelength fitting params (only relevant for full-ccd images)
 ;	PKDEL		- matching thresh in frac. of resolution (def: 0.75)
 ; Switches
@@ -91,13 +91,15 @@
 ;	2014-JUN-03	checks file digits automatically if FDIGITS not set
 ;	2016-APR-04	changes specific to KCWI lab data
 ;	2017-MAY-04	Added waveiter keyword
+;	2017-JUN-28	Added ALTCALDIR keyword
 ;-
-pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
+pro kcwi_prep,rawdir,reduceddir,datadir, $
 	froot=froot, $
 	fdigits=fdigits, $
 	mingroupbias=mingroupbias, $
 	mingroupdark=mingroupdark, $
 	minoscanpix=minoscanpix, $
+	altcaldir=altcaldir, $
 	taperfrac=taperfrac, pkdel=pkdel, $
 	nocrreject=nocrreject, $
 	nonassub=nonassub, $
@@ -120,7 +122,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	; requested help?
 	if keyword_set(help) then begin
 		print,pre+': Info - Usage: '+pre+', RawDir, ReducedDir, CalibDir, DataDir'
-		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, MINGROUPBIAS=N, MINOSCANPIX=N'
+		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, MINGROUPBIAS=N, MINOSCANPIX=N, ALTCALDIR=<full_dir_spec>'
 		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
 		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /WAVEINTER, /DOMEPRIORITY'
 		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /HELP'
@@ -148,9 +150,6 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	if n_elements(reduceddir) le 0 then $
 		odir = ppar.reddir $
 	else	odir = reduceddir
-	if n_elements(calibdir) le 0 then $
-		caldir = !KCWI_DATA+'calib/' $
-	else	caldir = calibdir
 	if n_elements(datadir) le 0 then $
 		ddir = !KCWI_DATA $
 	else	ddir = datadir
@@ -163,6 +162,9 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	indir  = kcwi_expand_dir(indir)
 	caldir = kcwi_expand_dir(caldir)
 	ddir   = kcwi_expand_dir(ddir)
+	if keyword_set(altcaldir) then $
+		adir = kcwi_expand_dir(altcaldir) $
+	else	adir = ''
 	;
 	; check if odir exists
 	if not file_test(odir,/directory) then begin
@@ -197,6 +199,14 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		return
 	endif
 	;
+	; check if adir accessible
+	if keyword_set(altcaldir) then $
+		if not file_test(adir,/directory,/executable,/read) then begin
+			print,pre+': Error - cannot access alt cal dir: ', $
+				adir,', returning'
+			return
+		endif
+	;
 	; check if caldir accessible
 	if not file_test(caldir,/directory,/executable,/read) then begin
 		print,pre+': Error - cannot access calib dir: ',caldir,', returning'
@@ -208,6 +218,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	ppar.reddir = odir
 	ppar.caldir = caldir
 	ppar.datdir = ddir
+	ppar.altcaldir = adir
 	cd,cur=cwd
 	ppar.curdir = cwd + '/'
 	;
@@ -305,6 +316,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 	printf,ll,'Raw dir: '+indir
 	printf,ll,'Reduced dir: '+odir
 	printf,ll,'Calib dir: '+caldir
+	if keyword_set(altcaldir) then $
+		printf,ll,'AltCal dir: '+adir
 	printf,ll,'Data dir: '+ddir
 	printf,ll,'Filespec: '+fspec
 	printf,ll,'Fileroot: '+ppar.froot
@@ -381,8 +394,8 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 		calcfg = kcfg
 		ncal = nf
 	endelse
-	kcwi_print_info,ppar,pre,'Number of images in calibration pool',ncal,$
-		format='(a,i5)'
+	kcwi_print_info,ppar,pre,'Number of local images in calibration pool', $
+			ncal,format='(a,i5)'
 	;
 	; find slice profile images
 	profs = where(strcmp(calcfg.imgtype,'object') eq 1 and $
@@ -557,6 +570,7 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				; log
 				kcwi_print_info,ppar,pre,'master bias file = '+$
 					mbfile
+				mbfile = odir + mbfile
 			;
 			; only one match
 			endif else if b eq 1 then begin
@@ -565,18 +579,29 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				; log
 				kcwi_print_info,ppar,pre,'master bias file = '+$
 					mbfile
+				mbfile = odir + mbfile
 			;
 			; handle the no match case or when no bias frames were taken
 			endif else begin
 				kcwi_print_info,ppar,pre,$
-				     'cannot associate with any master bias: '+ $
+				     'cannot associate with any local master bias: '+ $
 				     kcfg[p].obsfname,/warning
 				mbfile = ''
+				;
+				; did we specify an alternative?
+				if keyword_set(altcaldir) then begin
+					mbfile = kcwi_alt_cals(kcfg[p],adir,ppar,/bias)
+					;
+					; log if matched
+					if mbfile ne '' then $
+						kcwi_print_info,ppar,pre, $
+							'master bias file = '+mbfile
+				endif
 			endelse
 			;
 			; print proc
 			if mbfile ne '' then $
-				printf,kp,'masterbias='+odir+mbfile
+				printf,kp,'masterbias='+mbfile
 		endif	; ppar.nbgrps gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -605,15 +630,26 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				; log
 				kcwi_print_info,ppar,pre,'master dark file = '+$
 					mdfile
+				mdfile = odir + mdfile
 			endif else begin
 				kcwi_print_info,ppar,pre, $
-					'cannot unambiguously associate with any master dark: '+ $
+					'cannot associate with any local master dark: '+ $
 					kcfg[p].obsfname,/warning
 				mdfile = ''
+				;
+				; did we specify an alternative?
+				if keyword_set(altcaldir) then begin
+					mdfile = kcwi_alt_cals(kcfg[p],adir,ppar,/dark)
+					;
+					; log if matched
+					if mdfile ne '' then $
+						kcwi_print_info,ppar,pre, $
+							'master dark file = '+mdfile
+				endif
 			endelse
 			;
 			; print proc
-			printf,kp,'masterdark='+odir+mdfile
+			printf,kp,'masterdark='+mdfile
 		endif	; only object frames and ndgrps gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -635,18 +671,29 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				;
 				; log
 				kcwi_print_info,ppar,pre,'master flat file = ' + mffile
+				mffile = odir + mffile
 			;
 			; handle ambiguous match or the case when no flat frames were taken
 			endif else begin
 				kcwi_print_info,ppar,pre, $
-					'cannot unambiguously associate with any master flat: '+ $
+					'cannot associate with any local master flat: '+ $
 					kcfg[p].obsfname,/warning
 				mffile = ''
+				;
+				; did we specify an alternative?
+				if keyword_set(altcaldir) then begin
+					mffile = kcwi_alt_cals(kcfg[p],adir,ppar,/flat)
+					;
+					; log if matched
+					if mffile ne '' then $
+						kcwi_print_info,ppar,pre, $
+							'master flat file = '+mffile
+				endif
 			endelse
 			;
 			; print proc
 			if mffile ne '' then $
-				printf,kp,'masterflat='+odir+mffile
+				printf,kp,'masterflat='+mffile
 		endif	; only object and cflat frames and nfgrps gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -680,12 +727,29 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				; handle the ambiguous case or when no cbars image can be found
 			endif else begin
 				kcwi_print_info,ppar,pre, $
-				    'cannot unambiguously find geom images (arc, cbars) for object image: '+ $
+				    'cannot find local geom images (arc, cbars) for object image: '+ $
 				    kcfg[p].obsfname,/warning
 				cbfile = ''
 				arfile = ''
-				cstr = (kcwi_cfg_string(kcfg[p],/long,/deim))[0]
-				uncal = [ uncal, cstr ]
+				mgfile = ''
+				;
+				; did we specify an alternative?
+				if keyword_set(altcaldir) then begin
+					mgfile = kcwi_alt_cals(kcfg[p],adir,ppar,/geom)
+					;
+					; log if matched
+					if mgfile ne '' then begin
+						kcwi_print_info,ppar,pre, $
+							'master geom file = '+mgfile
+						printf,kp,'geom='+mgfile
+					endif
+				endif
+				;
+				; if not matched, log as uncalibrated
+				if mgfile eq '' then begin
+					cstr = (kcwi_cfg_string(kcfg[p],/long,/delim))[0]
+					uncal = [ uncal, cstr ]
+				endif
 			endelse
 			;
 			; print proc
@@ -726,8 +790,25 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				    kcfg[p].obsfname,/warning
 				cbfile = ''
 				arfile = ''
-				cstr = (kcwi_cfg_string(kcfg[p],/long,/deim))[0]
-				uncal = [ uncal, cstr ]
+				mgfile = ''
+				;
+				; did we specify an alternative?
+				if keyword_set(altcaldir) then begin
+					mgfile = kcwi_alt_cals(kcfg[p],adir,ppar,/dgeom)
+					;
+					; log if matched
+					if mgfile ne '' then begin
+						kcwi_print_info,ppar,pre, $
+							'master dgeom file = '+mgfile
+						printf,kp,'geom='+mgfile
+					endif
+				endif
+				;
+				; if not matched, log as uncalibrated
+				if mgfile eq '' then begin
+					cstr = (kcwi_cfg_string(kcfg[p],/long,/delim))[0]
+					uncal = [ uncal, cstr ]
+				endif
 			endelse
 			;
 			; print proc
@@ -756,19 +837,30 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				; log
 				kcwi_print_info,ppar,pre, $
 					'slice profile file = '+pfile
+				pfile = odir + pfile
 				;
 				; handle the ambiguous case or 
 				; when no slice profile image can be found
 			endif else begin
 				kcwi_print_info,ppar,pre, $
-    'cannot unambiguously associate slice profile image for object image: '+ $
+				    'cannot associate local slice profile image for object image: '+ $
 				    kcfg[p].obsfname,/warning
 				pfile = ''
+				;
+				; did we specify an alternative?
+				if keyword_set(altcaldir) then begin
+					pfile = kcwi_alt_cals(kcfg[p],adir,ppar,/prof)
+					;
+					; log if matched
+					if pfile ne '' then $
+						kcwi_print_info,ppar,pre, $
+							'slice profile file = '+pfile
+				endif
 			endelse
 			;
 			; print proc
 			if pfile ne '' then $
-				printf,kp,'masterprof='+odir+pfile
+				printf,kp,'masterprof='+pfile
 		endif	; only object frames and nprofs gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -856,13 +948,27 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				; log
 				kcwi_print_info,ppar,pre, $
 					'relative response file = '+rrfile
+				rrfile = odir + rrfile
 			endif else begin
+				kcwi_print_info,ppar,pre, $
+				    'cannot associate local relative response image for object image: '+ $
+				    kcfg[p].obsfname,/warning
 				rrfile = ''
+				;
+				; did we specify an alternative?
+				if keyword_set(altcaldir) then begin
+					rrfile = kcwi_alt_cals(kcfg[p],adir,ppar,/rr)
+					;
+					; log if matched
+					if rrfile ne '' then $
+						kcwi_print_info,ppar,pre, $
+							'relative response file = '+rrfile
+				endif
 			endelse
 			;
 			; print proc
 			if rrfile ne '' then $
-				printf,kp,'masterrr='+odir+rrfile
+				printf,kp,'masterrr='+rrfile
 		endif else rrfile = ''	; only object frames and nrrs gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -903,13 +1009,27 @@ pro kcwi_prep,rawdir,reduceddir,calibdir,datadir, $
 				;
 				; log
 				kcwi_print_info,ppar,pre,'standard star observation file = '+stdfile
+				stdfile = odir + stdfile
 			endif else begin
+				kcwi_print_info,ppar,pre, $
+				    'cannot associate local standard star obs for object image: '+ $
+				    kcfg[p].obsfname,/warning
 				stdfile = ''
+				;
+				; did we specify an alternative?
+				if keyword_set(altcaldir) then begin
+					stdfile = kcwi_alt_cals(kcfg[p],adir,ppar,/std)
+					;
+					; log if matched
+					if stdfile ne '' then $
+						kcwi_print_info,ppar,pre, $
+							'standard star observation file = '+stdfile
+				endif
 			endelse
 			;
 			; print proc
 			if stdfile ne '' then $
-				printf,kp,'masterstd='+odir+stdfile
+				printf,kp,'masterstd='+stdfile
 		endif	; only object frames
 	endfor	; loop over images
 	;

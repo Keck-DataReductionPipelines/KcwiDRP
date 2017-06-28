@@ -68,6 +68,7 @@ tmp = { kcwi_ppar, $
 	reddir:'./redux/', $	; directory to contain reduced images
 	caldir:'./calib/', $	; directory containing calibration images
 	datdir:'./', $		; directory containing ancillary data
+	altcaldir:'./', $	; alternate directory for calibrations
 	curdir:'./', $		; current directory
 ;
 ; processing files

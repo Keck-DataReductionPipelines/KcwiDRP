@@ -186,7 +186,7 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 						if do_direct then $
 							gfile = repstr(arf,'_int.fits','_geom.save') $
 						else	gfile = repstr(cbf,'_int.fits','_geom.save')
-					endelse
+					endif
 					;
 					; if it exists restore it
 					if file_test(gfile,/read) then begin
