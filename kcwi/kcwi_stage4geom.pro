@@ -141,7 +141,7 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 			else	do_direct = (1 eq 0)
 			;
 			; final output file
-			if strpos(kcfg.obstype,'direct') ge 0 then $
+			if do_direct then $
 				ofil = kcwi_get_imname(kpars[i],imgnum[i],'_img',/reduced) $
 			else	ofil = kcwi_get_imname(kpars[i],imgnum[i],'_icube',/reduced)
 			;
@@ -165,17 +165,28 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 				;
 				; do we have the geom files?
 				do_geom = (1 eq 0)	; assume no to begin with
-				if strtrim(kpars[i].geomcbar,2) ne '' and $
-				   strtrim(kpars[i].geomarc,2) ne '' then begin
+				if (strtrim(kpars[i].geomcbar,2) ne '' and $
+				    strtrim(kpars[i].geomarc,2) ne '') or $
+				    strtrim(kpars[i].geom,2) ne '' then begin
 					;
-					; get filenames
-					cbf = kpars[i].geomcbar
-					arf = kpars[i].geomarc
+					; do we have a specified geom file?
+				    	if strtrim(kpars[i].geom,2) ne '' then begin
+						gfile = strtrim(kpars[i].geom,2)
+					endif 
 					;
-					; get corresponding kgeom file
-					if do_direct then $
-						gfile = repstr(arf,'_int.fits','_geom.save') $
-					else	gfile = repstr(cbf,'_int.fits','_geom.save')
+					; do we have specified cbar and arc files (these take precedence)
+					if strtrim(kpars[i].geomcbar,2) ne '' and $
+					   strtrim(kpars[i].geomarc,2) ne '' then begin
+						;
+						; get filenames
+						cbf = kpars[i].geomcbar
+						arf = kpars[i].geomarc
+						;
+						; get corresponding kgeom file
+						if do_direct then $
+							gfile = repstr(arf,'_int.fits','_geom.save') $
+						else	gfile = repstr(cbf,'_int.fits','_geom.save')
+					endelse
 					;
 					; if it exists restore it
 					if file_test(gfile,/read) then begin

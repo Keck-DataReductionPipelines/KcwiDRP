@@ -102,6 +102,10 @@ tmp = { kcwi_cfg, $
 	wave1:0., $		; red end of wavelength range (Ang)
 	dwav:0., $		; average dispersion (Ang/pix)
 ;
+; Temperatures
+	tmpa1:0., $		; Blue CCD temperature (K)
+	tmpa8:0., $		; Optical bench temperature (K)
+;
 ; Cal Lamp properties
 	lmp0nam:'', $		; Lamp 0 name
 	lmp0stat:0, $		; Lamp 0 status (0 - off, 1 - on)

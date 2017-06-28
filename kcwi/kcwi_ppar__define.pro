@@ -118,14 +118,13 @@ tmp = { kcwi_ppar, $
 	nfgrps:0, $		; number of flat groups
 ;
 ; Geometry processing
+	geom:'', $		; master geometry filename
 	geomcbar:'', $		; master continuum bars filename
 	geomarc:'', $		; master arc filename
 	nggrps:0, $		; number of geom groups
+	ndggrps:0, $		; number of direct geom groups
 ;
 ; Direct mode processing
-	dgeombar:'', $		; master direct image arc filename
-	dgeomarc:'', $		; master direct image arc filename
-	ndggrps:0, $		; number of direct geom groups
 ;
 ; Wavelength processing
 	taperfrac:0.2, $	; cosine bell taper fraction for x-correlation
