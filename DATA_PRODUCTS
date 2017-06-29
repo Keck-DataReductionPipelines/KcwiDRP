@@ -1,5 +1,5 @@
 
-KCWI Data Reduxtion Pipeline Data Products Table
+KCWI Data Reduction Pipeline Data Products Table
 
 KCWI raw data filenames are constructed as follows:
 
@@ -11,7 +11,8 @@ KCWI reduced data filenames are constructed as follows:
 
 With:
 
-<froot>		defaults to 'kcwi', but can be modified
+<froot>		defaults to kbYYMMDD_, with YYMMDD being the current date,
+		but can be modified
 <imgnum>	a zero-filled integer of consistent width
 <ext>		specifies the specific product and is tabulated below
 
@@ -29,15 +30,15 @@ intf		e-/px			3	pixel-to-pixel variation removed
 varf		e-^2/px			3	variance + flat image variance
 mskf		flag			3	same
 
-icube		e-/px			4	geometrically corrected data cube
+icube		e-/px			4	geom corrected data cube
 vcube		e-^2/px			4	variance data cube
 mcube		flag			4	mask data cube
 
-icubep		e-/px			5	slice profile corrected data cube
+icubep		e-/px			5	profile corrected data cube
 vcubep		e-^2/px			5	variance + profile variance
 mcubep		flag			5	same
 
-icuber		e-/px			6	slice-to-slice response corrected data cube
+icuber		e-/px			6	response corrected data cube
 vcuber		e-^2/px			6	variance + relative response variance
 mcuber		flag			6	same
 

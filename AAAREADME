@@ -5,7 +5,7 @@ Copyright (c) 2017, California Institute of Technology.  All rights reserved.
         KCWI Data Extraction and Reduction Pipeline (KDERP) README
 
 
-Nineteenth beta release; Version: 0.4.3 (DEV) Date: 2017/06/01
+Nineteenth beta release; Version: 0.5.0 (REL) Date: 2017/06/29
 
 Caveat Emptor!  Use at your own risk!  In active development!
 
@@ -197,6 +197,7 @@ These are the keywords:
 			and iteratively expands the wavelength range 
 /HELP		- print the command usage info
 
+ALTCALDIR	- set to an alternate source directory for calibrations
 VERBOSE		- verbosity level for extra diagnostic output (1 is recommended)
 DISPLAY		- display level for extra diagnostic plots:
 			0 - display no plots
@@ -563,6 +564,14 @@ IDL> kcwi_print_cfgs,kcfg,/header
 
 4. NEW FEATURES:
 
+Alternate Calibration Directory
+
+In anticipation of having a library of calibrations, I have implemented the
+ALTCALDIR keyword for the kcwi_prep stage.  This allows you to specify
+another directory as a source for calibrations.  The kcwi_prep stage will
+attempt to find local calibrations first, but if none are found, it will
+attempt to find them in the directory specified by ALTCALDIR.
+
 New Cosmic Ray Removal Method
 
 The ability to account for an object PSF has been added to the routine
@@ -656,14 +665,5 @@ can now take a data cube or a profile corrected data cube as input.
 
 6. TODO:
 
-This is a beta release, so there is still much to do:
+See the TODO file in the release directory
 
--. Implement saveplots option
--. Implement nod-and-shuffle scattered light fitting/removal
--. Combine a group of skys to improve profile s/n
--. Clean up data structures to remove extraneous or repeated items
--. Implement non-nod-and-shuffle sky subtraction
--. Install a library of calibration images and geometry solutions
--. Install a library of reference spectra for wavelength solutions
--. Refine flat field fitting to better handle fringing in the red
--. Keep refining calibration file associations

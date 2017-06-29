@@ -1,9 +1,13 @@
 # Copyright (c) 2013-2017, California Institute of Technology, all rights reserved
 
-2017-Jun-01: v0.5.0 - Nineteenth beta release
+2017-Jun-29: v0.5.0 - Nineteenth beta release
 
 - removed link file paradigm for process control and replaced with a proc file 
 	that uses keyword/value pairs for calibration associations.
+
+- added kcwi_prep keyword ALTCALDIR for specifying alternate cal directory.
+
+- renamed master bias, dark, flat files to contain originating image name.
 
 - added optional psf model 'gaussy' for cr rejection that doesn't eat sky lines.
 

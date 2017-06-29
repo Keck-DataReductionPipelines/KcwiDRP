@@ -1,4 +1,4 @@
-alternate cal directory?
+add differential atmospheric refraction correction
 compression of all files?
 look into flat fitting algorithm: seeing striations in self-flatted cflats
 account for vignetting in bars images
@@ -6,8 +6,7 @@ use arcbars for direct geometry solution
 implement saveplots option & date-stamping plots
 implement nod-and-shuffle scattered light fitting/removal
 add option to re-scale the sky for aborted nod-and-shuffel obs
-propogate missing geom cal files foward into prof and rr links
-add differential atmospheric refraction correction
+#29-JUN-2017 DONE alternate cal directory
 #09-JUN-2017 DONE more control of la_cosmic parameters to the user.
 #19-MAY-2017 DONE mechanism for using full-frame cals on N&S frames.
 #20-APR-2017 DONE implement bad pixel masking
