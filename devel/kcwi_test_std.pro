@@ -260,7 +260,9 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	; make a hardcopy if requested
 	if keyword_set(ps) then begin
 		font_store=!p.font
-		psname = sname+'_'+kcfg.bgratnam+'_'+kcfg.ifunam+'_'+imstr
+		cwv = strn(fix(kcfg.bcwave))
+		psname = sname+'_' + kcfg.bgratnam + '_' + cwv + '_' + $
+				     kcfg.ifunam + '_' + imstr
 		psfile, psname
 		deepcolor
 		!p.background=colordex('white')
