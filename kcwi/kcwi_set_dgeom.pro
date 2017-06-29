@@ -81,8 +81,8 @@ pro kcwi_set_dgeom,kdgeom,ikcfg,ppar,help=help
 	;
 	; get output dgeom file name
 	odir = ppar.reddir
-	kdgeom.dgeomfile = ppar.reddir + $
-	    strmid(kcfg.obsfname,0,strpos(kcfg.obsfname,'_int')) + '_dgeom.save'
+	kdgeom.geomfile = ppar.reddir + $
+	    strmid(kcfg.obsfname,0,strpos(kcfg.obsfname,'_int')) + '_dgeom.fits'
     	;
     	; set basic configuration parameters
 	kdgeom.arcimgnum = kcfg.imgnum

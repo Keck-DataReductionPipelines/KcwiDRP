@@ -131,7 +131,7 @@ sxaddpar,dhdr, 'CBARSFL', kdgeom.cbarsfname,' Continuum bars image'
 sxaddpar,dhdr, 'ARCFL',   kdgeom.arcfname, ' Arc image'
 sxaddpar,dhdr, 'CBARSNO', kdgeom.cbarsimgnum,' Continuum bars image number'
 sxaddpar,dhdr, 'ARCNO',   kdgeom.arcimgnum, ' Arc image number'
-sxaddpar,dhdr, 'GEOMFL',  kdgeom.dgeomfile,' Geometry file'
+sxaddpar,dhdr, 'GEOMFL',  kdgeom.geomfile,' Geometry file'
 ;
 ; get sky coords
 rastr = sxpar(hdr,'RA',count=nra)

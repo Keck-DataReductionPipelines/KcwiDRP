@@ -47,7 +47,7 @@ pro kcwi_dgeom__define
 tmp = { kcwi_dgeom, $
 ;
 ; output filename
-	dgeomfile:'', $		; output save file for dgeom struct
+	geomfile:'', $		; output save file for dgeom struct
 ;
 ; calibration images
 	cbarsimgnum:0l, $	; cbars image number (0 - 9999)

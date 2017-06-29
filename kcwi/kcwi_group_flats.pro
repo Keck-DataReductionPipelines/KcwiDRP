@@ -104,16 +104,16 @@ pro kcwi_group_flats, kcfg, ppar, fcfg
 			; configuration
 			fcfg[i].imgtype		= 'cflat'
 			;
-			; use first image number in group
-			fi = kcfg[f].imgnum
+			; use first image in group
+			gi = kcfg[f].imgnum
+			grt = strmid(kcfg[f].obsfname,0, $
+				     strpos(kcfg[f].obsfname,'.fit'))
 			;
 			; files and directories
-			pp.masterflat		= 'mflat_' + $
-				string(fi,'(i0'+strn(pp.fdigits)+')') + '.fits'
-			pp.ppfname		= 'mflat_' + $
-				string(fi,'(i0'+strn(pp.fdigits)+')') + '.ppar'
+			pp.masterflat		= grt + '_mflat.fits'
+			pp.ppfname		= grt + '_mflat.ppar'
 			;
-			fcfg[i].groupnum	= fi
+			fcfg[i].groupnum	= gi
 			fcfg[i].groupfile	= pp.masterflat
 			fcfg[i].grouppar	= pp.ppfname
 			;

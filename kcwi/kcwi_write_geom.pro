@@ -5,7 +5,7 @@
 ;	KCWI_WRITE_GEOM
 ;
 ; PURPOSE:
-;	Writes out the KCWI_GEOM struct as an IDL save file
+;	Writes out the KCWI_GEOM struct as a FITS file
 ;
 ; CATEGORY:
 ;	Data reduction for the Keck Cosmic Web Imager (KCWI).
@@ -24,8 +24,8 @@
 ;	None.
 ;
 ; PROCEDURE:
-;	Uses the tag kgeom.geomfile to write out the struct as an IDL
-;	save file.  Checks if ppar.clobber is set and takes appropriate
+;	Uses the tag kgeom.geomfile to write out the struct as a FITS
+;	table file.  Checks if ppar.clobber is set and takes appropriate
 ;	action.
 ;
 ; EXAMPLE:
@@ -33,6 +33,7 @@
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2014-SEP-11	Initial Revision
+;	2017-JUN-29	Converted to writing FITS instead of save file
 ;-
 ;
 pro kcwi_write_geom,ppar,kgeom, test=test
@@ -74,8 +75,25 @@ if file_test(kgeom.geomfile) then begin
 	endelse
 endif
 ;
+; get header
+if n_elements(tag_names(kgeom)) lt 90 then $
+	hdr = headfits(kgeom.arcfname) $	; direct
+else	hdr = headfits(kgeom.cbarsfname)	; dispersed
+sxaddpar,hdr,'SIMPLE','F'
+sxdelpar,hdr,'NAXIS'
+sxdelpar,hdr,'NAXIS1'
+sxdelpar,hdr,'NAXIS2'
+sxdelpar,hdr,'BITPIX'
+sxdelpar,hdr,'BZERO'
+sxdelpar,hdr,'BSCALE'
+;
 ; write it out if we get here
-save,kgeom,filename=kgeom.geomfile
+mwrfits,kgeom,kgeom.geomfile
+;
+; update header
+modfits,kgeom.geomfile,0,hdr
+;
+; log
 kcwi_print_info,ppar,pre,'wrote geom file',kgeom.geomfile,format='(a,a)'
 ;
 return

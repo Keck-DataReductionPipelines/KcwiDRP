@@ -121,7 +121,7 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	; get output geom file name
 	odir = ppar.reddir
 	kgeom.geomfile = ppar.reddir + $
-	    strmid(kcfg.obsfname,0,strpos(kcfg.obsfname,'_int')) + '_geom.save'
+	    strmid(kcfg.obsfname,0,strpos(kcfg.obsfname,'_int')) + '_geom.fits'
     	;
     	; set basic configuration parameters
     	kgeom.ifunum = kcfg.ifunum

@@ -59,7 +59,7 @@ function kcwi_alt_cals, kcfg, adir, ppar, $
 	; bias
 	if keyword_set(bias) then begin
 		kcwi_print_info,ppar,pre,'Searching for mbiases in '+adir
-		cfgs = kcwi_read_cfgs(adir, filespec='mbias_*.fit*', count=nf)
+		cfgs = kcwi_read_cfgs(adir, filespec='*_mbias.fit*', count=nf)
 		;
 		; found some biases
 		if nf gt 0 then begin
@@ -91,7 +91,7 @@ function kcwi_alt_cals, kcfg, adir, ppar, $
 	; darks
 	endif else if keyword_set(dark) then begin
 		kcwi_print_info,ppar,pre,'Searching for mdarks in '+adir
-		cfgs = kcwi_read_cfgs(adir, filespec='mdark_*.fit*', count=nf)
+		cfgs = kcwi_read_cfgs(adir, filespec='*_mdark.fit*', count=nf)
 		;
 		; found some darks
 		if nf gt 0 then begin
@@ -131,7 +131,7 @@ function kcwi_alt_cals, kcfg, adir, ppar, $
 	; flats
 	endif else if keyword_set(flat) then begin
 		kcwi_print_info,ppar,pre,'Searching for mflats in '+adir
-		cfgs = kcwi_read_cfgs(adir, filespec='mflat_*.fit*', count=nf)
+		cfgs = kcwi_read_cfgs(adir, filespec='*_mflat.fit*', count=nf)
 		;
 		; found some flats
 		if nf gt 0 then begin
@@ -165,12 +165,30 @@ function kcwi_alt_cals, kcfg, adir, ppar, $
 	; geom files
 	endif else if keyword_set(geom) then begin
 		kcwi_print_info,ppar,pre,'Searching for geom files in '+adir
-		glist = file_search(adir + '/*_geom.save', count=nf)
+		cfgs = kcwi_read_cfgs(adir, filespec='*_geom.fit*', count=nf)
 		;
 		; found some geom files
 		if nf gt 0 then begin
-			cfile = kcwi_match_geom(glist,kcfg)
-			if strlen(strtrim(cfile,2)) eq 0 then $
+			;
+			; matching criteria
+			tlist = ['XBINSIZE','YBINSIZE','GRATID','GRANGLE', $
+				 'FILTNUM','CAMANG','IFUNUM']
+			mcfg = kcwi_match_cfg(cfgs,kcfg,ppar,tlist,count=nm)
+			;
+			; found some matches
+			if nm gt 0 then begin
+				;
+				; only one?
+				if nm eq 1 then begin
+					cfile = mcfg.obsdir + mcfg.obsfname
+				;
+				; more than one, use closest bench temperature to match
+				endif else begin
+					tdel = abs(mcfg.tmpa8 - kcfg.tmpa8)
+					t = (where(tdel eq min(tdel)))[0]
+					cfile = mcfg[t].obsdir + mcfg[t].obsfname
+				endelse
+			endif else $
 				kcwi_print_info,ppar,pre, $
 					'No matching geom files found'
 		endif else $
@@ -179,12 +197,29 @@ function kcwi_alt_cals, kcfg, adir, ppar, $
 	; direct geom files
 	endif else if keyword_set(dgeom) then begin
 		kcwi_print_info,ppar,pre,'Searching for dgeom files in '+adir
-		glist = file_search(adir + '/*_dgeom.save', count=nf)
+		cfgs = kcwi_read_cfgs(adir, filespec='*_dgeom.fit*', count=nf)
 		;
 		; found some dgeom files
 		if nf gt 0 then begin
-			cfile = kcwi_match_geom(glist,kcfg)
-			if strlen(strtrim(cfile,2)) eq 0 then $
+			;
+			; matching criteria
+			tlist = ['XBINSIZE','YBINSIZE','CAMANG','IFUNUM']
+			mcfg = kcwi_match_cfg(cfgs,kcfg,ppar,tlist,count=nm)
+			;
+			; found some matches
+			if nm gt 0 then begin
+				;
+				; only one?
+				if nm eq 1 then begin
+					cfile = mcfg.obsdir + mcfg.obsfname
+				;
+				; more than one, use closest bench temperature to match
+				endif else begin
+					tdel = abs(mcfg.tmpa8 - kcfg.tmpa8)
+					t = (where(tdel eq min(tdel)))[0]
+					cfile = mcfg[t].obsdir + mcfg[t].obsfname
+				endelse
+			endif else $
 				kcwi_print_info,ppar,pre, $
 					'No matching dgeom files found'
 		endif else $

@@ -44,6 +44,7 @@
 ;	2013-MAY-03	Initial version
 ;	2013-SEP-09	Added loglun keyword
 ;	2013-SEP-13	Now use KCWI_PPAR struct for parameters
+;	2017-JUN-29	Use first image in group as root name
 ;-
 pro kcwi_group_biases, kcfg, ppar, bcfg
 	;
@@ -171,16 +172,14 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 				bcfg[g].ccdmode		= kcfg[b].ccdmode
 				bcfg[g].gainmul		= kcfg[b].gainmul
 				;
-				; use first image number in group
+				; use first image in group
 				gi = kcfg[b].imgnum
+				grt = strmid(kcfg[b].obsfname,0, $
+					     strpos(kcfg[b].obsfname,'.fit'))
 				;
 				; files and directories
-				pp.masterbias		= 'mbias_' + $
-					string(gi,'(i0'+strn(pp.fdigits)+')') +$
-								'.fits'
-				pp.ppfname		= 'mbias_' + $
-					string(gi,'(i0'+strn(pp.fdigits)+')') +$
-								'.ppar'
+				pp.masterbias		= grt + '_mbias.fits'
+				pp.ppfname		= grt + '_mbias.ppar'
 				bcfg[g].groupnum	= gi
 				bcfg[g].groupfile	= pp.masterbias
 				bcfg[g].grouppar	= pp.ppfname

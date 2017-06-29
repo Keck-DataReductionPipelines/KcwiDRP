@@ -184,16 +184,19 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 						;
 						; get corresponding kgeom file
 						if do_direct then $
-							gfile = repstr(arf,'_int.fits','_geom.save') $
-						else	gfile = repstr(cbf,'_int.fits','_geom.save')
+							gfile = repstr(arf,'_int.fits','_dgeom.fits') $
+						else	gfile = repstr(cbf,'_int.fits','_geom.fits')
 					endif
 					;
-					; if it exists restore it
+					; if it exists, read it
 					if file_test(gfile,/read) then begin
-						restore,gfile
-						if do_direct then $
-							do_geom = (kdgeom.status eq 0) $
-						else	do_geom = (kgeom.status eq 0)
+						if do_direct then begin
+							kdgeom = mrdfits(gfile,1,ghdr)
+							do_geom = (kdgeom.status eq 0)
+						endif else begin
+							kgeom = mrdfits(gfile,1,ghdr)
+							do_geom = (kgeom.status eq 0)
+						endelse
 						;
 						; log it
 						kcwi_print_info,ppar,pre,'Using geometry from',gfile,format='(a,a)'
@@ -237,7 +240,7 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 								do_geom = (1 eq 1)
 							;
 							; write out result
-							kcwi_write_dgeom,kpars[i],kdgeom
+							kcwi_write_geom,kpars[i],kdgeom
 						;
 						; dispersed image geometry
 						endif else begin

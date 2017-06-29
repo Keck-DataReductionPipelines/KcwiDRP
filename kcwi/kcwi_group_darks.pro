@@ -169,16 +169,14 @@ pro kcwi_group_darks, kcfg, ppar, dcfg
 				dcfg[g].ccdmode		= kcfg[d].ccdmode
 				dcfg[g].gainmul		= kcfg[d].gainmul
 				;
-				; use first image number in group
+				; use first image in group
 				gi = kcfg[d].imgnum
+				grt = strmid(kcfg[d].obsfname,0, $
+					     strpos(kcfg[d].obsfname,'.fit'))
 				;
 				; files and directories
-				pp.masterdark		= 'mdark_' + $
-					string(gi,'(i0'+strn(pp.fdigits)+')') +$
-								'.fits'
-				pp.ppfname		= 'mdark_' + $
-					string(gi,'(i0'+strn(pp.fdigits)+')') +$
-								'.ppar'
+				pp.masterdark		= grt + '_mdark.fits'
+				pp.ppfname		= grt + '_mdark.ppar'
 				;
 				dcfg[g].groupnum	= gi
 				dcfg[g].groupfile	= pp.masterdark
