@@ -1089,7 +1089,8 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				'Number of missing bias configurations',nunbias, $
 				format='(a,i5)',/warn
 			for i = 0,nunbias-1 do $
-				kcwi_print_info,ppar,pre,'Missing bias configuration',unbias[i]
+				kcwi_print_info,ppar,pre,'Missing bias configuration',unbias[i], $
+								format='(a,a)'
 		endif else $
 			kcwi_print_info,ppar,pre,'All bias configurations calibrated'
 	endif else kcwi_print_info,ppar,pre,'No bias groups found',/warn
@@ -1103,7 +1104,8 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				'Number of missing dark configurations',nundark, $
 				format='(a,i5)'
 			for i = 0,nundark-1 do $
-				kcwi_print_info,ppar,pre,'Missing dark configuration',undark[i]
+				kcwi_print_info,ppar,pre,'Missing dark configuration',undark[i], $
+								format='(a,a)'
 		endif else $
 			kcwi_print_info,ppar,pre,'All dark configurations calibrated'
 	endif else kcwi_print_info,ppar,pre,'No dark groups found',/warn
@@ -1117,7 +1119,8 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				'Number of missing flat configurations',nunflat, $
 				format='(a,i5)',/warn
 			for i = 0,nunflat-1 do $
-				kcwi_print_info,ppar,pre,'Missing flat configuration',unflat[i]
+				kcwi_print_info,ppar,pre,'Missing flat configuration',unflat[i], $
+								format='(a,a)'
 		endif else $
 			kcwi_print_info,ppar,pre,'All flat configurations calibrated'
 	endif else kcwi_print_info,ppar,pre,'No flat groups found',/warn
@@ -1131,7 +1134,8 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				'Number of missing geometry configurations',nungeom, $
 				format='(a,i5)',/warn
 			for i = 0,nungeom-1 do $
-				kcwi_print_info,ppar,pre,'Missing geometry configuration',ungeom[i]
+				kcwi_print_info,ppar,pre,'Missing geometry configuration',ungeom[i], $
+								format='(a,a)'
 		endif else $
 			kcwi_print_info,ppar,pre,'All geometry configurations calibrated'
 	endif else kcwi_print_info,ppar,pre,'No geom groups found',/warn
@@ -1145,7 +1149,8 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				'Number of missing profile configurations',nunprof, $
 				format='(a,i5)',/warn
 			for i = 0,nunprof-1 do $
-				kcwi_print_info,ppar,pre,'Missing profile configuration',unprof[i]
+				kcwi_print_info,ppar,pre,'Missing profile configuration',unprof[i], $
+								format='(a,a)'
 		endif else $
 			kcwi_print_info,ppar,pre,'All profile configurations calibrated'
 	endif else kcwi_print_info,ppar,pre,'No profile images found',/warn
@@ -1159,7 +1164,8 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				'Number of missing relative response configurations',nunrr, $
 				format='(a,i5)',/warn
 			for i = 0,nunrr-1 do $
-				kcwi_print_info,ppar,pre,'Missing relative response configuration',unrr[i]
+				kcwi_print_info,ppar,pre,'Missing relative response configuration',unrr[i], $
+								format='(a,a)'
 		endif else $
 			kcwi_print_info,ppar,pre,'All relative response configurations calibrated'
 	endif else kcwi_print_info,ppar,pre,'No relative response images found',/warn
@@ -1173,7 +1179,8 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				'Number of missing standard star configurations',nunstd, $
 				format='(a,i5)',/warn
 			for i = 0,nunstd-1 do $
-				kcwi_print_info,ppar,pre,'Missing standard star configuration',unstd[i]
+				kcwi_print_info,ppar,pre,'Missing standard star configuration',unstd[i], $
+								format='(a,a)'
 		endif else $
 			kcwi_print_info,ppar,pre,'All standard star configurations calibrated'
 	endif else kcwi_print_info,ppar,pre,'No standard star images found',/warn
