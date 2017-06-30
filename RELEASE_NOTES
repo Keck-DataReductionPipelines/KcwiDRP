@@ -1,5 +1,10 @@
 # Copyright (c) 2013-2017, California Institute of Technology, all rights reserved
 
+2017-Jul-00: v0.5.1 - Twentieth beta release
+
+- added full configuration calibration report at the end of kcwi_prep.
+
+
 2017-Jun-29: v0.5.0 - Nineteenth beta release
 
 - removed link file paradigm for process control and replaced with a proc file 

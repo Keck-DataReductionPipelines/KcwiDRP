@@ -507,8 +507,14 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	; tags for direct images
 	dtags = ['XBINSIZE','YBINSIZE','GRATID','FILTNUM','CAMANG','IFUNUM']
 	;
-	; uncalibrated objects?
-	uncal = ['']
+	; uncalibrated objects
+	unbias = ['']
+	undark = ['']
+	unflat = ['']
+	ungeom = ['']
+	unprof = ['']
+	unrr   = ['']
+	unstd  = ['']
 	;
 	; proc filename
 	procfile = odir+'kcwi.proc'
@@ -600,8 +606,14 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			endelse
 			;
 			; print proc
-			if mbfile ne '' then $
+			if mbfile ne '' then begin
 				printf,kp,'masterbias='+mbfile
+			;
+			; if not matched, log as uncalibrated
+			endif else begin
+				cstr = (kcwi_cfg_string(kcfg[p],/delim,/bias))[0]
+				unbias = [ unbias, cstr ]
+			endelse
 		endif	; ppar.nbgrps gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -649,7 +661,14 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			endelse
 			;
 			; print proc
-			printf,kp,'masterdark='+mdfile
+			if mdfile ne '' then begin
+				printf,kp,'masterdark='+mdfile
+			;
+			; if not matched, log as uncalibrated
+			endif else begin
+				cstr = (kcwi_cfg_string(kcfg[p],/delim,/bias))[0]
+				undark = [ undark, cstr ]
+			endelse
 		endif	; only object frames and ndgrps gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -692,8 +711,14 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			endelse
 			;
 			; print proc
-			if mffile ne '' then $
+			if mffile ne '' then begin
 				printf,kp,'masterflat='+mffile
+			;
+			; if not matched, log as uncalibrated
+			endif else begin
+				cstr = (kcwi_cfg_string(kcfg[p],/delim,/long))[0]
+				unflat = [ unflat, cstr ]
+			endelse
 		endif	; only object and cflat frames and nfgrps gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -703,6 +728,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		; init
 		cbfile = ''
 		arfile = ''
+		mgfile = ''
 		;
 		; no sense creating a dark data cube or matching direct image
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
@@ -748,7 +774,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				; if not matched, log as uncalibrated
 				if mgfile eq '' then begin
 					cstr = (kcwi_cfg_string(kcfg[p],/long,/delim))[0]
-					uncal = [ uncal, cstr ]
+					ungeom = [ ungeom, cstr ]
 				endif
 			endelse
 			;
@@ -807,7 +833,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				; if not matched, log as uncalibrated
 				if mgfile eq '' then begin
 					cstr = (kcwi_cfg_string(kcfg[p],/long,/delim))[0]
-					uncal = [ uncal, cstr ]
+					ungeom = [ ungeom, cstr ]
 				endif
 			endelse
 			;
@@ -855,6 +881,12 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 					if pfile ne '' then $
 						kcwi_print_info,ppar,pre, $
 							'slice profile file = '+pfile
+				endif
+				;
+				; if not matched, log as uncalibrated
+				if pfile eq '' then begin
+					cstr = (kcwi_cfg_string(kcfg[p],/long,/delim))[0]
+					unprof = [ unprof, cstr ]
 				endif
 			endelse
 			;
@@ -967,8 +999,14 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			endelse
 			;
 			; print proc
-			if rrfile ne '' then $
+			if rrfile ne '' then begin
 				printf,kp,'masterrr='+rrfile
+			;
+			; if not matched, log as uncalibrated
+			endif else begin
+				cstr = (kcwi_cfg_string(kcfg[p],/long,/delim))[0]
+				unrr = [ unrr, cstr ]
+			endelse
 		endif else rrfile = ''	; only object frames and nrrs gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -996,10 +1034,8 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;
 		; correct only object frames
-		; also require relative response correction
 		if strmatch(kcfg[p].imgtype,'object') eq 1 and $
-		   strpos(kcfg[p].obstype,'direct') lt 0 and $
-		   rrfile ne '' then begin
+		   strpos(kcfg[p].obstype,'direct') lt 0 then begin
 			mcfg = kcwi_match_cfg(stdcfg,kcfg[p],ppar,mtags, $
 						count=std,/time)
 			if std eq 1 then begin
@@ -1028,27 +1064,119 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			endelse
 			;
 			; print proc
-			if stdfile ne '' then $
+			if stdfile ne '' then begin
 				printf,kp,'masterstd='+stdfile
+			;
+			; if not matched, log as uncalibrated
+			endif else begin
+				cstr = (kcwi_cfg_string(kcfg[p],/long,/delim))[0]
+				unstd = [ unstd, cstr ]
+			endelse
 		endif	; only object frames
 	endfor	; loop over images
 	;
 	; check for un calibrated observations
 	print,''
 	printf,ll,""
-	if n_elements(uncal) gt 1 then begin
-		uncal = uncal[1:(n_elements(uncal)-1)]
-		uncal = uncal[sort(uncal)]
-		uncal = uncal[uniq(uncal)]
-		nuncal = n_elements(uncal)
-		kcwi_print_info,ppar,pre, $
-			'Number of uncalibrated configurations',nuncal, $
-			format='(a,i5)'
-		for i = 0,nuncal-1 do $
-			kcwi_print_info,ppar,pre,'Uncalibrated configuration',uncal[i]
-	endif else begin
-		kcwi_print_info,ppar,pre,'All configurations calibrated'
-	endelse
+	kcwi_print_info,ppar,pre,'CONFIGURATION CALIBRATION REPORT'
+	if ppar.nbgrps gt 0 then begin
+		if n_elements(unbias) gt 1 then begin
+			unbias = unbias[1:(n_elements(unbias)-1)]
+			unbias = unbias[sort(unbias)]
+			unbias = unbias[uniq(unbias)]
+			nunbias = n_elements(unbias)
+			kcwi_print_info,ppar,pre, $
+				'Number of missing bias configurations',nunbias, $
+				format='(a,i5)',/warn
+			for i = 0,nunbias-1 do $
+				kcwi_print_info,ppar,pre,'Missing bias configuration',unbias[i]
+		endif else $
+			kcwi_print_info,ppar,pre,'All bias configurations calibrated'
+	endif else kcwi_print_info,ppar,pre,'No bias groups found',/warn
+	if ppar.ndgrps gt 0 then begin
+		if n_elements(undark) gt 1 then begin
+			undark = undark[1:(n_elements(undark)-1)]
+			undark = undark[sort(undark)]
+			undark = undark[uniq(undark)]
+			nundark = n_elements(undark)
+			kcwi_print_info,ppar,pre, $
+				'Number of missing dark configurations',nundark, $
+				format='(a,i5)'
+			for i = 0,nundark-1 do $
+				kcwi_print_info,ppar,pre,'Missing dark configuration',undark[i]
+		endif else $
+			kcwi_print_info,ppar,pre,'All dark configurations calibrated'
+	endif else kcwi_print_info,ppar,pre,'No dark groups found',/warn
+	if ppar.nfgrps gt 0 then begin
+		if n_elements(unflat) gt 1 then begin
+			unflat = unflat[1:(n_elements(unflat)-1)]
+			unflat = unflat[sort(unflat)]
+			unflat = unflat[uniq(unflat)]
+			nunflat = n_elements(unflat)
+			kcwi_print_info,ppar,pre, $
+				'Number of missing flat configurations',nunflat, $
+				format='(a,i5)',/warn
+			for i = 0,nunflat-1 do $
+				kcwi_print_info,ppar,pre,'Missing flat configuration',unflat[i]
+		endif else $
+			kcwi_print_info,ppar,pre,'All flat configurations calibrated'
+	endif else kcwi_print_info,ppar,pre,'No flat groups found',/warn
+	if ppar.nggrps gt 0 or ppar.ndggrps gt 0 then begin
+		if n_elements(ungeom) gt 1 then begin
+			ungeom = ungeom[1:(n_elements(ungeom)-1)]
+			ungeom = ungeom[sort(ungeom)]
+			ungeom = ungeom[uniq(ungeom)]
+			nungeom = n_elements(ungeom)
+			kcwi_print_info,ppar,pre, $
+				'Number of missing geometry configurations',nungeom, $
+				format='(a,i5)',/warn
+			for i = 0,nungeom-1 do $
+				kcwi_print_info,ppar,pre,'Missing geometry configuration',ungeom[i]
+		endif else $
+			kcwi_print_info,ppar,pre,'All geometry configurations calibrated'
+	endif else kcwi_print_info,ppar,pre,'No geom groups found',/warn
+	if nprofs gt 0 then begin
+		if n_elements(unprof) gt 1 then begin
+			unprof = unprof[1:(n_elements(unprof)-1)]
+			unprof = unprof[sort(unprof)]
+			unprof = unprof[uniq(unprof)]
+			nunprof = n_elements(unprof)
+			kcwi_print_info,ppar,pre, $
+				'Number of missing profile configurations',nunprof, $
+				format='(a,i5)',/warn
+			for i = 0,nunprof-1 do $
+				kcwi_print_info,ppar,pre,'Missing profile configuration',unprof[i]
+		endif else $
+			kcwi_print_info,ppar,pre,'All profile configurations calibrated'
+	endif else kcwi_print_info,ppar,pre,'No profile images found',/warn
+	if nrrs gt 0 then begin
+		if n_elements(unrr) gt 1 then begin
+			unrr = unrr[1:(n_elements(unrr)-1)]
+			unrr = unrr[sort(unrr)]
+			unrr = unrr[uniq(unrr)]
+			nunrr = n_elements(unrr)
+			kcwi_print_info,ppar,pre, $
+				'Number of missing relative response configurations',nunrr, $
+				format='(a,i5)',/warn
+			for i = 0,nunrr-1 do $
+				kcwi_print_info,ppar,pre,'Missing relative response configuration',unrr[i]
+		endif else $
+			kcwi_print_info,ppar,pre,'All relative response configurations calibrated'
+	endif else kcwi_print_info,ppar,pre,'No relative response images found',/warn
+	if nstds gt 0 then begin
+		if n_elements(unstd) gt 1 then begin
+			unstd = unstd[1:(n_elements(unstd)-1)]
+			unstd = unstd[sort(unstd)]
+			unstd = unstd[uniq(unstd)]
+			nunstd = n_elements(unstd)
+			kcwi_print_info,ppar,pre, $
+				'Number of missing standard star configurations',nunstd, $
+				format='(a,i5)',/warn
+			for i = 0,nunstd-1 do $
+				kcwi_print_info,ppar,pre,'Missing standard star configuration',unstd[i]
+		endif else $
+			kcwi_print_info,ppar,pre,'All standard star configurations calibrated'
+	endif else kcwi_print_info,ppar,pre,'No standard star images found',/warn
 	;
 	; report
 	eltime = systime(1) - startime
