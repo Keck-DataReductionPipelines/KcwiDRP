@@ -65,15 +65,18 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 	;
 	; check inputs
 	if kcwi_verify_ppar(ppar,/init,/silent) ne 0 then begin
-		kcwi_print_info,ppar,pre,'Ppar error - malformed KCWI_PPAR struct',/error
+		kcwi_print_info,ppar,pre, $
+			'Ppar error - malformed KCWI_PPAR struct',/error
 		return,-1
 	endif
 	if kcwi_verify_cfg(kcfg,/init,/silent) ne 0 then begin
-		kcwi_print_info,ppar,pre,'Search Error - malformed KCWI_CFG struct array',/error
+		kcwi_print_info,ppar,pre, $
+			'Search Error - malformed KCWI_CFG struct array',/error
 		return,-1
 	endif
 	if kcwi_verify_cfg(tcfg,/init,/silent) ne 0 then begin
-		kcwi_print_info,ppar,pre,'Target Error - malformed KCWI_CFG struct array',/error
+		kcwi_print_info,ppar,pre, $
+			'Target Error - malformed KCWI_CFG struct array',/error
 		return,-1
 	endif
 	;
@@ -104,7 +107,8 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 	for i=0,nmatch-1 do begin
 		t = where(strmatch(tags,mtags[i]) eq 1, nt)
 		if nt le 0 then begin
-			kcwi_print_info,ppar,pre,'Unrecognized tag',mtags[i],/error
+			kcwi_print_info,ppar,pre,'Unrecognized tag', $
+				mtags[i],/error
 			return,-1
 		endif
 		tnum[i] = t[0]
@@ -136,7 +140,8 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 				; float-like types
 				4:
 				5: begin
-					if abs(kcfg[i].(tnum[j]) - tcfg.(tnum[j])) gt 0.05 then begin
+					if abs(kcfg[i].(tnum[j]) - $
+					   tcfg.(tnum[j])) gt 0.05 then begin
 						match = (1 eq 0)
 					endif
 					break
@@ -145,20 +150,24 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 				1:
 				2:
 				3: begin
-					if abs(kcfg[i].(tnum[j]) - tcfg.(tnum[j])) gt 0 then begin
+					if abs(kcfg[i].(tnum[j]) - $
+					   tcfg.(tnum[j])) gt 0 then begin
 						match = (1 eq 0)
 					endif
 					break
 				end
 				; string type
 				7: begin
-					if kcfg[i].(tnum[j]) ne tcfg.(tnum[j]) then begin
+					if kcfg[i].(tnum[j]) ne tcfg.(tnum[j]) $
+								then begin
 						match = (1 eq 0)
 					endif
 					break
 				end
 				else: begin
-					kcwi_print_info,ppar,pre,'Illegal tag type for comparison',type,/warning
+					kcwi_print_info,ppar,pre, $
+					    'Illegal tag type for comparison', $
+					    type,/warning
 					match = (1 eq 0)
 				end
 			endswitch
@@ -208,14 +217,16 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 		; get minimum tdelt
 		mintdelt = min(abs(tdelt[mcfgi]))
 		if keyword_set(time) then begin
-			mcfgi = where(mstat eq 1 and abs(tdelt) eq mintdelt, count)
+			mcfgi = where(mstat eq 1 and abs(tdelt) eq mintdelt, $
+									count)
 		;
 		; before keyword
 		endif else if keyword_set(before) then begin
 			before = where(mstat eq 1 and tdelt gt 0, nbefore)
 			if nbefore gt 0 then begin
 				ttdel = min(tdelt[before])
-				mcfgi = where(mstat eq 1 and tdelt eq ttdel, count)
+				mcfgi = where(mstat eq 1 and tdelt eq ttdel, $
+									count)
 			;
 			; none before
 			endif else count = 0
@@ -225,7 +236,8 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 			after = where(mstat eq 1 and tdelt lt 0, nafter)
 			if nafter gt 0 then begin
 				ttdel = max(tdelt[after])
-				mcfgi = where(mstat eq 1 and tdelt eq ttdel, count)
+				mcfgi = where(mstat eq 1 and tdelt eq ttdel, $
+									count)
 			;
 			; none after
 			endif else count = 0
@@ -236,8 +248,9 @@ function kcwi_match_cfg, kcfg, tcfg, ppar, tlist, $
 	if count le 0 then begin 
 		mcfg = -1
 		if not keyword_set(silent) then $
-			kcwi_print_info,ppar,pre,'No matches to image,type',tcfg.imgnum,tcfg.imgtype, $
-				format='(a,i9,2x,a)',/error
+			kcwi_print_info,ppar,pre,'No matches to image,type', $
+				tcfg.imgnum,tcfg.imgtype, $
+				format='(a,i9,2x,a)',/warning
 	endif else mcfg = kcfg[mcfgi]
 	;
 	return,mcfg
