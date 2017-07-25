@@ -140,7 +140,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	dw = sxpar(hdr,'CD3_3')
 	;
 	; get all good wavelength range
-	wgoo0 = sxpar(hdr,'WAVGOOD0')
+	wgoo0 = sxpar(hdr,'WAVGOOD0') > 3650.00
 	wgoo1 = sxpar(hdr,'WAVGOOD1')
 	;
 	; get all inclusive wavelength range

@@ -129,7 +129,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	crpixw = sxpar(hdr,'CRPIX3')
 	;
 	; get all good wavelength range
-	wgoo0 = sxpar(hdr,'WAVGOOD0')
+	wgoo0 = sxpar(hdr,'WAVGOOD0') > 3650.0
 	wgoo1 = sxpar(hdr,'WAVGOOD1')
 	;
 	; get all inclusive wavelength range
