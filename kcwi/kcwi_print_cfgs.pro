@@ -67,14 +67,14 @@ pro kcwi_print_cfgs,kcfg,imsum, $
 		printf,ol,'# '+pre+'  '+systime(0)
 		printf,ol,'# R   = CCD Readout Speed: 0 - slow, 1 - fast'
 		printf,ol,'# SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes'
-		printf,ol,'#  #/   N Bin AMPS R SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
+		printf,ol,'#  #/   N Imno   Bin AMPS R G SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
 	endif
 	;
 	; header?
 	if keyword_set(header) and not keyword_set(silent) then begin
-		print,' R   = CCD Readout Speed: 0 - slow, 1 - fast'
+		print,' R   = CCD Readout Speed: 0 - slow, 1 - fast, G = Gain multiplier'
 		print,' SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes'
-		print,'   #/   N Bin AMPS R SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
+		print,'   #/   N Imno   Bin AMPS R G SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
 	endif
 	;
 	; current date
@@ -85,8 +85,10 @@ pro kcwi_print_cfgs,kcfg,imsum, $
 	for i=0,n-1l do begin
 		;
 		; prepare summary
-		imsum = string(i+1,'/',n,kcfg[i].xbinsize,kcfg[i].ybinsize, $
+		imsum = string(i+1,'/',n,kcfg[i].imgnum, $
+			kcfg[i].xbinsize,kcfg[i].ybinsize, $
 			strtrim(kcfg[i].ampmode,2),kcfg[i].ccdmode, $
+			kcfg[i].gainmul, $
 			kcfg[i].skyobs,kcfg[i].shuffmod,kcfg[i].nasmask, $
 			strtrim(kcfg[i].ifunam,2), $
 			strtrim(kcfg[i].bgratnam,2), $
@@ -94,7 +96,7 @@ pro kcwi_print_cfgs,kcfg,imsum, $
 			kcfg[i].cwave,kcfg[i].juliandate, $
 			kcfg[i].exptime,strtrim(kcfg[i].imgtype,2)+strtrim(kcfg[i].lampname,2), $
 			kcfg[i].imgnum,kcfg[i].ra,kcfg[i].dec,kcfg[i].rotposn, $
-			format='(i4,a1,i4,2i2,1x,a-5,i1,1x,3i1,1x,a-3,1x,a-4,1x,a-4,1x,f8.1,f12.3,f7.1,1x,a-11,i7,2f13.8,2x,f7.2)')
+			format='(i4,a1,i4,i7,2i2,1x,a-5,i1,1x,i2,1x,3i1,1x,a-3,1x,a-4,1x,a-4,1x,f8.1,f12.3,f7.1,1x,a-11,i7,2f13.8,2x,f7.2)')
 		;
 		; add object info
 		if strpos(kcfg[i].imgtype,'object') ge 0 then begin
