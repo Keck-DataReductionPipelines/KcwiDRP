@@ -58,7 +58,7 @@ pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
 	sz=size(img,/dim)
 	;
 	; image number
-	imgnum = sxpar(hdr,'imgnum')
+	imgnum = sxpar(hdr,'frameno')
 	;
 	; binning
 	bstr = strtrim(sxpar(hdr,'binning'),2)

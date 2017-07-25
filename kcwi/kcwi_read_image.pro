@@ -104,7 +104,7 @@ function kcwi_read_image,imgnum,ppar,tail,hdr, $
 		;
 		; check for type of read:
 		; masks are binary images
-		if strpos(tail,'msk') ge 0 then begin
+		if strpos(tail,'msk') ge 0 or strpos(tail,'mcub') ge 0 then begin
 			img = mrdfits(ifil,0,hdr,/silent)
 			kcwi_print_info,ppar,pre,'read mask file with no scaling',ifil,format='(a,a)'
 		;

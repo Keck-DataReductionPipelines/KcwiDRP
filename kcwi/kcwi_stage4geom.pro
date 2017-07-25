@@ -191,10 +191,10 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 					; if it exists, read it
 					if file_test(gfile,/read) then begin
 						if do_direct then begin
-							kdgeom = mrdfits(gfile,1,ghdr)
+							kdgeom = mrdfits(gfile,1,ghdr,/silent)
 							do_geom = (kdgeom.status eq 0)
 						endif else begin
-							kgeom = mrdfits(gfile,1,ghdr)
+							kgeom = mrdfits(gfile,1,ghdr,/silent)
 							do_geom = (kgeom.status eq 0)
 						endelse
 						;
