@@ -94,12 +94,14 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 		if kcfg.shuffmod eq 1 then begin
 			;
 			; read sky cube from nod-and-shuffle image set
-			icub = kcwi_read_image(kcfg.imgnum,ppar,'_scube',hdr,status=stat)
+			icub = kcwi_read_image(kcfg.imgnum,ppar,'_scube',hdr, $
+						/calib,status=stat)
 			if stat ne 0 then return
 		endif else begin
 			;
 			; read sky observation image
-			icub = kcwi_read_image(kcfg.imgnum,ppar,'_icube',hdr,status=stat)
+			icub = kcwi_read_image(kcfg.imgnum,ppar,'_icube',hdr, $
+						/calib,status=stat)
 			if stat ne 0 then return
 		endelse
 		;
@@ -166,7 +168,7 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 		;
 		; full wavelength sample (avoiding edges)
 		test  = reform(icub[i,*,y0:y3])
-		prof  = total(test,2)/float(n_elements(test[0,*]))
+		prof  = median(test,dim=2)
 		mo = moment(prof[g])
 		mn = mo[0]
 		sg = sqrt(mo[1])
@@ -180,9 +182,9 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 			test2 = reform(icub[i,*,y1:y2])
 			test3 = reform(icub[i,*,y2:y3])
 			;
-			prof1 = total(test1,2)/float(n_elements(test1[0,*]))
-			prof2 = total(test2,2)/float(n_elements(test2[0,*]))
-			prof3 = total(test3,2)/float(n_elements(test3[0,*]))
+			prof1 = median(test1,dim=2)
+			prof2 = median(test2,dim=2)
+			prof3 = median(test3,dim=2)
 			mo1 = moment(prof1[g])
 			mn1 = mo1[0]
 			sg1 = sqrt(mo1[1])
@@ -207,20 +209,18 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 			th=2
 			si=1.5
 			;
-			if kcfg.nasmask ne 1 then $
-				yran=[min( [min([prof[g],prof1[g],prof2[g],prof3[g]]), mn-1.] ), $
-			      	      max( [max([prof[g],prof1[g],prof2[g],prof3[g]]), mn+1.] )] $
-			else	yran=[min( [min(prof[g]), mn-1.] ), max( [max(prof[g]), mn+1.] ) ]
+			yran = [0.8,1.15]
 			;
-			plot,prof,xthick=th,ythick=th,charsi=si,charthi=th, $
+			plot,prof/median(prof),xthick=th,ythick=th,charsi=si, $
+				charthi=th,thick=th, $
 				title='Image # '+strn(kcfg.imgnum)+', Slice '+strn(i),psym=10, $
 				xtitle='Pixel',/xs, $
 				ytitle='Avg Int.',yrange=yran,/ys
 			oplot,!x.crange,[mn,mn],linesty=1
 			if kcfg.nasmask ne 1 then begin
-				oplot,prof1,color=colordex('B'),psym=10
-				oplot,prof2,color=colordex('G'),psym=10
-				oplot,prof3,color=colordex('R'),psym=10
+				oplot,prof1/median(prof1),color=colordex('B'),psym=10
+				oplot,prof2/median(prof2),color=colordex('G'),psym=10
+				oplot,prof3/median(prof3),color=colordex('R'),psym=10
 			endif
 			oplot,[gx0,gx0],!y.crange
 			oplot,[gx1,gx1],!y.crange
