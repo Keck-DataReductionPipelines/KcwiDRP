@@ -69,6 +69,9 @@ pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
 	; central wavelength
 	cwav = strtrim(string(sxpar(hdr,'bcwave'),format='(f8.1)'),2)
 	;
+	; mask
+	msk = strtrim(sxpar(hdr,'bnasnam'),2)
+	;
 	; initialize flat
 	flat = fltarr(sz) + 1.
 	;
@@ -85,7 +88,7 @@ pro kcwi_fit_flat,img,hdr,ppar,flat,splord=splord
 	splo = long(splo)
 	;
 	; is the nod-and-shuffle mask in?
-	if sxpar(hdr,'BNASPOS') eq 2 then begin
+	if strpos(msk,'Mask') ge 0 then begin
 		y0 = sxpar(hdr,'SHUFROWS')
 		y1 = y0 * 2 - 1
 		if y0 eq 0 or y1 eq 0 then begin
