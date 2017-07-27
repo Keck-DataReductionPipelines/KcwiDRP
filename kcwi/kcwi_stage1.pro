@@ -960,8 +960,8 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			; BEGIN STAGE 1-J: SCATTERED LIGHT SUBTRACTION
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
-			; only do scattered light subtraction if not nod-and-shuffle obs
-			do_scat = (sxpar(hdr,'NASSUB') eq 0)
+			; only do scattered light subtraction only if N&S mask not in
+			do_scat = (kcfg.nasmask eq 0)
 			;
 			; should we subtract scattered light?
 			if do_scat then begin
@@ -1022,6 +1022,22 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						read,'Next? (Q-quit plotting, <cr>-next): ',q
 						if strupcase(strmid(q,0,1)) eq 'Q' then plotscat = 0
 					endif
+					;
+					; plot scattered light
+					plfil = kcwi_get_imname(kpars[i],imgnum[i],'_scat',/reduced)
+					plfil = strmid(plfil,0,strpos(plfil,'.fit'))
+					psfile,plfil
+					kcwi_print_info,ppar,pre,'plotting scattered light to: '+plfil+'.ps'
+					deepcolor
+					!p.background=colordex('white')
+					!p.color=colordex('black')
+					plot,fx,slp,/xs,psym=1,xtitle='ROW',ytitle='e-', $
+						title='Image: '+strn(imgnum[i]), $
+						charth=2,charsi=1.5,xthi=2,ythi=2
+					oplot,fx,elp,color=colordex('blue')
+					oplot,fx[y0:y1],scat1,thick=3,color=colordex('red')
+					oplot,fx[y2:y3],scat2,thick=3,color=colordex('red')
+					psclose
 				endif
 				;
 				; subtract scat
