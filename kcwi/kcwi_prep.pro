@@ -112,6 +112,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	verbose=verbose, $
 	display=display, $
 	saveplots=saveplots, $
+	batch=batch, $
 	help=help
 	;
 	; setup
@@ -125,7 +126,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, MINGROUPBIAS=N, MINOSCANPIX=N, ALTCALDIR=<full_dir_spec>'
 		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
 		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /WAVEINTER, /DOMEPRIORITY'
-		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /HELP'
+		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /BATCH, /HELP'
 		return
 	endif
 	;
@@ -349,13 +350,72 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	printf,ll,'Plot display level: ',display
 	if keyword_set(saveplots) then $
 		printf,ll,'Saving plots'
+	if keyword_set(batch) then $
+		printf,ll,'Batch mode'
 	;
 	; gather configuration data on each observation in raw dir
 	kcfg = kcwi_read_cfgs(indir,filespec=fspec, redo_sort=jderr)
 	nf = n_elements(kcfg)
 	kcwi_print_info,ppar,pre,'Number of raw input images',nf
 	if jderr then $
-		kcwi_print_info,ppar,pre,'Image numbers out of time sequence',/warning
+		kcwi_print_info,ppar,pre,'Image numbers out of time sequence', $
+					/warning
+	;
+	; check with user about sky and twilight flat observations
+	if not keyword_set(batch) then begin
+		print,'For image number ranges use:'
+		print,"(<cr>) for no images in the night,"
+		print,"image number range list (e.g. '12-15,26,27')."
+		;
+		; SKY observations
+		skyrng=''
+		read,'Enter sky observations image number range: ',skyrng
+		skyrng = strcompress(skyrng,/remove_all)
+		if strlen(skyrng) gt 0 then begin
+			rangepar,skyrng,skyno
+			nsky = n_elements(skyno)
+			for i=0,nsky-1 do begin
+				t = where(kcfg.imgnum eq skyno[i], nt)
+				if nt eq 1 then begin
+					kcfg[t].skyobs = 1
+					kcfg[t].obstype = 'cal'
+				endif else if nt eq 0 then begin
+					kcwi_print_info,ppar,pre, $
+					'Sky image number not found: '+ $
+					strn(skyno[i]),/warn
+				endif else begin
+					kcwi_print_info,ppar,pre, $
+					'Ambiguous sky image number: '+ $
+					strn(skyno[i]),/warn
+				endelse
+			endfor
+		endif	; strlen(skyrng) gt 0
+		;
+		; twilight flat observations
+		twirng=''
+		read,'Enter twilight flat observations image number range: ', $
+			twirng
+		twirng = strcompress(twirng,/remove_all)
+		if strlen(twirng) gt 0 then begin
+			rangepar,twirng,twino
+			ntwi = n_elements(twino)
+			for i=0,ntwi-1 do begin
+				t = where(kcfg.imgnum eq twino[i], nt)
+				if nt eq 1 then begin
+					kcfg[t].imgtype = 'tflat'
+					kcfg[t].obstype = 'cal'
+				endif else if nt eq 0 then begin
+					kcwi_print_info,ppar,pre, $
+					'Twilight image number not found: '+ $
+					strn(twino[i]),/warn
+				endif else begin
+					kcwi_print_info,ppar,pre, $
+					'Ambiguous twilight image number: '+ $
+					strn(twino[i]),/warn
+				endelse
+			endfor
+		endif	; strlen(twirng) gt 0
+	endif	; not batch
 	;
 	; write out a complete listing
 	kcwi_print_cfgs,kcfg,/silent,/header,outfile=odir+'kcwi.imlog'
@@ -903,7 +963,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		if strmatch(kcfg[p].imgtype,'object') eq 1 and $
 		   kcfg[p].skyobs eq 0 and nskys gt 0 then begin
 			mcfg = kcwi_match_cfg(scfg,kcfg[p],ppar,mtags, $
-					/object,/time,count=s,/silent,cwi=cwi)
+					/object,/time,count=s,/silent)
 			if s eq 1 then begin
 				;
 				; record sky filename
@@ -920,7 +980,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			endelse
 			;
 			; print proc
-			if skyfile ne '' then $
+			if skfile ne '' then $
 				printf,kp,'mastersky='+odir+skfile
 		endif	; only object frames and nskys gt 0
 		;
@@ -1035,7 +1095,8 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		;
 		; correct only object frames
 		if strmatch(kcfg[p].imgtype,'object') eq 1 and $
-		   strpos(kcfg[p].obstype,'direct') lt 0 then begin
+		   strpos(kcfg[p].obstype,'direct') lt 0 and $
+		   nstds gt 0 then begin
 			mcfg = kcwi_match_cfg(stdcfg,kcfg[p],ppar,mtags, $
 						count=std,/time)
 			if std eq 1 then begin
