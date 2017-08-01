@@ -97,6 +97,10 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 	; read in cube
 	icub = mrdfits(rrfil,0,hdr,/fscale,/silent)
 	;
+	; get variance cube
+	vrfil = repstr(rrfil,'_icube','_vcube')
+	vcub = mrdfits(vrfil,0,hdr,/fscale,/silent)
+	;
 	; get size
 	sz = size(icub,/dim)
 	;
@@ -125,6 +129,10 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 		y1 = fix( (wall1 - w0) / dw ) - 10
 	endif
 	;
+	; y for fitting
+	yf = y[y0:y1] - y[y0]
+	yall = y - y[y0]
+	;
 	; wavelength scale
 	w = w0 + y*dw
 	;
@@ -149,9 +157,9 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 	; get reference slice number
 	irs = ppar.refslice >0<23
 	;
-	; extract reference slice response
-	test = reform(icub[irs,gx0:gx1,y0:y1])
-	refr = median(test,dim=1)
+	; extract reference slice response and variance
+	refr = median(reform(icub[irs,gx0:gx1,y0:y1]),dim=1)
+	refv = median(reform(vcub[irs,gx0:gx1,y0:y1]),dim=1)
 	;
 	; plot results if requested
 	q=''
@@ -167,6 +175,7 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 			title='Img: '+strn(kcfg.imgnum)+' Reference Slice: '+strn(irs), $
 			xrange=xran,/xs,xtitle='Wave', $
 			ytitle='Avg Int.', /ys
+		oplot,w[y0:y1],sqrt(refv),color=colordex('blue')
 		oplot,[wall0,wall0],!y.crange
 		oplot,[wall1,wall1],!y.crange
 		;
@@ -179,29 +188,43 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 		;
 		; are we the reference slice?
 		if i eq irs then begin
-			fco = fltarr(6)
+			fco = fltarr(10)
 			fco[0] = 1.
 			nrr = refr/refr
+			vrr = nrr
 			nfit = nrr
 			rlab = ' REF'
 		endif else begin
 			;
 			; full wavelength sample (avoiding edges)
-			test  = reform(icub[i,gx0:gx1,y0:y1])
-			rr = median(test,dim=1)
+			rr = median(reform(icub[i,gx0:gx1,y0:y1]),dim=1)
+			rv = median(reform(vcub[i,gx0:gx1,y0:y1]),dim=1)
+			;
+			; normalize to reference slice
 			nrr = rr/refr
-			fco = polyfit(y[y0:y1],nrr,5)
-			nfit = poly(y,fco)
-			rrs[i,*] = nfit > lim	; avoid zero-like values that cause overflow
+			;
+			; do not fit less than 3 sigma data
+			rsg = sqrt(refv + rv)
+			g = where(rr ge 3.*rsg, ng)
+			if ng gt 10 then begin
+				fco = poly_fit(yf[g],nrr[g],4,/double)
+				nfit = poly(yall,fco)
+				rrs[i,*] = nfit > lim	; avoid overflow
+			endif else begin
+				kcwi_print_info,ppar,pre,'Not enough good points!',/err
+				return
+			endelse
 			rlab = ''
 		endelse
 		;
 		; log results
 		kcwi_print_info,ppar,pre,'Resp. Fit: Slice#, Coefs',i,fco, $
-			format='(a,i4,2x,6g13.5)'
+			format='(a,i4,2x,10g13.5)'
 		;
 		if doplots ge 2 then begin
 			;
+			b = where(rr lt 3.*rsg, nb)
+			if nb gt 0 then nrr[b] = !values.f_nan
 			plot,w[y0:y1],nrr,xthick=th,ythick=th,charsi=si, $
 				charthi=th, $
 				title='Img: '+strn(kcfg.imgnum)+' Slice: '+strn(i)+rlab, $
