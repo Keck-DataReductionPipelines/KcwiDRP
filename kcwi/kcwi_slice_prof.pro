@@ -49,6 +49,7 @@
 ;	2013-SEP-23	Uses inclusive wavelengths
 ;	2013-NOV-12	Put spatial inclusive limits in KCWI_PPAR struct (ppar)
 ;	2014-APR-08	Check against zero-like values in profile causing overflow
+;	2017-AUG-02	Now use mean prof from center
 ;-
 pro kcwi_slice_prof,kcfg,ppar,profs
 	;
@@ -97,37 +98,39 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 			icub = kcwi_read_image(kcfg.imgnum,ppar,'_scube',hdr, $
 						/calib,status=stat)
 			if stat ne 0 then return
+			scub = sqrt(kcwi_read_image(kcfg.imgnum,ppar,'_vcube', $
+							hdr,/calib,status=stat))
+			if stat ne 0 then return
 		endif else begin
 			;
 			; read sky observation image
 			icub = kcwi_read_image(kcfg.imgnum,ppar,'_icube',hdr, $
 						/calib,status=stat)
 			if stat ne 0 then return
+			scub = sqrt(kcwi_read_image(kcfg.imgnum,ppar,'_vcube', $
+							hdr,/calib,status=stat))
+			if stat ne 0 then return
 		endelse
-		;
-		; get size
-		sz = size(icub,/dim)
-		dely = fix(sz[2]/3)
-		;
-		; default pixel ranges
-		y0 = dely + 10
-		y3 = y0 + dely - 10
 	endif else begin
 		;
 		; read sky observation image
-		icub = kcwi_read_image(kcfg.imgnum,ppar,'_icube',hdr,/calib,status=stat)
+		icub = kcwi_read_image(kcfg.imgnum,ppar,'_icube',hdr, $
+					/calib,status=stat)
 		if stat ne 0 then return
-		;
-		; get size
-		sz = size(icub,/dim)
-		;
-		; default pixel ranges
-		y0 = 175
-		y3 = sz[2] - 175
-		dely = fix( ( y3 - y0 ) / 3. )
-		y1 = y0 + dely
-		y2 = y1 + dely
+		scub = sqrt(kcwi_read_image(kcfg.imgnum,ppar,'_vcube',hdr, $
+					/calib,status=stat))
+		if stat ne 0 then return
 	endelse
+	;
+	; get size
+	sz = size(icub,/dim)
+	;
+	; default pixel ranges
+	y0 = 175
+	y3 = sz[2] - 175
+	dely = fix( ( y3 - y0 ) / 3. )
+	y1 = y0 + dely
+	y2 = y1 + dely
 	;
 	; get wavelength scale
 	w0 = sxpar(hdr,'CRVAL3')
@@ -146,19 +149,22 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 		y2 = y1 + dely
 	endif
 	;
+	; sigma noise limit
+	sl = 3.
+	;
 	; profiles
 	profs = fltarr(24,sz[1])
 	;
 	; good range
-	gx0 = 1
-	gx1 = sz[1] - 2
-	x = indgen(sz[1])
-	g = where(x ge gx0 and x le gx1)
+	gx0 = 5
+	gx1 = sz[1] - gx0 - 1
+	px = findgen(sz[1])
+	g = where(px ge gx0 and px le gx1, ng)
 	;
 	; log
 	if kcfg.nasmask ne 1 then $
-		kcwi_print_info,ppar,pre,':Slice   Bl:Mn    Sg       Gr:Mn    Sg       Rd:Mn    Sg       All:Mn   Sg' $
-	else	kcwi_print_info,ppar,pre,':Slice   All:Mn   Sg'
+		kcwi_print_info,ppar,pre,':Slice  All:Mn    Sg       Bl:Mn    Sg       Rd:Mn    Sg       Mid:Mn   Sg' $
+	else	kcwi_print_info,ppar,pre,':Slice   Mid:Mn   Sg'
 	;
 	; display status
 	doplots = ppar.display
@@ -166,40 +172,74 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 	; loop over slices
 	for i=0,23 do begin
 		;
-		; full wavelength sample (avoiding edges)
-		test  = reform(icub[i,*,y0:y3])
-		prof  = median(test,dim=2)
-		mo = moment(prof[g])
-		mn = mo[0]
-		sg = sqrt(mo[1])
+		; use middle wavelength sample
+		slim = reform(icub[i,*,y1:y2])
+		sgim = reform(scub[i,*,y1:y2])
+		;
+		; don't use noisy data
+		b = where(slim lt sl*sgim, nb)
+		if nb gt 0 then slim[b] = !values.f_nan
+		;
+		; profile of slice
+		prof = mean(slim,dim=2,/nan)
+		;
+		; get stats and avoid using edges for fit
+		ims,prof[g],mn,sg,wgt
 		lim = max([mn/100., 1.e-3])	; limit zero-like values
+		;
+		; normalization factor
+		if i gt 12 or i eq 11 then begin
+			nf = prof[g[0]]
+		endif else if i lt 11 or i eq 12 then begin
+			nf = prof[g[ng-1]]
+		endif
 		;
 		; check for nod-and-shuffle
 		if kcfg.nasmask ne 1 then begin
 			;
-			; three wavelength samples
-			test1 = reform(icub[i,*,y0:y1])
-			test2 = reform(icub[i,*,y1:y2])
-			test3 = reform(icub[i,*,y2:y3])
+			; full wavelength sample
+			slimf = reform(icub[i,*,y0:y3])
+			sgimf = reform(scub[i,*,y0:y3])
+			badf = where(slimf lt 3.*sgimf, nbf)
+			if nbf gt 0 then slimf[badf] = !values.f_nan
+			proff = mean(slimf,dim=2,/nan)
+			ims,proff[g],mnf,sgf
 			;
-			prof1 = median(test1,dim=2)
-			prof2 = median(test2,dim=2)
-			prof3 = median(test3,dim=2)
-			mo1 = moment(prof1[g])
-			mn1 = mo1[0]
-			sg1 = sqrt(mo1[1])
-			mo2 = moment(prof2[g])
-			mn2 = mo2[0]
-			sg2 = sqrt(mo2[1])
-			mo3 = moment(prof3[g])
-			mn3 = mo3[0]
-			sg3 = sqrt(mo3[1])
-			kcwi_print_info,ppar,pre,'',i,mn1,sg1,mn2,sg2,mn3,sg3,mn,sg, $
+			; blue end
+			slim1 = reform(icub[i,*,y0:y1])
+			sgim1 = reform(scub[i,*,y0:y1])
+			bad1 = where(slim1 lt 3.*sgim1, nb1)
+			if nb1 gt 0 then slim1[bad1] = !values.f_nan
+			prof1 = mean(slim1,dim=2,/nan)
+			ims,prof1[g],mn1,sg1
+			;
+			; red end
+			slim3 = reform(icub[i,*,y2:y3])
+			sgim3 = reform(scub[i,*,y2:y3])
+			bad3 = where(slim3 lt 3.*sgim3, nb3)
+			if nb3 gt 0 then slim3[bad3] = !values.f_nan
+			prof3 = mean(slim3,dim=2,/nan)
+			ims,prof3[g],mn3,sg3
+			;
+			; normalization factors
+			if i gt 12 or i eq 11 then begin
+				nff = proff[g[0]]
+				nf1 = prof1[g[0]]
+				nf3 = prof3[g[0]]
+			endif else if i lt 11 or i eq 12 then begin
+				nff = proff[g[ng-1]]
+				nf1 = prof1[g[ng-1]]
+				nf3 = prof3[g[ng-1]]
+			endif
+			;
+			; log results
+			kcwi_print_info,ppar,pre,'', $
+				i,mnf,sgf,mn1,sg1,mn3,sg3,mn,sg, $
 				format='(a,i4,2x,8f9.4)'
 		endif else $
 			kcwi_print_info,ppar,pre,'',i,mn,sg, $
 				format='(a,i4,2x,2f9.4)'
-		profs[i,*] = (prof>lim)/mn 	; avoid zeros
+		profs[i,*] = (prof>lim)/nf 	; avoid zeros
 		;
 		q=''
 		if doplots ge 2 then begin
@@ -209,21 +249,22 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 			th=2
 			si=1.5
 			;
-			yran = [0.8,1.15]
+			yran = [0.9,1.05]
 			;
-			plot,prof/median(prof),xthick=th,ythick=th,charsi=si, $
+			plot,prof/nf,xthick=th,ythick=th,charsi=si, $
 				charthi=th,thick=th, $
-				title='Image # '+strn(kcfg.imgnum)+', Slice '+strn(i),psym=10, $
+				title='Image # '+strn(kcfg.imgnum)+ $
+				', Slice '+strn(i),psym=10, $
 				xtitle='Pixel',/xs, $
-				ytitle='Avg Int.',yrange=yran,/ys
-			oplot,!x.crange,[mn,mn],linesty=1
+				ytitle='Avg Int.',yrange=yran,/ys,/nodata
 			if kcfg.nasmask ne 1 then begin
-				oplot,prof1/median(prof1),color=colordex('B'),psym=10
-				oplot,prof2/median(prof2),color=colordex('G'),psym=10
-				oplot,prof3/median(prof3),color=colordex('R'),psym=10
+				oplot,prof1/nf1,color=colordex('B'), psym=10
+				oplot,proff/nff,psym=10
+				oplot,prof3/nf3,color=colordex('R'), psym=10
 			endif
-			oplot,[gx0,gx0],!y.crange
-			oplot,[gx1,gx1],!y.crange
+			oplot,prof/nf,color=colordex('G'),psym=10,thick=th
+			oplot,[gx0,gx0],!y.crange,linesty=2
+			oplot,[gx1,gx1],!y.crange,linesty=2
 			;
 			read,'Next slice? (Q-quit plotting, <cr>-next): ',q
 		endif
@@ -233,8 +274,8 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 	; update profile image header
 	sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 	sxaddpar,hdr,'SLPROF','T',' Slice profile image?'
-	sxaddpar,hdr,'SLPROFY0',y0,' low wave pixel for profile'
-	sxaddpar,hdr,'SLPROFY1',y3,' high wave pixel for profile'
+	sxaddpar,hdr,'SLPROFY0',y1,' low wave pixel for profile'
+	sxaddpar,hdr,'SLPROFY1',y2,' high wave pixel for profile'
 	sxaddpar,hdr,'SLPROFX0',gx0,' low spatial pixel for profile'
 	sxaddpar,hdr,'SLPROFX1',gx1,' high spatial pixel for profile'
 	sxaddpar,hdr,'WCSDIM',2
