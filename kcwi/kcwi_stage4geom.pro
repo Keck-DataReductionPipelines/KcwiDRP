@@ -163,6 +163,9 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 				printf,ll,imsum
 				flush,ll
 				;
+				; record input file
+				kcwi_print_info,ppar,pre,'input 2-D image',obfil,format='(a,a)'
+				;
 				; do we have the geom files?
 				do_geom = (1 eq 0)	; assume no to begin with
 				if (strtrim(kpars[i].geomcbar,2) ne '' and $

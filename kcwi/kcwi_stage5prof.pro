@@ -146,6 +146,9 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 				printf,ll,imsum
 				flush,ll
 				;
+				; report input file
+				kcwi_print_info,ppar,pre,'input cube',obfil,format='(a,a)'
+				;
 				; do we have a prof file (also must have a cube)?
 				do_prof = (1 eq 0)
 				if strtrim(kpars[i].masterprof,2) ne '' then begin

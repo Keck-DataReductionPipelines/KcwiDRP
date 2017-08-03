@@ -147,6 +147,9 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 				printf,ll,imsum
 				flush,ll
 				;
+				; report input file
+				kcwi_print_info,ppar,pre,'input cube',obfil,format='(a,a)'
+				;
 				; do we have a std file?
 				do_std = (1 eq 0)
 				if strtrim(kpars[i].masterstd,2) ne '' then begin

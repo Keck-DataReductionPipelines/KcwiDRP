@@ -146,6 +146,9 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 				printf,ll,imsum
 				flush,ll
 				;
+				; report input file
+				kcwi_print_info,ppar,pre,'input reduced image',obfil,format='(a,a)'
+				;
 				; read in image
 				img = mrdfits(obfil,0,hdr,/fscale,/silent)
 				;

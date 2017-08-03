@@ -148,7 +148,10 @@ pro kcwi_stage6drr,procfname,ppfname,help=help,verbose=verbose, display=display
 				printf,ll,imsum
 				flush,ll
 				;
-				; do we have a rr link?
+				; report input file
+				kcwi_print_info,ppar,pre,'input cube',obfil,format='(a,a)'
+				;
+				; do we have a drr image?
 				do_rr = (1 eq 0)
 				if strtrim(kpars[i].masterrr,2) ne '' then begin
 					;

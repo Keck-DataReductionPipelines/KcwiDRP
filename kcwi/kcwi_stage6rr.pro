@@ -153,6 +153,9 @@ pro kcwi_stage6rr,procfname,ppfname,help=help,verbose=verbose, display=display
 				printf,ll,imsum
 				flush,ll
 				;
+				; report input file
+				kcwi_print_info,ppar,pre,'input cube',obfil,format='(a,a)'
+				;
 				; do we have a rr file?
 				do_rr = (1 eq 0)
 				if strtrim(kpars[i].masterrr,2) ne '' then begin

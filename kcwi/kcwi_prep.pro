@@ -590,7 +590,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	printf,kp,'# '+pre+'  '+systime(0)
 	printf,kp,'# R   = CCD Readout Speed: 0 - slow, 1 - fast'
 	printf,kp,'# SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes'
-	printf,kp,'#     Img  Bin AMPS R SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
+	printf,kp,'#  Img Bin AMPS R  G SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
 	;
 	; loop over images
 	for i=0,nproc-1 do begin
@@ -612,7 +612,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		flush,ll
 		if verbose ge 1 then $
 			print,imsumo
-		printf,kp,kcfg[p].imgnum,imsum,format='(i9,2x,a)'
+		printf,kp,imsum,format='(a)'
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; ASSOCIATE WITH MASTER BIAS IMAGE

@@ -179,6 +179,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			printf,ll,imsum
 			flush,ll
 			;
+			; record input file
+			kcwi_print_info,ppar,pre,'input raw file',obfil,format='(a,a)'
+			;
 			; read in image
 			img = mrdfits(obfil,0,hdr,/fscale,/silent)
 			;
@@ -681,11 +684,14 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				bcy0 -= 1
 				bcy1 -= 1
 				;
+				; x range for bad columns
+				bcdel = 5
+				;
 				; number of bad column entries
 				nbc = n_elements(bcx0)
 				for j = 0,nbc-1 do begin
-					if bcx0[j] ge 3 and bcx0[j] lt sz[0]-3 and $
-					   bcx1[j] ge 3 and bcx1[j] lt sz[0]-3 and $
+					if bcx0[j] ge bcdel and bcx0[j] lt sz[0]-bcdel and $
+					   bcx1[j] ge bcdel and bcx1[j] lt sz[0]-bcdel and $
 				   	   bcy0[j] ge 0 and bcy0[j] lt sz[1] and $
 					   bcy1[j] ge 0 and bcy1[j] lt sz[1] then begin
 					   	;
@@ -695,9 +701,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						; now do the job!
 						for by = bcy0[j],bcy1[j] do begin
 							;
-							; get median of six pixels straddling baddies
-							vals = [img[bcx0[j]-3,by], img[bcx0[j]-2,by], img[bcx0[j]-1,by], $
-								img[bcx1[j]+3,by], img[bcx1[j]+2,by], img[bcx1[j]+1,by]]
+							; get median of the +- del pixels straddling baddies
+							vals = [img[bcx0[j]-bcdel:bcx0[j]-1,by], $
+								img[bcx0[j]+1:bcx0[j]+bcdel,by]]
 							gval = median(vals)
 							;
 							; substitute good value in and set mask
