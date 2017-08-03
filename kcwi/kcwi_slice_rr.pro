@@ -44,6 +44,7 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2013-NOV-12	Initial Revision
 ;	2014-APR-08	Check against zero-like values in rresp. causing overlow
+;	2017-AUG-03	Reject noisy data, fit ratio with 7th order poly
 ;-
 pro kcwi_slice_rr,kcfg,ppar,rr
 	;
@@ -142,10 +143,12 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 	; avoid zero-like values
 	lim = 1.e-1
 	;
+	; avoid noisy data
+	sl = 10.0
+	;
 	; good spatial range
 	gx0 = 1
 	gx1 = sz[1] - 2
-	;
 	;
 	; log results
 	kcwi_print_info,ppar,pre,'Resp. Pars: X0, X1, Y0, Y1, Wav0, Wav1', $
@@ -159,7 +162,12 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 	;
 	; extract reference slice response and variance
 	refr = median(reform(icub[irs,gx0:gx1,y0:y1]),dim=1)
-	refv = median(reform(vcub[irs,gx0:gx1,y0:y1]),dim=1)
+	refs = sqrt(median(reform(vcub[irs,gx0:gx1,y0:y1]),dim=1))
+	refx = findgen(n_elements(refr))
+	refw = w[y0:y1]
+	;
+	; skip low s/n data
+	b = where(refr le sl*refs, nb)
 	;
 	; plot results if requested
 	q=''
@@ -171,13 +179,15 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 		si=1.5
 		;
 		xran=[wall0-10.,wall1+10.]
-		plot,w[y0:y1],refr,xthick=th,ythick=th,charsi=si,charthi=th, $
+		plot,refw,refr,xthick=th,ythick=th,charsi=si,charthi=th, $
 			title='Img: '+strn(kcfg.imgnum)+' Reference Slice: '+strn(irs), $
 			xrange=xran,/xs,xtitle='Wave', $
-			ytitle='Avg Int.', /ys
-		oplot,w[y0:y1],sqrt(refv),color=colordex('blue')
-		oplot,[wall0,wall0],!y.crange
-		oplot,[wall1,wall1],!y.crange
+			ytitle='Avg Int.'
+		oplot,refw,refs,color=colordex('blue')
+		if nb gt 0 then $
+			oplot,refw[b],refr[b],psym=7
+		oplot,[wall0,wall0],!y.crange,color=colordex('red')
+		oplot,[wall1,wall1],!y.crange,color=colordex('red')
 		;
 		read,'Next slice? (Q-quit plotting, <cr>-next): ',q
 		if strupcase(strmid(q,0,1)) eq 'Q' then doplots = 0
@@ -194,26 +204,28 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 			vrr = nrr
 			nfit = nrr
 			rlab = ' REF'
+			nb=0
 		endif else begin
 			;
 			; full wavelength sample (avoiding edges)
 			rr = median(reform(icub[i,gx0:gx1,y0:y1]),dim=1)
-			rv = median(reform(vcub[i,gx0:gx1,y0:y1]),dim=1)
+			rs = sqrt(median(reform(vcub[i,gx0:gx1,y0:y1]),dim=1))
 			;
-			; normalize to reference slice
+			; skip low s/n data
+			g = where(rr gt sl*rs and refr gt sl*refs, ng)
+			b = where(rr le sl*rs or refr le sl*refs, nb)
+			;
+			; normalize to reference slice fit
 			nrr = rr/refr
 			;
-			; do not fit less than 3 sigma data
-			rsg = sqrt(refv + rv)
-			g = where(rr ge 3.*rsg, ng)
-			if ng gt 10 then begin
-				fco = poly_fit(yf[g],nrr[g],4,/double)
-				nfit = poly(yall,fco)
-				rrs[i,*] = nfit > lim	; avoid overflow
-			endif else begin
-				kcwi_print_info,ppar,pre,'Not enough good points!',/err
-				return
-			endelse
+			; measurement errors
+			msig = sqrt(rs^2 + refs^2)
+			;
+			; fit the ratio
+			fco = poly_fit(yf[g],nrr[g],7,measure_err=msig[g], $
+					/double)
+			nfit = poly(yall,fco)
+			rrs[i,*] = nfit > lim	; avoid overflow
 			rlab = ''
 		endelse
 		;
@@ -223,21 +235,22 @@ pro kcwi_slice_rr,kcfg,ppar,rr
 		;
 		if doplots ge 2 then begin
 			;
-			b = where(rr lt 3.*rsg, nb)
-			if nb gt 0 then nrr[b] = !values.f_nan
-			plot,w[y0:y1],nrr,xthick=th,ythick=th,charsi=si, $
+			plot,refw,nrr,xthick=th,ythick=th,charsi=si, $
 				charthi=th, $
-				title='Img: '+strn(kcfg.imgnum)+' Slice: '+strn(i)+rlab, $
+				title='Img: '+strn(kcfg.imgnum)+ $
+				      ' Slice: '+strn(i)+rlab, $
 				xtitle='Wave', xrange=xran,/xs, $
-				ytitle='Int/Ref Int',yrange=[0.25,1.50],/ys
-			oplot,w,nfit,linesty=5
+				ytitle='Int/Ref Int',yrange=[0.60,1.40],/ys
+			oplot,w,nfit,linesty=2,color=colordex('green')
+			if nb gt 0 then $
+				oplot,refw[b],nrr[b],psym=7
 			oplot,[wall0,wall0],!y.crange
 			oplot,[wall1,wall1],!y.crange
 			;
 			read,'Next slice? (Q-quit plotting, <cr>-next): ',q
 		endif
 		if strupcase(strmid(q,0,1)) eq 'Q' then doplots = 0
-	endfor
+	endfor	; loop over slices
 	;
 	; update rr image header
 	sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
