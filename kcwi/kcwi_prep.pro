@@ -458,9 +458,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			ncal,format='(a,i5)'
 	;
 	; find slice profile images
-	profs = where(strcmp(calcfg.imgtype,'object') eq 1 and $
-		( calcfg.skyobs eq 1 or (calcfg.nasmask eq 1 and $
-					 calcfg.shuffmod eq 1) ), nprofs)
+	profs = where(strcmp(kcfg.imgtype,'object') eq 1 and $
+		( kcfg.skyobs eq 1 or (kcfg.nasmask eq 1 and $
+					 kcfg.shuffmod eq 1) ), nprofs)
 	; twilight flats may be better for this
 	;profs = where(strcmp(calcfg.imgtype,'tflat') eq 1, nprofs)
 	if nprofs le 0 then $
@@ -527,7 +527,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	; GROUP SLICE PROFILE OBSERVATIONS
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	if nprofs gt 0 then $
-		pcfg = calcfg[profs]
+		pcfg = kcfg[profs]
 	kcwi_print_info,ppar,pre,'Number of slice profile images',nprofs
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
