@@ -144,9 +144,6 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 		cfg.obstype	= 'cal'
 	endif else if strcmp(caltype,'cflat') eq 1 then begin
 		cfg.obstype	= 'cal'
-	;
-	; TODO: put in case for dome flats that checks for
-	; object type and dome lamp on.
 	endif else if strcmp(caltype,'object') eq 1 then begin
 		if strpos(cfg.flimagin,'on') ge 0 or $
 		   strpos(cfg.flspectr,'on') ge 0 then begin
