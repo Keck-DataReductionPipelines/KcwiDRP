@@ -193,6 +193,7 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 		endif else if i lt 11 or i eq 12 then begin
 			nf = prof[g[ng-1]]
 		endif
+		prof_max = max(prof[g]/nf,/nan)
 		;
 		; check for nod-and-shuffle
 		if kcfg.nasmask ne 1 then begin
@@ -231,6 +232,9 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 				nf1 = prof1[g[ng-1]]
 				nf3 = prof3[g[ng-1]]
 			endif
+			proff_max = max(proff[g]/nff,/nan)
+			prof1_max = max(prof1[g]/nf1,/nan)
+			prof3_max = max(prof3[g]/nf3,/nan)
 			;
 			; log results
 			kcwi_print_info,ppar,pre,'', $
@@ -249,14 +253,19 @@ pro kcwi_slice_prof,kcfg,ppar,profs
 			th=2
 			si=1.5
 			;
-			yran = [0.9,1.05]
+			if kcfg.nasmask eq 1 then begin
+				yran = [0.9,max([1.05,prof_max])]
+			endif else begin
+				yran = [0.9,max([1.05,max([prof_max,prof1_max, $
+						proff_max,prof3_max],/nan)])]
+			endelse
 			;
 			plot,prof/nf,xthick=th,ythick=th,charsi=si, $
 				charthi=th,thick=th, $
 				title='Image # '+strn(kcfg.imgnum)+ $
 				', Slice '+strn(i),psym=10, $
 				xtitle='Pixel',/xs, $
-				ytitle='Avg Int.',yrange=yran,/ys,/nodata
+				ytitle='Norm. Int.',yrange=yran,/ys,/nodata
 			if kcfg.nasmask ne 1 then begin
 				oplot,prof1/nf1,color=colordex('B'), psym=10
 				oplot,proff/nff,psym=10

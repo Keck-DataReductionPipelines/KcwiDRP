@@ -67,14 +67,14 @@ pro kcwi_print_cfgs,kcfg,imsum, $
 		printf,ol,'# '+pre+'  '+systime(0)
 		printf,ol,'# R   = CCD Readout Speed: 0 - slow, 1 - fast'
 		printf,ol,'# SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes'
-		printf,ol,'#  #/   N Imno   Bin AMPS R G SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
+		printf,ol,'#  #/   N Imno   Bin AMPS R  G SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
 	endif
 	;
 	; header?
 	if keyword_set(header) and not keyword_set(silent) then begin
 		print,' R   = CCD Readout Speed: 0 - slow, 1 - fast, G = Gain multiplier'
 		print,' SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes'
-		print,'   #/   N Imno   Bin AMPS R G SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
+		print,'   #/   N Imno   Bin AMPS R  G SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
 	endif
 	;
 	; current date
