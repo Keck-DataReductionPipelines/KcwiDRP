@@ -87,11 +87,13 @@ function kcwi_read_proc,ppar,procf,imgs, $
 	kcwi_print_info,ppar,pre,systime(0)
 	if ppar.verbose ge 3 then begin
 		kcwi_print_info,ppar,pre, $
-			'R   = CCD Readout Speed: 0 - slow, 1 - fast',info=3
+			'R   = CCD Readout Speed : 0 - slow, 1 - fast',info=3
+		kcwi_print_info,ppar,pre, $
+			'G   = Gain Multiplier   : 10, 5, 2, 1',info=3
 		kcwi_print_info,ppar,pre, $
 			'SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes',info=3
 		kcwi_print_info,ppar,pre, $
-			'      Img  Bin AMPS R SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object',info=3
+			'   Img Bin AMPS R  G SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA      Air  Object',info=3
 	endif
 ;
 ; skip past header to first image record

@@ -588,9 +588,10 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	filestamp,procfile,/arch
 	openw,kp,procfile,/get_lun
 	printf,kp,'# '+pre+'  '+systime(0)
-	printf,kp,'# R   = CCD Readout Speed: 0 - slow, 1 - fast'
+	printf,kp,'# R   = CCD Readout Speed : 0 - slow, 1 - fast'
+	printf,kp,'# G   = Gain Multiplier   : 10, 5, 2, 1'
 	printf,kp,'# SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes'
-	printf,kp,'#  Img Bin AMPS R  G SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA    Object'
+	printf,kp,'#  Img Bin AMPS R  G SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA      Air  Object'
 	;
 	; loop over images
 	for i=0,nproc-1 do begin
