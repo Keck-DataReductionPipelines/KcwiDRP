@@ -347,7 +347,7 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 									format='(a,a)'
 							endif
 							;
-							; variance image
+							; variance cube
 							vfil = repstr(obfil,'_int','_var')
 							if file_test(vfil,/read) then begin
 								var = mrdfits(vfil,0,varhdr,/fscale,/silent)
@@ -361,7 +361,7 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 							endif else $
 								kcwi_print_info,ppar,pre,'no variance image found',/warning
 							;
-							; mask image
+							; mask cube
 							mfil = repstr(obfil,'_int','_msk')
 							if file_test(mfil,/read) then begin
 								msk = float(mrdfits(mfil,0,mskhdr,/silent))

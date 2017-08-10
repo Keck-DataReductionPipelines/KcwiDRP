@@ -255,7 +255,7 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,mskhdr,'MPFILE',mpfile,' master prof file applied'
 					sxaddpar,mskhdr,'MPIMNO',mpimgno,' master prof image number'
 					;
-					; write out mask image
+					; write out profile corrected mask image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mcubep',/nodir)
 					kcwi_write_image,msk,mskhdr,ofil,kpars[i]
 					;
@@ -265,7 +265,7 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,varhdr,'MPFILE',mpfile,' master prof file applied'
 					sxaddpar,varhdr,'MPIMNO',mpimgno,' master prof image number'
 					;
-					; output variance image
+					; output profile corrected variance image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vcubep',/nodir)
 					kcwi_write_image,var,varhdr,ofil,kpars[i]
 					;
@@ -275,7 +275,7 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,hdr,'MPFILE',mpfile,' master prof file applied'
 					sxaddpar,hdr,'MPIMNO',mpimgno,' master prof image number'
 					;
-					; write out final intensity image
+					; write out profile corrected intensity image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_icubep',/nodir)
 					kcwi_write_image,img,hdr,ofil,kpars[i]
 					;
@@ -294,7 +294,7 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,skyhdr,'MPFILE',mpfile,' master prof file applied'
 						sxaddpar,skyhdr,'MPIMNO',mpimgno,' master prof image number'
 						;
-						; write out final intensity image
+						; write out profile corrected sky panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_scubep',/nodir)
 						kcwi_write_image,sky,hdr,ofil,kpars[i]
 					endif
@@ -314,7 +314,7 @@ pro kcwi_stage5prof,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,objhdr,'MPFILE',mpfile,' master prof file applied'
 						sxaddpar,objhdr,'MPIMNO',mpimgno,' master prof image number'
 						;
-						; write out final intensity image
+						; write out profile corrected obj panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocubep',/nodir)
 						kcwi_write_image,obj,hdr,ofil,kpars[i]
 					endif

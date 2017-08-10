@@ -262,7 +262,7 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,mskhdr,'MDFILE',mdfile,' master dark file applied'
 					sxaddpar,mskhdr,'DARKSCL',fac,' dark scale factor'
 					;
-					; write out mask image
+					; write out dark corrected mask image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mskd',/nodir)
 					kcwi_write_image,msk,mskhdr,ofil,kpars[i]
 					;
@@ -272,7 +272,7 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,varhdr,'MDFILE',mdfile,' master dark file applied'
 					sxaddpar,varhdr,'DARKSCL',fac,' dark scale factor'
 					;
-					; output variance image
+					; output dark corrected variance image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vard',/nodir)
 					kcwi_write_image,var,varhdr,ofil,kpars[i]
 					;
@@ -282,7 +282,7 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,hdr,'MDFILE',mdfile,' master dark file applied'
 					sxaddpar,hdr,'DARKSCL',fac,' dark scale factor'
 					;
-					; write out final intensity image
+					; write out dark corrected intensity image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_intd',/nodir)
 					kcwi_write_image,img,hdr,ofil,kpars[i]
 					;

@@ -245,7 +245,7 @@ pro kcwi_stage3flat,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,mskhdr,'FLATCOR','T',' flat corrected?'
 						sxaddpar,mskhdr,'MFFILE',mffile,' master flat file applied'
 						;
-						; write out final intensity image
+						; write out flat corrected mask image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mskf',/nodir)
 						kcwi_write_image,msk,mskhdr,ofil,kpars[i]
 						;
@@ -254,7 +254,7 @@ pro kcwi_stage3flat,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,varhdr,'FLATCOR','T',' flat corrected?'
 						sxaddpar,varhdr,'MFFILE',mffile,' master flat file applied'
 						;
-						; write out mask image
+						; write out flat corrected variance image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_varf',/nodir)
 						kcwi_write_image,var,varhdr,ofil,kpars[i]
 						;
@@ -263,7 +263,7 @@ pro kcwi_stage3flat,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,hdr,'FLATCOR','T',' flat corrected?'
 						sxaddpar,hdr,'MFFILE',mffile,' master flat file applied'
 						;
-						; write out final intensity image
+						; write out flat corrected intensity image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_intf',/nodir)
 						kcwi_write_image,img,hdr,ofil,kpars[i]
 					endelse

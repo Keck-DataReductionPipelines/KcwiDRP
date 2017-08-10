@@ -267,7 +267,7 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,mskhdr,'MSIMNO',msimgno,' master std image number'
 					sxaddpar,mskhdr,'BUNIT','FLAM',' brightness units'
 					;
-					; write out mask image
+					; write out flux calibrated mask image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mcubes',/nodir)
 					kcwi_write_image,msk,mskhdr,ofil,kpars[i]
 					;
@@ -278,7 +278,7 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,varhdr,'MSIMNO',msimgno,' master std image number'
 					sxaddpar,varhdr,'BUNIT','FLAM',' brightness units'
 					;
-					; output variance image
+					; write out flux calibrated variance image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vcubes',/nodir)
 					kcwi_write_image,var,varhdr,ofil,kpars[i]
 					;
@@ -289,7 +289,7 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,hdr,'MSIMNO',msimgno,' master std image number'
 					sxaddpar,hdr,'BUNIT','FLAM',' brightness units'
 					;
-					; write out final calibrated image
+					; write out flux calibrated intensity image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_icubes',/nodir)
 					kcwi_write_image,img,hdr,ofil,kpars[i]
 					;
@@ -312,7 +312,7 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,skyhdr,'MSIMNO',msimgno,' master std image number'
 						sxaddpar,skyhdr,'BUNIT','FLAM',' brightness units'
 						;
-						; write out final intensity image
+						; write out flux calibrated sky panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_scubes',/nodir)
 						kcwi_write_image,sky,hdr,ofil,kpars[i]
 					endif
@@ -336,7 +336,7 @@ pro kcwi_stage7std,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,objhdr,'MSIMNO',msimgno,' master std image number'
 						sxaddpar,objhdr,'BUNIT','FLAM',' brightness units'
 						;
-						; write out final intensity image
+						; write out flux calibrated obj panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocubes',/nodir)
 						kcwi_write_image,obj,hdr,ofil,kpars[i]
 					endif

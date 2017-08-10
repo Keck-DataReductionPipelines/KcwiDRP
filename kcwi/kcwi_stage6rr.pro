@@ -316,7 +316,7 @@ pro kcwi_stage6rr,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,mskhdr,'MRFILE',mrfile,' master rr file applied'
 					sxaddpar,mskhdr,'MRIMNO',mrimgno,' master rr image number'
 					;
-					; write out mask image
+					; write out response corrected mask image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mcuber',/nodir)
 					kcwi_write_image,msk,mskhdr,ofil,kpars[i]
 					;
@@ -326,7 +326,7 @@ pro kcwi_stage6rr,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,varhdr,'MRFILE',mrfile,' master rr file applied'
 					sxaddpar,varhdr,'MRIMNO',mrimgno,' master rr image number'
 					;
-					; output variance image
+					; write out response corrected variance image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vcuber',/nodir)
 					kcwi_write_image,var,varhdr,ofil,kpars[i]
 					;
@@ -336,7 +336,7 @@ pro kcwi_stage6rr,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,hdr,'MRFILE',mrfile,' master rr file applied'
 					sxaddpar,hdr,'MRIMNO',mrimgno,' master rr image number'
 					;
-					; write out final intensity image
+					; write out response corrected intensity image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_icuber',/nodir)
 					kcwi_write_image,img,hdr,ofil,kpars[i]
 					;
@@ -355,7 +355,7 @@ pro kcwi_stage6rr,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,skyhdr,'MRFILE',mrfile,' master rr file applied'
 						sxaddpar,skyhdr,'MRIMNO',mrimgno,' master rr image number'
 						;
-						; write out final intensity image
+						; write out response corrected sky panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_scuber',/nodir)
 						kcwi_write_image,sky,hdr,ofil,kpars[i]
 					endif
@@ -375,7 +375,7 @@ pro kcwi_stage6rr,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,objhdr,'MRFILE',mrfile,' master rr file applied'
 						sxaddpar,objhdr,'MRIMNO',mrimgno,' master rr image number'
 						;
-						; write out final intensity image
+						; write out response corrected obj panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocuber',/nodir)
 						kcwi_write_image,obj,hdr,ofil,kpars[i]
 					endif
