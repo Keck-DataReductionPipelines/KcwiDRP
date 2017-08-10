@@ -56,6 +56,9 @@ pro kcwi_stage8dar,procfname,ppfname,help=help,verbose=verbose,display=display
 	startime=systime(1)
 	q = ''	; for queries
 	;
+	; padding for each type of grating
+	gpad = [2.0, 3.0, 4.0]	; arcsecs for BH, BM, BL
+	;
 	; help request
 	if keyword_set(help) then begin
 		print,pre+': Info - Usage: '+pre+', Proc_filespec, Ppar_filespec'
@@ -156,6 +159,9 @@ pro kcwi_stage8dar,procfname,ppfname,help=help,verbose=verbose,display=display
 				; get dimensions
 				sz = size(img,/dimension)
 				;
+				; grating
+				grating = strtrim(sxpar(hdr,'GRATNAM'),2)
+				;
 				; get wavelengths
 				w0 = sxpar(hdr,'crval3')
 				dw = sxpar(hdr,'cd3_3')
@@ -163,12 +169,32 @@ pro kcwi_stage8dar,procfname,ppfname,help=help,verbose=verbose,display=display
 				wl = w0 + findgen(sz[2]) * dw
 				wgoo0 = sxpar(hdr,'wavgood0')
 				wgoo1 = sxpar(hdr,'wavgood1')
-				kcwi_print_info,ppar,pre,'Good WL range (ang)', $
-					wgoo0,wgoo1,format='(a,2f9.1)'
+				wref  = sxpar(hdr,'wavmid')
+				kcwi_print_info,ppar,pre,'Ref WL and good WL range (ang)', $
+					wref,wgoo0,wgoo1,format='(a,3f9.1)'
 				;
 				; spatial scales in arcsec/item
 				yscl = sxpar(hdr,'pxscl')*3600.d0	; along slice
 				xscl = sxpar(hdr,'slscl')*3600.d0	; purp to slice
+				;
+				; padding
+				if strpos(grating,'H') ge 0 then $
+					pad_as = gpad[0] $
+				else if strpos(grating,'M') ge 0 then $
+					pad_as = gpad[1] $
+				else	pad_as = gpad[2]
+				pad_x = fix(pad_as / xscl)
+				pad_y = fix(pad_as / yscl)
+				kcwi_print_info,ppar,pre,'Cube padding x, y (pix)', $
+					pad_x, pad_y, format='(a,2i6)'
+				img_out = fltarr(sz[0]+2*pad_x, sz[1]+2*pad_y,sz[2])
+				img_out[pad_x:pad_x+sz[0]-1, pad_y:pad_y+sz[1]-1,*] = img
+				;
+				; update WCS
+				crpix1 = sxpar(hdr,'crpix1')
+				crpix2 = sxpar(hdr,'crpix2')
+				sxaddpar,hdr,'crpix1',crpix1+float(pad_x)
+				sxaddpar,hdr,'crpix2',crpix2+float(pad_y)
 				;
 				; airmass
 				air = sxpar(hdr,'airmass')
@@ -205,34 +231,52 @@ pro kcwi_stage8dar,procfname,ppfname,help=help,verbose=verbose,display=display
 				kcwi_print_info,ppar,pre,'DAR over GOOD WL range: total, x, y (pix)', $
 					xdmax_px,ydmax_px, format='(a,3f9.2)'
 				;
-				; read variance, mask images
+				; read variance cube
 				vfil = repstr(obfil,'_icube','_vcube')
 				if file_test(vfil) then begin
 					var = mrdfits(vfil,0,varhdr,/fscale,/silent)
+					;
+					; update WCS
+					crpix1 = sxpar(varhdr,'crpix1')
+					crpix2 = sxpar(varhdr,'crpix2')
+					sxaddpar,varhdr,'crpix1',crpix1+float(pad_x)
+					sxaddpar,varhdr,'crpix2',crpix2+float(pad_y)
 				endif else begin
 					var = fltarr(sz)
 					var[0] = 1.	; give var value range
 					varhdr = hdr
 					kcwi_print_info,ppar,pre,'variance image not found for: '+obfil,/warning
 				endelse
+				var_out = fltarr(sz[0]+2*pad_x, sz[1]+2*pad_y,sz[2])
+				var_out[pad_x:pad_x+sz[0]-1, pad_y:pad_y+sz[1]-1,*] = var
+				;
+				; read mask cube
 				mfil = repstr(obfil,'_icube','_mcube')
 				if file_test(mfil) then begin
 					msk = mrdfits(mfil,0,mskhdr,/silent)
+					;
+					; update WCS
+					crpix1 = sxpar(mskhdr,'crpix1')
+					crpix2 = sxpar(mskhdr,'crpix2')
+					sxaddpar,mskhdr,'crpix1',crpix1+float(pad_x)
+					sxaddpar,mskhdr,'crpix2',crpix2+float(pad_y)
 				endif else begin
 					msk = intarr(sz)
 					msk[0] = 1	; give mask value range
 					mskhdr = hdr
 					kcwi_print_info,ppar,pre,'mask image not found for: '+obfil,/warning
 				endelse
+				msk_out = fltarr(sz[0]+2*pad_x, sz[1]+2*pad_y,sz[2]) + 4
+				msk_out[pad_x:pad_x+sz[0]-1, pad_y:pad_y+sz[1]-1,*] = msk
 				;
 				; do correction
 				for j = 0,sz[2]-1 do begin
-					dcor = atm_disper(w1,wl[j],air)
+					dcor = atm_disper(wref,wl[j],air)
 					xsh = dcor * sin(projang) / xscl
 					ysh = dcor * cos(projang) / yscl
-					img[*,*,j] = fshift(img[*,*,j],xsh,ysh)
-					var[*,*,j] = fshift(var[*,*,j],xsh,ysh)
-					msk[*,*,j] = fshift(msk[*,*,j],xsh,ysh)
+					img_out[*,*,j] = fshift(img_out[*,*,j],xsh,ysh)
+					var_out[*,*,j] = fshift(var_out[*,*,j],xsh,ysh)
+					msk_out[*,*,j] = fshift(msk_out[*,*,j],xsh,ysh)
 				endfor
 
 				;
@@ -240,73 +284,94 @@ pro kcwi_stage8dar,procfname,ppfname,help=help,verbose=verbose,display=display
 				sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
 				sxaddpar,mskhdr,'DARCOR','T',' DAR corrected?'
 				sxaddpar,mskhdr,'DARANG',projang_deg,' DAR projection angle (deg)'
+				sxaddpar,mskhdr,'DAREFWL',wref,' DAR reference wl (Ang)'
 				;
 				; write out dar corrected mask image
 				ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mcubed',/nodir)
-				kcwi_write_image,msk,mskhdr,ofil,kpars[i]
+				kcwi_write_image,msk_out,mskhdr,ofil,kpars[i]
 				;
 				; update header
 				sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
 				sxaddpar,varhdr,'DARCOR','T',' DAR corrected?'
 				sxaddpar,varhdr,'DARANG',projang_deg,' DAR projection angle (deg)'
+				sxaddpar,varhdr,'DAREFWL',wref,' DAR reference wl (Ang)'
 				;
 				; write out dar corrected variance image
 				ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vcubed',/nodir)
-				kcwi_write_image,var,varhdr,ofil,kpars[i]
+				kcwi_write_image,var_out,varhdr,ofil,kpars[i]
 				;
 				; update header
 				sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 				sxaddpar,hdr,'DARCOR','T',' DAR corrected?'
 				sxaddpar,hdr,'DARANG',projang_deg,' DAR projection angle (deg)'
+				sxaddpar,hdr,'DAREFWL',wref,' DAR reference wl (Ang)'
 				;
 				; write out dar corrected intensity image
 				ofil = kcwi_get_imname(kpars[i],imgnum[i],'_icubed',/nodir)
-				kcwi_write_image,img,hdr,ofil,kpars[i]
+				kcwi_write_image,img_out,hdr,ofil,kpars[i]
 				;
 				; check for nod-and-shuffle sky image
 				sfil = repstr(obfil,'_icube','_scube')
 				if file_test(sfil) then begin
 					sky = mrdfits(sfil,0,skyhdr,/fscale,/silent)
+					sky_out = fltarr(sz[0]+2*pad_x, sz[1]+2*pad_y,sz[2])
+					sky_out[pad_x:pad_x+sz[0]-1, pad_y:pad_y+sz[1]-1,*] = sky
 					;
 					; do correction
 					for j = 0,sz[2]-1 do begin
 						dcor = atm_disper(w1,wl[j],air)
 						xsh = dcor * sin(projang) / xscl
 						ysh = dcor * cos(projang) / yscl
-						sky[*,*,j] = fshift(sky[*,*,j],xsh,ysh)
+						sky_out[*,*,j] = fshift(sky_out[*,*,j],xsh,ysh)
 					endfor
 					;
 					; update header
 					sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,skyhdr,'DARCOR','T',' DAR corrected?'
 					sxaddpar,skyhdr,'DARANG',projang_deg,' DAR projection angle (deg)'
+					sxaddpar,skyhdr,'DAREFWL',wref,' DAR reference wl (Ang)'
+					;
+					; update WCS
+					crpix1 = sxpar(skyhdr,'crpix1')
+					crpix2 = sxpar(skyhdr,'crpix2')
+					sxaddpar,skyhdr,'crpix1',crpix1+float(pad_x)
+					sxaddpar,skyhdr,'crpix2',crpix2+float(pad_y)
 					;
 					; write out dar corrected sky panel image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_scubed',/nodir)
-					kcwi_write_image,sky,hdr,ofil,kpars[i]
+					kcwi_write_image,sky_out,hdr,ofil,kpars[i]
 				endif
 				;
 				; check for nod-and-shuffle obj image
 				nfil = repstr(obfil,'_icube','_ocube')
 				if file_test(nfil) then begin
 					obj = mrdfits(nfil,0,objhdr,/fscale,/silent)
+					obj_out = fltarr(sz[0]+2*pad_x, sz[1]+2*pad_y,sz[2])
+					obj_out[pad_x:pad_x+sz[0]-1, pad_y:pad_y+sz[1]-1,*] = obj
 					;
 					; do correction
 					for j = 0,sz[2]-1 do begin
 						dcor = atm_disper(w1,wl[j],air)
 						xsh = dcor * sin(projang) / xscl
 						ysh = dcor * cos(projang) / yscl
-						obj[*,*,j] = fshift(obj[*,*,j],xsh,ysh)
+						obj_out[*,*,j] = fshift(obj_out[*,*,j],xsh,ysh)
 					endfor
 					;
 					; update header
 					sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,objhdr,'DARCOR','T',' DAR corrected?'
 					sxaddpar,objhdr,'DARANG',projang_deg,' DAR projection angle (deg)'
+					sxaddpar,objhdr,'DAREFWL',wref,' DAR reference wl (Ang)'
+					;
+					; update WCS
+					crpix1 = sxpar(objhdr,'crpix1')
+					crpix2 = sxpar(objhdr,'crpix2')
+					sxaddpar,objhdr,'crpix1',crpix1+float(pad_x)
+					sxaddpar,objhdr,'crpix2',crpix2+float(pad_y)
 					;
 					; write out dar corrected obj panel image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocubed',/nodir)
-					kcwi_write_image,obj,hdr,ofil,kpars[i]
+					kcwi_write_image,obj_out,hdr,ofil,kpars[i]
 				endif
 			;
 			; end check if output file exists already
