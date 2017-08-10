@@ -319,4 +319,4 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 	free_lun,ll
 	;
 	return
-end
+end	; kcwi_stage2dark

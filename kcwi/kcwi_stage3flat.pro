@@ -240,6 +240,8 @@ pro kcwi_stage3flat,procfname,ppfname,help=help,verbose=verbose, display=display
 						; variance is multiplied by flat squared
 						var = var * mflat^2
 						;
+						; mask is not changed by flat
+						;
 						; update header
 						sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,mskhdr,'FLATCOR','T',' flat corrected?'
@@ -303,4 +305,4 @@ pro kcwi_stage3flat,procfname,ppfname,help=help,verbose=verbose, display=display
 	free_lun,ll
 	;
 	return
-end
+end	; kcwi_stage3flat

@@ -22,7 +22,7 @@
 ;	Ppar	- KCWI_PPAR struct specifying outputs and logging flags
 ;
 ; KEYWORDS:
-;	LOGLUN	- the logfile logical unit
+;	ISCALE	- use integer scaling (otherwise write as floats)
 ;
 ; OUTPUTS:
 ;	None
