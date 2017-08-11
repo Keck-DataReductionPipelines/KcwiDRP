@@ -117,8 +117,8 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 		;
 		; image to process
 		;
-		; require output from kcwi_stage6rr
-		obfil = kcwi_get_imname(kpars[i],imgnum[i],'_icuber',/reduced)
+		; require output from kcwi_stage7dar
+		obfil = kcwi_get_imname(kpars[i],imgnum[i],'_icubed',/reduced)
 		;
 		; check if input file exists
 		if file_test(obfil) then begin
@@ -166,7 +166,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					endif else begin
 						;
 						; does input std image exist?
-						sinfile = repstr(msfile,'_invsens','_icuber')
+						sinfile = repstr(msfile,'_invsens','_icubed')
 						if file_test(sinfile) then begin
 							do_std = (1 eq 1)
 							kcwi_print_info,ppar,pre,'building std file = '+msfile
