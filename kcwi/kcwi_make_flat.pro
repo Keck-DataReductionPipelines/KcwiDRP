@@ -32,10 +32,6 @@
 ;	ppar = KCWI_PPAR_READ('mflat_0.ppar')
 ;	KCWI_MAKE_FLAT,ppar
 ;
-; TODO:
-;	check for dark subtracted flats
-;	create master variance and mask images
-;
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2013-AUG-29	Initial version
@@ -78,15 +74,25 @@ pro kcwi_make_flat,ppar
 	; log number of images
 	kcwi_print_info,ppar,pre,'combining this many images',nf
 	;
-	; read first image
-	ffil = reddir + root + string(fnums[0],form=i_fmt)+'_int.fits'
-	if file_test(ffil) then begin
-		im = mrdfits(ffil,0,hdr,/fscale,/silent)
-	endif else begin
+	; start with dark-subtracted flats
+	tail = '_intd.fits'
+	;
+	; check first image
+	ffil = reddir + root + string(fnums[0],form=i_fmt)+tail
+	if not file_test(ffil) then begin
+		;
+		; try stage 1 output
+		tail = '_int.fits'
+		ffil = reddir + root + string(fnums[0],form=i_fmt)+tail
+	endif
+	if not file_test(ffil) then begin
 		kcwi_print_info,ppar,pre,'Image file not found',ffil, $
 			format='(a,a)',/error
 		return
 	endelse
+	;
+	; read first image
+	im = mrdfits(ffil,0,hdr,/fscale,/silent)
 	;
 	; get size
 	sz = size(im,/dim)
@@ -103,7 +109,7 @@ pro kcwi_make_flat,ppar
 	if nf eq 2 then begin
 		;
 		; read second image
-		ffil = reddir + root + string(fnums[1],form=i_fmt)+'_int.fits'
+		ffil = reddir + root + string(fnums[1],form=i_fmt)+tail
 		if file_test(ffil) then begin
 			im = mrdfits(ffil,0,fhdr,/fscale,/silent)
 		endif else begin
@@ -127,7 +133,7 @@ pro kcwi_make_flat,ppar
 		for i=1,nf-1 do begin
 	    		;
 	    		; read next image
-			ffil = reddir + root + string(fnums[i],form=i_fmt)+'_int.fits'
+			ffil = reddir + root + string(fnums[i],form=i_fmt)+tail
 			if file_test(ffil) then begin
 				im = mrdfits(ffil,0,fhdr,/fscale,/silent)
 			endif else begin

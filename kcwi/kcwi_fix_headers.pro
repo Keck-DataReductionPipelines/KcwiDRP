@@ -9,7 +9,7 @@
 ;	Fix KCWI raw image data headers to work with KCWI DRP.
 ;
 ; CATEGORY:
-;	Data reduction for the Palomar Cosmic Web Imager (KCWI).
+;	Data reduction for the Keck Cosmic Web Imager (KCWI).
 ;
 ; CALLING SEQUENCE:
 ;	KCWI_FIX_HEADERS,Hmf
@@ -78,7 +78,6 @@ pro kcwi_fix_headers,hmf,froot=froot,fdigits=fdigits,update=update, $
 ;
 ; program setup
 pre = 'KCWI_FIX_HEADERS'
-version = '2cd863a 2017-03-13'
 ;
 ; check inputs
 if n_params(0) lt 1 then begin
@@ -270,4 +269,4 @@ endfor	; loop over images
 print,'Fixed '+strn(nfix)+' headers'
 ;
 return
-end
+end	; kcwi_fix_headers

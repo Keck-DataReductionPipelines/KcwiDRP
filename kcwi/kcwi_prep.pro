@@ -13,7 +13,7 @@
 ;	Data reduction for the Keck Cosmic Web Imager (KCWI).
 ;
 ; CALLING SEQUENCE:
-;	KCWI_PREP, RawDir, ReducedDir, CalibDir, DataDir
+;	KCWI_PREP, RawDir, ReducedDir, DataDir
 ;
 ; OPTIONAL INPUTS:
 ;	RawDir		- input raw directory (string) defaults to current dir
@@ -22,19 +22,20 @@
 ;
 ; KEYWORDS:
 ; Params
-;	FROOT		- root of image filenames (def: 'image')
-;	FDIGITS		- number of digits in image numbers (def: 4)
+;	FROOT		- root of image filenames (def: 'kcwi')
+;	FDIGITS		- number of digits in image numbers (def: 5)
 ;	MINGROUPBIAS	- minimum number of bias images per group (def: 5)
 ;	MINGROUPDARK	- minimum number of dark images per group (def: 3)
 ;	MINOSCANPIX	- minimum number of overscan pixels for subtraction (def: 70)
 ;	ALTCALDIR	- alternate source directory for calibrations (string)
 ; Wavelength fitting params (only relevant for full-ccd images)
+;	TAPERFRAC	- taper fraction for cross-correlation (0.2)
 ;	PKDEL		- matching thresh in frac. of resolution (def: 0.75)
 ; Switches
 ;	NOCRREJECT	- set to skip cosmic ray rejection
 ;	NONASSUB	- set to skip nod-and-shuffle subtraction
 ;	CLEANCOEFFS	- set to override default clean of wave sol'n coeffs
-;	WAVEINTER	- set to select arc lines interactively
+;	WAVEITER	- set to use iterative wavelength range expansion method
 ;	SAVEINTIMS	- set to save intermediate images (def: NO)
 ;	INCLUDETEST	- set to include test images in reduction (def: NO)
 ;	DOMEPRIORITY	- set to use dome flats over twilight flats (def: NO)
@@ -125,7 +126,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		print,pre+': Info - Usage: '+pre+', RawDir, ReducedDir, CalibDir, DataDir'
 		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, MINGROUPBIAS=N, MINOSCANPIX=N, ALTCALDIR=<full_dir_spec>'
 		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
-		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /WAVEINTER, /DOMEPRIORITY'
+		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /WAVEITER, /DOMEPRIORITY'
 		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /BATCH, /HELP'
 		return
 	endif

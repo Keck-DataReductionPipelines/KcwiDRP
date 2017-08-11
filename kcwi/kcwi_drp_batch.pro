@@ -19,7 +19,6 @@
 ;
 ; KEYWORDS:
 ;	DARK		- set to run KCWI_STAGE2DARK (def: NO)
-;	CWI		- set to skip first bias and use CWI associations(def: NO)
 ;	MINOSCANPIX	- set to minimum pixels required for overscan subtraction
 ;	LASTSTAGE	- set to the last stage you want run
 ;	ONESTAGE	- set to a single stage you want run (overrides LASTSTAGE)
@@ -31,7 +30,7 @@
 ;	Runs pipeline in each directory specified in DirList.
 ;
 ; EXAMPLE:
-;	KCWI_DRP_BATCH,['140527','140528','140529'],/cwi
+;	KCWI_DRP_BATCH,['140527','140528','140529']
 ;
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)
@@ -39,7 +38,7 @@
 ;	2014-OCT-23	Added onestage keyword
 ;	2014-NOV-07	Added stage7std to nominal run
 ;-
-pro kcwi_drp_batch,dirlist,dark=dark,cwi=cwi, $
+pro kcwi_drp_batch,dirlist,dark=dark, $
 	minoscanpix=minoscanpix, $
 	laststage=laststage, $
 	onestage=onestage
@@ -47,7 +46,7 @@ pro kcwi_drp_batch,dirlist,dark=dark,cwi=cwi, $
 ; check keywords
 if keyword_set(laststage) then $
 	last = laststage $
-else	last = 7
+else	last = 8
 ;
 if keyword_set(onestage) then $
 	one = onestage $
@@ -74,7 +73,8 @@ for i=0,ndir-1 do begin
 			4: kcwi_stage4geom
 			5: kcwi_stage5prof
 			6: kcwi_stage6rr
-			7: kcwi_stage7std
+			7: kcwi_stage7dar
+			8: kcwi_stage8std
 			else: print,'Illegal stage: ',one
 		endcase
 	;
@@ -88,7 +88,7 @@ for i=0,ndir-1 do begin
 		spawn,'mkdir '+ppar.reddir
 		;
 		; get the pipeline ready
-		kcwi_prep,cwi=cwi,/verbose,/display,minoscanpix=minoscanpix
+		kcwi_prep,/verbose,/display,minoscanpix=minoscanpix
 		;
 		; do basic ccd image reduction
 		kcwi_stage1
@@ -115,8 +115,12 @@ for i=0,ndir-1 do begin
 		kcwi_stage6rr
 		if last le 6 then goto,done
 		;
+		; do DAR correction
+		kcwi_stage7dar
+		if last le 7 then goto,done
+		;
 		; do standard star calibration
-		kcwi_stage7std
+		kcwi_stage8std
 		;
 		; done
 		done:

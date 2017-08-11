@@ -40,9 +40,6 @@
 ;
 ; EXAMPLE:
 ;
-; TODO:
-;	Make plot scaling more consistent between slices
-;
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2013-SEP-20	Initial version

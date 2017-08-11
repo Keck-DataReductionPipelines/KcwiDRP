@@ -56,8 +56,6 @@
 ;	img = mrdfits('image7060_int.fits',0,hdr,/fscale)
 ;	kcwi_trace_cbars,img,kgeom,ppar,/moffat
 ;
-; TODO:
-;	Use canonical 'center row' so spatial coords don't vary
 ;
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)

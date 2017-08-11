@@ -42,6 +42,10 @@ icuber		e-/px			6	response corrected data cube
 vcuber		e-^2/px			6	variance + relative response variance
 mcuber		flag			6	same
 
-icubes		flux/px			7	std star calibrated data cube
-vcubes		flux^2/px		7	variance in flux units
-mcubes		flag			7	same
+icubed		e-/px			7	DAR corrected data cube
+vcubed		e-^2/px			7	DAR corrected variance cube
+mcubed		flag			7	DAR corrected flag cube
+
+icubes		flux/px			8	std star calibrated data cube
+vcubes		flux^2/px		8	variance in flux units
+mcubes		flag			8	same
