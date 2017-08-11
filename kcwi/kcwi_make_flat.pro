@@ -89,7 +89,7 @@ pro kcwi_make_flat,ppar
 		kcwi_print_info,ppar,pre,'Image file not found',ffil, $
 			format='(a,a)',/error
 		return
-	endelse
+	endif
 	;
 	; read first image
 	im = mrdfits(ffil,0,hdr,/fscale,/silent)
