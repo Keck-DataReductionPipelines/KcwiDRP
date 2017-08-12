@@ -86,7 +86,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	endif
 	;
 	; read in image
-	icub = kcwi_read_image(kcfg.imgnum,ppar,'_icuber',hdr,/calib, $
+	icub = kcwi_read_image(kcfg.imgnum,ppar,'_icubed',hdr,/calib, $
 								status=stat)
 	if stat ne 0 then begin
 		kcwi_print_info,ppar,pre,'could not read input file',/error
