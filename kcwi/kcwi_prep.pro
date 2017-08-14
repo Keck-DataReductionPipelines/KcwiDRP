@@ -945,6 +945,38 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 							'slice profile file = '+pfile
 				endif
 				;
+				; still not matched?  Use twilight flats or domes
+				;
+				; first check for twilight flats
+				if pfile eq '' and ntrrs gt 0 then begin
+					mcfg = kcwi_match_cfg(rtcfg,kcfg[p],ppar,mtags, $
+								count=s,/time)
+					if s eq 1 then begin
+						pfile = strmid(mcfg.obsfname,0, $
+								strpos(mcfg.obsfname,'.fit'))+'_prof.fits'
+						;
+						; log
+						kcwi_print_info,ppar,pre, $
+							'twilight flat slice profile file = '+pfile
+						pfile = odir + pfile
+					endif
+				endif
+				;
+				; next check for dome flats
+				if pfile eq '' and ndrrs gt 0 then begin
+					mcfg = kcwi_match_cfg(rdcfg,kcfg[p],ppar,mtags, $
+								count=s,/time)
+					if s eq 1 then begin
+						pfile = strmid(mcfg.obsfname,0, $
+								strpos(mcfg.obsfname,'.fit'))+'_prof.fits'
+						;
+						; log
+						kcwi_print_info,ppar,pre, $
+							'dome flat slice profile file = '+pfile
+						pfile = odir + pfile
+					endif
+				endif
+				;
 				; if not matched, log as uncalibrated
 				if pfile eq '' then begin
 					cstr = (kcwi_cfg_string(kcfg[p],/long,/delim))[0]
