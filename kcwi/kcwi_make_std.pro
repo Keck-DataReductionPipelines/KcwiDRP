@@ -110,9 +110,9 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	sz = size(icub,/dim)
 	;
 	; default pixel ranges
-	y = findgen(sz[2])
-	y0 = 175
-	y1 = sz[2] - 175
+	z = findgen(sz[2])
+	z0 = 175
+	z1 = sz[2] - 175
 	;
 	; get exposure time
 	expt = sxpar(hdr,'XPOSURE')
@@ -149,31 +149,31 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	;
 	; compute good y pixel ranges
 	if w0 gt 0. and dw gt 0. and wgoo0 gt 0. and wgoo1 gt 0. then begin
-		y0 = fix( (wgoo0 - w0) / dw ) + 10
-		y1 = fix( (wgoo1 - w0) / dw ) - 10
+		z0 = fix( (wgoo0 - w0) / dw ) + 10
+		z1 = fix( (wgoo1 - w0) / dw ) - 10
 	endif
-	gy = where(y ge y0 and y le y1)
+	gz = where(z ge z0 and z le z1)
 	;
 	; wavelength scale
-	w = w0 + y*dw
+	w = w0 + z*dw
 	;
 	; good spatial range
-	gx0 = 1
-	gx1 = sz[1] - 2
+	gy0 = 1
+	gy1 = sz[1] - 2
 	;
 	; log results
-	kcwi_print_info,ppar,pre,'Invsen. Pars: X0, X1, Y0, Y1, Wav0, Wav1', $
-		gx0,gx1,y0,y1,w[y0],w[y1],format='(a,4i6,2f9.3)'
+	kcwi_print_info,ppar,pre,'Invsen. Pars: Y0, Y1, Z0, Z1, Wav0, Wav1', $
+		gy0,gy1,z0,z1,w[z0],w[z1],format='(a,4i6,2f9.3)'
 	;
 	; display status
 	doplots = (ppar.display ge 2)
 	;
 	; find standard in slices
-	tot = total(icub[*,gx0:gx1,y0:y1],3)
-	xx = findgen(gx1-gx0)+gx0
+	tot = total(icub[*,gy0:gy1,z0:z1],3)
+	yy = findgen(gy1-gy0)+gy0
 	mxsl = -1
 	mxsg = 0.
-	for i=0,23 do begin
+	for i=0,sz[0]-1 do begin
 		mo = moment(tot[i,*])
 		if sqrt(mo[1]) gt mxsg then begin
 			mxsg = sqrt(mo[1])
@@ -183,14 +183,14 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	;
 	; relevant slices
 	sl0 = (mxsl-3)>0
-	sl1 = (mxsl+3)<23
+	sl1 = (mxsl+3)<(sz[0]-1)
 	;
-	; get x position of std
-	cx = (pkfind(tot[mxsl,*],npeaks,thresh=0.99))[0] + gx0
+	; get y position of std
+	cy = (pkfind(tot[mxsl,*],npeaks,thresh=0.99))[0] + gy0
 	;
 	; log results
 	kcwi_print_info,ppar,pre,'Std slices; max, sl0, sl1, spatial cntrd', $
-		mxsl,sl0,sl1,cx,format='(a,3i4,f9.2)'
+		mxsl,sl0,sl1,cy,format='(a,3i4,f9.2)'
 	;
 	; do sky subtraction
 	scub = icub
@@ -201,14 +201,14 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	for i=sl0,sl1 do begin
 		skyspec = fltarr(sz[2])
 		for j = 0,sz[2]-1 do begin
-			skyv = reform(icub[i,gx0:gx1,j])
-			gsky = where(xx le (cx-skywin) or xx ge (cx+skywin))
+			skyv = reform(icub[i,gy0:gy1,j])
+			gsky = where(yy le (cy-skywin) or yy ge (cy+skywin))
 			sky = median(skyv[gsky])
 			skyspec[j] = sky
 			scub[i,*,j] = icub[i,*,j] - sky
 		endfor
 		if doplots then begin
-			yrng = get_plotlims(skyspec[gy])
+			yrng = get_plotlims(skyspec[gz])
 			plot,w,skyspec,title='Slice '+strn(i)+ $
 				' SKY, Img #: '+strn(kcfg.imgnum), $
 				xtitle='Wave (A)', xran=[wall0,wall1], /xs, $
@@ -231,8 +231,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	kcwi_correct_extin, scub, hdr, ppar
 	;
 	; get slice spectra
-	slspec = total(scub[*,gx0:gx1,*],2)
-	ulspec = total(ucub[*,gx0:gx1,*],2)
+	slspec = total(scub[*,gy0:gy1,*],2)
+	ulspec = total(ucub[*,gy0:gy1,*],2)
 	;
 	; summed observed standard spectra
 	obsspec = total(slspec[sl0:sl1,*],1)
@@ -312,7 +312,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	;
 	; plot effective inverse sensitivity
 	if doplots then begin
-		yrng = get_plotlims(invsen[gy])
+		yrng = get_plotlims(invsen[gz])
 		plot,w,invsen,title=sname+' Img #: '+strn(kcfg.imgnum), $
 			xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 			ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
@@ -375,14 +375,18 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; update invsens header
 	sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 	sxaddpar,hdr,'INVSENS','T',' effective inv. sens. spectrum?'
-	sxaddpar,hdr,'INVSY0',y0,' low wave pixel for eff inv. sens.'
-	sxaddpar,hdr,'INVSY1',y1,' high wave pixel for eff inv. sens.'
-	sxaddpar,hdr,'INVSX0',gx0,' low spatial pixel for eff inv. sens.'
-	sxaddpar,hdr,'INVSX1',gx1,' high spatial pixel for eff inv. sens.'
+	sxaddpar,hdr,'INVSW0',w[z0],' low wavelength for eff inv. sens.', $
+		format='F9.2'
+	sxaddpar,hdr,'INVSW1',w[z1],' high wavelength for eff inv. sens.', $
+		format='F9.2'
+	sxaddpar,hdr,'INVSZ0',z0,' low wave pixel for eff inv. sens.'
+	sxaddpar,hdr,'INVSZ1',z1,' high wave pixel for eff inv. sens.'
+	sxaddpar,hdr,'INVSY0',gy0,' low spatial pixel for eff inv. sens.'
+	sxaddpar,hdr,'INVSY1',gy1,' high spatial pixel for eff inv. sens.'
 	sxaddpar,hdr,'INVSLMX',mxsl,' brightest std star slice'
 	sxaddpar,hdr,'INVSL0',sl0,' lowest std star slice summed'
 	sxaddpar,hdr,'INVSL1',sl1,' highest std star slice summed'
-	sxaddpar,hdr,'INVSLX',cx,' spatial pixel position of std within slice'
+	sxaddpar,hdr,'INVSLY',cy,' spatial pixel position of std within slice'
 	sxaddpar,hdr,'BUNIT','erg/cm^2/A/e-',' brightness units'
 	sxaddpar,hdr,'EXPTIME',1.,' effective exposure time (seconds)'
 	sxaddpar,hdr,'XPOSURE',1.,' effective exposure time (seconds)'
