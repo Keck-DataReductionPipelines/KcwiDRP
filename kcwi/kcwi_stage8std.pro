@@ -251,7 +251,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					kcwi_correct_extin,img,hdr,kpars[i]
 					;
 					; do calibration
-					for is=0,23 do begin
+					for is=0,sz[0]-1 do begin
 						for ix = 0, sz[1]-1 do begin
 							img[is,ix,*] = (img[is,ix,*]/expt) * mscal
 							;
@@ -302,7 +302,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						kcwi_correct_extin,sky,skyhdr,kpars[i]
 						;
 						; do correction
-						for is=0,23 do for ix = 0, sz[1]-1 do $
+						for is=0,sz[0]-1 do for ix = 0, sz[1]-1 do $
 							sky[is,ix,*] = (sky[is,ix,*]/expt) * mscal
 						;
 						; update header
@@ -326,7 +326,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						kcwi_correct_extin,obj,objhdr,kpars[i]
 						;
 						; do correction
-						for is=0,23 do for ix = 0, sz[1]-1 do $
+						for is=0,sz[0]-1 do for ix = 0, sz[1]-1 do $
 							obj[is,ix,*] = (obj[is,ix,*]/expt) * mscal
 						;
 						; update header

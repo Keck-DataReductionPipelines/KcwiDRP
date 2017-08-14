@@ -172,7 +172,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	mxsl = sxpar(eahdr,'INVSLMX')
 	sl0 = sxpar(eahdr,'INVSL0')
 	sl1 = sxpar(eahdr,'INVSL1')
-	cx = sxpar(eahdr,'INVSLX')
+	cx = sxpar(eahdr,'INVSLY')
 	xx = findgen(gx1-gx0)+gx0
 	;
 	; log results
