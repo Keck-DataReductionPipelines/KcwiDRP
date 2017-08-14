@@ -405,7 +405,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		if strlen(twirng) gt 0 then begin
 			kcwi_print_info,ppar,pre, $
 				'Input twilight flat image numbers', $
-				skyrng,format='(a,a)'
+				twirng,format='(a,a)'
 			rangepar,twirng,twino
 			ntwi = n_elements(twino)
 			for i=0,ntwi-1 do begin
