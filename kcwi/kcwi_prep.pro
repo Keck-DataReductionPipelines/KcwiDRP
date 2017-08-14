@@ -362,7 +362,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		kcwi_print_info,ppar,pre,'Image numbers out of time sequence', $
 					/warning
 	;
-	; check with user about sky and twilight flat observations
+	; check with user for info about sky and twilight flat observations
 	if not keyword_set(batch) then begin
 		print,'For image number ranges use:'
 		print,"(<cr>) for no images in the night,"
@@ -373,6 +373,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		read,'Enter sky observations image number range: ',skyrng
 		skyrng = strcompress(skyrng,/remove_all)
 		if strlen(skyrng) gt 0 then begin
+			kcwi_print_info,ppar,pre, $
+				'Input sky image numbers', $
+				skyrng,format='(a,a)'
 			rangepar,skyrng,skyno
 			nsky = n_elements(skyno)
 			for i=0,nsky-1 do begin
@@ -390,7 +393,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 					strn(skyno[i]),/warn
 				endelse
 			endfor
-		endif	; strlen(skyrng) gt 0
+		endif	else	$	; strlen(skyrng) gt 0
+			kcwi_print_info,ppar,pre, $
+				'No sky image numbers input'
 		;
 		; twilight flat observations
 		twirng=''
@@ -398,6 +403,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			twirng
 		twirng = strcompress(twirng,/remove_all)
 		if strlen(twirng) gt 0 then begin
+			kcwi_print_info,ppar,pre, $
+				'Input twilight flat image numbers', $
+				skyrng,format='(a,a)'
 			rangepar,twirng,twino
 			ntwi = n_elements(twino)
 			for i=0,ntwi-1 do begin
@@ -415,7 +423,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 					strn(twino[i]),/warn
 				endelse
 			endfor
-		endif	; strlen(twirng) gt 0
+		endif	else	$	; strlen(twirng) gt 0
+			kcwi_print_info,ppar,pre, $
+				'No twilight flat image numbers input'
 	endif	; not batch
 	;
 	; write out a complete listing
