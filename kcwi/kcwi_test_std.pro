@@ -210,10 +210,10 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	endfor
 	;
 	; get slice spectra
-	slspec = total(scub[*,gx0:gx1,*],2)
+	slspec = total(scub[*,cx-skywin:cx+skywin,*],2,/nan)
 	;
 	; standard spectra
-	stdspec = total(slspec[sl0:sl1,*],1)
+	stdspec = total(slspec[sl0:sl1,*],1,/nan)
 	;
 	; read in standard
 	sdat = mrdfits(spath,1,shdr)
