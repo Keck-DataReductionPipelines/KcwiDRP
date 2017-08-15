@@ -231,8 +231,10 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	kcwi_correct_extin, scub, hdr, ppar
 	;
 	; get slice spectra
-	slspec = total(scub[*,cy-skywin:cy+skywin,*],2)
-	ulspec = total(ucub[*,cy-skywin:cy+skywin,*],2)
+	sy0 = (cy-skywin) > 0
+	sy1 = (cy+skywin) < (sz[1]-1)
+	slspec = total(scub[*,sy0:sy1,*],2)
+	ulspec = total(ucub[*,sy0:sy1,*],2)
 	;
 	; summed observed standard spectra
 	obsspec = total(slspec[sl0:sl1,*],1)
