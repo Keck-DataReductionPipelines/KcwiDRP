@@ -268,7 +268,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				;
 				; compare number of amps
 				if nba ne namps then begin
-					kcwi_print_info,ppar,pre,'amp number mis-match (bais vs. obs)',nba,namps,/warning
+					kcwi_print_info,ppar,pre,'amp number mis-match (bias vs. obs)',nba,namps,/warning
 					;
 					; handle mis-match
 					case nba of
