@@ -210,6 +210,8 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	endfor
 	;
 	; get slice spectra
+	sx0 = (cx-skywin) > 0
+	sx1 = (cx+skywin) < (sz[1]-1)
 	slspec = total(scub[*,cx-skywin:cx+skywin,*],2,/nan)
 	;
 	; standard spectra
