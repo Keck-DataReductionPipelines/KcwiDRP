@@ -4,7 +4,8 @@ function kcwi_drp_version
 	cd,'..'
 	verstring = 'KCWI DERP Version: 0.5.1 DEV 2017/07/00'
 	spawn,'git describe --tags --long', gitver, errmsg
-	if strlen(errmsg) le 0 then begin
+	errlen = total(strlen(errmsg))
+	if errlen le 0 then begin
 		verstring = 'KCWI DERP Version: '+gitver
 		spawn,'git log -1 --format=%cd', gitdate, errmsg
 		if strlen(errmsg) le 0 then $

@@ -292,6 +292,8 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 					sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,mskhdr,'DARCOR','T',' DAR corrected?'
 					sxaddpar,mskhdr,'DARANG',projang_deg,' DAR projection angle (deg)'
+					sxaddpar,mskhdr,'DARPADX',pad_x,' DAR X padding (pix)'
+					sxaddpar,mskhdr,'DARPADY',pad_y,' DAR Y padding (pix)'
 					sxaddpar,mskhdr,'DAREFWL',wref,' DAR reference wl (Ang)'
 					;
 					; write out dar corrected mask image
@@ -302,6 +304,8 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,varhdr,'DARCOR','T',' DAR corrected?'
 					sxaddpar,varhdr,'DARANG',projang_deg,' DAR projection angle (deg)'
+					sxaddpar,varhdr,'DARPADX',pad_x,' DAR X padding (pix)'
+					sxaddpar,varhdr,'DARPADY',pad_y,' DAR Y padding (pix)'
 					sxaddpar,varhdr,'DAREFWL',wref,' DAR reference wl (Ang)'
 					;
 					; write out dar corrected variance image
@@ -312,6 +316,8 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,hdr,'DARCOR','T',' DAR corrected?'
 					sxaddpar,hdr,'DARANG',projang_deg,' DAR projection angle (deg)'
+					sxaddpar,hdr,'DARPADX',pad_x,' DAR X padding (pix)'
+					sxaddpar,hdr,'DARPADY',pad_y,' DAR Y padding (pix)'
 					sxaddpar,hdr,'DAREFWL',wref,' DAR reference wl (Ang)'
 					;
 					; write out dar corrected intensity image
@@ -337,6 +343,8 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 						sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,skyhdr,'DARCOR','T',' DAR corrected?'
 						sxaddpar,skyhdr,'DARANG',projang_deg,' DAR projection angle (deg)'
+						sxaddpar,skyhdr,'DARPADX',pad_x,' DAR X padding (pix)'
+						sxaddpar,skyhdr,'DARPADY',pad_y,' DAR Y padding (pix)'
 						sxaddpar,skyhdr,'DAREFWL',wref,' DAR reference wl (Ang)'
 						;
 						; update WCS
@@ -369,6 +377,8 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 						sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,objhdr,'DARCOR','T',' DAR corrected?'
 						sxaddpar,objhdr,'DARANG',projang_deg,' DAR projection angle (deg)'
+						sxaddpar,objhdr,'DARPADX',pad_x,' DAR X padding (pix)'
+						sxaddpar,objhdr,'DARPADY',pad_y,' DAR Y padding (pix)'
 						sxaddpar,objhdr,'DAREFWL',wref,' DAR reference wl (Ang)'
 						;
 						; update WCS

@@ -16,7 +16,7 @@ pro radec_parse,irastr,idecstr,delim,rad,decd
 ; parse ra string
 rastr = strtrim(strcompress(irastr),2)	; get rid of extra white space
 rastr = strsplit(rastr,delim,/extract,count=n)	; separate into components
-ra0_h = double(rastr(0))
+ra0_h = double(rastr(0))<24.d0
 if n gt 1 then $
 	ra0_m = double(rastr(1)) $
 else	ra0_m = 0.d0

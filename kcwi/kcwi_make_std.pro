@@ -136,6 +136,9 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	wall0 = sxpar(hdr,'WAVALL0')
 	wall1 = sxpar(hdr,'WAVALL1')
 	;
+	; get DAR padding in y
+	pad_y = sxpar(hdr,'DARPADY')
+	;
 	; get telescope and atm. correction
 	tel = strtrim(sxpar(hdr,'telescop',count=ntel),2)
 	if ntel le 0 then tel = 'Keck II'
@@ -158,8 +161,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	w = w0 + z*dw
 	;
 	; good spatial range
-	gy0 = 1
-	gy1 = sz[1] - 2
+	gy0 = pad_y > 1
+	gy1 = sz[1] - (pad_y > 2)
 	;
 	; log results
 	kcwi_print_info,ppar,pre,'Invsen. Pars: Y0, Y1, Z0, Z1, Wav0, Wav1', $
@@ -169,12 +172,16 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	doplots = (ppar.display ge 2)
 	;
 	; find standard in slices
-	tot = total(icub[*,gy0:gy1,z0:z1],3)
-	yy = findgen(gy1-gy0)+gy0
-	mxsl = -1
-	mxsg = 0.
+	tot = total(icub[*,gy0:gy1,z0:z1],3)	; sum over wavelength
+	yy = findgen(gy1-gy0)+gy0		; spatial coordinates
+	mxsl = -1			; max slice
+	mxsg = 0.			; sigma of max slice
+	;
+	; for each slice
 	for i=0,sz[0]-1 do begin
 		mo = moment(tot[i,*])
+		;
+		; find the slice with the maximum sigma
 		if sqrt(mo[1]) gt mxsg then begin
 			mxsg = sqrt(mo[1])
 			mxsl = i
@@ -193,18 +200,34 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		mxsl,sl0,sl1,cy,format='(a,3i4,f9.2)'
 	;
 	; do sky subtraction
-	scub = icub
+	scub = icub				; copy of input cube
+	skywin = ppar.psfwid/kcfg.xbinsize	; sky window width in pixels
+	;
+	; plotting prep
 	deepcolor
 	!p.background=colordex('white')
 	!p.color=colordex('black')
-	skywin = ppar.psfwid/kcfg.xbinsize
+	;
+	; for each relevant slice
 	for i=sl0,sl1 do begin
 		skyspec = fltarr(sz[2])
+		;
+		; for each wavelength
 		for j = 0,sz[2]-1 do begin
+			;
+			; get y-spanning vector from input cube
 			skyv = reform(icub[i,gy0:gy1,j])
+			;
+			; avoid standard
 			gsky = where(yy le (cy-skywin) or yy ge (cy+skywin))
+			;
+			; median of what's left is sky value
 			sky = median(skyv[gsky])
+			;
+			; store the sky value at this wavelength,slice
 			skyspec[j] = sky
+			;
+			; perform subtraction
 			scub[i,*,j] = icub[i,*,j] - sky
 		endfor
 		if doplots then begin
@@ -230,13 +253,15 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	ucub = scub	; uncorrected cube
 	kcwi_correct_extin, scub, hdr, ppar
 	;
-	; get slice spectra
+	; get slice spectra y limits
 	sy0 = (cy-skywin) > 0
 	sy1 = (cy+skywin) < (sz[1]-1)
+	;
+	; sum over y range
 	slspec = total(scub[*,sy0:sy1,*],2)
 	ulspec = total(ucub[*,sy0:sy1,*],2)
 	;
-	; summed observed standard spectra
+	; sum over slices
 	obsspec = total(slspec[sl0:sl1,*],1)
 	ubsspec = total(ulspec[sl0:sl1,*],1)
 	;
