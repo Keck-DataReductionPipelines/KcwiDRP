@@ -147,6 +147,9 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	wall0 = sxpar(hdr,'WAVALL0')
 	wall1 = sxpar(hdr,'WAVALL1')
 	;
+	; get DAR padding in y
+	pad_y = sxpar(hdr,'DARPADY')
+	;
 	; compute good y pixel ranges
 	if w0 gt 0. and dw gt 0. and wgoo0 gt 0. and wgoo1 gt 0. then begin
 		y0 = fix( (wgoo0 - w0) / dw ) + 10
@@ -158,8 +161,8 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	w = w0 + y*dw
 	;
 	; good spatial range
-	gx0 = 1
-	gx1 = sz[1] - 2
+	gx0 = pad_y > 1
+	gx1 = sz[1] - (pad_y > 2)
 	;
 	; log results
 	kcwi_print_info,ppar,pre,'Invsens. Pars: X0, X1, Y0, Y1, Wav0, Wav1', $

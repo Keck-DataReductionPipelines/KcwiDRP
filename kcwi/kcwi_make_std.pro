@@ -318,7 +318,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; get effective inverse sensitivity
 	invsen = rsflx / obsspec
 	;
-	; convert to photons
+	; convert to photons/s/cm^2/(wl bin = dw)
 	rspho = 5.03411250d+07 * rsflx * w * dw
 	;
 	; get effective area
