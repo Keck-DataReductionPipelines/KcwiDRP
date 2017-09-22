@@ -370,11 +370,11 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		;
 		; SKY observations
 		skyrng=''
-		read,'Enter sky observations image number range: ',skyrng
+		read,'Enter blank sky observations image number range: ',skyrng
 		skyrng = strcompress(skyrng,/remove_all)
 		if strlen(skyrng) gt 0 then begin
 			kcwi_print_info,ppar,pre, $
-				'Input sky image numbers', $
+				'Input blank sky image numbers', $
 				skyrng,format='(a,a)'
 			rangepar,skyrng,skyno
 			nsky = n_elements(skyno)
