@@ -23,6 +23,7 @@
 ; OUTPUTS:
 ;
 ; KEYWORDS:
+;	ISCALE	- set to scale output into integers
 ;
 ; SIDE EFFECTS:
 ;	Writes a 2-D image with name based on input.
@@ -35,7 +36,7 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2017-APR-27	Initial version
 ;-
-pro kcwi_flatten_cube,cfile
+pro kcwi_flatten_cube,cfile,iscale=iscale
 	;
 	; setup
 	pre = 'KCWI_FLATTEN_CUBE'
@@ -119,7 +120,7 @@ pro kcwi_flatten_cube,cfile
 			sxaddpar,hdr,'CDELT2',dw,' Wavelength Angstroms per pixel'
 			;
 			; write it out
-			mwrfits,oim,ofil,hdr,/create,/iscale
+			mwrfits,oim,ofil,hdr,/create,iscale=iscale
 		endif else begin
 			print,pre+': not a 3-D image cube - ', cfile
 		endelse
