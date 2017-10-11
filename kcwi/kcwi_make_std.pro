@@ -324,15 +324,37 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; get effective area
 	earea = ubsspec / rspho
 	;
-	; fit smoothed inverse sensitivity
+	; fit inverse sensitivity and effective area
 	t=where(w ge wgoo0 and w le wgoo1, nt)
 	if nt gt 0 then begin
-		sf = smooth(invsen[t],250)
-		wf = w - min(w)
+		;
+		; set up fitting vectors, flux, waves, measure errors
+		sf = invsen[t]
+		wf = w[t]
+		me = sf * 1.e-3
+		;
+		; Balmer lines
+		blines = [4861., 4341., 4102., 3970., 3889., 3835.]
+		bwid = 0.017
+		;
+		; loop over Balmer lines
+		for ib = 0, n_elements(blines)-1 do begin
+			roi = where(wf gt blines[ib] - blines[ib]*bwid and $
+				    wf lt blines[ib] + blines[ib]*bwid, nroi)
+			if nroi gt 0 then begin
+				me[roi] = me[roi] * 1.e9
+				kcwi_print_info,ppar,pre, $
+					'Masking Balmer line ',blines[ib], $
+					format='(a,f6.1)'
+			endif
+		endfor
 		;
 		; polynomial fit
-		res = poly_fit(wf[t],sf,5,/double)
-		finvsen = poly(wf,res)
+		wf0 = min(wf)
+		res = poly_fit(wf-wf0,sf,5,/double,measure_error=me)
+		finvsen = poly(w-wf0,res)
+		res = poly_fit(wf-wf0,earea[t],5,/double,measure_error=me)
+		fearea = poly(w-wf0,res)
 	endif else begin
 		kcwi_print_info,ppar,pre,'no good wavelengths to fit',/error
 	endelse
@@ -352,16 +374,13 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		; plot effective area (cm^2)
 		goo = where(w gt wgoo0 and w lt wgoo1, ngoo)
 		if ngoo gt 5 then begin
-			maxea = max(earea[goo])
-			mo = moment(earea[goo])
-			yrng = get_plotlims(earea[goo])
-			sea = smooth(earea[goo],250)
-			sex = w[goo] - min(w[goo])
-			res = poly_fit(sex,sea,5,yfit=fea,/double)
+			maxea = max(fearea[goo])
+			mo = moment(fearea[goo])
+			yrng = get_plotlims(fearea[goo])
 		endif else begin
-			maxea = max(earea)
-			mo = moment(earea)
-			yrng = get_plotlims(earea)
+			maxea = max(fearea)
+			mo = moment(fearea)
+			yrng = get_plotlims(fearea)
 		endelse
 		if yrng[0] lt 0. then yrng[0] = 0.0
 		if area gt 0 then begin
@@ -380,7 +399,9 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			axis,yaxis=1,yrange=100.*(!y.crange/area),ys=1, $
 				ytitle='Efficiency (%)'
 		endif else begin
-			plot,w,earea,title=sname+' Img #: '+strn(kcfg.imgnum), $
+			plot,w,earea, $
+				title=sname+' Img #: '+strn(kcfg.imgnum)+' '+ $
+				strtrim(kcfg.bgratnam,2)+' '+tlab, $
 				xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 				ytitle='Effective Area (cm^2/A)',yran=yrng,/ys
 			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
@@ -393,7 +414,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		;
 		; overplot fit
 		if ngoo gt 5 then $
-			oplot,w[goo],fea,thick=5,color=colordex('blue')
+			oplot,w[goo],fearea[goo],thick=5,color=colordex('blue')
 		read,'Next: ',q
 	endif
 	;
@@ -457,8 +478,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	;
 	; write out inverse sensitivity file
 	ofil = kcwi_get_imname(ppar,kcfg.imgnum,'_invsens',/nodir)
-	kcwi_write_image,invsen,hdr,ofil,ppar
-	;kcwi_write_image,finvsen,hdr,ofil,ppar
+	;kcwi_write_image,invsen,hdr,ofil,ppar
+	kcwi_write_image,finvsen,hdr,ofil,ppar
 	;
 	; update effective area header
 	sxaddpar,hdr,'INVSENS','F',' effective inv. sens. spectrum?'
@@ -468,7 +489,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	;
 	; write out effective area file
 	ofil = kcwi_get_imname(ppar,kcfg.imgnum,'_ea',/nodir)
-	kcwi_write_image,earea,hdr,ofil,ppar
+	;kcwi_write_image,earea,hdr,ofil,ppar
+	kcwi_write_image,fearea,hdr,ofil,ppar
 	;
 	return
 end
