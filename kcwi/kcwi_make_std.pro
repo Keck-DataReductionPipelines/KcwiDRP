@@ -276,26 +276,30 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	sfw = sdat.fwhm
 	;
 	; get region of interest
-	sroi = where(swl ge wall0 and swl le wall1, nsroi)
+	sroi = where(swl ge w[0] and swl le w[n_elements(w)-1L], nsroi)
 	if nsroi le 0 then begin
 		kcwi_print_info,ppar,pre, $
 			'no standard wavelengths in common',/error
 		return
+	endif
+	;
+	; expand range after checking for edges
+	if sroi[0] gt 0 then begin
+		sroi = [ sroi[0]-1, sroi ]
+		nsroi += 1
+	endif
+	if sroi[nsroi-1] le n_elements(swl)-1L then begin
+		sroi = [ sroi, sroi[nsroi-1]+1 ]
+		nsroi += 1
+	endif
 	;
 	; very sparsely sampled w.r.t. object
-	endif else if nsroi eq 1 then begin
-		;
-		; up against an edge, no good
-		if sroi[0] le 0 or sroi[0] ge n_elements(swl)-1L then begin
-			kcwi_print_info,ppar,pre, $
-				'standard wavelengths not a good match',/error
-			return
-		;
-		; manually expand sroi to allow linterp to work
-		endif else begin
-			sroi = [ sroi[0]-1, sroi[0], sroi[0]+1 ]
-		endelse
+	if nsroi le 1 then begin
+		kcwi_print_info,ppar,pre, $
+			'not enough standard points',/error
+		return
 	endif
+	kcwi_print_info,ppar,pre,'Number of standard points',nsroi
 	swl = swl[sroi]
 	sflx = sflx[sroi]
 	sfw = sfw[sroi]
@@ -304,16 +308,17 @@ pro kcwi_make_std,kcfg,ppar,invsen
 					'Angstroms', format='(a,f5.1,1x,a)'
 	;
 	; smooth to this resolution
-	if kcfg.nasmask then begin
-		obsspec = gaussfold(w,obsspec,fwhm)
-		ubsspec = gaussfold(w,ubsspec,fwhm)
-	endif else begin
-		obsspec = gaussfold(w,obsspec,fwhm,lammin=wgoo0,lammax=wgoo1)
-		ubsspec = gaussfold(w,ubsspec,fwhm,lammin=wgoo0,lammax=wgoo1)
-	endelse
+	;if kcfg.nasmask then begin
+;		obsspec = gaussfold(w,obsspec,fwhm)
+;		ubsspec = gaussfold(w,ubsspec,fwhm)
+;	endif else begin
+;		obsspec = gaussfold(w,obsspec,fwhm,lammin=wgoo0,lammax=wgoo1)
+;		ubsspec = gaussfold(w,ubsspec,fwhm,lammin=wgoo0,lammax=wgoo1)
+;	endelse
 	;
 	; resample standard onto our wavelength grid
-	linterp,swl,sflx,w,rsflx
+	;linterp,swl,sflx,w,rsflx
+	rsflx = interpol(sflx,swl,w,/nan,/spline)
 	;
 	; get effective inverse sensitivity
 	invsen = rsflx / obsspec
@@ -331,11 +336,24 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		; set up fitting vectors, flux, waves, measure errors
 		sf = invsen[t]
 		wf = w[t]
+		mf = sf-sf
 		me = sf * 1.e-3
 		;
 		; Balmer lines
 		blines = [4861., 4341., 4102., 3970., 3889., 3835.]
 		bwid = 0.017
+		ford = 9
+		sigf = 3.0
+		if strpos(kcfg.bgratnam,'BL') ge 0 then begin
+			bwid = 0.008
+			ford = 7
+			sigf = 4.0
+		endif
+		if strpos(kcfg.bgratnam,'BH') ge 0 then begin
+			bwid = 0.008
+			ford = 9
+			sigf = 3.0
+		endif
 		;
 		; loop over Balmer lines
 		for ib = 0, n_elements(blines)-1 do begin
@@ -343,23 +361,40 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				    wf lt blines[ib] + blines[ib]*bwid, nroi)
 			if nroi gt 0 then begin
 				me[roi] = me[roi] * 1.e9
+				mf[roi] = sf[roi]
 				kcwi_print_info,ppar,pre, $
-					'Masking Balmer line ',blines[ib], $
-					format='(a,f6.1)'
+					'Masking Balmer line',blines[ib],bwid, $
+					format='(a,f6.1,f8.4)'
 			endif
 		endfor
 		;
-		; polynomial fit
+		; polynomial fit of inverse sensitivity
+		;
+		; first pass
 		wf0 = min(wf)
-		res = poly_fit(wf-wf0,sf,5,/double,measure_error=me)
+		res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me, $
+			yfit=yfit,yband=yband)
+		;
+		; now attempt to mask absorption lines
+		roi = where(sf-yfit gt sigf*yband, nroi)
+		if nroi gt 0 then begin
+			me[roi] = me[roi] * 1.e9
+			mf[roi] = sf[roi]
+		endif
+		;
+		; second pass
+		res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me)
 		finvsen = poly(w-wf0,res)
-		res = poly_fit(wf-wf0,earea[t],5,/double,measure_error=me)
+		;
+		; now fit effective area
+		res = poly_fit(wf-wf0,earea[t],ford,/double,measure_error=me)
 		fearea = poly(w-wf0,res)
 	endif else begin
 		kcwi_print_info,ppar,pre,'no good wavelengths to fit',/error
+		return
 	endelse
 	;
-	; plot effective inverse sensitivity
+	; plot inverse sensitivity
 	if doplots then begin
 		yrng = get_plotlims(invsen[gz])
 		plot,w,invsen,title=sname+' Img #: '+strn(kcfg.imgnum), $
@@ -367,6 +402,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
 			yran=yrng,/ys,xmargin=[11,3]
 		oplot,w,finvsen,color=colordex('red')
+		oplot,wf,mf,psym=7
 		oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
 		oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
 		read,'Next: ',q

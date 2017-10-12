@@ -227,26 +227,30 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	sfw = sdat.fwhm
 	;
 	; get region of interest
-	sroi = where(swl ge wall0 and swl le wall1, nsroi)
+	sroi = where(swl ge w[0] and swl le w[n_elements(w)-1L], nsroi)
 	if nsroi le 0 then begin
 		kcwi_print_info,ppar,pre,'no standard wavelengths in common', $
 									/error
 		return
+	endif
+	;
+	; expand range aftert checking for edges
+	if sroi[0] gt 0 then begin
+		sroi = [ sroi[0]-1, sroi ]
+		nsroi += 1
+	endif
+	if sroi[nsroi-1] le n_elements(swl)-1L then begin
+		sroi = [ sroi, sroi[nsroi-1]+1 ]
+		nsroi += 1
+	endif
 	;
 	; very sparsely sampled w.r.t. object
-	endif else if nsroi eq 1 then begin
-		;
-		; up against an edge, no good
-		if sroi[0] le 0 or sroi[0] ge n_elements(swl)-1L then begin
-			kcwi_print_info,ppar,pre, $
-				'standard wavelengths not a good match',/error
-			return
-		;
-		; manually expand sroi to allow linterp to work
-		endif else begin
-			sroi = [ sroi[0]-1, sroi[0], sroi[0]+1 ]
-		endelse
+	if nsroi le 1 then begin
+		kcwi_print_info,ppar,pre, $
+			'not enough standard points',/error
+		return
 	endif
+	kcwi_print_info,ppar,pre,'Number of standard points',nsroi
 	swl = swl[sroi]
 	sflx = sflx[sroi]
 	sfw = sfw[sroi]
@@ -255,12 +259,13 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		format='(a,f5.1)'
 	;
 	; get a smoothed version
-	if kcfg.nasmask then $
-		stdsmoo = gaussfold(w,stdspec,fwhm) $
-	else	stdsmoo = gaussfold(w,stdspec,fwhm,lammin=wgoo0,lammax=wgoo1)
+	;if kcfg.nasmask then $
+;		stdsmoo = gaussfold(w,stdspec,fwhm) $
+;	else	stdsmoo = gaussfold(w,stdspec,fwhm,lammin=wgoo0,lammax=wgoo1)
 	;
 	; resample onto our wavelength grid
-	linterp,swl,sflx,w,rsflx
+	;linterp,swl,sflx,w,rsflx
+	rsflx = interpol(sflx,swl,w,/nan,/spline)
 	;
 	; make a hardcopy if requested
 	if keyword_set(ps) then begin
@@ -281,8 +286,9 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		xran=[wall0,wall1], /xs,xtickformat='(a1)', $
 		ytitle='!3Flam (erg s!U-1!N cm!U-2!N A!U-1!N)',yran=yrng,/ys, $
 		pos=[0.15,0.30,0.95,0.95]
-	oplot,w,stdsmoo,color=colordex('blue'),thick=2
-	oplot,swl,sflx,color=colordex('red')
+	oplot,sdat.wavelength,sdat.flux,color=colordex('red'),psym=4, $
+		symsize=3.0,thick=3
+	oplot,w,rsflx,color=colordex('blue')
 	oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
 	oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
 	kcwi_legend,['Cal. Flux','Obs. Flux','Smoothed'],linesty=[0,0,0], $
@@ -292,7 +298,6 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	; get residuals
 	rsd = stdspec - rsflx
 	frsd = 100.d0*(rsd/rsflx)
-	srsd = stdsmoo - rsflx
 	mo = moment(rsd[gy],/nan)
 	fmo = moment(frsd[gy],/nan)
 	;
@@ -309,7 +314,6 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		ytitle='!3Obs-Cal',yran=yrng,/ys,pos=[0.15,0.05,0.95,0.30], $
 		/noerase
 	oplot,!x.crange,[0,0]
-	oplot,w,srsd,color=colordex('blue')
 	oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
 	oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
 	;
@@ -354,7 +358,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		yrng = get_plotlims(ea[goo])
 		sea = smooth(ea[goo],250)
 		sex = wea[goo] - min(wea[goo])
-		res = poly_fit(sex,sea,5,yfit=fea,/double)
+		res = poly_fit(sex,sea,9,yfit=fea,/double)
 	endif else begin
 		maxea = max(ea)
 		mo = moment(ea)
