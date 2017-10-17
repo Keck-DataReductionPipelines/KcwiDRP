@@ -361,22 +361,25 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			kcwi_print_info,ppar,pre,'Wavelength range for Invsens fit',wlm0,wlm1, $
 				format='(a,2f9.2)'
 			read,'Next: ',q
+			;
+			; final wavelength range
 			t = where(w ge wlm0 and w le wlm1, nt)
 		endif
 		;
 		; set up fitting vectors, flux, waves, measure errors
 		sf = invsen[t]
 		wf = w[t]
-		mf = sf-sf
 		me = sf * 1.e-3
+		use = intarr(nt) + 1
 		;
 		; loop over Balmer lines
 		for ib = 0, n_elements(blines)-1 do begin
 			roi = where(wf gt blines[ib] - blines[ib]*bwid and $
 				    wf lt blines[ib] + blines[ib]*bwid, nroi)
 			if nroi gt 0 then begin
-				me[roi] = me[roi] * 1.e9
-				mf[roi] = sf[roi]
+				use[roi] = 0
+				;me[roi] = me[roi] * 1.e9
+				;mf[roi] = sf[roi]
 				kcwi_print_info,ppar,pre, $
 					'Masking Balmer line',blines[ib],bwid, $
 					format='(a,f6.1,f8.4)'
@@ -384,6 +387,15 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		endfor
 		;
 		; polynomial fit of inverse sensitivity
+		b = where(use le 0, nb)
+		if nb gt 0 then begin
+			me[b] = sf[b] * 1.e9
+		endif
+		g = where(use ge 1, ng)
+		if ng le 0 then begin
+			g = lindgen(nt)
+			ng = nt
+		endif
 		;
 		; first pass
 		wf0 = min(wf)
@@ -393,13 +405,73 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		; now attempt to mask absorption lines
 		roi = where(sf-yfit gt sigf*yband, nroi)
 		if nroi gt 0 then begin
-			me[roi] = me[roi] * 1.e9
-			mf[roi] = sf[roi]
+			use[roi] = 0
+			me[roi] = sf[roi] * 1.e9
 		endif
 		;
 		; second pass
 		res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me)
 		finvsen = poly(w-wf0,res)
+		;
+		; plot fits
+		done = (1 eq 0)
+		while not done do begin
+			me = sf * 1.e-3
+			mf = sf-sf
+			b = where(use le 0, nb)
+			if nb gt 0 then begin
+				me[b] = sf[b] * 1.e9
+				mf[b] = sf[b]
+			endif
+			yrng = get_plotlims(invsen[gz])
+			plot,w,invsen,title=sname+' Img #: '+strn(kcfg.imgnum), $
+				xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
+				ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
+				yran=yrng,/ys,xmargin=[11,3]
+			oplot,w,finvsen,color=colordex('red')
+			oplot,wf,mf,psym=7
+			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
+			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
+			read,'r - restore pts, d - delete pts, f - re-fit, q - quit fitting: ',q
+			;
+			; all done
+			if strupcase(strtrim(q,2)) eq 'Q' then begin
+				done = (1 eq 1)
+			endif else begin
+				;
+				; re-fit
+				if strupcase(strtrim(q,2)) eq 'F' then begin
+					res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me)
+					finvsen = poly(w-wf0,res)
+				;
+				; mark a region for resoration or deletion
+				endif else begin
+					wlm0 = -1.
+					wlm1 = -1.
+					while wlm0 ge wlm1 do begin
+						print,'Mark short wavelength limit'
+						cursor,wlm0,yy,/data,/down
+						oplot,[wlm0,wlm0],!y.crange,linesty=2
+						print,'Mark long wavelgnth limit'
+						cursor,wlm1,yy,/data,/down
+						oplot,[wlm1,wlm1],!y.crange,linesty=2
+					endwhile
+					roi = where(wf ge wlm0 and wf le wlm1, nroi)
+					;
+					if nroi gt 0 then begin
+						;
+						; restore points
+						if strupcase(strtrim(q,2)) eq 'R' then begin
+							use[roi] = 1
+						;
+						; delete points
+						endif else if strupcase(strtrim(q,2)) eq 'D' then begin
+							use[roi] = 0
+						endif else print,'I do not understand ',q
+					endif
+				endelse
+			endelse
+		endwhile
 		;
 		; now fit effective area
 		res = poly_fit(wf-wf0,earea[t],ford,/double,measure_error=me)
@@ -411,16 +483,6 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	;
 	; plot inverse sensitivity
 	if doplots then begin
-		yrng = get_plotlims(invsen[gz])
-		plot,w,invsen,title=sname+' Img #: '+strn(kcfg.imgnum), $
-			xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
-			ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
-			yran=yrng,/ys,xmargin=[11,3]
-		oplot,w,finvsen,color=colordex('red')
-		oplot,wf,mf,psym=7
-		oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
-		oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
-		read,'Next: ',q
 		;
 		; plot effective area (cm^2)
 		goo = where(w gt wgoo0 and w lt wgoo1, ngoo)
