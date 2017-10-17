@@ -341,11 +341,15 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	t=where(w ge wgoo0 and w le wgoo1, nt)
 	if nt gt 0 then begin
 		if doplots then begin
-			yrng = get_plotlims(invsen[t])
-			plot,w,invsen,title=sname+' Img #: '+strn(kcfg.imgnum), $
+			gd = where(invsen gt 0.)
+			plot,w,invsen[gd],title=sname+' Img #: '+strn(kcfg.imgnum), $
 				xtitle='Wave (A)', $
 				ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
-				yran=yrng,/ys
+				/ylog,/ys
+			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
+				thick=3
+			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
+				thick=3
 			wlm0 = -1.
 			wlm1 = -1.
 			while wlm0 ge wlm1 do begin
