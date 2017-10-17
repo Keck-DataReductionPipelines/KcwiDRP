@@ -400,7 +400,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		; first pass
 		wf0 = min(wf)
 		res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me, $
-			yfit=yfit,yband=yband)
+			yfit=yfit,yband=yband,status=fitstat)
 		;
 		; now attempt to mask absorption lines
 		roi = where(sf-yfit gt sigf*yband, nroi)
@@ -410,7 +410,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		endif
 		;
 		; second pass
-		res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me)
+		res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me, $
+			status=fitstat)
 		finvsen = poly(w-wf0,res)
 		;
 		; plot fits
@@ -441,7 +442,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				;
 				; re-fit
 				if strupcase(strtrim(q,2)) eq 'F' then begin
-					res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me)
+					res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me, $
+							status=fitstat)
 					finvsen = poly(w-wf0,res)
 				;
 				; mark a region for resoration or deletion
@@ -474,7 +476,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		endwhile
 		;
 		; now fit effective area
-		res = poly_fit(wf-wf0,earea[t],ford,/double,measure_error=me)
+		res = poly_fit(wf-wf0,earea[t],ford,/double,measure_error=me, $
+				status=fitstat)
 		fearea = poly(w-wf0,res)
 	endif else begin
 		kcwi_print_info,ppar,pre,'no good wavelengths to fit',/error
