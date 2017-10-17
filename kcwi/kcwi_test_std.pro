@@ -258,13 +258,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	kcwi_print_info,ppar,pre,'reference spectrum FWHM used',fwhm, $
 		format='(a,f5.1)'
 	;
-	; get a smoothed version
-	;if kcfg.nasmask then $
-;		stdsmoo = gaussfold(w,stdspec,fwhm) $
-;	else	stdsmoo = gaussfold(w,stdspec,fwhm,lammin=wgoo0,lammax=wgoo1)
-	;
 	; resample onto our wavelength grid
-	;linterp,swl,sflx,w,rsflx
 	rsflx = interpol(sflx,swl,w,/nan,/spline)
 	;
 	; make a hardcopy if requested
@@ -291,7 +285,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	oplot,w,rsflx,color=colordex('blue')
 	oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
 	oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
-	kcwi_legend,['Cal. Flux','Obs. Flux','Smoothed'],linesty=[0,0,0], $
+	kcwi_legend,['Cal. Flux','Obs. Flux','Interp'],linesty=[0,0,0], $
 		color=[colordex('red'),colordex('black'),colordex('blue')], $
 		/clear,clr_color=!p.background,/bottom,/right
 	;
@@ -356,19 +350,14 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		maxea = max(ea[goo])
 		mo = moment(ea[goo])
 		yrng = get_plotlims(ea[goo])
-		sea = smooth(ea[goo],250)
-		sex = wea[goo] - min(wea[goo])
-		res = poly_fit(sex,sea,9,yfit=fea,/double)
 	endif else begin
-		maxea = max(ea)
-		mo = moment(ea)
-		yrng = get_plotlims(ea)
-		sea = -1
-		res = -1
+		maxea = max(ea[*,0])
+		mo = moment(ea[*,0])
+		yrng = get_plotlims(ea[*,0])
 	endelse
 	if yrng[0] lt 0. then yrng[0] = 0.
 	if area gt 0 then begin
-		plot,wea,ea,xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
+		plot,wea,ea[*,0],xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 			ytitle='!3EA (cm!U2!N)',title=tlab,ys=9, $
 			yran=yrng,xmargin=[11,8]
 		oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
@@ -380,7 +369,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		axis,yaxis=1,yrange=100.*(!y.crange/area),ys=1, $
 			ytitle='Efficiency (%)'
 	endif else begin
-		plot,wea,ea,xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
+		plot,wea,ea[*,0],xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 			ytitle='!3EA (cm!U2!N)', yran=yrng, /ys, $
 			title=tlab
 		oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
@@ -393,13 +382,13 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	;
 	; overplot fit
 	if ngoo gt 5 then $
-		oplot,wea[goo],fea,thick=5,color=colordex('blue')
+		oplot,wea[goo],ea[goo,1],thick=5,color=colordex('blue')
 	;
 	; check if we are making hardcopy
 	if keyword_set(ps) then begin
 		!p.font=font_store
 		psclose
-		kcwi_print_info,ppar,pre,'Plotting to ',psname
+		kcwi_print_info,ppar,pre,'Plotting to ',psname + '.ps'
 	endif
 	;
 	return

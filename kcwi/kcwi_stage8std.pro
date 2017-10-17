@@ -191,19 +191,20 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						kcwi_make_std,scfg,kpars[i]
 					endif
 					;
-					; read in master std
-					mstd = mrdfits(msfile,0,mshdr,/fscale,/silent)
+					; read in master calibration (inverse sensitivity)
+					mcal = mrdfits(msfile,0,mchdr,/fscale,/silent)
+					mcal = reform(mcal[*,1])
 					;
 					; get dimensions
-					mssz = size(mstd,/dimension)
+					mcsz = size(mcal,/dimension)
 					;
 					; get master std waves
-					msw0 = sxpar(mshdr,'crval1')
-					msdw = sxpar(mshdr,'cdelt1')
-					mswav = msw0 + findgen(mssz[0]) * msdw
+					mcw0 = sxpar(mchdr,'crval1')
+					mcdw = sxpar(mchdr,'cdelt1')
+					mcwav = mcw0 + findgen(mcsz[0]) * mcdw
 					;
 					; get master std image number
-					msimgno = sxpar(mshdr,'FRAMENO')
+					msimgno = sxpar(mchdr,'FRAMENO')
 					;
 					; read in image
 					img = mrdfits(obfil,0,hdr,/fscale,/silent)
@@ -217,12 +218,12 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					wav = w0 + findgen(sz[2]) * dw
 					;
 					; resample onto object waves, if needed
-					if w0 ne msw0 or dw ne msdw or wav[sz[2]-1] ne mswav[mssz[0]-1] or $
-						sz[2] ne mssz[0] then begin
+					if w0 ne mcw0 or dw ne mcdw or wav[sz[2]-1] ne mcwav[mcsz[0]-1] or $
+						sz[2] ne mcsz[0] then begin
 						kcwi_print_info,ppar,pre, $
 							'wavelengths scales not identical, resampling standard',/warn
-						linterp,mswav,mstd,wav,mscal
-					endif else mscal = mstd
+						linterp,mcwav,mcal,wav,mscal
+					endif else mscal = mcal
 					;
 					; get exposure time
 					expt = sxpar(hdr,'XPOSURE')

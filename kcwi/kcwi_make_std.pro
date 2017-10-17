@@ -307,17 +307,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	kcwi_print_info,ppar,pre,'reference spectrum FWHM used',fwhm, $
 					'Angstroms', format='(a,f5.1,1x,a)'
 	;
-	; smooth to this resolution
-	;if kcfg.nasmask then begin
-;		obsspec = gaussfold(w,obsspec,fwhm)
-;		ubsspec = gaussfold(w,ubsspec,fwhm)
-;	endif else begin
-;		obsspec = gaussfold(w,obsspec,fwhm,lammin=wgoo0,lammax=wgoo1)
-;		ubsspec = gaussfold(w,ubsspec,fwhm,lammin=wgoo0,lammax=wgoo1)
-;	endelse
-	;
 	; resample standard onto our wavelength grid
-	;linterp,swl,sflx,w,rsflx
 	rsflx = interpol(sflx,swl,w,/nan,/spline)
 	;
 	; get effective inverse sensitivity
@@ -329,31 +319,54 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; get effective area
 	earea = ubsspec / rspho
 	;
+	; Balmer lines
+	blines = [4861., 4341., 4102., 3970., 3889., 3835.]
+	;
+	; default values (for BM)
+	bwid = 0.017	; fractional width to mask
+	ford = 9	; fit order
+	sigf = 3.0	; rejection sigma
+	if strpos(kcfg.bgratnam,'BL') ge 0 then begin
+		bwid = 0.008
+		ford = 7
+		sigf = 4.0
+	endif
+	if strpos(kcfg.bgratnam,'BH') ge 0 then begin
+		bwid = 0.008
+		ford = 9
+		sigf = 3.0
+	endif
+	;
 	; fit inverse sensitivity and effective area
 	t=where(w ge wgoo0 and w le wgoo1, nt)
 	if nt gt 0 then begin
+		if doplots then begin
+			yrng = get_plotlims(invsen[t])
+			plot,w,invsen,title=sname+' Img #: '+strn(kcfg.imgnum), $
+				xtitle='Wave (A)', $
+				ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
+				yran=yrng,/ys
+			wlm0 = -1.
+			wlm1 = -1.
+			while wlm0 ge wlm1 do begin
+				print,'Mark short wavelength limit'
+				cursor,wlm0,yy,/data,/down
+				oplot,[wlm0,wlm0],!y.crange,linesty=2
+				print,'Mark long wavelgnth limit'
+				cursor,wlm1,yy,/data,/down
+				oplot,[wlm1,wlm1],!y.crange,linesty=2
+			endwhile
+			kcwi_print_info,ppar,pre,'Wavelength range for Invsens fit',wlm0,wlm1, $
+				format='(a,2f9.2)'
+			read,'Next: ',q
+			t = where(w ge wlm0 and w le wlm1, nt)
+		endif
 		;
 		; set up fitting vectors, flux, waves, measure errors
 		sf = invsen[t]
 		wf = w[t]
 		mf = sf-sf
 		me = sf * 1.e-3
-		;
-		; Balmer lines
-		blines = [4861., 4341., 4102., 3970., 3889., 3835.]
-		bwid = 0.017
-		ford = 9
-		sigf = 3.0
-		if strpos(kcfg.bgratnam,'BL') ge 0 then begin
-			bwid = 0.008
-			ford = 7
-			sigf = 4.0
-		endif
-		if strpos(kcfg.bgratnam,'BH') ge 0 then begin
-			bwid = 0.008
-			ford = 9
-			sigf = 3.0
-		endif
 		;
 		; loop over Balmer lines
 		for ib = 0, n_elements(blines)-1 do begin
@@ -514,8 +527,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	;
 	; write out inverse sensitivity file
 	ofil = kcwi_get_imname(ppar,kcfg.imgnum,'_invsens',/nodir)
-	;kcwi_write_image,invsen,hdr,ofil,ppar
-	kcwi_write_image,finvsen,hdr,ofil,ppar
+	kcwi_write_image,[[invsen],[finvsen],[obsspec]],hdr,ofil,ppar
 	;
 	; update effective area header
 	sxaddpar,hdr,'INVSENS','F',' effective inv. sens. spectrum?'
@@ -525,8 +537,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	;
 	; write out effective area file
 	ofil = kcwi_get_imname(ppar,kcfg.imgnum,'_ea',/nodir)
-	;kcwi_write_image,earea,hdr,ofil,ppar
-	kcwi_write_image,fearea,hdr,ofil,ppar
+	kcwi_write_image,[[earea],[fearea]],hdr,ofil,ppar
 	;
 	return
 end
