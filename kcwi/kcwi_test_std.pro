@@ -251,6 +251,15 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		return
 	endif
 	kcwi_print_info,ppar,pre,'Number of standard points',nsroi
+	;
+	; how many points?
+	if nsroi gt 20 then begin
+		stdpsym = -3
+		stdsymsi = 1
+	endif else begin
+		stdpsym = 4
+		stdsymsi = 3.0
+	endelse
 	swl = swl[sroi]
 	sflx = sflx[sroi]
 	sfw = sfw[sroi]
@@ -280,8 +289,8 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		xran=[wall0,wall1], /xs,xtickformat='(a1)', $
 		ytitle='!3Flam (erg s!U-1!N cm!U-2!N A!U-1!N)',yran=yrng,/ys, $
 		pos=[0.15,0.30,0.95,0.95]
-	oplot,sdat.wavelength,sdat.flux,color=colordex('red'),psym=4, $
-		symsize=3.0,thick=3
+	oplot,sdat.wavelength,sdat.flux,color=colordex('red'),psym=stdpsym, $
+		symsize=stdsymsi,thick=3
 	oplot,w,rsflx,color=colordex('blue')
 	oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
 	oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
