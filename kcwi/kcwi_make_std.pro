@@ -170,6 +170,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	;
 	; display status
 	doplots = (ppar.display ge 2)
+	plotsky = (ppar.display ge 3)
 	;
 	; find standard in slices
 	tot = total(icub[*,gy0:gy1,z0:z1],3)	; sum over wavelength
@@ -230,7 +231,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			; perform subtraction
 			scub[i,*,j] = icub[i,*,j] - sky
 		endfor
-		if doplots then begin
+		if plotsky then begin
 			yrng = get_plotlims(skyspec[gz])
 			plot,w,skyspec,title='Slice '+strn(i)+ $
 				' SKY, Img #: '+strn(kcfg.imgnum), $
@@ -242,12 +243,9 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				thick=3
 			read,'Next? (Q-quit plotting, <cr> - next): ',q
 			if strupcase(strmid(strtrim(q,2),0,1)) eq 'Q' then $
-				doplots = 0
+				plotsky = 0
 		endif
 	endfor
-	;
-	; recover plot status
-	doplots = (ppar.display ge 2)
 	;
 	; apply extinction correction
 	ucub = scub	; uncorrected cube
@@ -346,19 +344,19 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				xtitle='Wave (A)', $
 				ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
 				/ylog,/ys
-			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
+			oplot,[wgoo0,wgoo0],10^!y.crange,color=colordex('green'), $
 				thick=3
-			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
+			oplot,[wgoo1,wgoo1],10^!y.crange,color=colordex('green'), $
 				thick=3
 			wlm0 = -1.
 			wlm1 = -1.
 			while wlm0 ge wlm1 do begin
 				print,'Mark short wavelength limit'
 				cursor,wlm0,yy,/data,/down
-				oplot,[wlm0,wlm0],!y.crange,linesty=2
+				oplot,[wlm0,wlm0],10^!y.crange,linesty=2
 				print,'Mark long wavelgnth limit'
 				cursor,wlm1,yy,/data,/down
-				oplot,[wlm1,wlm1],!y.crange,linesty=2
+				oplot,[wlm1,wlm1],10^!y.crange,linesty=2
 			endwhile
 			kcwi_print_info,ppar,pre,'Wavelength range for Invsens fit',wlm0,wlm1, $
 				format='(a,2f9.2)'
