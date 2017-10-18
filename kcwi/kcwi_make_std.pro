@@ -433,7 +433,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			oplot,wf,mf,psym=7
 			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
 			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
-			for ib=0,n_elements(blines) do $
+			for ib=0,n_elements(blines)-1 do $
 				oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('red'),linesty=2
 			read,'r - restore pts, d - delete pts, f - re-fit, q - quit fitting: ',q
 			;
