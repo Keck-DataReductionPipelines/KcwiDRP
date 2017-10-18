@@ -358,7 +358,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	if ngoo gt 5 then begin
 		maxea = max(ea[goo,1])
 		mo = moment(ea[goo,1])
-		yrng = get_plotlims(ea[goo])
+		yrng = get_plotlims(ea[goo,1])
 	endif else begin
 		maxea = max(ea[*,1])
 		mo = moment(ea[*,1])
