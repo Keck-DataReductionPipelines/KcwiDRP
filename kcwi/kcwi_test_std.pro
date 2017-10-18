@@ -356,13 +356,13 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		read,'next: ',q
 	goo = where(wea gt wgoo0 and wea lt wgoo1, ngoo)
 	if ngoo gt 5 then begin
-		maxea = max(ea[goo])
-		mo = moment(ea[goo])
+		maxea = max(ea[goo,1])
+		mo = moment(ea[goo,1])
 		yrng = get_plotlims(ea[goo])
 	endif else begin
-		maxea = max(ea[*,0])
-		mo = moment(ea[*,0])
-		yrng = get_plotlims(ea[*,0])
+		maxea = max(ea[*,1])
+		mo = moment(ea[*,1])
+		yrng = get_plotlims(ea[*,1])
 	endelse
 	if yrng[0] lt 0. then yrng[0] = 0.
 	if area gt 0 then begin
