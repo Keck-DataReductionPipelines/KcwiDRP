@@ -342,7 +342,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			;
 			; get good wavelength range
 			gd = where(invsen gt 0.)
-			plot,w,invsen[gd],title=sname+' Img #: '+strn(kcfg.imgnum), $
+			plot,w[gd],invsen[gd],title=sname+' Img #: '+strn(kcfg.imgnum), $
 				xtitle='Wave (A)', $
 				ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
 				/ylog,/ys
@@ -352,7 +352,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				thick=3
 			wlma = -1.
 			wlmb = -1.
-			print,'Mark one wavelength limit'
+			print,'Mark first wavelength limit'
 			cursor,wlma,yy,/data,/down
 			oplot,[wlma,wlma],10^!y.crange,linesty=2
 			print,'Mark next wavelength limit'
@@ -434,7 +434,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
 			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
 			for ib=0,n_elements(blines)-1 do $
-				oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('red'),linesty=2
+				oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('blue'),linesty=2
 			read,'r - restore pts, d - delete pts, f - re-fit, q - quit fitting: ',q
 			;
 			; all done
