@@ -169,7 +169,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		gy0,gy1,z0,z1,w[z0],w[z1],format='(a,4i6,2f9.3)'
 	;
 	; display status
-	doplots = (ppar.display ge 2)
+	interact = (ppar.display ge 2)
 	plotsky = (ppar.display ge 3)
 	;
 	; find standard in slices
@@ -338,7 +338,9 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; fit inverse sensitivity and effective area
 	t=where(w ge wgoo0 and w le wgoo1, nt)
 	if nt gt 0 then begin
-		if doplots then begin
+		if interact then begin
+			;
+			; get good wavelength range
 			gd = where(invsen gt 0.)
 			plot,w,invsen[gd],title=sname+' Img #: '+strn(kcfg.imgnum), $
 				xtitle='Wave (A)', $
@@ -348,16 +350,16 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				thick=3
 			oplot,[wgoo1,wgoo1],10^!y.crange,color=colordex('green'), $
 				thick=3
-			wlm0 = -1.
-			wlm1 = -1.
-			while wlm0 ge wlm1 do begin
-				print,'Mark short wavelength limit'
-				cursor,wlm0,yy,/data,/down
-				oplot,[wlm0,wlm0],10^!y.crange,linesty=2
-				print,'Mark long wavelgnth limit'
-				cursor,wlm1,yy,/data,/down
-				oplot,[wlm1,wlm1],10^!y.crange,linesty=2
-			endwhile
+			wlma = -1.
+			wlmb = -1.
+			print,'Mark one wavelength limit'
+			cursor,wlma,yy,/data,/down
+			oplot,[wlma,wlma],10^!y.crange,linesty=2
+			print,'Mark next wavelength limit'
+			cursor,wlmb,yy,/data,/down
+			oplot,[wlmb,wlmb],10^!y.crange,linesty=2
+			wlm0 = min([wlma,wlmb])
+			wlm1 = max([wlma,wlmb])
 			kcwi_print_info,ppar,pre,'Wavelength range for Invsens fit',wlm0,wlm1, $
 				format='(a,2f9.2)'
 			read,'Next: ',q
@@ -378,8 +380,6 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				    wf lt blines[ib] + blines[ib]*bwid, nroi)
 			if nroi gt 0 then begin
 				use[roi] = 0
-				;me[roi] = me[roi] * 1.e9
-				;mf[roi] = sf[roi]
 				kcwi_print_info,ppar,pre, $
 					'Masking Balmer line',blines[ib],bwid, $
 					format='(a,f6.1,f8.4)'
@@ -433,6 +433,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			oplot,wf,mf,psym=7
 			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
 			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
+			for ib=0,n_elements(blines) do begin
+				oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('red'),linesty=2
 			read,'r - restore pts, d - delete pts, f - re-fit, q - quit fitting: ',q
 			;
 			; all done
@@ -448,16 +450,16 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				;
 				; mark a region for resoration or deletion
 				endif else begin
-					wlm0 = -1.
-					wlm1 = -1.
-					while wlm0 ge wlm1 do begin
-						print,'Mark short wavelength limit'
-						cursor,wlm0,yy,/data,/down
-						oplot,[wlm0,wlm0],!y.crange,linesty=2
-						print,'Mark long wavelgnth limit'
-						cursor,wlm1,yy,/data,/down
-						oplot,[wlm1,wlm1],!y.crange,linesty=2
-					endwhile
+					wlma = -1.
+					wlmb = -1.
+					print,'Mark first wavelength limit'
+					cursor,wlma,yy,/data,/down
+					oplot,[wlma,wlma],!y.crange,linesty=2
+					print,'Mark next wavelgnth limit'
+					cursor,wlmb,yy,/data,/down
+					oplot,[wlmb,wlmb],!y.crange,linesty=2
+					wlm0 = min([wlma,wlmb])
+					wlm1 = max([wlma,wlmb])
 					roi = where(wf ge wlm0 and wf le wlm1, nroi)
 					;
 					if nroi gt 0 then begin
@@ -485,7 +487,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	endelse
 	;
 	; plot inverse sensitivity
-	if doplots then begin
+	if interact then begin
 		;
 		; plot effective area (cm^2)
 		goo = where(w gt wgoo0 and w lt wgoo1, ngoo)
