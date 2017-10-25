@@ -356,10 +356,17 @@ and '_mskf.fits'.
 Stage 4 - geometric solution and data cube generation:
 
 Once you are happy with the kcwi.proc and kcwi.ppar files, just execute
-stage4.  By default it looks for the kcwi.ppar file in './redux/', but you
-can specify it on the command line.
+stage4.  By default it looks for the kcwi.proc and kcwi.ppar files in 
+'./redux/', but you can specify them on the command line.
 
-IDL> kcwi_stage4geom,'./kcwi.ppar'
+IDL> kcwi_stage4geom, './kcwi.proc', './kcwi.ppar'
+
+
+NB: Unless there is a good reason, it is not recommended that you specify
+these filenames on the command line.  In general, you will want to edit the
+files in the redux directory and just issue the command with no parameters.
+
+IDL> kcwi_stage4geom
 
 The first step will be to trace the bars in the 'cbars' image.  If you set
 DISPLAY=2, you will see a plot for the middle row of each bar.  You can

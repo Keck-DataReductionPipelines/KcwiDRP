@@ -451,9 +451,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	; is there anything left to process?
 	if nproc le 0 then begin
 		kcwi_print_info,ppar,pre,'no object/cal images to process', $
-			/error
-		free_lun,ll
-		return
+			/warning
 	endif
 	;
 	; gather configuration data on each observation in caldir
