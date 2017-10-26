@@ -627,15 +627,22 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; ASSOCIATE WITH MASTER BIAS IMAGE
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		if ppar.nbgrps gt 0 then begin
+		if ppar.nbgrps gt 0 or keyword_set(altcaldir) then begin
 			tlist = ['xbinsize','ybinsize','ampmode', $
 				 'ccdmode','gainmul']
 			;
-			; we don't really need these to be bias-subtracted
+			; these don't need to be bias subtracted
 			sile = (strmatch(kcfg[p].imgtype,'cbars') or $
 				strmatch(kcfg[p].imgtype,'arc'))
-			mcfg = kcwi_match_cfg(bcfg,kcfg[p],ppar,tlist, $
-				count=b,silent=sile)
+			;
+			; don't check if no bias groups
+			if ppar.nbgrps gt 0 then begin
+				mcfg = kcwi_match_cfg(bcfg,kcfg[p],ppar,tlist, $
+					count=b,silent=sile)
+			endif else begin
+				mcfg = -1
+				b = 0
+			endelse
 			;
 			; multiple matches, take the closest one in sequence
 			if b gt 1 then begin
@@ -665,7 +672,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				mbfile = ''
 				;
 				; did we specify an alternative?
-				if keyword_set(altcaldir) then begin
+				if keyword_set(altcaldir) and not sile then begin
 					mbfile = kcwi_alt_cals(kcfg[p],adir,ppar,/bias)
 					;
 					; log if matched
@@ -690,9 +697,19 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		; ASSOCIATE WITH MASTER DARK IMAGES
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		if ( strmatch(kcfg[p].imgtype,'dark') eq 1 or $
-		     strmatch(kcfg[p].imgtype,'object') eq 1 ) and ppar.ndgrps gt 0 then begin
+		     strmatch(kcfg[p].imgtype,'object') eq 1 ) and $
+		     (ppar.ndgrps gt 0 or keyword_set(altcaldir)) then begin
 			tlist = ['xbinsize','ybinsize','ampmode','ccdmode']
-			mcfg = kcwi_match_cfg(dcfg,kcfg[p],ppar,tlist,count=d)
+			;
+			; don't check if no dark groups
+			if ppar.ndgrps gt 0 then begin
+				mcfg = kcwi_match_cfg(dcfg,kcfg[p],ppar,tlist,count=d)
+			endif else begin
+				mcfg = -1
+				d = 0
+			endelse
+			;
+			; pick best match
 			if d ge 1 then begin
 				;
 				; refine based on exposure time
@@ -747,14 +764,23 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		;
 		; no sense flat fielding the dark frames
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
-			ppar.nfgrps gt 0 then begin
+			(ppar.nfgrps gt 0 or keyword_set(altcaldir)) then begin
 			;
 			; we don't really need these to be flat-fielded
 			sile = (strmatch(kcfg[p].imgtype,'cbars') or $
 				strmatch(kcfg[p].imgtype,'arcbars') or $
 				strmatch(kcfg[p].imgtype,'arc'))
-			mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time, $
-				count=f,silent=sile)
+			;
+			; don't check if no flat groups
+			if ppar.nfgrps gt 0 then begin
+				mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time, $
+					count=f,silent=sile)
+			endif else begin
+				mcfg = -1
+				f = 0
+			endelse
+			;
+			; record match
 			if f eq 1 then begin
 				mffile = mcfg.groupfile
 				;
@@ -770,7 +796,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				mffile = ''
 				;
 				; did we specify an alternative?
-				if keyword_set(altcaldir) then begin
+				if keyword_set(altcaldir) and not sile then begin
 					mffile = kcwi_alt_cals(kcfg[p],adir,ppar,/flat)
 					;
 					; log if matched
@@ -802,8 +828,17 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		;
 		; no sense creating a dark data cube or matching direct image
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and strpos(kcfg[p].obstype,'direct') lt 0 and $
-			ppar.nggrps gt 0 then begin
-			mcfg = kcwi_match_cfg(ccfg,kcfg[p],ppar,mtags,imgtype='cbars',/time,count=c,/silent)
+			(ppar.nggrps gt 0 or keyword_set(altcaldir)) then begin
+			;
+			; don't check unless there are geom groups
+			if ppar.nggrps gt 0 then begin
+				mcfg = kcwi_match_cfg(ccfg,kcfg[p],ppar,mtags,imgtype='cbars',/time,count=c,/silent)
+			endif else begin
+				mcfg = -1
+				c = 0
+			endelse
+			;
+			; record match
 			if c eq 1 then begin
 				;
 				; record cbars filename
@@ -861,8 +896,17 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		;
 		; no sense creating a dark direct image
 		if strpos(kcfg[p].obstype,'direct') ge 0 and strmatch(kcfg[p].imgtype,'dark') ne 1 and $
-			ppar.ndggrps gt 0 then begin
-			mcfg = kcwi_match_cfg(dccfg,kcfg[p],ppar,dtags,imgtype='arcbars',/time,count=c,/silent)
+			(ppar.ndggrps gt 0 or keyword_set(altcaldir)) then begin
+			;
+			; don't check unless we have direct geom groups
+			if ppar.ndggrps gt 0 then begin
+				mcfg = kcwi_match_cfg(dccfg,kcfg[p],ppar,dtags,imgtype='arcbars',/time,count=c,/silent)
+			endif else begin
+				mcfg = -1
+				c = 0
+			endelse
+			;
+			; record match
 			if c eq 1 then begin
 				;
 				; record arcbars filename
@@ -922,17 +966,26 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		; also require geometry solution
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and $
 		   strpos(kcfg[p].obstype,'direct') lt 0 and $
-		   nprofs gt 0 and cbfile ne '' and arfile ne '' then begin
-			mcfg = kcwi_match_cfg(pcfg,kcfg[p],ppar,mtags, $
+		   (nprofs gt 0 or ntrrs gt 0 or ndrrs gt 0 or keyword_set(altcaldir)) and $
+		   cbfile ne '' and arfile ne '' then begin
+		   	;
+			; don't check unless we have profiles
+			if nprofs gt 0 then begin
+				mcfg = kcwi_match_cfg(pcfg,kcfg[p],ppar,mtags, $
 						count=s,/time)
+			endif else begin
+				mcfg = -1
+				s = 0
+			endelse
+			;
+			; record match
 			if s eq 1 then begin
 				;
 				; record slice profile observation filename
 				pfile = strmid(mcfg.obsfname,0,strpos(mcfg.obsfname,'.fit'))+'_prof.fits'
 				;
 				; log
-				kcwi_print_info,ppar,pre, $
-					'slice profile file = '+pfile
+				kcwi_print_info,ppar,pre, 'slice profile file = '+pfile
 				pfile = odir + pfile
 				;
 				; handle the ambiguous case or 
@@ -1034,7 +1087,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		; also require geometry solution
 		if strmatch(kcfg[p].imgtype,'dark') ne 1 and $
 		   strpos(kcfg[p].obstype,'direct') lt 0 and $
-		   nrrs gt 0 and cbfile ne '' and arfile ne '' then begin
+		   (nrrs gt 0 or keyword_set(altcaldir)) and cbfile ne '' and arfile ne '' then begin
 			;
 			; twilight flats
 			if ntrrs gt 0 then $
@@ -1138,9 +1191,18 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		; correct only object frames
 		if strmatch(kcfg[p].imgtype,'object') eq 1 and $
 		   strpos(kcfg[p].obstype,'direct') lt 0 and $
-		   nstds gt 0 then begin
-			mcfg = kcwi_match_cfg(stdcfg,kcfg[p],ppar,mtags, $
+		   (nstds gt 0 or keyword_set(altcaldir)) then begin
+		   	;
+			; don't check unless we have stds
+			if nstds gt 0 then begin
+				mcfg = kcwi_match_cfg(stdcfg,kcfg[p],ppar,mtags, $
 						count=std,/time)
+			endif else begin
+				mcfg = -1
+				std = 0
+			endelse
+			;
+			; record match
 			if std eq 1 then begin
 				;
 				; record stadard observation filename
