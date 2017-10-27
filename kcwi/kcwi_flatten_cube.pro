@@ -24,6 +24,7 @@
 ;
 ; KEYWORDS:
 ;	ISCALE	- set to scale output into integers
+;	TRIM	- set to number of pixels to trim off slice edges
 ;
 ; SIDE EFFECTS:
 ;	Writes a 2-D image with name based on input.
@@ -35,8 +36,9 @@
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2017-APR-27	Initial version
+;	2017-OCT-27	Added TRIM keyword
 ;-
-pro kcwi_flatten_cube,cfile,iscale=iscale
+pro kcwi_flatten_cube,cfile,iscale=iscale,trim=trim
 	;
 	; setup
 	pre = 'KCWI_FLATTEN_CUBE'
@@ -46,6 +48,11 @@ pro kcwi_flatten_cube,cfile,iscale=iscale
 		cfile = ''
 		read,'Input cube image file name: ',cfile
 	endif
+	;
+	; check trim keyword
+	if keyword_set(trim) then $
+		trm = trim $
+	else	trm = 0
 	;
 	; check if it exists
 	if file_test(cfile) then begin
@@ -61,8 +68,13 @@ pro kcwi_flatten_cube,cfile,iscale=iscale
 			oim = fltarr(sz[0]*sz[1],sz[2])
 			;
 			; pack slices
-			for i=0,sz[0]-1 do $
-				oim[i*sz[1]:(i+1)*sz[1]-1,*] = cub[i,*,*]
+			for i=0,sz[0]-1 do begin
+				ix0 = 0 + trm
+				ix1 = sz[1] - (trm + 1)
+				ox0 = i*sz[1] + trm
+				ox1 = (i+1)*sz[1] - (trm + 1)
+				oim[ox0:ox1,*] = cub[i,ix0:ix1,*]
+			endfor
 			;
 			; get output name
 			ofil = repstr(cfile,'.fits','_2d.fits')
