@@ -20,6 +20,7 @@
 ; OUTPUTS:
 ;
 ; KEYWORDS:
+;	HELP	- print calling sequence
 ;	ISCALE	- set to scale output into integers
 ;	TRIM	- set to number of pixels to trim off slice edges
 ;	REVERSE	- set to reverse the flattening: create a 3d cube from 2d flattened cube
@@ -40,10 +41,16 @@
 ;	2017-OCT-27	Added TRIM keyword
 ;	2017-OCT-30	Added REVERSE keyword
 ;-
-pro kcwi_flatten_cube,cfile,iscale=iscale,trim=trim,reverse=reverse
+pro kcwi_flatten_cube,cfile,help=help,iscale=iscale,trim=trim,reverse=reverse
 	;
 	; setup
 	pre = 'KCWI_FLATTEN_CUBE'
+	;
+	; help request
+	if keyword_set(help) then begin
+		print,pre+': Info - Usage: '+pre+', <cube_filename> [,/iscale, /reverse, trim=n_pixels'
+		return
+	endif
 	;
 	; check inputs
 	if n_params(0) lt 1 then begin
