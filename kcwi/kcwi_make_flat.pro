@@ -37,6 +37,7 @@
 ;	2013-AUG-29	Initial version
 ;	2013-SEP-10	Preliminary calculation of variance and mask images
 ;	2013-SEP-16	use ppar to pass pipeline params
+;	2017-NOV-01	change from median to mean stack because of intensity decay
 ;-
 pro kcwi_make_flat,ppar
 	;
@@ -154,10 +155,10 @@ pro kcwi_make_flat,ppar
 			stack[i,*,*] = im
 		endfor	; loop over remaining images
 		;
-		; create master flat from median stack
+		; create master flat from median (mean) stack
 		mflat = fltarr(nx,ny)
 		for yi=0,ny-1 do for xi=0,nx-1 do $
-			mflat[xi,yi] = median(stack[*,xi,yi])
+			mflat[xi,yi] = mean(stack[*,xi,yi])
 	endif
 	;
 	; now fit master flat
@@ -165,7 +166,7 @@ pro kcwi_make_flat,ppar
 	;
 	; update master flat header
 	sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
-	sxaddpar,hdr,'NMEDIAN',nf, $
+	sxaddpar,hdr,'NMEAN',nf, $
 		' number of images used for stack'
 	sxaddpar,hdr,'MASTFLAT','T',' master flat image?'
 	sxaddpar,hdr,'FLATLST',ppar.cflats, $
