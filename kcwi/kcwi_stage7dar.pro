@@ -116,8 +116,8 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 		;
 		; image to process
 		;
-		; first check for flux calibrated cube
-		obfil = kcwi_get_imname(kpars[i],imgnum[i],'_icubes',/reduced)
+		; first check for sky subtracted cube
+		obfil = kcwi_get_imname(kpars[i],imgnum[i],'_icubek',/reduced)
 		;
 		; if not check for relative response corrected cube
 		if not file_test(obfil) then $

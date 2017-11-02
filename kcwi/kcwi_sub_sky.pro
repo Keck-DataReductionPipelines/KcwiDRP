@@ -72,7 +72,7 @@ pro kcwi_sub_sky,ppar,hdr,cub,msk
 			mvec[is*sz[1]+yt:(is+1)*sz[1]-(yt+1)] = $
 				reform(msk[is,yt:sz[1]-(yt+1),iw])
 		endfor
-		ims,svec,sky,sig,wgt,siglim=2.5
+		ims_asym,svec,sky,sig,wgt,siglim=[2.0,3.0]
 		rej = where(wgt eq 0, nrej)
 		if nrej gt 0 then $
 			mvec[rej] = mvec[rej] + 4b
