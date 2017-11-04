@@ -78,7 +78,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 	; setup
 	pre = 'KCWI_STAGE1'
 	startime=systime(1)
-	crexthresh = 60.
+	crexthresh = 2.
 	q = ''	; for queries
 	;
 	; help request
