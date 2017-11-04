@@ -364,10 +364,10 @@ pro kcwi_stage4geom,procfname,ppfname,help=help,verbose=verbose, display=display
 							; mask cube
 							mfil = repstr(obfil,'_int','_msk')
 							if file_test(mfil,/read) then begin
-								msk = float(mrdfits(mfil,0,mskhdr,/silent))
+								msk = mrdfits(mfil,0,mskhdr,/silent)
 								;
                                                         	sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
-                                                        	kcwi_apply_geom,msk,mskhdr,kgeom,kpars[i],mcub,mchdr   
+                                                        	kcwi_apply_geom,msk,mskhdr,kgeom,kpars[i],mcub,mchdr,/mask
 								;
 								; write out mask cube
 								ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mcube',/nodir)

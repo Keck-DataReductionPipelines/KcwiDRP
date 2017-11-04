@@ -72,12 +72,26 @@ pro kcwi_sub_sky,ppar,hdr,cub,msk
 			mvec[is*sz[1]+yt:(is+1)*sz[1]-(yt+1)] = $
 				reform(msk[is,yt:sz[1]-(yt+1),iw])
 		endfor
-		ims_asym,svec,sky,sig,wgt,siglim=[2.0,3.0]
-		rej = where(wgt eq 0, nrej)
-		if nrej gt 0 then $
-			mvec[rej] = mvec[rej] + 4b
+		;
+		; reject masked pixels
+		g = where(mvec le 2, ng)
+		;
+		; if we have enough do an asymmetric rejection
+		; of object flux from the sky vector (20 iterations)
+		if ng gt 5 then begin
+			ims_asym,svec[g],sky,sig,siglim=[2.0,3.0]
+			;
+			; mask the object pixels
+			obj = where(svec ge 2.0*sky, nobj)
+			if nobj gt 0 then $
+				mvec[obj] = mvec[obj] + 8b
+		;
+		; otherwise set sky to zero
+		endif else sky = 0.
+		;
+		; insert into the sky,msk cubes
 		for is = 0,sz[0]-1 do begin
-			scub[is,*,iw] = sky ;[is*sz[1]:(is+1)*sz[1]-1]
+			scub[is,*,iw] = sky
 			msk[is,*,iw] = mvec[is*sz[1]:(is+1)*sz[1]-1]
 		endfor
 	endfor

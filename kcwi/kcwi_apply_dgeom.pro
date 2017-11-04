@@ -198,6 +198,35 @@ if ppar.crpix2 le 0. then $
 	crpix2 = maximx/2. $	; spatial slit direction
 else	crpix2 = ppar.crpix2
 ;
+; adjust for pointing origin
+porg = strtrim(sxpar(hdr,'PONAME'),2)
+if strpos(porg,'IFU') ge 0 then begin
+	case kgeom.ifunum of
+		1:	begin	; Large
+				off1 = 1.0
+				off2 = 4.0
+			end
+		2:	begin	; Medium
+				off1 = 1.0
+				off2 = 5.0
+			end
+		3:	begin	; Small
+				off1 = 0.05
+				off2 = 5.6
+			end
+		else:	begin	; Undefined
+				kcwi_print_info,ppar,pre,'Unknown IFU number', $
+					kgeom.ifunum, form='(a,i3)',/warning
+				off1 = 0.0
+				off2 = 0.0
+			end
+	endcase
+	off1 = off1 / float(kgeom.xbinsize)
+	off2 = off2 / float(kgeom.ybinsize)
+	crpix1 += off1
+	crpix2 += off2
+endif
+;
 ; WCS keywords
 sxaddpar,dhdr,'WCSDIM',2,' number of dimensions in WCS'
 sxaddpar,dhdr,'WCSNAME','KCWI'

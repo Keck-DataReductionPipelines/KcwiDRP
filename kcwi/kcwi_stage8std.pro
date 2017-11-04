@@ -242,8 +242,8 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					if file_test(mfil) then begin
 						msk = mrdfits(mfil,0,mskhdr,/silent)
 					endif else begin
-						msk = intarr(sz)
-						msk[0] = 1	; give mask value range
+						msk = bytarr(sz)
+						msk[0] = 1b	; give mask value range
 						mskhdr = hdr
 						kcwi_print_info,ppar,pre,'mask image not found for: '+obfil,/warning
 					endelse

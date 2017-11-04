@@ -43,7 +43,7 @@
 ;       2015-APR-25     Added CWI flexure hooks (MM)
 ;	2016-OCT-05	Removed CWI flexure routines
 ;-
-pro kcwi_apply_geom,img,hdr,kgeom,ppar,cube,chdr,warpout=warpout
+pro kcwi_apply_geom,img,hdr,kgeom,ppar,cube,chdr,warpout=warpout,mask=mask
 ;
 ; startup
 pre = 'KCWI_APPLY_GEOM'
@@ -61,6 +61,10 @@ sz = size(img,/dim)
 ; get the padding for image
 pad = kgeom.ypad
 ;
+; pad y values
+y0 = pad
+y1 = (sz[1]-1) + pad
+;
 ; get low trim wavelength
 wave0 = kgeom.wave0out
 ;
@@ -68,11 +72,13 @@ wave0 = kgeom.wave0out
 lastpix = long ( ( kgeom.wave1out - kgeom.wave0out ) / kgeom.dwout )
 ;
 ; pad image to include full slices
-pimg = fltarr(sz[0],sz[1]+pad+pad)
+;
+; mask regions outside of slices with 4
+if keyword_set(mask) then $
+	pimg = bytarr(sz[0],sz[1]+pad+pad) + 4b $
+else	pimg = fltarr(sz[0],sz[1]+pad+pad)
 ;
 ; insert original
-y0 = pad
-y1 = (sz[1]-1) + pad
 pimg[*,y0:y1] = img
 ;
 ; get slice size
@@ -128,11 +134,17 @@ for i=0,23 do begin
 	;
 	; trim slice
 	slice = warp[0:slsize,0:lastpix<(wsz[1]-1)]
+	;
+	; create our cube
 	if i eq 0 then begin
 		sz = size(slice,/dim)
-		cube = fltarr(24,sz[0],sz[1])
+		if keyword_set(mask) then $
+			cube = bytarr(24,sz[0],sz[1]) $
+		else	cube = fltarr(24,sz[0],sz[1])
 	endif
-	cube[i,*,*] = slice
+	if keyword_set(mask) then $
+		cube[i,*,*] = byte(slice) $
+	else	cube[i,*,*] = slice
 	if ppar.verbose eq 1 then $
 		print,strn(i)+' ',format='($,a)'
 endfor
@@ -260,6 +272,35 @@ else	crpix2 = ppar.crpix2
 if ppar.crpix3 le 0. then $
 	crpix3 = 1. $		; wavelength direction
 else	crpix3 = ppar.crpix3
+;
+; adjust for pointing origin
+porg = strtrim(sxpar(hdr,'PONAME'),2)
+if strpos(porg,'IFU') ge 0 then begin
+	case kgeom.ifunum of
+		1:	begin	; Large
+				off1 = 1.0
+				off2 = 4.0
+			end
+		2:	begin	; Medium
+				off1 = 1.0
+				off2 = 5.0
+			end
+		3:	begin	; Small
+				off1 = 0.05
+				off2 = 5.6
+			end
+		else:	begin	; Undefined
+				kcwi_print_info,ppar,pre,'Unknown IFU number', $
+					kgeom.ifunum, form='(a,i3)',/warning
+				off1 = 0.0
+				off2 = 0.0
+			end
+	endcase
+	off1 = off1 / float(kgeom.xbinsize)
+	off2 = off2 / float(kgeom.ybinsize)
+	crpix1 += off1
+	crpix2 += off2
+endif
 ;
 ; WCS keywords
 sxaddpar,chdr,'WCSDIM',3,' number of dimensions in WCS'

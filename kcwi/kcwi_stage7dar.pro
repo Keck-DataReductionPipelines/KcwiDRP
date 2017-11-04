@@ -269,13 +269,13 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 						sxaddpar,mskhdr,'crpix1',crpix1+float(pad_x)
 						sxaddpar,mskhdr,'crpix2',crpix2+float(pad_y)
 					endif else begin
-						msk = intarr(sz)
-						msk[0] = 1	; give mask value range
+						msk = bytarr(sz)
+						msk[0] = 1b	; give mask value range
 						mskhdr = hdr
 						kcwi_print_info,ppar,pre,'mask image not found for: '+obfil,/warning
 					endelse
-					msk_out = fltarr(sz[0]+2*pad_x, sz[1]+2*pad_y,sz[2]) + 4
-					msk_out[pad_x:pad_x+sz[0]-1, pad_y:pad_y+sz[1]-1,*] = msk
+					msk_out = fltarr(sz[0]+2*pad_x, sz[1]+2*pad_y,sz[2]) + 16.
+					msk_out[pad_x:pad_x+sz[0]-1, pad_y:pad_y+sz[1]-1,*] = float(msk)
 					;
 					; do correction
 					for j = 0,sz[2]-1 do begin
@@ -286,7 +286,7 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 						var_out[*,*,j] = fshift(var_out[*,*,j],xsh,ysh)
 						msk_out[*,*,j] = fshift(msk_out[*,*,j],xsh,ysh)
 					endfor
-	
+					msk_out = byte(msk_out)
 					;
 					; update header
 					sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
