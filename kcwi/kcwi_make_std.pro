@@ -341,11 +341,10 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		if interact then begin
 			;
 			; get good wavelength range
-			gd = where(invsen gt 0.)
-			plot,w[gd],invsen[gd],title=sname+' Img #: '+strn(kcfg.imgnum), $
+			gd = where(obsspec gt 0.)
+			plot,w[gd],obsspec[gd],title=sname+' Img #: '+strn(kcfg.imgnum), $
 				xtitle='Wave (A)', $
-				ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
-				/ylog,/ys
+				ytitle='Observed flux',/ylog;,/ys
 			oplot,[wgoo0,wgoo0],10^!y.crange,color=colordex('green'), $
 				thick=3
 			oplot,[wgoo1,wgoo1],10^!y.crange,color=colordex('green'), $
@@ -354,10 +353,10 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			wlmb = -1.
 			print,'Mark first wavelength limit'
 			cursor,wlma,yy,/data,/down
-			oplot,[wlma,wlma],10^!y.crange,linesty=2
+			oplot,[wlma,wlma],10^!y.crange,linesty=2,color=colordex('orange')
 			print,'Mark next wavelength limit'
 			cursor,wlmb,yy,/data,/down
-			oplot,[wlmb,wlmb],10^!y.crange,linesty=2
+			oplot,[wlmb,wlmb],10^!y.crange,linesty=2,color=colordex('orange')
 			wlm0 = min([wlma,wlmb])
 			wlm1 = max([wlma,wlmb])
 			kcwi_print_info,ppar,pre,'Wavelength range for Invsens fit',wlm0,wlm1, $
@@ -414,9 +413,30 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			status=fitstat)
 		finvsen = poly(w-wf0,res)
 		;
+		; create a standard flux window
+		device,Window_State=wins
+		if wins[1] ne 1 then $
+			window,1,title='Standard Flux'
+		;
 		; plot fits
 		done = (1 eq 0)
 		while not done do begin
+			;
+			; calculate calibrated spectrum
+			calspec = obsspec * finvsen
+			;
+			; now plot standard flux and calibrated spectrum
+			wset,1
+			yrng=get_plotlims(calspec)
+			if yrng[0] lt 0 then yrng[0] = 0.
+			plot,w,calspec,title=sname+' Img #: '+strn(kcfg.imgnum), $
+				xtitle='Wave(A)',xran=[wall0,wall1],/xs, $
+				ytitle='Flambda (erg/cm^2/A)',yran=yrng,/ys
+			oplot,w,rsflx,thick=3,color=colordex('red')
+			for ib=0,n_elements(blines)-1 do $
+				oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('blue'), $
+					linesty=2
+			; default measure_error
 			me = sf * 1.e-3
 			mf = sf-sf
 			b = where(use le 0, nb)
@@ -424,17 +444,22 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				me[b] = sf[b] * 1.e9
 				mf[b] = sf[b]
 			endif
-			yrng = get_plotlims(invsen[gz])
+			yrng = get_plotlims(sf,/log)
+			wset,0
 			plot,w,invsen,title=sname+' Img #: '+strn(kcfg.imgnum), $
 				xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 				ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
-				yran=yrng,/ys,xmargin=[11,3]
+				yran=yrng,/ylog,/ys,xmargin=[11,3]
 			oplot,w,finvsen,color=colordex('red')
-			oplot,wf,mf,psym=7
-			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
-			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
+			if nb gt 0 then $
+				oplot,wf[b],mf[b],psym=7
+			oplot,[wgoo0,wgoo0],10.^!y.crange,color=colordex('green'),thick=3
+			oplot,[wgoo1,wgoo1],10.^!y.crange,color=colordex('green'),thick=3
+			oplot,[wlm0,wlm0],10.^!y.crange,color=colordex('orange'),linesty=2
+			oplot,[wlm1,wlm1],10.^!y.crange,color=colordex('orange'),linesty=2
 			for ib=0,n_elements(blines)-1 do $
-				oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('blue'),linesty=2
+				oplot,[blines[ib],blines[ib]],10.^!y.crange,color=colordex('blue'), $
+					linesty=2
 			read,'r - restore pts, d - delete pts, f - re-fit, q - quit fitting: ',q
 			;
 			; all done
@@ -454,13 +479,13 @@ pro kcwi_make_std,kcfg,ppar,invsen
 					wlmb = -1.
 					print,'Mark first wavelength limit'
 					cursor,wlma,yy,/data,/down
-					oplot,[wlma,wlma],!y.crange,linesty=2
-					print,'Mark next wavelgnth limit'
+					oplot,[wlma,wlma],10.^!y.crange,linesty=2
+					print,'Mark next wavelength limit'
 					cursor,wlmb,yy,/data,/down
-					oplot,[wlmb,wlmb],!y.crange,linesty=2
-					wlm0 = min([wlma,wlmb])
-					wlm1 = max([wlma,wlmb])
-					roi = where(wf ge wlm0 and wf le wlm1, nroi)
+					oplot,[wlmb,wlmb],10.^!y.crange,linesty=2
+					wl0 = min([wlma,wlmb])
+					wl1 = max([wlma,wlmb])
+					roi = where(wf ge wl0 and wf le wl1, nroi)
 					;
 					if nroi gt 0 then begin
 						;
@@ -473,9 +498,9 @@ pro kcwi_make_std,kcfg,ppar,invsen
 							use[roi] = 0
 						endif else print,'I do not understand ',q
 					endif
-				endelse
-			endelse
-		endwhile
+				endelse	; marking a region
+			endelse	; not quitting
+		endwhile	; still working on fits
 		;
 		; now fit effective area
 		res = poly_fit(wf-wf0,earea[t],ford,/double,measure_error=me, $
