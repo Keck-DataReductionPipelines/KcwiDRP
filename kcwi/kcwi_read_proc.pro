@@ -105,7 +105,8 @@ function kcwi_read_proc,ppar,procf,imgs, $
 ; skip past header or commented key,value pairs
 		while not eof(il) and $
 			(strpos(rec,'#') ge 0 or $
-		         strpos(rec,'=') ge 0) do readf,il,rec
+		         strpos(rec,'=') ge 0) or $
+			 strlen(strtrim(rec,2)) le 5 do readf,il,rec
 		if not eof(il) then begin
 			;
 			; new image to process

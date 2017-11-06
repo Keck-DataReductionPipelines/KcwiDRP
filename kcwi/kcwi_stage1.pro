@@ -1015,12 +1015,16 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					deepcolor
 					!p.background=colordex('white')
 					!p.color=colordex('black')
-					plot,fx,slp,/xs,psym=1,xtitle='ROW',ytitle='e-', $
+					plot,fx,slp,/xs,psym=1,xtitle='ROW',ytitle='Scattered Light (e-)', $
 						title='Image: '+strn(imgnum[i]), $
 						charth=2,charsi=1.5,xthi=2,ythi=2
 					oplot,fx,elp,color=colordex('blue')
 					oplot,fx[y0:y1],scat1,thick=3,color=colordex('red')
 					oplot,fx[y2:y3],scat2,thick=3,color=colordex('red')
+					kcwi_legend,['Data', 'Fit', 'Err'],thick=[1,3,1], $
+						charthi=2,charsi=1.5, $
+						color=[colordex('C'),colordex('R'),colordex('B')], $
+						linesty=[0,0,0]
 					;
 					; make interactive if display greater than 1
 					if plotscat and kpars[i].display ge 2 then begin
@@ -1037,12 +1041,16 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					deepcolor
 					!p.background=colordex('white')
 					!p.color=colordex('black')
-					plot,fx,slp,/xs,psym=1,xtitle='ROW',ytitle='e-', $
+					plot,fx,slp,/xs,psym=1,xtitle='ROW',ytitle='Scattered Light (e-)', $
 						title='Image: '+strn(imgnum[i]), $
 						charth=2,charsi=1.5,xthi=2,ythi=2
 					oplot,fx,elp,color=colordex('blue')
 					oplot,fx[y0:y1],scat1,thick=3,color=colordex('red')
 					oplot,fx[y2:y3],scat2,thick=3,color=colordex('red')
+					kcwi_legend,['Data', 'Fit', 'Err'],thick=[1,3,1], $
+						charthi=2,charsi=1.5, $
+						color=[colordex('C'),colordex('R'),colordex('B')], $
+						linesty=[0,0,0]
 					psclose
 				endif
 				;
