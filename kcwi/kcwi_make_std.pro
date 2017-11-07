@@ -385,32 +385,18 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			endif
 		endfor
 		;
-		; polynomial fit of inverse sensitivity
+		; ignore bad points by setting large errors
+		mf = sf-sf
 		b = where(use le 0, nb)
 		if nb gt 0 then begin
 			me[b] = sf[b] * 1.e9
-		endif
-		g = where(use ge 1, ng)
-		if ng le 0 then begin
-			g = lindgen(nt)
-			ng = nt
+			mf[b] = sf[b]
 		endif
 		;
-		; first pass
+		; initial polynomial fit of inverse sensitivity
 		wf0 = min(wf)
 		res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me, $
 			yfit=yfit,yband=yband,status=fitstat)
-		;
-		; now attempt to mask absorption lines
-		roi = where(sf-yfit gt sigf*yband, nroi)
-		if nroi gt 0 then begin
-			use[roi] = 0
-			me[roi] = sf[roi] * 1.e9
-		endif
-		;
-		; second pass
-		res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me, $
-			status=fitstat)
 		finvsen = poly(w-wf0,res)
 		;
 		; create a standard flux window
@@ -422,21 +408,14 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		done = (1 eq 0)
 		while not done do begin
 			;
-			; calculate calibrated spectrum
-			calspec = obsspec * finvsen
+			; good points
+			g = where(use ge 1, ng)
+			if ng le 0 then begin
+				g = lindgen(nt)
+				ng = nt
+			endif
 			;
-			; now plot standard flux and calibrated spectrum
-			wset,1
-			yrng=get_plotlims(calspec)
-			if yrng[0] lt 0 then yrng[0] = 0.
-			plot,w,calspec,title=sname+' Img #: '+strn(kcfg.imgnum), $
-				xtitle='Wave(A)',xran=[wall0,wall1],/xs, $
-				ytitle='Flambda (erg/cm^2/A)',yran=yrng,/ys
-			oplot,w,rsflx,thick=3,color=colordex('red')
-			for ib=0,n_elements(blines)-1 do $
-				oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('blue'), $
-					linesty=2
-			; default measure_error
+			; new bad points, marked by large errors
 			me = sf * 1.e-3
 			mf = sf-sf
 			b = where(use le 0, nb)
@@ -444,8 +423,55 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				me[b] = sf[b] * 1.e9
 				mf[b] = sf[b]
 			endif
-			yrng = get_plotlims(sf,/log)
+			;
+			; calculate calibrated spectrum
+			calspec = obsspec * finvsen
+			;
+			; now plot standard flux and calibrated spectrum
+			wset,1
+			yrng=get_plotlims(calspec[t])
+			if yrng[0] lt 0 then yrng[0] = 0.
+			plot,w,calspec,title=sname+' Img #: '+strn(kcfg.imgnum), $
+				xran=[wall0,wall1],/xs,xtickformat='(a1)', $
+				ytitle='!3Flam (erg s!U-1!N cm!U-2!N A!U-1!N',yran=yrng,/ys, $
+				pos=[0.07,0.30,0.98,0.95]
+			oplot,w,rsflx,thick=3,color=colordex('red')
+			oplot,[wlm0,wlm0],!y.crange,color=colordex('orange'),linesty=2
+			oplot,[wlm1,wlm1],!y.crange,color=colordex('orange'),linesty=2
+			for ib=0,n_elements(blines)-1 do $
+				oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('blue'), $
+					linesty=2
+			;
+			; calculate residuals
+			rsd = calspec - rsflx
+			frsd = 100.d0 * (rsd/rsflx)
+			mo = moment(rsd[t[g]],/nan)
+			fmo = moment(frsd[t[g]],/nan)
+			;
+			; annotate residuals
+			kcwi_legend,['<Resid> = '+strtrim(string(mo[0],format='(g13.3)'),2) + $
+				' +- '+strtrim(string(sqrt(mo[1]),format='(g13.3)'),2)+' Flam',$
+				'<Resid> = '+strtrim(string(fmo[0],format='(f8.2)'),2) + $
+				' +- '+strtrim(string(sqrt(fmo[1]),format='(f8.2)'),2)+' %'], $
+				/clear,clr_color=!p.background,/bottom
+			;
+			; plot residuals
+			yrng = get_plotlims(rsd[t[g]])
+			plot,w,rsd,xtitle='Wave (A)',xran=[wall0,wall1], /xs, $
+				ytitle='!3Obs-Cal',yran=yrng,/ys,pos=[0.07,0.05,0.98,0.30], $
+				/noerase
+			oplot,!x.crange,[0,0]
+			oplot,[wlm0,wlm0],!y.crange,color=colordex('orange'),linesty=2
+			oplot,[wlm1,wlm1],!y.crange,color=colordex('orange'),linesty=2
+			if nb gt 0 then $
+				oplot,w[t[b]],rsd[t[b]],psym=7
+			for ib=0,n_elements(blines)-1 do $
+				oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('blue'), $
+					linesty=2
+			;
+			; plot inverse sensitivity
 			wset,0
+			yrng = get_plotlims(sf,/log)
 			plot,w,invsen,title=sname+' Img #: '+strn(kcfg.imgnum), $
 				xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 				ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
@@ -460,7 +486,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			for ib=0,n_elements(blines)-1 do $
 				oplot,[blines[ib],blines[ib]],10.^!y.crange,color=colordex('blue'), $
 					linesty=2
-			read,'r - restore pts, d - delete pts, f - re-fit, q - quit fitting: ',q
+			read,'r - restore pts, d - delete pts, + - increase fit order, - - decrease fit order, f - re-fit, q - quit fitting: ',q
 			;
 			; all done
 			if strupcase(strtrim(q,2)) eq 'Q' then begin
@@ -472,6 +498,12 @@ pro kcwi_make_std,kcfg,ppar,invsen
 					res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me, $
 							status=fitstat)
 					finvsen = poly(w-wf0,res)
+				endif else if strtrim(q,2) eq '+' then begin
+					ford += 1
+					print,'Fitting order: ',ford
+				endif else if strtrim(q,2) eq '-' then begin
+					ford -= 1
+					print,'Fitting order: ',ford
 				;
 				; mark a region for resoration or deletion
 				endif else begin
