@@ -48,14 +48,16 @@ endif
   dwout = kgeom.dwout
   wave0out = kgeom.wave0out
   ldeg = kgeom.lastdegree
-  
-  xpad = 3
+  xbin = kgeom.xbinsize
+  xpad = 7
 
 ; process the degree, default to 3. 
   if n_elements(degree) eq 0 then degree = ldeg
   if degree lt 2 or degree gt 4 then degree = 3 
   
   outfile = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_wavemap",/reduced)
+  outfilepos = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_wavemap_pos",/reduced)
+  outfilesli = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_wavemap_sli",/reduced)
 
   x = dindgen(nx)
   y = dindgen(ny); ypad
@@ -66,7 +68,9 @@ endif
   yy = onex#y
   
   reverse_image = xx-xx-10
-  
+  slice_id=reverse_image+100
+  slice_position=reverse_image-90.0
+  tmp_slice_position=slice_position
   ; loop over slices
   for s=0, 23 do begin
      qs = where(slice eq s and xi gt 0 and finite(xw) and finite(yw), nqs)
@@ -81,12 +85,12 @@ endif
      y1 = yw[qs]
      x0min = min(x0)
      x0temp = x0-x0min+x0out
-;     stop
      ; generate a mapping
      polywarp,x1,y1,x0temp,y0,3,kx,ky,/double
      ; reset the "in" values
      xmm = minmax(x0)
-     qin = where(xx gt xmm[0]-xpad and xx lt xmm[1]+xpad and yy ge trimy0 and yy le trimy1, nqxin)
+     qin = where(xx gt xmm[0]-xpad and xx lt xmm[1]+xpad and $
+     		 yy ge trimy0 and yy le trimy1, nqxin)
      if nqxin eq 0 then begin
 	     kcwi_print_info,ppar,pre, $
 		"Sorry, no suitable points found. Confused. Exiting.",/error
@@ -98,7 +102,11 @@ endif
 
      ; set the pixel values to the wavelengths.
      reverse_image[xin-x0out+x0min,yin-ypad] = yout*dwout+wave0out
-
+     tmp_slice_position[xin-x0out+x0min,yin-ypad]= xout ;-x0min+x0out
+     qz = where(tmp_slice_position ge -2/xbin and tmp_slice_position le 142.0/xbin)
+     slice_id[qz]=s
+     slice_position[qz]=tmp_slice_position[qz]
+     tmp_slice_position[*]=-100
   endfor
 
   ;
@@ -141,6 +149,8 @@ endif
 
   ; write the file
   kcwi_print_info,ppar,pre,"Writing",outfile,/info,format='(a,1x,a)'
-  mwrfits, reverse_image, outfile, hdr,/create,/iscale
+  mwrfits, float(slice_position), outfilepos,hdr,/create
+  mwrfits, byte((slice_id)), outfilesli,hdr,/create
+  mwrfits, float(reverse_image), outfile, hdr,/create,/iscale
   kcwi_print_info,ppar,pre,"Generated reverse map.",/info
 end
