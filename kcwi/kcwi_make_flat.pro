@@ -14,10 +14,11 @@
 ;	Data reduction for the Keck Cosmic Web Imager (KCWI).
 ;
 ; CALLING SEQUENCE:
-;	KCWI_MAKE_FLAT, Ppar
+;	KCWI_MAKE_FLAT, Ppar, Gfile
 ;
 ; INPUTS:
 ;	Ppar	- KCWI_PPAR struct for flat group to combine
+;	Gfile	- FITS file containing KCWI_GEOM struct from STAGE3GEOM
 ;
 ; KEYWORDS:
 ;	None
@@ -38,8 +39,9 @@
 ;	2013-SEP-10	Preliminary calculation of variance and mask images
 ;	2013-SEP-16	use ppar to pass pipeline params
 ;	2017-NOV-01	change from median to mean stack because of intensity decay
+;	2017-NOV-13	adapt for bspline fitting of continuum for illum corr.
 ;-
-pro kcwi_make_flat,ppar
+pro kcwi_make_flat,ppar,gfile
 	;
 	; initialize
 	pre = 'KCWI_MAKE_FLAT'
@@ -55,6 +57,46 @@ pro kcwi_make_flat,ppar
 		kcwi_print_info,ppar,pre,'no flats entered',/error
 		return
 	endif
+	;
+	; is geometry solved?
+	if not file_test(gfile) then begin
+		kcwi_print_info,ppar,pre,'no geometry file',/error
+		return
+	endif
+	;
+	; read in geometry file
+	kgeom = mrdfits(gfile,1,ghdr,/silent)
+	if kgeom.status ne 0 then begin
+		kcwi_print_info,ppar,pre,'bad geometry solution',/error
+		return
+	endif
+	;
+	; read in wavemap image
+	wmf = repstr(gfile,'_geom', '_wavemap')
+	if file_test(wmf) then begin
+		wavemap = mrdfits(wmf,0,wmfh,/fscale,/silent)
+	endif else begin
+		kcwi_print_info,ppar,pre,'no wavemap file',/error
+		return
+	endelse
+	;
+	; read in slice image
+	slf = repstr(gfile,'_geom','_slicemap')
+	if file_test(slf) then begin
+		slice = mrdfits(slf,0,slfh,/fscale,/silent)
+	endif else begin
+		kcwi_print_info,ppar,pre,'no slicemap file',/error
+		return
+	endelse
+	;
+	; read in position image
+	pof = repstr(gfile,'_geom','_posmap')
+	if file_test(pof) then begin
+		pos = mrdfits(pof,0,pofh,/fscale,/silent)
+	endif else begin
+		kcwi_print_info,ppar,pre,'no posmap file',/error
+		return
+	endelse
 	;
 	; directories
 	if kcwi_verify_dirs(ppar,rawdir,reddir,cdir,ddir) ne 0 then begin
@@ -94,6 +136,9 @@ pro kcwi_make_flat,ppar
 	;
 	; read first image
 	im = mrdfits(ffil,0,hdr,/fscale,/silent)
+	;
+	; get type of flat
+	internal = (strpos(sxpar(hdr,'CALTYPE'),'cflat') ge 0)
 	;
 	; get size
 	sz = size(im,/dim)
@@ -161,8 +206,79 @@ pro kcwi_make_flat,ppar
 			mflat[xi,yi] = mean(stack[*,xi,yi])
 	endif
 	;
+	; correct vignetting if we are using internal flats
+	if internal then begin
+		deepcolor
+		!p.background=colordex('white')
+		!p.color=colordex('black')
+		xbin = kgeom.xbinsize
+		fitl = 4/xbin
+		fitr = 24/xbin
+		flatl = 34/xbin
+		flatr = 72/xbin
+		buffer = 5.0/float(xbin)
+		refslice = kgeom.refbar/5
+		allidx = findgen(140/xbin)
+		str = string(fnums[0],"(i05)")
+		q=where(wavemap gt 0)
+		waves=minmax(wavemap[q])
+		dw=(waves[1]-waves[0])/30.0
+		wavemin=(waves[0]+waves[1])/2.0-dw
+		wavemax=(waves[0]+waves[1])/2.0+dw
+		print,wavemin,wavemax
+		q=where(slice eq refslice and wavemap ge wavemin and wavemap le wavemax)
+		plot,pos[q],mflat[q],psym=3,/xs
+		ask=''
+		; select the points we will fit for the vignetting 
+		xfit=pos[q]  
+		yfit=mflat[q]
+		qfit=where(xfit ge fitl and xfit le fitr)
+		xfit=xfit[qfit]
+		yfit=yfit[qfit]
+		s=sort(xfit)
+		xfit=xfit[s]
+		yfit=yfit[s]
+		resfit=linfit(xfit,yfit)
+		oplot,allidx,resfit[0]+resfit[1]*allidx,color=colordex('purple')
+		; select the template region
+		xflat=pos[q] 
+		yflat=mflat[q]
+		qflat=where(xflat ge flatl and xflat le flatr)
+		xflat=xflat[qflat]
+		yflat=yflat[qflat]
+		s=sort(xflat)
+		xflat=xflat[s]
+		yflat=yflat[s]
+		resflat=linfit(xflat,yflat)
+		oplot,allidx,resflat[0]+resflat[1]*allidx,color=colordex('red')
+		; compute the intersection
+		xinter=-(resflat[0]-resfit[0])/(resflat[1]-resfit[1])
+		; figure out where the correction applies
+		qinter=where(pos ge 0 and pos lt xinter-buffer)
+		; apply the corection!
+		newflat=mflat
+		newflat[qinter]= (resflat[0]+resflat[1]*pos[qinter])/(resfit[0]+resfit[1]*pos[qinter])*mflat[qinter]
+		; now deal with the the intermediate (buffer) region
+		qspline=where(pos ge xinter-buffer and pos le xinter+buffer)
+		posmin=min(pos[qspline])
+		posmax=max(pos[qspline])
+		valuemin=(resflat[0]+resflat[1]*posmin)/(resfit[0]+resfit[1]*posmin)
+		valuemax=1
+		slopeleft=resflat[1]/(resfit[1]*posmin+resfit[0])-(resflat[1]*posmin+resflat[0])*resfit[1]/((resfit[1]*posmin+resfit[0])*(resfit[1]*posmin+resfit[0]))
+		sloperight=resflat[1]/(resfit[1]*posmax+resfit[0])-(resflat[1]*posmax+resflat[0])*resfit[1]/((resfit[1]*posmax+resfit[0])*(resfit[1]*posmax+resfit[0]))
+		;slopemid=resflat[1]/(resfit[1]*xinter+resfit[0])-(resflat[1]*xinter+resflat[0])*resfit[1]/((resfit[1]*xinter+resfit[0])*(resfit[1]*xinter+resfit[0]))
+		;print,slopeleft,slopemid,sloperight
+		spline_p,[posmin,posmax],[valuemin,valuemax],xr,yr,interval=0.1,tan0=[-slopeleft,0],tan1=[-sloperight,0]
+		read,'next: ',ask
+		plot,xr,yr,/ys               ;,psym=3
+		yvals=interpol(yr,xr,pos[qspline])*mflat[qspline]
+		newflat[qspline]=yvals
+   
+		print,xinter
+	endif
+	;
 	; now fit master flat
-	kcwi_fit_flat,mflat,hdr,ppar,flato
+	kcwi_ratio_flat,mflat,hdr,ppar,flato
 	;
 	; update master flat header
 	sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)

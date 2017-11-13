@@ -49,15 +49,15 @@ endif
   wave0out = kgeom.wave0out
   ldeg = kgeom.lastdegree
   xbin = kgeom.xbinsize
-  xpad = 7
+  xpad = 6/xbin
 
 ; process the degree, default to 3. 
   if n_elements(degree) eq 0 then degree = ldeg
   if degree lt 2 or degree gt 4 then degree = 3 
   
   outfile = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_wavemap",/reduced)
-  outfilepos = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_wavemap_pos",/reduced)
-  outfilesli = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_wavemap_sli",/reduced)
+  outfilepos = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_posmap",/reduced)
+  outfilesli = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_slicemap",/reduced)
 
   x = dindgen(nx)
   y = dindgen(ny); ypad
@@ -148,9 +148,11 @@ endif
   sxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file'
 
   ; write the file
-  kcwi_print_info,ppar,pre,"Writing",outfile,/info,format='(a,1x,a)'
+  kcwi_print_info,ppar,pre,"Writing",outfilepos,/info,format='(a,1x,a)'
   mwrfits, float(slice_position), outfilepos,hdr,/create
+  kcwi_print_info,ppar,pre,"Writing",outfilesli,/info,format='(a,1x,a)'
   mwrfits, byte((slice_id)), outfilesli,hdr,/create
+  kcwi_print_info,ppar,pre,"Writing",outfile,/info,format='(a,1x,a)'
   mwrfits, float(reverse_image), outfile, hdr,/create,/iscale
-  kcwi_print_info,ppar,pre,"Generated reverse map.",/info
+  kcwi_print_info,ppar,pre,"Generated reverse maps.",/info
 end
