@@ -93,39 +93,79 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky
 	kcwi_print_info,ppar,pre,systime(0)
 	;
 	; prepare plots
-	deepcolor
-	!p.background=colordex('white')
-	!p.color=colordex('black')
+	do_plots = (ppar.display ge 1)
+	if do_plots then begin
+		deepcolor
+		!p.background=colordex('white')
+		!p.color=colordex('black')
+		th=3
+		si=1.7
+		ask = ''
+	endif
 	;
-	; do fitting
+	; do bspline fitting
+	;
+	; use only finite values
 	finiteflux = finite(img)
+	;
+	; get points mapped to exposed regions on CCD
 	q = where(slice ge 0 and slice le 23 and pos ge 0 and $
 		  wavemap ge kgeom.waveall0 and wavemap lt kgeom.waveall1 and $
 		  finiteflux)
-	fluxes=img
-	waves=wavemap
+	;
+	; extract relevant image values
 	fluxes=img[q]
+	;
+	; relevant wavelengths
 	waves=wavemap[q]
+	;
+	; keep output wavelengths
 	owaves=waves
+	;
+	; sort on wavelength
 	s=sort(waves)
 	waves=waves[s]
 	fluxes=fluxes[s]
-	plot,waves,smooth(fluxes,250),psym=3,yrange=[0,200]
-	stop
 	;
-	; knots
-	n=8000
+	; knots (number of y pixels)
+	n = sxpar(hdr,'NAXIS2')
+	;
+	; calculate break points for b splines
+	bkpt = min(waves) + findgen(n+1) * (max(waves) - min(waves)) / n
+	;
+	; log
+	kcwi_print_info,ppar,pre,'N, Min, Max breakpoints (A)',n, minmax(bkpt),$
+		format='(a,i6,2f13.2)'
+	;
+	; do bspline fit
+	sft0 = bspline_iterfit(waves,fluxes,fullbkpt=bkpt,yfit=yfit1, $
+				upper=1,lower=1)
+	;
+	; get values at original wavelengths
+	yfit = bspline_valu(owaves,sft0)
 
-	bkpt=min(waves)+findgen(n+1)*(max(waves)-min(waves))/n
-	print,minmax(bkpt)
-	sft0=bspline_iterfit(waves,fluxes,fullbkpt=bkpt,yfit=yfit1,upper=1,lower=1)
-	yfit=bspline_valu(owaves,sft0)
-
-	oplot,waves,yfit1,color=colordex('orange')
-	sky=img-img
-	sky[q]=yfit
-	print,"Done!"
-	stop
+	if do_plots then begin
+		fsmo = smooth(fluxes,250)
+		mo = moment(fsmo)
+		yrng = [0, max([mo[0]+5.*sqrt(mo[1]), max(yfit1)])]
+		plot,waves,fsmo,psym=3,title=sxpar(hdr,'OFNAME'), $
+			charsi=si, charthi=th, $
+			xtitle='Wavelength (A)',xthick=th, /xs, $
+			ytitle='Flux (e-)', ythick=th, yrange=yrng
+		oplot,waves,yfit1,color=colordex('orange')
+		oplot,[kgeom.wavegood0,kgeom.wavegood0],!y.crange, $
+			color=colordex('green')
+		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
+			color=colordex('green')
+		kcwi_legend,['DATA','FIT'],charsi=si,charthi=th, $
+			color=[colordex('black'), colordex('orange')], $
+			linesty=[0,0],/clear,clr_color=!p.background
+		if ppar.display ge 2 then read,'next: ',ask
+	endif
+	;
+	; create sky image
+	sky = img - img
+	sky[q] = yfit
 	;
 	; output file name
 	ofn = sxpar(hdr,'OFNAME')
@@ -134,6 +174,8 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky
 	; update sky header
 	shdr = hdr
 	sxaddpar,shdr,'HISTORY','  '+pre+' '+systime(0)
+	sxaddpar,shdr,'SKYMODEL','T',' sky model image?'
+	sxaddpar,shdr,'SKYIMAGE',ofn,' image used for sky model'
 	;
 	; write out image file
 	kcwi_write_image,sky,shdr,sfil,ppar
