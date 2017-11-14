@@ -206,29 +206,42 @@ pro kcwi_make_flat,ppar,gfile
 			mflat[xi,yi] = mean(stack[*,xi,yi])
 	endif
 	;
-	; correct vignetting if we are using internal flats
-	if internal then begin
+	; parameters for fitting
+	xbin = kgeom.xbinsize
+	fitl = 4/xbin
+	fitr = 24/xbin
+	flatl = 34/xbin
+	flatr = 72/xbin
+	ffleft = 10/xbin
+	ffright = 70/xbin
+	buffer = 5.0/float(xbin)
+	refslice = kgeom.refbar/5
+	if xbin le 1 then refslice = 9
+	ffslice = refslice
+	ffslice2 = refslice
+	sm = 25
+	allidx = findgen(140/xbin)
+	str = string(fnums[0],"(i05)")
+	ask=''
+	;
+	; set up plots
+	do_plots = (ppar.display ge 2)
+	if do_plots then begin
 		deepcolor
 		!p.background=colordex('white')
 		!p.color=colordex('black')
-		xbin = kgeom.xbinsize
-		fitl = 4/xbin
-		fitr = 24/xbin
-		flatl = 34/xbin
-		flatr = 72/xbin
-		buffer = 5.0/float(xbin)
-		refslice = kgeom.refbar/5
-		allidx = findgen(140/xbin)
-		str = string(fnums[0],"(i05)")
+	endif
+	;
+	; correct vignetting if we are using internal flats
+	if internal then begin
 		q=where(wavemap gt 0)
 		waves=minmax(wavemap[q])
 		dw=(waves[1]-waves[0])/30.0
 		wavemin=(waves[0]+waves[1])/2.0-dw
 		wavemax=(waves[0]+waves[1])/2.0+dw
 		print,wavemin,wavemax
-		q=where(slice eq refslice and wavemap ge wavemin and wavemap le wavemax)
-		plot,pos[q],mflat[q],psym=3,/xs
-		ask=''
+		q = where(slice eq refslice and wavemap ge wavemin and $
+			  wavemap le wavemax)
 		; select the points we will fit for the vignetting 
 		xfit=pos[q]  
 		yfit=mflat[q]
@@ -239,7 +252,6 @@ pro kcwi_make_flat,ppar,gfile
 		xfit=xfit[s]
 		yfit=yfit[s]
 		resfit=linfit(xfit,yfit)
-		oplot,allidx,resfit[0]+resfit[1]*allidx,color=colordex('purple')
 		; select the template region
 		xflat=pos[q] 
 		yflat=mflat[q]
@@ -250,7 +262,19 @@ pro kcwi_make_flat,ppar,gfile
 		xflat=xflat[s]
 		yflat=yflat[s]
 		resflat=linfit(xflat,yflat)
-		oplot,allidx,resflat[0]+resflat[1]*allidx,color=colordex('red')
+		if do_plots then begin
+			plot,pos[q],mflat[q],psym=3,/xs,/nodata
+			oplot,allidx,resfit[0]+resfit[1]*allidx, $
+				color=colordex('purple')
+			oplot,allidx,resflat[0]+resflat[1]*allidx, $
+				color=colordex('red')
+			oplot,pos[q],mflat[q],psym=3
+			oplot,[fitl,fitl],!y.crange,color=colordex('blue')
+			oplot,[fitr,fitr],!y.crange,color=colordex('blue')
+			oplot,[flatl,flatl],!y.crange,color=colordex('green')
+			oplot,[flatr,flatr],!y.crange,color=colordex('green')
+			read,'next: ',ask
+		endif
 		; compute the intersection
 		xinter=-(resflat[0]-resfit[0])/(resflat[1]-resfit[1])
 		; figure out where the correction applies
@@ -262,23 +286,267 @@ pro kcwi_make_flat,ppar,gfile
 		qspline=where(pos ge xinter-buffer and pos le xinter+buffer)
 		posmin=min(pos[qspline])
 		posmax=max(pos[qspline])
-		valuemin=(resflat[0]+resflat[1]*posmin)/(resfit[0]+resfit[1]*posmin)
+		valuemin = (resflat[0]+resflat[1]*posmin) / $
+			   (resfit[0]+resfit[1]*posmin)
 		valuemax=1
-		slopeleft=resflat[1]/(resfit[1]*posmin+resfit[0])-(resflat[1]*posmin+resflat[0])*resfit[1]/((resfit[1]*posmin+resfit[0])*(resfit[1]*posmin+resfit[0]))
-		sloperight=resflat[1]/(resfit[1]*posmax+resfit[0])-(resflat[1]*posmax+resflat[0])*resfit[1]/((resfit[1]*posmax+resfit[0])*(resfit[1]*posmax+resfit[0]))
-		;slopemid=resflat[1]/(resfit[1]*xinter+resfit[0])-(resflat[1]*xinter+resflat[0])*resfit[1]/((resfit[1]*xinter+resfit[0])*(resfit[1]*xinter+resfit[0]))
-		;print,slopeleft,slopemid,sloperight
-		spline_p,[posmin,posmax],[valuemin,valuemax],xr,yr,interval=0.1,tan0=[-slopeleft,0],tan1=[-sloperight,0]
-		read,'next: ',ask
-		plot,xr,yr,/ys               ;,psym=3
+		slopeleft = resflat[1]/(resfit[1]*posmin+resfit[0]) - $
+			   (resflat[1]*posmin+resflat[0])*resfit[1] / $
+			  ((resfit[1]*posmin+resfit[0]) * 
+			   (resfit[1]*posmin+resfit[0]))
+		sloperight = resflat[1]/(resfit[1]*posmax+resfit[0]) - $
+			    (resflat[1]*posmax+resflat[0])*resfit[1] / $
+			   ((resfit[1]*posmax+resfit[0]) * $
+			    (resfit[1] * posmax+resfit[0]))
+		spline_p,[posmin,posmax],[valuemin,valuemax],xr,yr, $
+			 interval=0.1,tan0=[-slopeleft,0],tan1=[-sloperight,0]
 		yvals=interpol(yr,xr,pos[qspline])*mflat[qspline]
 		newflat[qspline]=yvals
-   
-		print,xinter
-	endif
+	;
+	; non-internal flats don't need correction for vignetting
+	endif else $
+		newflat = mflat
 	;
 	; now fit master flat
-	kcwi_ratio_flat,mflat,hdr,ppar,flato
+	qref=where(slice eq refslice and pos ge ffleft and pos le ffright)
+	xfr=wavemap[qref]
+	yfr=newflat[qref]
+	s=sort(xfr)
+	xfr=xfr[s]
+	yfr=yfr[s]
+	invvar=1/(1+abs(yfr))
+	n=100.0
+	bkpt = min(wavemap[qref])+findgen(n+1) * $
+	      (max(wavemap[qref])-min(wavemap[qref]))/n
+	sftr = bspline_iterfit(xfr,yfr,fullbkpt=bkpt,yfit=yfitr)
+	; Generate a blue slice spectrum bspline fit 
+	blueslice=12
+	blueleft=60/xbin
+	blueright=80/xbin
+	qblue=where(slice eq blueslice and pos ge blueleft and pos le blueright)
+	xfb=wavemap[qblue]
+	yfb=newflat[qblue]
+	s=sort(xfb)
+	xfb=xfb[s]
+	yfb=yfb[s]
+	invvar=1/(1+abs(yfb))
+	n=100.0
+	bkpt = min(wavemap[qblue]) + findgen(n+1) * (max(wavemap[qblue]) - $
+	       min(wavemap[qblue])) / n
+	sftb = bspline_iterfit(xfb,yfb,fullbkpt=bkpt,yfit=yfitb)
+	; 
+
+	; Generate a red slice spectrum bspline fit
+	redslice=23
+	redleft=60/xbin
+	redright=80/xbin
+	qred=where(slice eq redslice and pos ge redleft and pos le redright)
+	xfd=wavemap[qred]
+	yfd=newflat[qred]
+	s=sort(xfd)
+	xfd=xfd[s]
+	yfd=yfd[s]
+	invvar=1/(1+abs(yfd))
+	n=100.0
+	bkpt = min(wavemap[qred]) + findgen(n+1) * (max(wavemap[qred]) -
+	       min(wavemap[qred])) / n
+	sftd = bspline_iterfit(xfd,yfd,fullbkpt=bkpt,yfit=yfitd)
+	
+	; waves.
+	minwave=min(xfb)
+	maxwave=max(xfd)
+	nwaves=1000.0
+	waves=minwave+(maxwave-minwave)*findgen(nwaves+1)/nwaves
+
+	if do_plots then begin
+		plot,xfr,yfitr,xrange=[kgeom.waveall0,kgeom.waveall1]
+		oplot,xfb,yfitb,color=colordex('blue')
+		oplot,xfd,yfitd,color=colordex('red')
+		oplot,[kgeom.wavegood0,kgeom.wavegood0],!y.crange, $
+			color=colordex('green')
+		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
+			color=colordex('green')
+		read,'next: ',ask
+	endif
+
+	wavebuffer=0.1
+	minrwave=min(xfr)
+	maxrwave=max(xfr)
+	wavebuffer2=0.05
+
+	qbluefit = where(waves lt minrwave+(maxrwave-minrwave)*wavebuffer and $
+		         waves gt minrwave+(maxrwave-minrwave)*wavebuffer2)
+	qredfit = where(waves ge minrwave+(maxrwave-minrwave)*(1-wavebuffer) $
+		and waves lt minrwave+(maxrwave-minrwave)*(1-wavebuffer2))
+
+	bluefit = bspline_valu(waves[qbluefit],sftb)
+	refbluefit = bspline_valu(waves[qbluefit],sftr)
+	redfit = bspline_valu(waves[qredfit],sftd)
+	refredfit = bspline_valu(waves[qredfit],sftr)
+	bluelinfit = linfit(waves[qbluefit],refbluefit/bluefit)
+	redlinfit = linfit(waves[qredfit],refredfit/redfit)
+
+	if do_plots then begin
+		plot,waves[qbluefit],refbluefit
+		oplot,waves[qbluefit],bluefit,color=colordex('blue')
+		read,'next: ',ask
+
+		plot,waves[qbluefit],refbluefit/bluefit,/ys
+		oplot,waves[qbluefit], $
+		      bluelinfit[0]+bluelinfit[1]*waves[qbluefit], $
+		      color=colordex('blue')
+		read,'next: ',ask
+
+		plot,waves[qredfit],refredfit
+		oplot,waves[qredfit],redfit,color=colordex('red')
+		read,'next: ',ask
+
+		plot,waves[qredfit],refredfit/redfit,/ys
+		oplot,waves[qredfit], $
+		      redlinfit[0]+redlinfit[1]*waves[qredfit], $
+		      color=colordex('red')
+		read,'next: ',ask
+	endif
+
+	;; at this point we are going to try to merge the points
+	qselred=where(xfd ge maxrwave)
+	qselblue=where(xfb le minrwave)
+	
+	redfluxes=yfd[qselred]*(redlinfit[0]+redlinfit[1]*xfd[qselred])
+	bluefluxes=yfb[qselblue]*(bluelinfit[0]+bluelinfit[1]*xfb[qselblue])
+	
+	allx=[xfb[qselblue],xfr,xfd[qselred]]
+	ally=[bluefluxes,yfr,redfluxes]
+	
+	s=sort(allx)
+	allx=allx[s]
+	ally=ally[s]
+	
+	
+	invvar=1/(1+abs(yfb))
+	n=100.0
+	bkpt=min(allx)+findgen(n+1)*(max(allx)-min(allx))/n
+	sftall=bspline_iterfit(allx,ally,fullbkpt=bkpt,yfit=yfitall)
+	
+	if do_plots then begin
+		plot,xfr,yfr,psym=3,xrange=[kgeom.waveall0,kgeom.waveall1], $
+			/xs,/nodata
+		oplot,allx,ally,psym=3,color=colordex('purple')
+		oplot,allx,yfitall,color=colordex('red'),thick=2
+		oplot,xfr,yfr,psym=3
+		oplot,xfr,yfitr,color=colordex('green'),thick=2
+		oplot,[kgeom.wavegood0,kgeom.wavegood0],!y.crange, $
+			color=colordex('orange')
+		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
+			color=colordex('orange')
+		read,'next: ',ask
+	endif
+
+	; OK. Now we have extended to the full range... so... we are going to
+	; make a ratio flat!
+	
+	comflat=newflat-newflat
+	qz= where(wavemap ge 0 );and slice ge 0 and slice le 23)
+	
+	comvals=bspline_valu(wavemap[qz],sftall)
+	
+	comflat[qz]=comvals
+	ratio=newflat-newflat
+	qzer = where(newflat ne 0)
+	ratio[qzer]=comflat[qzer]/newflat[qzer]
+	
+	qq=where(ratio lt 0)
+	ratio[qq]=0.0
+	qq=where(ratio ge 2)
+	ratio[qq]=2
+	
+	rff = repstr(ppar.masterflat,'_mflat','_ratio_f')
+	kcwi_write_image,ratio,hdr,rff,ppar
+
+	; select the pixels in the reference slice and correct positions
+	qff0=where(slice eq ffslice and pos ge ffleft and pos le ffright)
+	qff=where(slice eq ffslice2 and pos ge ffleft and pos le ffright)
+	; plot a little more than the KCWI blue range
+	if do_plots then begin
+		plot,wavemap[qff0],smooth(newflat[qff0],sm),psym=3, $
+			/xs,xrange=[kgeom.waveall0,kgeom.waveall1]
+	
+		oplot,wavemap[qff],smooth(newflat[qff],sm),psym=3, $
+			color=colordex('orange')
+		oplot,[kgeom.wavegood0,kgeom.wavegood0],!y.crange, $
+			color=colordex('green')
+		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
+			color=colordex('green')
+	endif
+	
+	; generate the bspline fit.
+	xf=wavemap[qff0]
+	yf=newflat[qff0]
+	s=sort(xf)
+	xf=xf[s]
+	yf=yf[s]
+	res=1/(1+abs(yf))
+	n=100.0
+	bkpt = min(wavemap[qff0])+findgen(n+1)*(max(wavemap[qff0]) - $
+	       min(wavemap[qff0]))/n
+	sft = bspline_iterfit(xf,yf,fullbkpt=bkpt,yfit=yfit)
+
+	xf1=wavemap[qff]
+	yf1=newflat[qff]
+	s=sort(xf1)
+	xf1=xf1[s]
+	yf1=yf1[s]
+	bkpt = min(wavemap[qff])+findgen(n+1)*(max(wavemap[qff]) - $
+	       min(wavemap[qff]))/n
+	sft0=bspline_iterfit(xf1,yf1,fullbkpt=bkpt,yfit=yfit1)
+	yfita=bspline_valu(xf,sft0)
+	
+	; so the spline works pretty good, but we need to stitch it together
+	; for the full wavelenth range... 
+	
+	;print,ec
+	if do_plots then begin
+		oplot,wavemap[qff0],yfit,color=colordex('blue'),psym=3
+		read,'next: ',ask
+
+		plot,wavemap[qff0],yfit-newflat[qff0],psym=3,/xs
+		read,'next: ',ask
+
+		plot,wavemap[qff0],smooth(newflat[qff0],sm),psym=3, $
+			/xs,xrange=[kgeom.waveall0,kgeom.waveall1]
+		oplot,wavemap[qff0],yfit,color=colordex('blue'),psym=3
+		oplot,wavemap[qff],smooth(newflat[qff],sm),psym=3, $
+			color=colordex('green')
+		oplot,wavemap[qff0],yfita,color=colordex('red'),psym=3
+		oplot,[kgeom.wavegood0,kgeom.wavegood0],!y.crange, $
+			color=colordex('orange')
+		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
+			color=colordex('orange')
+		read,'next: ',ask
+	endif
+	
+	qz = where(pos ge 0)
+	
+	xp=wavemap[qz]
+	newvals=bspline_valu(xp,sft)
+
+	if do_plots then begin
+		plot,xp,newvals,psym=3,title='newvals'
+		oplot,[kgeom.wavegood0,kgeom.wavegood0],!y.crange, $
+			color=colordex('green')
+		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
+			color=colordex('green')
+		read,'next: ',ask
+	endif
+	
+	comflat=newflat-newflat
+	comflat[qz]=newvals
+	cff = repstr(ppar.masterflat,'_mflat','_comflat')
+	kcwi_write_image,comflat,hdr,cff,ppar
+	
+	qnz = where(newflat ne 0)
+	ratio=newflat-newflat
+	ratio[qnz]=comflat[qnz]/newflat[qnz]
+
 	;
 	; update master flat header
 	sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
@@ -289,7 +557,7 @@ pro kcwi_make_flat,ppar,gfile
 		' range list of image numbers for stack'
 	;
 	; write out image file
-	kcwi_write_image,flato,hdr,ppar.masterflat,ppar
+	kcwi_write_image,ratio,hdr,ppar.masterflat,ppar
 	;
 	return
 end
