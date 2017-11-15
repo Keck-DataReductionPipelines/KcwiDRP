@@ -123,6 +123,10 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 		if not file_test(obfil) then $
 			obfil = kcwi_get_imname(kpars[i],imgnum[i],'_icuber',/reduced)
 		;
+		; if not check for stage 6cube output
+		if not file_test(obfil) then $
+			obfil = kcwi_get_imname(kpars[i],imgnum[i],'_icube',/reduced)
+		;
 		; check if input file exists
 		if file_test(obfil) then begin
 			;

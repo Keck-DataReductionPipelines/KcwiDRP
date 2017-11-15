@@ -12,7 +12,7 @@
 ;	Data reduction for the Keck Cosmic Web Imager (KCWI).
 ;
 ; CALLING SEQUENCE:
-;	KCWI_MAKE_SKY, Ppar, Img, Hdr, Gfil, Sky
+;	KCWI_MAKE_SKY, Ppar, Img, Hdr, Gfil, Sky, SKY_MASK_FILE=<skymaskfile>
 ;
 ; INPUTS:
 ;	Ppar	- KCWI_PPAR struct for flat group to combine
@@ -24,7 +24,14 @@
 ;	Sky	- The sky model for subtracting
 ;
 ; KEYWORDS:
-;	None
+;	SKY_MASK_FILE	- a text file containing regions to mask using
+;		five white-space separated columns for each region you
+;		want to mask: 
+;		1 - slice
+;		2 - slice position (px) start
+;		3 - slice position (px) end
+;		4 - wavelength (A) start
+;		5 - wavelength (A) end
 ;
 ; PROCEDURE:
 ;	Fits the sky with bsplines.
@@ -35,13 +42,16 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2017-NOV-13	Initial version
 ;-
-pro kcwi_make_sky,ppar,img,hdr,gfil,sky
+pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 	;
 	; initialize
 	pre = 'KCWI_MAKE_SKY'
 	;
 	; check inputs
 	if kcwi_verify_ppar(ppar,/init) ne 0 then return
+	;
+	; log
+	kcwi_print_info,ppar,pre,systime(0)
 	;
 	; is geometry solved?
 	if not file_test(gfil) then begin
@@ -68,7 +78,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky
 	; read in slice image
 	slf = repstr(gfil,'_geom','_slicemap')
 	if file_test(slf) then begin
-		slice = mrdfits(slf,0,slfh,/fscale,/silent)
+		slicemap = mrdfits(slf,0,slfh,/fscale,/silent)
 	endif else begin
 		kcwi_print_info,ppar,pre,'no slicemap file',/error
 		return
@@ -77,7 +87,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky
 	; read in position image
 	pof = repstr(gfil,'_geom','_posmap')
 	if file_test(pof) then begin
-		pos = mrdfits(pof,0,pofh,/fscale,/silent)
+		posmap = mrdfits(pof,0,pofh,/fscale,/silent)
 	endif else begin
 		kcwi_print_info,ppar,pre,'no posmap file',/error
 		return
@@ -89,8 +99,9 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky
 		return
 	endif
 	;
-	; log
-	kcwi_print_info,ppar,pre,systime(0)
+	; sky map, if requested
+	if keyword_set(sky_mask_file) then begin
+	endif
 	;
 	; prepare plots
 	do_plots = (ppar.display ge 1)
@@ -109,7 +120,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky
 	finiteflux = finite(img)
 	;
 	; get points mapped to exposed regions on CCD
-	q = where(slice ge 0 and slice le 23 and pos ge 0 and $
+	q = where(slicemap ge 0 and slicemap le 23 and posmap ge 0 and $
 		  wavemap ge kgeom.waveall0 and wavemap lt kgeom.waveall1 and $
 		  finiteflux)
 	;
@@ -121,6 +132,48 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky
 	;
 	; keep output wavelengths
 	owaves=waves
+	;
+	; mask, if requested
+	if keyword_set(skymf) gt 0 then begin
+		if file_test(skymf) then begin
+			readcol,skymf,msli0, msli1, mp0, mp1, mw0, mw1, $
+				/silent,comment='#'
+			kcwi_print_info,ppar,pre,'Sky mask file read in', $
+				skymf
+			kcwi_print_info,ppar,pre,'Number of masked regions', $
+				n_elements(msli0)
+			;
+			; relevant positions
+			pos = posmap[q]
+			;
+			; relevant slice numbers
+			slice = slicemap[q]
+			;
+			; count masked pixels
+			tmsk = 0L
+			for i = 0, n_elements(msli0)-1 do begin
+				msk = where(slice ge msli0[i] and $
+					slice le msli1[i] and $
+					pos ge mp0[i] and pos le mp1[i] and $
+					waves ge mw0[i] and waves le mw1[i], $
+					nmsk)
+				if nmsk gt 0 then begin
+					fluxes[msk] = !values.f_nan
+					tmsk += nmsk
+				endif else $
+					kcwi_print_info,ppar,pre, $
+					 'empty mask region', i,/warning
+			endfor
+			finiteflux = finite(fluxes)
+			good = where(finiteflux)
+			fluxes = fluxes[good]
+			waves = waves[good]
+			kcwi_print_info,ppar,pre, $
+				'Total number of pixels masked',tmsk
+		endif else $
+			kcwi_print_info,ppar,pre,'Sky mask file not found', $
+				skymf,/warning
+	endif
 	;
 	; sort on wavelength
 	s=sort(waves)
@@ -134,8 +187,8 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky
 	bkpt = min(waves) + findgen(n+1) * (max(waves) - min(waves)) / n
 	;
 	; log
-	kcwi_print_info,ppar,pre,'N, Min, Max breakpoints (A)',n, minmax(bkpt),$
-		format='(a,i6,2f13.2)'
+	kcwi_print_info,ppar,pre,'Nknots, Min, Max breakpoints (A)', $
+		n, minmax(bkpt),format='(a,i6,2f13.2)'
 	;
 	; do bspline fit
 	sft0 = bspline_iterfit(waves,fluxes,fullbkpt=bkpt,yfit=yfit1, $

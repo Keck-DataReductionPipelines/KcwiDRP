@@ -208,8 +208,16 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					; do the sky for science images
 					endif else begin
 						;
+						; check for a sky mask file
+						smfil = repstr(obfil,'_intf.fits','_smsk.txt')
+						;
 						; fit the sky
-						kcwi_make_sky,kpars[i],img,hdr,gfile,sky
+						if file_test(smfil) then begin
+							kcwi_print_info,ppar,pre,'Using sky mask file',smfil
+							kcwi_make_sky,kpars[i],img,hdr,gfile,sky, $
+								sky_mask_file=smfil
+						endif else $
+							kcwi_make_sky,kpars[i],img,hdr,gfile,sky
 						;
 						; do correction
 						img = img - sky

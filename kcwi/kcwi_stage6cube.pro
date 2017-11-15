@@ -165,12 +165,24 @@ pro kcwi_stage6cube,procfname,ppfname,help=help,verbose=verbose, display=display
 				;
 				; do we have the geom files?
 				do_geom = (1 eq 0)	; assume no to begin with
-				if strtrim(kpars[i].geom,2) ne '' then begin
+				if (strtrim(kpars[i].geomcbar,2) ne '' and $
+				    strtrim(kpars[i].geomarc,2) ne '') or $
+				    strtrim(kpars[i].geom,2) ne '' then begin
 					;
 					; do we have a specified geom file?
 				    	if strtrim(kpars[i].geom,2) ne '' then begin
 						gfile = strtrim(kpars[i].geom,2)
-					endif 
+					;
+					; no geom, so use cbar or arc filename
+					endif else begin
+						if do_direct then begin
+							if strtrim(kpars[i].geomarc,2) ne '' then $
+								gfile = repstr(kpars[i].geomarc,'_int','_dgeom')
+						endif else begin
+							if strtrim(kpars[i].geomcbar,2) ne '' then $
+								gfile = repstr(kpars[i].geomcbar,'_int','_geom')
+						endelse
+					endelse
 					;
 					; if it exists, read it
 					if file_test(gfile,/read) then begin

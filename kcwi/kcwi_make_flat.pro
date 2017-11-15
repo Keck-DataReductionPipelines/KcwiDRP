@@ -225,7 +225,7 @@ pro kcwi_make_flat,ppar,gfile
 	ask=''
 	;
 	; set up plots
-	do_plots = (ppar.display ge 2)
+	do_plots = (ppar.display ge 1)
 	if do_plots then begin
 		deepcolor
 		!p.background=colordex('white')
@@ -273,7 +273,7 @@ pro kcwi_make_flat,ppar,gfile
 			oplot,[fitr,fitr],!y.crange,color=colordex('blue')
 			oplot,[flatl,flatl],!y.crange,color=colordex('green')
 			oplot,[flatr,flatr],!y.crange,color=colordex('green')
-			read,'next: ',ask
+			if ppar.display ge 2 then read,'next: ',ask
 		endif
 		; compute the intersection
 		xinter=-(resflat[0]-resfit[0])/(resflat[1]-resfit[1])
@@ -365,7 +365,7 @@ pro kcwi_make_flat,ppar,gfile
 			color=colordex('green')
 		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
 			color=colordex('green')
-		read,'next: ',ask
+		if ppar.display ge 2 then read,'next: ',ask
 	endif
 
 	wavebuffer=0.1
@@ -388,23 +388,23 @@ pro kcwi_make_flat,ppar,gfile
 	if do_plots then begin
 		plot,waves[qbluefit],refbluefit
 		oplot,waves[qbluefit],bluefit,color=colordex('blue')
-		read,'next: ',ask
+		if ppar.display ge 2 then read,'next: ',ask
 
 		plot,waves[qbluefit],refbluefit/bluefit,/ys
 		oplot,waves[qbluefit], $
 		      bluelinfit[0]+bluelinfit[1]*waves[qbluefit], $
 		      color=colordex('blue')
-		read,'next: ',ask
+		if ppar.display ge 2 then read,'next: ',ask
 
 		plot,waves[qredfit],refredfit
 		oplot,waves[qredfit],redfit,color=colordex('red')
-		read,'next: ',ask
+		if ppar.display ge 2 then read,'next: ',ask
 
 		plot,waves[qredfit],refredfit/redfit,/ys
 		oplot,waves[qredfit], $
 		      redlinfit[0]+redlinfit[1]*waves[qredfit], $
 		      color=colordex('red')
-		read,'next: ',ask
+		if ppar.display ge 2 then read,'next: ',ask
 	endif
 
 	;; at this point we are going to try to merge the points
@@ -438,7 +438,7 @@ pro kcwi_make_flat,ppar,gfile
 			color=colordex('orange')
 		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
 			color=colordex('orange')
-		read,'next: ',ask
+		if ppar.display ge 2 then read,'next: ',ask
 	endif
 
 	; OK. Now we have extended to the full range... so... we are going to
@@ -506,10 +506,10 @@ pro kcwi_make_flat,ppar,gfile
 	;print,ec
 	if do_plots then begin
 		oplot,wavemap[qff0],yfit,color=colordex('blue'),psym=3
-		read,'next: ',ask
+		if ppar.display ge 2 then read,'next: ',ask
 
 		plot,wavemap[qff0],yfit-newflat[qff0],psym=3,/xs
-		read,'next: ',ask
+		if ppar.display ge 2 then read,'next: ',ask
 
 		plot,wavemap[qff0],smooth(newflat[qff0],sm),psym=3, $
 			/xs,xrange=[kgeom.waveall0,kgeom.waveall1]
@@ -521,7 +521,7 @@ pro kcwi_make_flat,ppar,gfile
 			color=colordex('orange')
 		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
 			color=colordex('orange')
-		read,'next: ',ask
+		if ppar.display ge 2 then read,'next: ',ask
 	endif
 	
 	qz = where(pos ge 0)
@@ -535,7 +535,7 @@ pro kcwi_make_flat,ppar,gfile
 			color=colordex('green')
 		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
 			color=colordex('green')
-		read,'next: ',ask
+		if ppar.display ge 2 then read,'next: ',ask
 	endif
 	
 	comflat=newflat-newflat
