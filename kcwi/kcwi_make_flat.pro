@@ -348,7 +348,7 @@ pro kcwi_make_flat,ppar,gfile
 	yfd=yfd[s]
 	invvar=1/(1+abs(yfd))
 	n=100.0
-	bkpt = min(wavemap[qred]) + findgen(n+1) * (max(wavemap[qred]) -
+	bkpt = min(wavemap[qred]) + findgen(n+1) * (max(wavemap[qred]) - $
 	       min(wavemap[qred])) / n
 	sftd = bspline_iterfit(xfd,yfd,fullbkpt=bkpt,yfit=yfitd)
 	
