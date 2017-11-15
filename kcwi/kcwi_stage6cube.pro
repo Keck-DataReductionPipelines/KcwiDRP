@@ -262,7 +262,7 @@ pro kcwi_stage6cube,procfname,ppfname,help=help,verbose=verbose, display=display
 							endif else $
 								kcwi_print_info,ppar,pre,'no mask image found',/warning
 							;
-							; check for nod-and-shuffle sky images
+							; check for nod-and-shuffle and model sky images
 							sfil = kcwi_get_imname(kpars[i],imgnum[i],'_sky',/reduced)
 							if file_test(sfil,/read) then begin
 								sky = mrdfits(sfil,0,skyhdr,/fscale,/silent)

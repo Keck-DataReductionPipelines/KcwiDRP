@@ -102,6 +102,12 @@ imgtyp = sxpar(hdr,'CALTYPE')
 ; mask
 nasmask = (strpos(sxpar(hdr,'BNASNAM'),'Mask') ge 0)
 ;
+; shuffle?
+shuffmod = (sxpar(hdr,'NSHFUP') gt 0 or sxpar(hdr,'NSHFDN' gt 0))
+;
+; skyobs?
+skyobs = sxpar(hdr,'SKYOBS')
+;
 ; log
 kcwi_print_info,ppar,pre,'Slicing and dicing image '+strn(imgnum)+': '+object+'...'
 ;
@@ -206,8 +212,13 @@ sxaddpar,chdr, 'ARCNO',   kgeom.arcimgnum, ' Arc image number'
 sxaddpar,chdr, 'GEOMFL',  kgeom.geomfile,' Geometry file'
 ;
 ; get sky coords
-rastr = sxpar(hdr,'RA',count=nra)
-decstr = sxpar(hdr,'DEC',count=ndec)
+if shuffmod and not skyobs then begin
+	rastr = sxpar(hdr,'RABASE',count=nra)
+	decstr = sxpar(hdr,'DECBASE',count=ndec)
+endif else begin
+	rastr = sxpar(hdr,'RA',count=nra)
+	decstr = sxpar(hdr,'DEC',count=ndec)
+endelse
 if nra ne 1 or ndec ne 1 then begin
 	rastr = sxpar(hdr,'TARGRA',count=nra)
 	decstr = sxpar(hdr,'TARGDEC',count=ndec)
