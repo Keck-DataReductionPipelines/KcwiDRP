@@ -281,7 +281,8 @@ pro kcwi_make_flat,ppar,gfile
 		qinter=where(pos ge 0 and pos lt xinter-buffer)
 		; apply the corection!
 		newflat=mflat
-		newflat[qinter]= (resflat[0]+resflat[1]*pos[qinter])/(resfit[0]+resfit[1]*pos[qinter])*mflat[qinter]
+		newflat[qinter] = (resflat[0]+resflat[1]*pos[qinter]) / $
+				(resfit[0]+resfit[1]*pos[qinter])*mflat[qinter]
 		; now deal with the the intermediate (buffer) region
 		qspline=where(pos ge xinter-buffer and pos le xinter+buffer)
 		posmin=min(pos[qspline])
@@ -291,7 +292,7 @@ pro kcwi_make_flat,ppar,gfile
 		valuemax=1
 		slopeleft = resflat[1]/(resfit[1]*posmin+resfit[0]) - $
 			   (resflat[1]*posmin+resflat[0])*resfit[1] / $
-			  ((resfit[1]*posmin+resfit[0]) * 
+			  ((resfit[1]*posmin+resfit[0]) * $
 			   (resfit[1]*posmin+resfit[0]))
 		sloperight = resflat[1]/(resfit[1]*posmax+resfit[0]) - $
 			    (resflat[1]*posmax+resflat[0])*resfit[1] / $
