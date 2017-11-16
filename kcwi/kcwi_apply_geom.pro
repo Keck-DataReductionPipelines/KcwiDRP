@@ -103,7 +103,7 @@ imgtyp = sxpar(hdr,'CALTYPE')
 nasmask = (strpos(sxpar(hdr,'BNASNAM'),'Mask') ge 0)
 ;
 ; shuffle?
-shuffmod = (sxpar(hdr,'NSHFUP') gt 0 or sxpar(hdr,'NSHFDN' gt 0))
+shuffmod = (sxpar(hdr,'NSHFUP') gt 0 or sxpar(hdr,'NSHFDN') gt 0)
 ;
 ; skyobs?
 skyobs = sxpar(hdr,'SKYOBS')
