@@ -180,8 +180,13 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 	waves=waves[s]
 	fluxes=fluxes[s]
 	;
-	; knots (number of y pixels)
-	n = sxpar(hdr,'NAXIS2')
+	; knots
+	if kgeom.ifunum ge 3 then $
+		n = 8000 $
+	else if kgeom.ifunum eq 2 then $
+		n = 5000 $
+	else if kgeom.ifunum le 1 then $
+		n = 2000
 	;
 	; calculate break points for b splines
 	bkpt = min(waves) + findgen(n+1) * (max(waves) - min(waves)) / n

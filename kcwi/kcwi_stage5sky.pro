@@ -202,8 +202,9 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					;
 					; skip sky correction for darks, continuum bars, and arcs
 					if strpos(kcfg.obstype,'cal') ge 0 or $
-					   strpos(kcfg.obstype,'direct') ge 0 then begin
-						kcwi_print_info,ppar,pre,'skipping sky subtraction for cal/direct image',/info
+					   strpos(kcfg.obstype,'direct') ge 0 or kcfg.shuffmod then begin
+						kcwi_print_info,ppar,pre, $
+						    'skipping sky subtraction for cal/direct/nod-and-shuffle image',/info
 					;
 					; do the sky for science images
 					endif else begin
