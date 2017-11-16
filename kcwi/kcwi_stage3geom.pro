@@ -147,8 +147,9 @@ pro kcwi_stage3geom,procfname,ppfname,help=help,verbose=verbose, display=display
 			kcwi_print_info,ppar,pre,'input 2-D image',obfil,format='(a,a)'
 			;
 			; do we have the geom files?
-			if strtrim(kpars[i].geomcbar,2) ne '' and $
-			   strtrim(kpars[i].geomarc,2) ne '' then begin
+			if (strtrim(kpars[i].geomcbar,2) ne '' and $
+			    strtrim(kpars[i].geomarc,2) ne '') or $
+			    strtrim(kpars[i].geom,2) ne '' then begin
 				;
 				; do we have a specified geom file?
 			    	if strtrim(kpars[i].geom,2) ne '' then begin
@@ -169,7 +170,7 @@ pro kcwi_stage3geom,procfname,ppfname,help=help,verbose=verbose, display=display
 					else	gfile = repstr(cbf,'_int.fits','_geom.fits')
 				endif
 				;
-				; if it exists, read it
+				; if it exists, we're done
 				if file_test(gfile,/read) then begin
 					;
 					; log it

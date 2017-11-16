@@ -935,7 +935,6 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			endif
 		endif	; only object and cflat frames and ncbars gt 0 and narcs gt 0
 		;
-		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; ASSOCIATE WITH DIRECT RELATIVE RESPONSE OBSERVATIONS
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -954,6 +953,26 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			; if we are direct, but there is no arc file
 			; just leave the file as set above ('')
 			printf,kp,'masterrr='+odir+drrfile
+		endif
+		;
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		; ASSOCIATE WITH MASTER SKY OBSERVATIONS
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;
+		; Only objects on sky get sky subtraction
+		; Defaults to self-subtraction
+		if strmatch(kcfg[p].imgtype,'object') eq 1 and $
+		   strmatch(kcfg[p].obstype,'cal') ne 1 and $
+		   strmatch(kcfg[p].obstype,'zero') ne 1 then begin
+		   	;
+			; defaults to self-subtraction
+			skyfile = kcwi_get_imname(ppar,kcfg[p].imgnum, $
+							'_sky',/reduced)
+			kcwi_print_info,ppar,pre, $
+				'master sky file = '+skyfile
+			;
+			; print to proc file
+			printf,kp,'mastersky='+skyfile
 		endif
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

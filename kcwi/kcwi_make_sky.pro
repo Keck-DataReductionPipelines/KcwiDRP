@@ -69,6 +69,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 	; read in wavemap image
 	wmf = repstr(gfil,'_geom', '_wavemap')
 	if file_test(wmf) then begin
+		kcwi_print_info,ppar,pre,'reading wavemap file ',wmf
 		wavemap = mrdfits(wmf,0,wmfh,/fscale,/silent)
 	endif else begin
 		kcwi_print_info,ppar,pre,'no wavemap file',/error
@@ -78,6 +79,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 	; read in slice image
 	slf = repstr(gfil,'_geom','_slicemap')
 	if file_test(slf) then begin
+		kcwi_print_info,ppar,pre,'reading slicemap file',slf
 		slicemap = mrdfits(slf,0,slfh,/fscale,/silent)
 	endif else begin
 		kcwi_print_info,ppar,pre,'no slicemap file',/error
@@ -87,6 +89,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 	; read in position image
 	pof = repstr(gfil,'_geom','_posmap')
 	if file_test(pof) then begin
+		kcwi_print_info,ppar,pre,'reading posmap file  ',pof
 		posmap = mrdfits(pof,0,pofh,/fscale,/silent)
 	endif else begin
 		kcwi_print_info,ppar,pre,'no posmap file',/error

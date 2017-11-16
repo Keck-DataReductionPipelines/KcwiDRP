@@ -18,7 +18,7 @@ function bsplvn, bkpt, nord, x, ileft
      vnikx = x # replicate(0.,nord)
 
      while lower LT nx do begin
-        splog, lower, upper, nx
+        ;splog, lower, upper, nx
         vnikx[lower:upper,*] = bsplvn(bkpt, nord, x[lower:upper], $
                                       ileft[lower:upper])
         lower = upper + 1

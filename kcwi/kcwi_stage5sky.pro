@@ -147,116 +147,137 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 				; report input file
 				kcwi_print_info,ppar,pre,'input reduced image',obfil,format='(a,a)'
 				;
-				; read in image
-				img = mrdfits(obfil,0,hdr,/fscale,/silent)
-				;
-				; get dimensions
-				sz = size(img,/dimension)
-				;
-				; read variance, mask images
-				vfil = repstr(obfil,'_int','_var')
-				if file_test(vfil) then begin
-					var = mrdfits(vfil,0,varhdr,/fscale,/silent)
-				endif else begin
-					var = fltarr(sz)
-					var[0] = 1.	; give var value range
-					varhdr = hdr
-					kcwi_print_info,ppar,pre,'variance image not found for: '+obfil,/warning
-				endelse
-				mfil = repstr(obfil,'_int','_msk')
-				if file_test(mfil) then begin
-					msk = mrdfits(mfil,0,mskhdr,/silent)
-				endif else begin
-					msk = intarr(sz)
-					msk[0] = 1	; give mask value range
-					mskhdr = hdr
-					kcwi_print_info,ppar,pre,'mask image not found for: '+obfil,/warning
-				endelse
-				;
-				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-				; STAGE 5: SKY CORRECTION
-				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-				;
-				; do we have a geometry solution?
-				do_sky = (1 eq 0)	; assume no to begin with
-				if strtrim(kpars[i].geomcbar,2) ne '' then begin
+				; do we have master sky file?
+				do_sky = (1 eq 0)
+				if strtrim(kpars[i].mastersky,2) ne '' then begin
+					msfile = kpars[i].mastersky
 					;
-					; geom file
-					gfile = repstr(strtrim(kpars[i].geomcbar,2),'_int','_geom')
-					;
-					; check access
-					if file_test(gfile) then begin
+					; is master sky already built?
+					if file_test(msfile) then begin
 						do_sky = (1 eq 1)
 						;
 						; log that we got it
-						kcwi_print_info,ppar,pre,'geom file = '+gfile
+						kcwi_print_info,ppar,pre,'master sky file = '+msfile
 					endif else begin
 						;
-						; log that we haven't got it
-						kcwi_print_info,ppar,pre,'geom file not found: '+gfile,/error
+						; does input master sky image exist?
+						;
+						; need flat fielded image
+						sinfile = repstr(msfile,'_sky','_intf')
+						if file_test(sinfile) then begin
+							;
+							; also need geom file
+							gfile = repstr(strtrim(kpars[i].geomcbar,2),'_int','_geom')
+							;
+							; check access
+							if file_test(gfile) then begin
+								do_sky = (1 eq 1)
+								;
+								; log that we got it
+								kcwi_print_info,ppar,pre,'building master sky file = '+msfile
+								kcwi_print_info,ppar,pre,'sky input file = '+sinfile
+								kcwi_print_info,ppar,pre,'geom file = '+gfile
+							endif else begin
+								;
+								; log that we haven't got it
+								kcwi_print_info,ppar,pre,'geom file not found: '+gfile,/error
+							endelse
+						endif else begin
+							;
+							; log that we haven't got it
+							kcwi_print_info,ppar,pre,'master sky input file not found: '+sinfile,/error
+						endelse
 					endelse
-				endif
+				endif	; do we have a master sky file?
 				;
-				; let's fit the sky
+				; let's read in or create master sky
 				if do_sky then begin
 					;
-					; skip sky correction for darks, continuum bars, and arcs
-					if strpos(kcfg.obstype,'cal') ge 0 or $
-					   strpos(kcfg.obstype,'direct') ge 0 or kcfg.shuffmod then begin
-						kcwi_print_info,ppar,pre, $
-						    'skipping sky subtraction for cal/direct/nod-and-shuffle image',/info
-					;
-					; do the sky for science images
+					; build master sky if necessary
+					if file_test(msfile) then begin
+						;
+						; read in master sky
+						sky = mrdfits(msfile,0,mshdr,/fscale,/silent)
 					endif else begin
 						;
-						; check for a sky mask file
-						smfil = repstr(obfil,'_intf.fits','_smsk.txt')
+						; read sky input image
+						skimg = mrdfits(sinfile,0,sihdr,/fscale,/silent)
 						;
-						; fit the sky
+						; check for a sky mask file
+						smfil = repstr(sinfile,'_intf.fits','_smsk.txt')
+						;
+						; make the master sky
 						if file_test(smfil) then begin
 							kcwi_print_info,ppar,pre,'Using sky mask file',smfil
-							kcwi_make_sky,kpars[i],img,hdr,gfile,sky, $
+							kcwi_make_sky,kpars[i],skimg,sihdr,gfile,sky, $
 								sky_mask_file=smfil
 						endif else $
-							kcwi_make_sky,kpars[i],img,hdr,gfile,sky
-						;
-						; do correction
-						img = img - sky
-						;
-						; variance is multiplied by flat squared
-						var = var + sky^2
-						;
-						; mask is not changed by flat
-						;
-						; update header
-						sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
-						sxaddpar,mskhdr,'SKYCOR','T',' sky corrected?'
-						;
-						; write out flat corrected mask image
-						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mskk',/nodir)
-						kcwi_write_image,msk,mskhdr,ofil,kpars[i]
-						;
-						; update header
-						sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
-						sxaddpar,varhdr,'SKYCOR','T',' sky corrected?'
-						;
-						; write out flat corrected variance image
-						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vark',/nodir)
-						kcwi_write_image,var,varhdr,ofil,kpars[i]
-						;
-						; update header
-						sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
-						sxaddpar,hdr,'SKYCOR','T',' sky corrected?'
-						;
-						; write out flat corrected intensity image
-						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_intk',/nodir)
-						kcwi_write_image,img,hdr,ofil,kpars[i]
+							kcwi_make_sky,kpars[i],skimg,sihdr,gfile,sky
 					endelse
 					;
-					; handle the case when no flat frames were taken
+					; read in image
+					img = mrdfits(obfil,0,hdr,/fscale,/silent)
+					;
+					; get dimensions
+					sz = size(img,/dimension)
+					;
+					; read variance, mask images
+					vfil = repstr(obfil,'_int','_var')
+					if file_test(vfil) then begin
+						var = mrdfits(vfil,0,varhdr,/fscale,/silent)
+					endif else begin
+						var = fltarr(sz)
+						var[0] = 1.	; give var value range
+						varhdr = hdr
+						kcwi_print_info,ppar,pre,'variance image not found for: '+obfil,/warning
+					endelse
+					mfil = repstr(obfil,'_int','_msk')
+					if file_test(mfil) then begin
+						msk = mrdfits(mfil,0,mskhdr,/silent)
+					endif else begin
+						msk = intarr(sz)
+						msk[0] = 1	; give mask value range
+						mskhdr = hdr
+						kcwi_print_info,ppar,pre,'mask image not found for: '+obfil,/warning
+					endelse
+					;
+					; do correction
+					img = img - sky
+					;
+					; variance is multiplied by sky squared
+					var = var + sky^2
+					;
+					; mask is not changed by flat
+					;
+					; update header
+					sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
+					sxaddpar,mskhdr,'SKYCOR','T',' sky corrected?'
+					sxaddpar,mskhdr,'SKYMAST',msfile,' master sky file'
+					;
+					; write out flat corrected mask image
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mskk',/nodir)
+					kcwi_write_image,msk,mskhdr,ofil,kpars[i]
+					;
+					; update header
+					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
+					sxaddpar,varhdr,'SKYCOR','T',' sky corrected?'
+					sxaddpar,varhdr,'SKYMAST',msfile,' master sky file'
+					;
+					; write out flat corrected variance image
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vark',/nodir)
+					kcwi_write_image,var,varhdr,ofil,kpars[i]
+					;
+					; update header
+					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
+					sxaddpar,hdr,'SKYCOR','T',' sky corrected?'
+					sxaddpar,hdr,'SKYMAST',msfile,' master sky file'
+					;
+					; write out flat corrected intensity image
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_intk',/nodir)
+					kcwi_write_image,img,hdr,ofil,kpars[i]
 				endif else $
-					kcwi_print_info,ppar,pre,'geom solution required, not found for: '+ $
-							kcfg.obsfname,/warning
+					kcwi_print_info,ppar,pre,'skipping sky subtraction for: '+ $
+							kcfg.obsfname
 				flush,ll
 			;
 			; end check if output file exists already
