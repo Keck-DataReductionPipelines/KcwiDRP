@@ -67,10 +67,10 @@ endif
   xx = x#oney
   yy = onex#y
   
-  reverse_image = xx-xx-10
-  slice_id=reverse_image+100
-  slice_position=reverse_image-90.0
-  tmp_slice_position=slice_position
+  wavemap = xx-xx-10
+  slicemap=wavemap+100
+  posmap=wavemap-90.0
+  tmp_posmap=posmap
   ; loop over slices
   for s=0, 23 do begin
      qs = where(slice eq s and xi gt 0 and finite(xw) and finite(yw), nqs)
@@ -101,12 +101,12 @@ endif
      kcwi_poly_map,xin,yin,kx,ky,xout,yout
 
      ; set the pixel values to the wavelengths.
-     reverse_image[xin-x0out+x0min,yin-ypad] = yout*dwout+wave0out
-     tmp_slice_position[xin-x0out+x0min,yin-ypad]= xout ;-x0min+x0out
-     qz = where(tmp_slice_position ge -2/xbin and tmp_slice_position le 142.0/xbin)
-     slice_id[qz]=s
-     slice_position[qz]=tmp_slice_position[qz]
-     tmp_slice_position[*]=-100
+     wavemap[xin-x0out+x0min,yin-ypad] = yout*dwout+wave0out
+     tmp_posmap[xin-x0out+x0min,yin-ypad]= xout ;-x0min+x0out
+     qz = where(tmp_posmap ge -2/xbin and tmp_posmap le 142.0/xbin)
+     slicemap[qz]=s
+     posmap[qz]=tmp_posmap[qz]
+     tmp_posmap[*]=-100
   endfor
 
   ;
@@ -149,10 +149,10 @@ endif
 
   ; write the file
   kcwi_print_info,ppar,pre,"Writing",outfilepos,/info,format='(a,1x,a)'
-  mwrfits, float(slice_position), outfilepos,hdr,/create
+  mwrfits, float(posmap), outfilepos,hdr,/create
   kcwi_print_info,ppar,pre,"Writing",outfilesli,/info,format='(a,1x,a)'
-  mwrfits, byte((slice_id)), outfilesli,hdr,/create
+  mwrfits, byte((slicemap)), outfilesli,hdr,/create
   kcwi_print_info,ppar,pre,"Writing",outfile,/info,format='(a,1x,a)'
-  mwrfits, float(reverse_image), outfile, hdr,/create,/iscale
+  mwrfits, float(wavemap), outfile, hdr,/create,/iscale
   kcwi_print_info,ppar,pre,"Generated reverse maps.",/info
 end
