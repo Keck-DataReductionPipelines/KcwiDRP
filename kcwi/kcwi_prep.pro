@@ -38,7 +38,7 @@
 ;	WAVEITER	- set to use iterative wavelength range expansion method
 ;	SAVEINTIMS	- set to save intermediate images (def: NO)
 ;	INCLUDETEST	- set to include test images in reduction (def: NO)
-;	DOMEPRIORITY	- set to use dome flats over twilight flats (def: NO)
+;	EXTERNAL_FLAT	- set to use external flats over internal flats (def: NO)
 ;	CLOBBER		- set to clobber existing images (def: no clobber)
 ;	VERBOSE		- set gt 0 to get extra screen output (def: 0)
 ;	DISPLAY		- set gt 0 to display diagnostic result plots
@@ -108,7 +108,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	waveiter=waveiter, $
 	saveintims=saveintims, $
 	includetest=includetest, $
-	domepriority=domepriority, $
+	external_flat=external_flat, $
 	clobber=clobber, $
 	verbose=verbose, $
 	display=display, $
@@ -126,7 +126,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		print,pre+': Info - Usage: '+pre+', RawDir, ReducedDir, CalibDir, DataDir'
 		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, MINGROUPBIAS=N, MINOSCANPIX=N, ALTCALDIR=<full_dir_spec>'
 		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
-		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /WAVEITER, /DOMEPRIORITY'
+		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /WAVEITER, /EXTERNAL_FLAT'
 		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /BATCH, /HELP'
 		return
 	endif
@@ -342,9 +342,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		printf,ll,'Saving intermediate images'
 	if keyword_set(includetest) then $
 		printf,ll,'Including test images in processing'
-	if keyword_set(domepriority) then $
-		printf,ll,'Dome flats have priority for relative response' $
-	else	printf,ll,'Twilight flats have priority for relative response'
+	if keyword_set(external_flat) then $
+		printf,ll,'External flats have priority for illumination correction' $
+	else	printf,ll,'Internal flats have priority for illumination correction'
 	if keyword_set(clobber) then $
 		printf,ll,'Clobbering existing images'
 	printf,ll,'Verbosity level   : ',verbose
@@ -368,64 +368,37 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		print,"(<cr>) for no images in the night,"
 		print,"image number range list (e.g. '12-15,26,27')."
 		;
-		; SKY observations
-		skyrng=''
-		read,'Enter blank sky observations image number range: ',skyrng
-		skyrng = strcompress(skyrng,/remove_all)
-		if strlen(skyrng) gt 0 then begin
-			kcwi_print_info,ppar,pre, $
-				'Input blank sky image numbers', $
-				skyrng,format='(a,a)'
-			rangepar,skyrng,skyno
-			nsky = n_elements(skyno)
-			for i=0,nsky-1 do begin
-				t = where(kcfg.imgnum eq skyno[i], nt)
-				if nt eq 1 then begin
-					kcfg[t].skyobs = 1
-					kcfg[t].obstype = 'cal'
-				endif else if nt eq 0 then begin
-					kcwi_print_info,ppar,pre, $
-					'Sky image number not found: '+ $
-					strn(skyno[i]),/warn
-				endif else begin
-					kcwi_print_info,ppar,pre, $
-					'Ambiguous sky image number: '+ $
-					strn(skyno[i]),/warn
-				endelse
-			endfor
-		endif	else	$	; strlen(skyrng) gt 0
-			kcwi_print_info,ppar,pre, $
-				'No sky image numbers input'
-		;
 		; twilight flat observations
-		twirng=''
-		read,'Enter twilight flat observations image number range: ', $
-			twirng
-		twirng = strcompress(twirng,/remove_all)
-		if strlen(twirng) gt 0 then begin
-			kcwi_print_info,ppar,pre, $
-				'Input twilight flat image numbers', $
-				twirng,format='(a,a)'
-			rangepar,twirng,twino
-			ntwi = n_elements(twino)
-			for i=0,ntwi-1 do begin
-				t = where(kcfg.imgnum eq twino[i], nt)
-				if nt eq 1 then begin
-					kcfg[t].imgtype = 'tflat'
-					kcfg[t].obstype = 'cal'
-				endif else if nt eq 0 then begin
-					kcwi_print_info,ppar,pre, $
-					'Twilight image number not found: '+ $
-					strn(twino[i]),/warn
-				endif else begin
-					kcwi_print_info,ppar,pre, $
-					'Ambiguous twilight image number: '+ $
-					strn(twino[i]),/warn
-				endelse
-			endfor
-		endif	else	$	; strlen(twirng) gt 0
+		if keyword_set(external_flat) then begin
+			twirng=''
+			read,'Enter twilight flat observations image number range: ', $
+				twirng
+			twirng = strcompress(twirng,/remove_all)
+			if strlen(twirng) gt 0 then begin
+				kcwi_print_info,ppar,pre, $
+					'Input twilight flat image numbers', $
+					twirng,format='(a,a)'
+				rangepar,twirng,twino
+				ntwi = n_elements(twino)
+				for i=0,ntwi-1 do begin
+					t = where(kcfg.imgnum eq twino[i], nt)
+					if nt eq 1 then begin
+						kcfg[t].imgtype = 'tflat'
+						kcfg[t].obstype = 'cal'
+					endif else if nt eq 0 then begin
+						kcwi_print_info,ppar,pre, $
+						'Twilight image number not found: '+ $
+						strn(twino[i]),/warn
+					endif else begin
+						kcwi_print_info,ppar,pre, $
+						'Ambiguous twilight image number: '+ $
+						strn(twino[i]),/warn
+					endelse
+				endfor
+			endif	else	$	; strlen(twirng) gt 0
 			kcwi_print_info,ppar,pre, $
 				'No twilight flat image numbers input'
+		endif
 	endif	; not batch
 	;
 	; write out a complete listing
@@ -466,38 +439,6 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	kcwi_print_info,ppar,pre,'Number of local images in calibration pool', $
 			ncal,format='(a,i5)'
 	;
-	; find slice profile images
-	profs = where(strcmp(kcfg.imgtype,'object') eq 1 and $
-		( kcfg.skyobs eq 1 or (kcfg.nasmask eq 1 and $
-					 kcfg.shuffmod eq 1) ), nprofs)
-	; twilight flats may be better for this
-	;profs = where(strcmp(calcfg.imgtype,'tflat') eq 1, nprofs)
-	if nprofs le 0 then $
-		kcwi_print_info,ppar,pre, $
-			'no slice profile observations found',/warning
-	;
-	; find relative response images
-	trrs = where(strcmp(calcfg.imgtype,'tflat') eq 1, ntrrs)
-	drrs = where(strcmp(calcfg.imgtype,'dflat') eq 1, ndrrs)
-	if ntrrs gt 0 or ndrrs gt 0 then begin
-		nrrs = ntrrs + ndrrs
-		if ntrrs gt 0 then begin
-			rrs = trrs
-			if ndrrs gt 0 then $
-				rrs = [rrs, drrs]
-		endif else 	rrs = drrs
-		nrrs = n_elements(rrs)
-	endif else begin
-		nrrs = 0
-		kcwi_print_info,ppar,pre, $
-			'no relative response images found',/warning
-	endelse
-	;
-	; find sky observation images
-	skys = where(kcfg.skyobs eq 1, nskys)
-	if nskys le 0 then $
-		kcwi_print_info,ppar,pre,'no sky observations found',/warning
-	;
 	; find standard star observation images
 	stds = kcwi_find_stds(kcfg,ppar,nstds)
 	if nstds le 0 then $
@@ -533,29 +474,6 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	kcwi_group_geom,calcfg,ppar,ccfg,acfg
 	;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	; GROUP SLICE PROFILE OBSERVATIONS
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	if nprofs gt 0 then $
-		pcfg = kcfg[profs]
-	kcwi_print_info,ppar,pre,'Number of slice profile images',nprofs
-	;
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	; GROUP SKY OBSERVATIONS
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	if nskys gt 0 then $
-		scfg = kcfg[skys]
-	kcwi_print_info,ppar,pre,'Number of sky images',nskys
-	;
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	; GROUP RELATIVE RESPONSE OBSERVATIONS
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	if ntrrs gt 0 then $
-		rtcfg = calcfg[trrs]
-	if ndrrs gt 0 then $
-		rdcfg = calcfg[drrs]
-	kcwi_print_info,ppar,pre,'Number of relative response images',nrrs
-	;
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; GROUP STANDARD STAR OBSERVATIONS
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	if nstds gt 0 then $
@@ -579,10 +497,8 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	; uncalibrated objects
 	unbias = ['']
 	undark = ['']
-	unflat = ['']
 	ungeom = ['']
-	unprof = ['']
-	unrr   = ['']
+	unflat = ['']
 	unstd  = ['']
 	;
 	; proc filename
@@ -773,8 +689,69 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			;
 			; don't check if no flat groups
 			if ppar.nfgrps gt 0 then begin
-				mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags,imgtype='cflat',/time, $
+				mcfg = kcwi_match_cfg(fcfg,kcfg[p],ppar,mtags, $
 					count=f,silent=sile)
+				;
+				; we have a choice for flat reference
+				if f gt 1 then begin
+					;
+					; external flats are priority
+					if keyword_set(external_flat) then begin
+						;
+						; first look for twilights
+						ff = where(mcfg.imgtype eq 'tflat', nff)
+						if nff ge 1 then begin
+							mcfg = mcfg[ff[0]]
+							f = 1
+						endif else begin
+							;
+							; then domes
+							ff = where(mcfg.imgtype eq 'dflat', nff)
+							if nff ge 1 then begin
+								mcfg = mcfg[ff[0]]
+								f = 1
+							endif else begin
+								;
+								; internal flats last
+								ff = where(mcfg.imgtype eq 'cflat', nff)
+								if nff ge 1 then begin
+									mcfg = mcfg[ff[0]]
+									f = 1
+								endif else begin
+									kcwi_print_info,ppar,pre,'Flat match error',/warn
+								endelse
+							endelse
+						endelse
+					;
+					; internal flats are priority (default)
+					endif else begin
+						;
+						; first look for internal flats
+						ff = where(mcfg.imgtype eq 'cflat', nff)
+						if nff ge 1 then begin
+							mcfg = mcfg[ff[0]]
+							f = 1
+						endif else begin
+							;
+							; then twilight flats
+							ff = where(mcfg.imgtype eq 'tflat', nff)
+							if nff ge 1 then begin
+								mcfg = mcfg[ff[0]]
+								f = 1
+							endif else begin
+								;
+								; dome flats last
+								ff = where(mcfg.imgtype eq 'dflat', nff)
+								if nff ge 1 then begin
+									mcfg = mcfg[ff[0]]
+									f = 1
+								endif else begin
+									kcwi_print_info,ppar,pre,'Flat match error',/warn
+								endelse
+							endelse
+						endelse
+					endelse	; internal flats priority
+				endif	; multiple flats possible
 			endif else begin
 				mcfg = -1
 				f = 0
@@ -813,7 +790,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			; if not matched, log as uncalibrated
 			endif else begin
 				cstr = (kcwi_cfg_string(kcfg[p],/delim,/long))[0]
-				unflat = [ unflat, cstr ]
+				unflat  = [ unflat , cstr ]
 			endelse
 		endif	; only object and cflat frames and nfgrps gt 0
 		;
@@ -958,211 +935,6 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			endif
 		endif	; only object and cflat frames and ncbars gt 0 and narcs gt 0
 		;
-		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		; ASSOCIATE WITH SLICE PROFILE OBSERVATIONS
-		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		;
-		; no point profile correcting dark frames
-		; also require geometry solution
-		if strmatch(kcfg[p].imgtype,'dark') ne 1 and $
-		   strpos(kcfg[p].obstype,'direct') lt 0 and $
-		   (nprofs gt 0 or ntrrs gt 0 or ndrrs gt 0 or keyword_set(altcaldir)) and $
-		   cbfile ne '' and arfile ne '' then begin
-		   	;
-			; don't check unless we have profiles
-			if nprofs gt 0 then begin
-				mcfg = kcwi_match_cfg(pcfg,kcfg[p],ppar,mtags, $
-						count=s,/time)
-			endif else begin
-				mcfg = -1
-				s = 0
-			endelse
-			;
-			; record match
-			if s eq 1 then begin
-				;
-				; record slice profile observation filename
-				pfile = strmid(mcfg.obsfname,0,strpos(mcfg.obsfname,'.fit'))+'_prof.fits'
-				;
-				; log
-				kcwi_print_info,ppar,pre, 'slice profile file = '+pfile
-				pfile = odir + pfile
-				;
-				; handle the ambiguous case or 
-				; when no slice profile image can be found
-			endif else begin
-				kcwi_print_info,ppar,pre, $
-				    'cannot associate local slice profile image for object image: '+ $
-				    kcfg[p].obsfname,/warning
-				pfile = ''
-				;
-				; did we specify an alternative?
-				if keyword_set(altcaldir) then begin
-					pfile = kcwi_alt_cals(kcfg[p],adir,ppar,/prof)
-					;
-					; log if matched
-					if pfile ne '' then $
-						kcwi_print_info,ppar,pre, $
-							'slice profile file = '+pfile
-				endif
-				;
-				; still not matched?  Use twilight flats or domes
-				;
-				; first check for twilight flats
-				if pfile eq '' and ntrrs gt 0 then begin
-					mcfg = kcwi_match_cfg(rtcfg,kcfg[p],ppar,mtags, $
-								count=s,/time)
-					if s eq 1 then begin
-						pfile = strmid(mcfg.obsfname,0, $
-								strpos(mcfg.obsfname,'.fit'))+'_prof.fits'
-						;
-						; log
-						kcwi_print_info,ppar,pre, $
-							'twilight flat slice profile file = '+pfile
-						pfile = odir + pfile
-					endif
-				endif
-				;
-				; next check for dome flats
-				if pfile eq '' and ndrrs gt 0 then begin
-					mcfg = kcwi_match_cfg(rdcfg,kcfg[p],ppar,mtags, $
-								count=s,/time)
-					if s eq 1 then begin
-						pfile = strmid(mcfg.obsfname,0, $
-								strpos(mcfg.obsfname,'.fit'))+'_prof.fits'
-						;
-						; log
-						kcwi_print_info,ppar,pre, $
-							'dome flat slice profile file = '+pfile
-						pfile = odir + pfile
-					endif
-				endif
-				;
-				; if not matched, log as uncalibrated
-				if pfile eq '' then begin
-					cstr = (kcwi_cfg_string(kcfg[p],/long,/delim))[0]
-					unprof = [ unprof, cstr ]
-				endif
-			endelse
-			;
-			; print proc
-			if pfile ne '' then $
-				printf,kp,'masterprof='+pfile
-		endif	; only object frames and nprofs gt 0
-		;
-		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		; ASSOCIATE WITH SKY OBSERVATIONS
-		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		;
-		; only object frames can have sky observations
-		if strmatch(kcfg[p].imgtype,'object') eq 1 and $
-		   kcfg[p].skyobs eq 0 and nskys gt 0 then begin
-			mcfg = kcwi_match_cfg(scfg,kcfg[p],ppar,mtags, $
-					/object,/time,count=s,/silent)
-			if s eq 1 then begin
-				;
-				; record sky filename
-				skfile = mcfg.obsfname
-				;
-				; log
-				kcwi_print_info,ppar,pre,'sky file = '+skfile
-			endif else begin
-				kcwi_print_info,ppar,pre, $
-					'No sky obs with same object name', $
-					kcfg[p].targname,format='(a,2x,a)', $
-					/warning
-				skfile = ''
-			endelse
-			;
-			; print proc
-			if skfile ne '' then $
-				printf,kp,'mastersky='+odir+skfile
-		endif	; only object frames and nskys gt 0
-		;
-		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		; ASSOCIATE WITH RELATIVE RESPONSE OBSERVATIONS
-		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		;
-		; no sense response correcting dark frames
-		; also require geometry solution
-		if strmatch(kcfg[p].imgtype,'dark') ne 1 and $
-		   strpos(kcfg[p].obstype,'direct') lt 0 and $
-		   (nrrs gt 0 or keyword_set(altcaldir)) and cbfile ne '' and arfile ne '' then begin
-			;
-			; twilight flats
-			if ntrrs gt 0 then $
-				mtcfg = kcwi_match_cfg(rtcfg,kcfg[p],ppar, $
-							mtags,count=rt,/time) $
-			else	rt = 0
-			;
-			; dome flats
-			if ndrrs gt 0 then $
-				mdcfg = kcwi_match_cfg(rdcfg,kcfg[p],ppar, $
-							mtags,count=rd,/time) $
-			else	rd = 0
-			;
-			; do we have a choice?
-			if rt eq 1 and rd eq 1 then begin
-				if keyword_set(domepriority) then begin
-					r = rd
-					mcfg = mdcfg
-				endif else begin
-					r = rt
-					mcfg = mtcfg
-				endelse
-			;
-			; nope, one or no choices
-			endif else begin
-				;
-				; only a dome flat
-				if rd eq 1 then begin
-					r = rd
-					mcfg = mdcfg
-				;
-				; must be a twilight flat or nothing
-				endif else begin
-					r = rt
-					if rt eq 1 then mcfg = mtcfg
-				endelse
-			endelse
-			;
-			; did we find any?
-			if r eq 1 then begin
-				;
-				; record twilight or dome flat filename
-				rrfile = strmid(mcfg.obsfname,0,strpos(mcfg.obsfname,'.fit'))+'_rr.fits'
-				;
-				; log
-				kcwi_print_info,ppar,pre, $
-					'relative response file = '+rrfile
-				rrfile = odir + rrfile
-			endif else begin
-				kcwi_print_info,ppar,pre, $
-				    'cannot associate local relative response image for object image: '+ $
-				    kcfg[p].obsfname,/warning
-				rrfile = ''
-				;
-				; did we specify an alternative?
-				if keyword_set(altcaldir) then begin
-					rrfile = kcwi_alt_cals(kcfg[p],adir,ppar,/rr)
-					;
-					; log if matched
-					if rrfile ne '' then $
-						kcwi_print_info,ppar,pre, $
-							'relative response file = '+rrfile
-				endif
-			endelse
-			;
-			; print proc
-			if rrfile ne '' then begin
-				printf,kp,'masterrr='+rrfile
-			;
-			; if not matched, log as uncalibrated
-			endif else begin
-				cstr = (kcwi_cfg_string(kcfg[p],/long,/delim))[0]
-				unrr = [ unrr, cstr ]
-			endelse
-		endif else rrfile = ''	; only object frames and nrrs gt 0
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; ASSOCIATE WITH DIRECT RELATIVE RESPONSE OBSERVATIONS
@@ -1304,36 +1076,6 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		endif else $
 			kcwi_print_info,ppar,pre,'All geometry configurations calibrated'
 	endif else kcwi_print_info,ppar,pre,'No geom groups found',/warn
-	if nprofs gt 0 then begin
-		if n_elements(unprof) gt 1 then begin
-			unprof = unprof[1:(n_elements(unprof)-1)]
-			unprof = unprof[sort(unprof)]
-			unprof = unprof[uniq(unprof)]
-			nunprof = n_elements(unprof)
-			kcwi_print_info,ppar,pre, $
-				'Number of missing profile configurations',nunprof, $
-				format='(a,i5)',/warn
-			for i = 0,nunprof-1 do $
-				kcwi_print_info,ppar,pre,'Missing profile configuration',unprof[i], $
-								format='(a,a)'
-		endif else $
-			kcwi_print_info,ppar,pre,'All profile configurations calibrated'
-	endif else kcwi_print_info,ppar,pre,'No profile images found',/warn
-	if nrrs gt 0 then begin
-		if n_elements(unrr) gt 1 then begin
-			unrr = unrr[1:(n_elements(unrr)-1)]
-			unrr = unrr[sort(unrr)]
-			unrr = unrr[uniq(unrr)]
-			nunrr = n_elements(unrr)
-			kcwi_print_info,ppar,pre, $
-				'Number of missing relative response configurations',nunrr, $
-				format='(a,i5)',/warn
-			for i = 0,nunrr-1 do $
-				kcwi_print_info,ppar,pre,'Missing relative response configuration',unrr[i], $
-								format='(a,a)'
-		endif else $
-			kcwi_print_info,ppar,pre,'All relative response configurations calibrated'
-	endif else kcwi_print_info,ppar,pre,'No relative response images found',/warn
 	if nstds gt 0 then begin
 		if n_elements(unstd) gt 1 then begin
 			unstd = unstd[1:(n_elements(unstd)-1)]

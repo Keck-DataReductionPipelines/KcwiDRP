@@ -22,6 +22,7 @@
 ;	Fcfg	- a KCWI_CFG struct vector with one entry for each flat group
 ;
 ; KEYWORDS:
+;	None
 ;
 ; SIDE EFFECTS:
 ;	Outputs pipeline parameter file in ODIR for each flat group.
@@ -44,6 +45,7 @@
 ;	2013-AUG-29	Initial version
 ;	2013-SEP-09	Added loglun keyword
 ;	2013-SEP-13	Now use KCWI_PPAR struct for parameters
+;	2017-NOV-15	Group all flats
 ;-
 pro kcwi_group_flats, kcfg, ppar, fcfg
 	;
@@ -59,17 +61,54 @@ pro kcwi_group_flats, kcfg, ppar, fcfg
 	if kcwi_verify_cfg(kcfg) ne 0 then return
 	if kcwi_verify_ppar(ppar) ne 0 then return
 	;
-	; get flat list
-	flats = where(strpos(kcfg.imgtype,'cflat') ge 0, nflats)
+	; get flat lists
+	cflats = where(strpos(kcfg.imgtype,'cflat') ge 0, ncflats)
+	dflats = where(strpos(kcfg.imgtype,'dflat') ge 0, ndflats)
+	tflats = where(strpos(kcfg.imgtype,'tflat') ge 0, ntflats)
 	;
-	; if we have flats, group them
-	if nflats gt 0 then begin
-		;
-		; create range list of all flats
-		rangepar,flats,flist
-		;
-		; get flat groups split by comma
-		fgroups = strsplit(flist,',',/extract,count=ngroups)
+	; get groups for each
+	ngroups = 0
+	;
+	; cont flats
+	if ncflats gt 0 then begin
+		rangepar,cflats,cflist
+		cfgroups = strsplit(cflist,',',/extract,count=ncgroups)
+		if ncgroups gt 0 then begin
+			fgroups = cfgroups
+			ngroups += ncgroups
+		endif
+	endif
+	;
+	; dome flats
+	if ndflats gt 0 then begin
+		rangepar,dflats,dflist
+		dfgroups = strsplit(dflist,',',/extract,count=ndgroups)
+		if ndgroups gt 0 then begin
+			if ngroups gt 0 then begin
+				fgroups = [fgroups,dfgroups]
+			endif else begin
+				fgroups = dfgroups
+			endelse
+			ngroups += ndgroups
+		endif
+	endif
+	;
+	; twilight flats
+	if ntflats gt 0 then begin
+		rangepar,tflats,tflist
+		tfgroups = strsplit(tflist,',',/extract,count=ntgroups)
+		if ntgroups gt 0 then begin
+			if ngroups gt 0 then begin
+				fgroups = [fgroups,tfgroups]
+			endif else begin
+				fgroups = tfgroups
+			endelse
+			ngroups += ntgroups
+		endif
+	endif
+	;
+	; if we have flat groups, set them up
+	if ngroups gt 0 then begin
 		;
 		; setup KCWI_CFG struct for groups
 		fcfg = replicate(fcfg, ngroups)
@@ -102,7 +141,7 @@ pro kcwi_group_flats, kcfg, ppar, fcfg
 			fcfg[i].nimages		= nims
 			;
 			; configuration
-			fcfg[i].imgtype		= 'cflat'
+			fcfg[i].imgtype		= kcfg[f].imgtype
 			;
 			; use first image in group
 			gi = kcfg[f].imgnum
