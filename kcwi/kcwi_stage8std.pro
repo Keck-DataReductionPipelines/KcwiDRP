@@ -356,8 +356,11 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 			endelse
 		;
 		; end check if input file exists
-		endif else $
-			kcwi_print_info,ppar,pre,'input file not found: '+obfil,/warning
+		endif else begin
+			if strpos(kpars[i].obstype,'cal') lt 0 then $
+				kcwi_print_info,ppar,pre,'input file not found: '+obfil,/warning $
+			else $
+				kcwi_print_info,ppar,pre,'skipping calibration file: '+obfil
 	endfor	; loop over images
 	;
 	; report
