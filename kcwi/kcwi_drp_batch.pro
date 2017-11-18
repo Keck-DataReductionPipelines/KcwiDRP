@@ -37,6 +37,7 @@
 ;	2014-JUN-03	Initial version
 ;	2014-OCT-23	Added onestage keyword
 ;	2014-NOV-07	Added stage7std to nominal run
+;	2017-NOV-18	Accounting for re-structure
 ;-
 pro kcwi_drp_batch,dirlist,dark=dark, $
 	minoscanpix=minoscanpix, $
@@ -69,10 +70,10 @@ for i=0,ndir-1 do begin
 		case one of
 			1: kcwi_stage1
 			2: kcwi_stage2dark
-			3: kcwi_stage3flat
-			4: kcwi_stage4geom
-			5: kcwi_stage5prof
-			6: kcwi_stage6rr
+			3: kcwi_stage3geom
+			4: kcwi_stage4flat
+			5: kcwi_stage5sky
+			6: kcwi_stage6cube
 			7: kcwi_stage7dar
 			8: kcwi_stage8std
 			else: print,'Illegal stage: ',one
@@ -99,20 +100,20 @@ for i=0,ndir-1 do begin
 			kcwi_stage2dark
 		if last le 2 then goto,done
 		;
-		; do flat field correction
-		kcwi_stage3flat
+		; do geometry solution
+		kcwi_stage3geom
 		if last le 3 then goto,done
 		;
-		; solve for wavelengths and geometry
-		kcwi_stage4geom
+		; do flat correction
+		kcwi_stage4flat
 		if last le 4 then goto,done
 		;
-		; do slice profile correction
-		kcwi_stage5prof
+		; do sky subtraction
+		kcwi_stage5sky
 		if last le 5 then goto,done
 		;
-		; do relative response correction
-		kcwi_stage6rr
+		; do cube generation
+		kcwi_stage6cube
 		if last le 6 then goto,done
 		;
 		; do DAR correction
