@@ -375,37 +375,47 @@ pro kcwi_make_flat,ppar,gfile
 	wavebuffer2=0.05
 
 	qbluefit = where(waves lt minrwave+(maxrwave-minrwave)*wavebuffer and $
-		         waves gt minrwave+(maxrwave-minrwave)*wavebuffer2)
+		         waves gt minrwave+(maxrwave-minrwave)*wavebuffer2, $
+			 nqb)
 	qredfit = where(waves ge minrwave+(maxrwave-minrwave)*(1-wavebuffer) $
-		and waves lt minrwave+(maxrwave-minrwave)*(1-wavebuffer2))
+		and waves lt minrwave+(maxrwave-minrwave)*(1-wavebuffer2), $
+		nqr)
 
-	bluefit = bspline_valu(waves[qbluefit],sftb)
-	refbluefit = bspline_valu(waves[qbluefit],sftr)
-	redfit = bspline_valu(waves[qredfit],sftd)
-	refredfit = bspline_valu(waves[qredfit],sftr)
-	bluelinfit = linfit(waves[qbluefit],refbluefit/bluefit)
-	redlinfit = linfit(waves[qredfit],refredfit/redfit)
+	if nqb gt 0 then begin
+		bluefit = bspline_valu(waves[qbluefit],sftb)
+		refbluefit = bspline_valu(waves[qbluefit],sftr)
+		bluelinfit = linfit(waves[qbluefit],refbluefit/bluefit)
+	endif
+	if nqr gt 0 then begin
+		redfit = bspline_valu(waves[qredfit],sftd)
+		refredfit = bspline_valu(waves[qredfit],sftr)
+		redlinfit = linfit(waves[qredfit],refredfit/redfit)
+	endif
 
 	if do_plots then begin
-		plot,waves[qbluefit],refbluefit
-		oplot,waves[qbluefit],bluefit,color=colordex('blue')
-		if ppar.display ge 2 then read,'next: ',ask
+		if nqb gt 1 then begin
+			plot,waves[qbluefit],refbluefit
+			oplot,waves[qbluefit],bluefit,color=colordex('blue')
+			if ppar.display ge 2 then read,'next: ',ask
 
-		plot,waves[qbluefit],refbluefit/bluefit,/ys
-		oplot,waves[qbluefit], $
-		      bluelinfit[0]+bluelinfit[1]*waves[qbluefit], $
-		      color=colordex('blue')
-		if ppar.display ge 2 then read,'next: ',ask
+			plot,waves[qbluefit],refbluefit/bluefit,/ys
+			oplot,waves[qbluefit], $
+		      		bluelinfit[0]+bluelinfit[1]*waves[qbluefit], $
+		      		color=colordex('blue')
+			if ppar.display ge 2 then read,'next: ',ask
+		endif
 
-		plot,waves[qredfit],refredfit
-		oplot,waves[qredfit],redfit,color=colordex('red')
-		if ppar.display ge 2 then read,'next: ',ask
+		if nqr gt 1 then begin
+			plot,waves[qredfit],refredfit
+			oplot,waves[qredfit],redfit,color=colordex('red')
+			if ppar.display ge 2 then read,'next: ',ask
 
-		plot,waves[qredfit],refredfit/redfit,/ys
-		oplot,waves[qredfit], $
-		      redlinfit[0]+redlinfit[1]*waves[qredfit], $
-		      color=colordex('red')
-		if ppar.display ge 2 then read,'next: ',ask
+			plot,waves[qredfit],refredfit/redfit,/ys
+			oplot,waves[qredfit], $
+		      		redlinfit[0]+redlinfit[1]*waves[qredfit], $
+		      		color=colordex('red')
+			if ppar.display ge 2 then read,'next: ',ask
+		endif
 	endif
 
 	;; at this point we are going to try to merge the points
