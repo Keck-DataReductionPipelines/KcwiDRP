@@ -422,9 +422,9 @@ pro kcwi_make_flat,ppar,gfile
 	qselred=where(xfd ge maxrwave, nqsr)
 	qselblue=where(xfb le minrwave, nqsb)
 	
-	if nqsr gt 0 then begin
+	if nqsr gt 0 then $
 		redfluxes=yfd[qselred]*(redlinfit[0]+redlinfit[1]*xfd[qselred])
-	if nqsb gt 0 then begin
+	if nqsb gt 0 then $
 		bluefluxes=yfb[qselblue]*(bluelinfit[0]+bluelinfit[1]*xfb[qselblue])
 	allx = xfr
 	ally = yfr
