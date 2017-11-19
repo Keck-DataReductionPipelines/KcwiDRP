@@ -419,14 +419,23 @@ pro kcwi_make_flat,ppar,gfile
 	endif
 
 	;; at this point we are going to try to merge the points
-	qselred=where(xfd ge maxrwave)
-	qselblue=where(xfb le minrwave)
+	qselred=where(xfd ge maxrwave, nqsr)
+	qselblue=where(xfb le minrwave, nqsb)
 	
-	redfluxes=yfd[qselred]*(redlinfit[0]+redlinfit[1]*xfd[qselred])
-	bluefluxes=yfb[qselblue]*(bluelinfit[0]+bluelinfit[1]*xfb[qselblue])
-	
-	allx=[xfb[qselblue],xfr,xfd[qselred]]
-	ally=[bluefluxes,yfr,redfluxes]
+	if nqsr gt 0 then begin
+		redfluxes=yfd[qselred]*(redlinfit[0]+redlinfit[1]*xfd[qselred])
+	if nqsb gt 0 then begin
+		bluefluxes=yfb[qselblue]*(bluelinfit[0]+bluelinfit[1]*xfb[qselblue])
+	allx = xfr
+	ally = yfr
+	if nqsb gt 0 then begin
+		allx = [xfb[qselblue],allx]
+		ally = [bluefluxes,ally]
+	endif
+	if nqsr gt 0 then begin
+		allx = [allx, xfd[qselred]]
+		ally = [ally, redfluxes]
+	endif
 	
 	s=sort(allx)
 	allx=allx[s]
