@@ -207,8 +207,14 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 
 	if do_plots then begin
 		fsmo = smooth(fluxes,250)
-		mo = moment(fsmo)
-		yrng = [0, max([mo[0]+5.*sqrt(mo[1]), max(yfit1)])]
+		pg = where(waves ge kgeom.wavegood0 and waves le kgeom.wavegood1, npg)
+		if npg gt 3 then begin
+			mo = moment(fsmo[pg])
+			yrng = [0, max([mo[0]+5.*sqrt(mo[1]), max(yfit1[pg])])]
+		endif else begin
+			mo = moment(fsmo)
+			yrng = [0, max([mo[0]+5.*sqrt(mo[1]), max(yfit1)])]
+		endelse
 		plot,waves,fsmo,psym=3,title=sxpar(hdr,'OFNAME'), $
 			charsi=si, charthi=th, $
 			xtitle='Wavelength (A)',xthick=th, /xs, $
