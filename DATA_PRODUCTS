@@ -7,11 +7,11 @@ KCWI raw data filenames are constructed as follows:
 
 KCWI reduced data filenames are constructed as follows:
 
-<froot><imngnum>_<ext>.fits
+<froot>_<imngnum>_<ext>.fits
 
 With:
 
-<froot>		defaults to kbYYMMDD_, with YYMMDD being the current date,
+<froot>		defaults to kbYYMMDD, with YYMMDD being the current date,
 		but can be modified
 <imgnum>	a zero-filled integer of consistent width
 <ext>		specifies the specific product and is tabulated below
@@ -26,21 +26,21 @@ intd		e-/px			2	dark current removed
 vard		e-^2/px			2	variance + dark image variance
 mskd		flag			2	same
 
-intf		e-/px			3	pixel-to-pixel variation removed
-varf		e-^2/px			3	variance + flat image variance
-mskf		flag			3	same
+wavemap		Ang			3	wavelength value at pixel
+slicemap	0-23			3	slice number at pixel
+posmap		0-140			3	slice position (px) at pixel
 
-icube		e-/px			4	geom corrected data cube
-vcube		e-^2/px			4	variance data cube
-mcube		flag			4	mask data cube
+intf		e-/px			4	pixel-to-pixel/illumination variation removed
+varf		e-^2/px			4	variance + flat image variance
+mskf		flag			4	same
 
-icubep		e-/px			5	profile corrected data cube
-vcubep		e-^2/px			5	variance + profile variance
-mcubep		flag			5	same
+intk		e-/px			5	sky subtracted
+vark		e-^2/px			5	variance + sky variance
+mskk		flag			5	same
 
-icuber		e-/px			6	response corrected data cube
-vcuber		e-^2/px			6	variance + relative response variance
-mcuber		flag			6	same
+icube		e-/px			6	geom corrected data cube
+vcube		e-^2/px			6	variance data cube
+mcube		flag			6	mask data cube
 
 icubed		e-/px			7	DAR corrected data cube
 vcubed		e-^2/px			7	DAR corrected variance cube

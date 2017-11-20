@@ -1,17 +1,30 @@
 # Copyright (c) 2013-2017, California Institute of Technology, all rights reserved
 
-2017-Aug-00: v0.5.1 - Twentieth beta release
+2017-Nov-00: v0.6.0 - Twentieth beta release
+
+- major restructuring to implement the usage of bsplines to fit both the
+	pixel-to-pixel and the illumination corrections and to fit and 
+	subtract the sky (see AAAREADME for more details).
 
 - added differential atmospheric refraction correction stage as stage 7 and
 	renamed flux standard stage to stage 8.
+
+- fixed a bug in the coordinates for nod-and-shuffle images that was using
+	the background coords instead of the object coords.
+
+- added interactivity to flux standard calibration to improve fits.
+
+- masks now mainting byte format and now include more values.
+
+- changed median stack of cont flats to mean to account for intensity decay.
+
+- changed CR rejection exposure time threshold from 60s to 2s.
 
 - many output fixes and improvements to make solutions more robust.
 
 - removed unused routines from 'devel' subdirectory.
 
 - updated bad pixel lists.
-
-- prompt user for sky and twilight flat image numbers in kcwi_prep.
 
 - added scattered light subtraction to stage 1.
 
