@@ -344,7 +344,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			gd = where(obsspec gt 0.)
 			plot,w[gd],obsspec[gd],title=sname+' Img #: '+strn(kcfg.imgnum), $
 				xtitle='Wave (A)', $
-				ytitle='Observed flux',/ylog;,/ys
+				ytitle='Observed flux',/ylog
 			oplot,[wgoo0,wgoo0],10^!y.crange,color=colordex('green'), $
 				thick=3
 			oplot,[wgoo1,wgoo1],10^!y.crange,color=colordex('green'), $
