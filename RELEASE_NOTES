@@ -12,6 +12,8 @@
 - fixed a bug in the coordinates for nod-and-shuffle images that was using
 	the background coords instead of the object coords.
 
+- added keyword FIRST to kcwi_prep to indicate first imgnum to process
+
 - added interactivity to flux standard calibration to improve fits.
 
 - masks now mainting byte format and now include more values.

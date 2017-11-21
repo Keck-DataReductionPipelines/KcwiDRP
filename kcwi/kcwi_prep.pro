@@ -24,6 +24,7 @@
 ; Params
 ;	FROOT		- root of image filenames (def: 'kcwi')
 ;	FDIGITS		- number of digits in image numbers (def: 5)
+;	FIRST		- starting image number to process (def: 1)
 ;	MINGROUPBIAS	- minimum number of bias images per group (def: 5)
 ;	MINGROUPDARK	- minimum number of dark images per group (def: 3)
 ;	MINOSCANPIX	- minimum number of overscan pixels for subtraction (def: 70)
@@ -93,10 +94,12 @@
 ;	2016-APR-04	changes specific to KCWI lab data
 ;	2017-MAY-04	Added waveiter keyword
 ;	2017-JUN-28	Added ALTCALDIR keyword
+;	2017-NOV-21	Added FIRST keyword
 ;-
 pro kcwi_prep,rawdir,reduceddir,datadir, $
 	froot=froot, $
 	fdigits=fdigits, $
+	first=first, $
 	mingroupbias=mingroupbias, $
 	mingroupdark=mingroupdark, $
 	minoscanpix=minoscanpix, $
@@ -124,7 +127,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	; requested help?
 	if keyword_set(help) then begin
 		print,pre+': Info - Usage: '+pre+', RawDir, ReducedDir, CalibDir, DataDir'
-		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, MINGROUPBIAS=N, MINOSCANPIX=N, ALTCALDIR=<full_dir_spec>'
+		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, FIRST=N, MINGROUPBIAS=N, MINOSCANPIX=N, ALTCALDIR=<full_dir_spec>'
 		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
 		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /WAVEITER, /EXTERNAL_FLAT'
 		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /BATCH, /HELP'
@@ -275,6 +278,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	ppar.filespec = fspec
 	;
 	; check other params
+	if keyword_set(first) then $
+		first_imgnum = first $
+	else	first_imgnum = 1
 	if keyword_set(mingroupbias) then $
 		ppar.mingroupbias = mingroupbias
 	if keyword_set(mingroupdark) then $
@@ -538,7 +544,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		flush,ll
 		if verbose ge 1 then $
 			print,imsumo
-		printf,kp,imsum,format='(a)'
+		if kcfg[p].imgnum ge first_imgnum then $
+			printf,kp,imsum,format='(a)' $
+		else	printf,kp,'#'+imsum,format='(a)'
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; ASSOCIATE WITH MASTER BIAS IMAGE
@@ -600,7 +608,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			;
 			; print proc
 			if mbfile ne '' then begin
-				printf,kp,'masterbias='+mbfile
+				if kcfg[p].imgnum ge first_imgnum then $
+					printf,kp,'masterbias='+mbfile $
+				else	printf,kp,'#masterbias='+mbfile
 			;
 			; if not matched, log as uncalibrated
 			endif else begin
@@ -665,7 +675,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			;
 			; print proc
 			if mdfile ne '' then begin
-				printf,kp,'masterdark='+mdfile
+				if kcfg[p].imgnum ge first_imgnum then $
+					printf,kp,'masterdark='+mdfile $
+				else	printf,kp,'#masterdark='+mdfile
 			;
 			; if not matched, log as uncalibrated
 			endif else begin
@@ -785,7 +797,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			;
 			; print proc
 			if mffile ne '' then begin
-				printf,kp,'masterflat='+mffile
+				if kcfg[p].imgnum ge first_imgnum then $
+					printf,kp,'masterflat='+mffile $
+				else	printf,kp,'#masterflat='+mffile
 			;
 			; if not matched, log as uncalibrated
 			endif else begin
@@ -849,7 +863,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 					if mgfile ne '' then begin
 						kcwi_print_info,ppar,pre, $
 							'master geom file = '+mgfile
-						printf,kp,'geom='+mgfile
+						if kcfg[p].imgnum ge first_imgnum then $
+							printf,kp,'geom='+mgfile $
+						else	printf,kp,'#geom='+mgfile
 					endif
 				endif
 				;
@@ -862,8 +878,13 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			;
 			; print proc
 			if cbfile ne '' and arfile ne '' then begin
-				printf,kp,'geomcbar='+odir+cbfile
-				printf,kp,'geomarc='+odir+arfile
+				if kcfg[p].imgnum ge first_imgnum then begin
+					printf,kp,'geomcbar='+odir+cbfile
+					printf,kp,'geomarc='+odir+arfile
+				endif else begin
+					printf,kp,'#geomcbar='+odir+cbfile
+					printf,kp,'#geomarc='+odir+arfile
+				endelse
 			endif
 		endif	; only object and cflat frames and ncbars gt 0 and narcs gt 0
 		;
@@ -917,7 +938,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 					if mgfile ne '' then begin
 						kcwi_print_info,ppar,pre, $
 							'master dgeom file = '+mgfile
-						printf,kp,'geom='+mgfile
+						if kcfg[p].imgnum ge first_imgnum then $
+							printf,kp,'geom='+mgfile $
+						else	printf,kp,'#geom='+mgfile
 					endif
 				endif
 				;
@@ -930,8 +953,13 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			;
 			; print proc
 			if cbfile ne '' and arfile ne '' then begin
-				printf,kp,'geomcbar='+odir+cbfile
-				printf,kp,'geomarc='+odir+arfile
+				if kcfg[p].imgnum ge first_imgnum then begin
+					printf,kp,'geomcbar='+odir+cbfile
+					printf,kp,'geomarc='+odir+arfile
+				endif else begin
+					printf,kp,'#geomcbar='+odir+cbfile
+					printf,kp,'#geomarc='+odir+arfile
+				endelse
 			endif
 		endif	; only object and cflat frames and ncbars gt 0 and narcs gt 0
 		;
@@ -952,7 +980,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			;
 			; if we are direct, but there is no arc file
 			; just leave the file as set above ('')
-			printf,kp,'masterrr='+odir+drrfile
+			if kcfg[p].imgnum ge first_imgnum then $
+				printf,kp,'masterrr='+odir+drrfile $
+			else	printf,kp,'#masterrr='+odir+drrfile
 		endif
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -972,7 +1002,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				'master sky file = '+skyfile
 			;
 			; print to proc file
-			printf,kp,'mastersky='+skyfile
+			if kcfg[p].imgnum ge first_imgnum then $
+				printf,kp,'mastersky='+skyfile $
+			else	printf,kp,'#mastersky='+skyfile
 		endif
 		;
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1021,7 +1053,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			;
 			; print proc
 			if stdfile ne '' then begin
-				printf,kp,'masterstd='+stdfile
+				if kcfg[p].imgnum ge first_imgnum then $
+					printf,kp,'masterstd='+stdfile $
+				else	printf,kp,'#masterstd='+stdfile
 			;
 			; if not matched, log as uncalibrated
 			endif else begin

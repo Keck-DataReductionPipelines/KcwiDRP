@@ -216,6 +216,7 @@ MINOSCANPIX	- minimum number of overscan pixels in a given row
 			this defaults to 70
 FROOT		- string overriding default file root ('kcwi')
 FDIGITS		- integer overriding the default image number digits (5)
+FIRST		- imgnum of first image to process (1)
 
 TAPERFRAC	- taper fraction for cross-correlation (0.2)
 PKDEL		- arc line matching threshold in fraction of resolution (0.75)
