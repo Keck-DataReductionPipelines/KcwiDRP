@@ -205,9 +205,34 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 	sft0 = bspline_iterfit(waves,fluxes,fullbkpt=bkpt,yfit=yfit1, $
 				upper=1,lower=1)
 	;
+	; check result
+	if max(yfit1) le 0. then begin
+		kcwi_print_info,ppar,pre,'bspline failure',/warn
+		if n gt 2000 then begin
+			if n eq 5000 then n = 2000
+			if n eq 8000 then n = 5000
+			;
+			; calculate new break points
+			bkpt = min(waves) + findgen(n+1) * (max(waves) - min(waves)) / n
+			;
+			; log
+			kcwi_print_info,ppar,pre,'Nknots, Min, Max breakpoints (A)', $
+				n, minmax(bkpt),format='(a,i6,2f13.2)'
+			;
+			; do bspline fit
+			sft0 = bspline_iterfit(waves,fluxes,fullbkpt=bkpt,yfit=yfit1, $
+						upper=1,lower=1)
+		endif	; n gt 2000
+		;
+		; still not good
+		if max(yfit1) le 0. then $
+			kcwi_print_info,ppar,pre,'bspline final failure, sky is zero',/warn
+	endif	; max(yfit) le 0.
+	;
 	; get values at original wavelengths
 	yfit = bspline_valu(owaves,sft0)
-
+	;
+	; plot, if requested
 	if do_plots then begin
 		fsmo = smooth(fluxes,250)
 		pg = where(waves ge kgeom.wavegood0 and waves le kgeom.wavegood1, npg)
