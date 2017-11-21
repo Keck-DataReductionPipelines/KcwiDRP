@@ -7,14 +7,14 @@ KCWI raw data filenames are constructed as follows:
 
 KCWI reduced data filenames are constructed as follows:
 
-<froot>_<imngnum>_<ext>.fits
+<froot><imngnum>_<ext>.fits
 
 With:
 
-<froot>		defaults to kbYYMMDD, with YYMMDD being the current date,
-		but can be modified
-<imgnum>	a zero-filled integer of consistent width
-<ext>		specifies the specific product and is tabulated below
+<froot>		defaults to kbYYMMDD_, with YYMMDD being the current date,
+		but can be modified.
+<imgnum>	a zero-filled integer of consistent width.
+<ext>		specifies the specific product and is tabulated below.
 
 ext		data units		Stage	notes
 ---------------	-----------------------	-----	------------------------

@@ -140,8 +140,8 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	kgeom.nx = kcfg.naxis1
 	kgeom.ny = kcfg.naxis2
 	kgeom.x0out = 30 / kgeom.xbinsize	; re-set in kcwi_trace_cbars
-	kgeom.goody0 = 10
-	kgeom.goody1 = kgeom.ny - 10
+	kgeom.goody0 = 0
+	kgeom.goody1 = kgeom.ny
 	kgeom.trimy0 = 0
 	kgeom.trimy1 = kgeom.ny
 	kgeom.ypad = 1400 / kgeom.ybinsize
