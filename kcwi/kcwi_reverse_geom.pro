@@ -49,7 +49,7 @@ endif
   wave0out = kgeom.wave0out
   ldeg = kgeom.lastdegree
   xbin = kgeom.xbinsize
-  xpad = 6/xbin
+  xpad = 17/xbin
 
 ; process the degree, default to 3. 
   if n_elements(degree) eq 0 then degree = ldeg
@@ -86,7 +86,9 @@ endif
      x0min = min(x0)
      x0temp = x0-x0min+x0out
      ; generate a mapping
-     polywarp,x1,y1,x0temp,y0,3,kx,ky,/double
+     ;polywarp,x1,y1,x0temp,y0,3,kx,ky,/double
+     deg2d = [2,4]
+     mod_polywarp,x1,y1,x0temp,y0,deg2d,kx,ky,/double
      ; reset the "in" values
      xmm = minmax(x0)
      qin = where(xx gt xmm[0]-xpad and xx lt xmm[1]+xpad and $
@@ -98,12 +100,12 @@ endif
      endif
      xin = xx[qin]-x0min+x0out
      yin = yy[qin]+ypad
-     kcwi_poly_map,xin,yin,kx,ky,xout,yout
+     kcwi_poly_map,xin,yin,kx,ky,xout,yout,deg2d=deg2d
 
      ; set the pixel values to the wavelengths.
      wavemap[xin-x0out+x0min,yin-ypad] = yout*dwout+wave0out
-     tmp_posmap[xin-x0out+x0min,yin-ypad]= xout ;-x0min+x0out
-     qz = where(tmp_posmap ge -2/xbin and tmp_posmap le 142.0/xbin)
+     tmp_posmap[xin-x0out+x0min,yin-ypad] = xout ;-x0min+x0out
+     qz = where(tmp_posmap ge -2/xbin and tmp_posmap le 140.0/xbin)
      slicemap[qz]=s
      posmap[qz]=tmp_posmap[qz]
      tmp_posmap[*]=-100
