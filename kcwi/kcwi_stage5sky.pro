@@ -203,16 +203,23 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 						; read sky input image
 						skimg = mrdfits(sinfile,0,sihdr,/fscale,/silent)
 						;
-						; check for a sky mask file
+						; check for a sky mask file, (txt or fits)
 						smfil = repstr(sinfile,'_intf.fits','_smsk.txt')
+						smfits = repstr(sinfile,'_intf.fits','_smsk.fits')
 						;
 						; make the master sky
 						if file_test(smfil) then begin
-							kcwi_print_info,ppar,pre,'Using sky mask file',smfil
+							kcwi_print_info,ppar,pre,'Using sky mask region file',smfil
 							kcwi_make_sky,kpars[i],skimg,sihdr,gfile,sky, $
 								sky_mask_file=smfil
-						endif else $
+						endif else if file_test(smfits) eq 1 then begin
+							kcwi_print_info,ppar,pre,'Using sky mask image',smfits
+							kcwi_make_sky,kpars[i],skimg,sihdr,gfile,sky, $
+								sky_mask_file=smfits,/fits
+						endif else begin
+							kcwi_print_info,ppar,pre,'No sky mask'
 							kcwi_make_sky,kpars[i],skimg,sihdr,gfile,sky
+						endelse
 					endelse
 					;
 					; read in image
@@ -254,7 +261,7 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,mskhdr,'SKYCOR','T',' sky corrected?'
 					sxaddpar,mskhdr,'SKYMAST',msfile,' master sky file'
 					;
-					; write out flat corrected mask image
+					; write out sky corrected mask image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mskk',/nodir)
 					kcwi_write_image,msk,mskhdr,ofil,kpars[i]
 					;
@@ -263,7 +270,7 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,varhdr,'SKYCOR','T',' sky corrected?'
 					sxaddpar,varhdr,'SKYMAST',msfile,' master sky file'
 					;
-					; write out flat corrected variance image
+					; write out sky corrected variance image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vark',/nodir)
 					kcwi_write_image,var,varhdr,ofil,kpars[i]
 					;
@@ -272,7 +279,7 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,hdr,'SKYCOR','T',' sky corrected?'
 					sxaddpar,hdr,'SKYMAST',msfile,' master sky file'
 					;
-					; write out flat corrected intensity image
+					; write out sky corrected intensity image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_intk',/nodir)
 					kcwi_write_image,img,hdr,ofil,kpars[i]
 				endif else $

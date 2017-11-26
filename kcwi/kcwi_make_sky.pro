@@ -25,13 +25,20 @@
 ;
 ; KEYWORDS:
 ;	SKY_MASK_FILE	- a text file containing regions to mask using
-;		five white-space separated columns for each region you
+;		six white-space separated columns for each region you
 ;		want to mask: 
-;		1 - slice
-;		2 - slice position (px) start
-;		3 - slice position (px) end
-;		4 - wavelength (A) start
-;		5 - wavelength (A) end
+;		1 - slice number start
+;		2 - slice number end
+;		3 - slice position (px) start
+;		4 - slice position (px) end
+;		5 - wavelength (A) start
+;		6 - wavelength (A) end
+;
+;		OR
+;
+;	FITS	- set if sky mask is a binary FITS image
+;			where 0 = use, 1 - mask, otherwise assume
+;			sky mask is a text file as above
 ;
 ; PROCEDURE:
 ;	Fits the sky with bsplines.
@@ -41,14 +48,21 @@
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2017-NOV-13	Initial version
+;	2017-NOV-26	Added fits keyword and re-implemented sky masking
 ;-
-pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
+pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf,fits=fits
 	;
 	; initialize
 	pre = 'KCWI_MAKE_SKY'
 	;
 	; check inputs
 	if kcwi_verify_ppar(ppar,/init) ne 0 then return
+	;
+	; directories
+	if kcwi_verify_dirs(ppar,rawdir,reddir,cdir,ddir) ne 0 then begin
+		kcwi_print_info,ppar,pre,'Directory error, returning',/error
+		return
+	endif
 	;
 	; log
 	kcwi_print_info,ppar,pre,systime(0)
@@ -99,15 +113,81 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 		return
 	endelse
 	;
-	; directories
-	if kcwi_verify_dirs(ppar,rawdir,reddir,cdir,ddir) ne 0 then begin
-		kcwi_print_info,ppar,pre,'Directory error, returning',/error
-		return
+	; get size
+	sm_sz = size(slicemap,/dim)
+	;
+	; sky masking
+	;
+	; default is no masking (0 = use, 1 = mask)
+	binary_mask = bytarr(sm_sz[0], sm_sz[1])
+	;
+	; was sky masking requested?
+	if keyword_set(skymf) then begin
+		;
+		; was it supplied as an image?
+		if keyword_set(fits) then begin
+			;
+			; is the image accessible?
+			if file_test(skymf) then begin
+				binary_mask = mrdfits(skymf,/unsigned,/silent)
+				bm_sz = size(binary_mask,/dim)
+				;
+				; is there a size mis-match?
+				if (bm_sz[0] ne sm_sz[0]) or $
+				   (bm_sz[1] ne sm_sz[1]) then begin
+					kcwi_print_info,ppar,pre, $
+				'Sky mask size mis-match: masking disabled', $
+					/warning
+					binary_mask = bytarr(sm_sz[0], sm_sz[1])
+				endif
+			;
+			; fall back to no masking
+			endif else $
+				kcwi_print_info,ppar,pre, $
+					'Sky mask image not found',skymf, $
+					format='(a,a)',/warning
+		;
+		; was it supplied as a text region file?
+		endif else begin
+		    ;
+		    ; is the text region file accessible?
+		    if file_test(skymf) then begin
+			;
+			; read regions
+			readcol,skymf,msli0, msli1, mp0, mp1, mw0, mw1, $
+				/silent,comment='#'
+			kcwi_print_info,ppar,pre,'Sky mask file read in', $
+				skymf
+			kcwi_print_info,ppar,pre,'Number of masked regions', $
+				n_elements(msli0)
+			;
+			; loop over regions
+			for i = 0, n_elements(msli0)-1 do begin
+				msk = where(slicemap ge msli0[i] and $
+					    slicemap le msli1[i] and $
+					    posmap ge mp0[i] and $
+					    posmap le mp1[i] and $
+					    wavemap ge mw0[i] and $
+					    wavemap le mw1[i], nmsk)
+				;
+				; set masked pixels
+				if nmsk gt 0 then $
+					binary_mask[msk] = 1b $
+				else	kcwi_print_info,ppar,pre, $
+					 	'empty mask region', i,/warning
+			endfor
+		    endif else $
+			kcwi_print_info,ppar,pre, $
+				'Sky mask region file not found', $
+				skymf, format='(a,a)',/warning
+		endelse
+	;
+	; was sky masking requested?
 	endif
 	;
-	; sky map, if requested
-	if keyword_set(sky_mask_file) then begin
-	endif
+	; count masked pixels
+	msk = where(binary_mask ne 0, tmsk)
+	kcwi_print_info,ppar,pre,'Number of pixels masked',tmsk
 	;
 	; prepare plots
 	do_plots = (ppar.display ge 1)
@@ -125,8 +205,13 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 	; use only finite values
 	finiteflux = finite(img)
 	;
-	; get points mapped to exposed regions on CCD
+	; get un-masked points mapped to exposed regions on CCD
 	q = where(slicemap ge 0 and slicemap le 23 and posmap ge 0 and $
+		  wavemap ge kgeom.waveall0 and wavemap lt kgeom.waveall1 and $
+		  finiteflux and binary_mask eq 0)
+	;
+	; get all points mapped to exposed regions on the CCD (for output)
+	qo = where(slicemap ge 0 and slicemap le 23 and posmap ge 0 and $
 		  wavemap ge kgeom.waveall0 and wavemap lt kgeom.waveall1 and $
 		  finiteflux)
 	;
@@ -137,49 +222,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 	waves=wavemap[q]
 	;
 	; keep output wavelengths
-	owaves=waves
-	;
-	; mask, if requested
-	if keyword_set(skymf) gt 0 then begin
-		if file_test(skymf) then begin
-			readcol,skymf,msli0, msli1, mp0, mp1, mw0, mw1, $
-				/silent,comment='#'
-			kcwi_print_info,ppar,pre,'Sky mask file read in', $
-				skymf
-			kcwi_print_info,ppar,pre,'Number of masked regions', $
-				n_elements(msli0)
-			;
-			; relevant positions
-			pos = posmap[q]
-			;
-			; relevant slice numbers
-			slice = slicemap[q]
-			;
-			; count masked pixels
-			tmsk = 0L
-			for i = 0, n_elements(msli0)-1 do begin
-				msk = where(slice ge msli0[i] and $
-					slice le msli1[i] and $
-					pos ge mp0[i] and pos le mp1[i] and $
-					waves ge mw0[i] and waves le mw1[i], $
-					nmsk)
-				if nmsk gt 0 then begin
-					fluxes[msk] = !values.f_nan
-					tmsk += nmsk
-				endif else $
-					kcwi_print_info,ppar,pre, $
-					 'empty mask region', i,/warning
-			endfor
-			finiteflux = finite(fluxes)
-			good = where(finiteflux)
-			fluxes = fluxes[good]
-			waves = waves[good]
-			kcwi_print_info,ppar,pre, $
-				'Total number of pixels masked',tmsk
-		endif else $
-			kcwi_print_info,ppar,pre,'Sky mask file not found', $
-				skymf,/warning
-	endif
+	owaves=wavemap[qo]
 	;
 	; sort on wavelength
 	s=sort(waves)
@@ -213,20 +256,23 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 			if n eq 8000 then n = 5000
 			;
 			; calculate new break points
-			bkpt = min(waves) + findgen(n+1) * (max(waves) - min(waves)) / n
+			bkpt = min(waves) + findgen(n+1) * $
+			       (max(waves) - min(waves)) / n
 			;
 			; log
-			kcwi_print_info,ppar,pre,'Nknots, Min, Max breakpoints (A)', $
+			kcwi_print_info,ppar,pre, $
+				'Nknots, Min, Max breakpoints (A)', $
 				n, minmax(bkpt),format='(a,i6,2f13.2)'
 			;
 			; do bspline fit
-			sft0 = bspline_iterfit(waves,fluxes,fullbkpt=bkpt,yfit=yfit1, $
-						upper=1,lower=1)
+			sft0 = bspline_iterfit(waves,fluxes,fullbkpt=bkpt, $
+						yfit=yfit1,upper=1,lower=1)
 		endif	; n gt 2000
 		;
 		; still not good
 		if max(yfit1) le 0. then $
-			kcwi_print_info,ppar,pre,'bspline final failure, sky is zero',/warn
+			kcwi_print_info,ppar,pre, $
+				'bspline final failure, sky is zero',/warn
 	endif	; max(yfit) le 0.
 	;
 	; get values at original wavelengths
@@ -235,7 +281,8 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 	; plot, if requested
 	if do_plots then begin
 		fsmo = smooth(fluxes,250)
-		pg = where(waves ge kgeom.wavegood0 and waves le kgeom.wavegood1, npg)
+		pg = where(waves ge kgeom.wavegood0 and $
+			   waves le kgeom.wavegood1, npg)
 		if npg gt 3 then begin
 			mo = moment(fsmo[pg])
 			yrng = [0, max([mo[0]+5.*sqrt(mo[1]), max(yfit1[pg])])]
@@ -260,7 +307,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 	;
 	; create sky image
 	sky = img - img
-	sky[q] = yfit
+	sky[qo] = yfit
 	;
 	; output file name
 	ofn = sxpar(hdr,'OFNAME')
@@ -271,6 +318,10 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf
 	sxaddpar,shdr,'HISTORY','  '+pre+' '+systime(0)
 	sxaddpar,shdr,'SKYMODEL','T',' sky model image?'
 	sxaddpar,shdr,'SKYIMAGE',ofn,' image used for sky model'
+	if tmsk gt 0 then begin
+		sxaddpar,shdr,'SKYMSK','T',' was sky masked?'
+		sxaddpar,shdr,'SKYMSKF', skymf, ' sky mask file'
+	endif
 	;
 	; write out image file
 	kcwi_write_image,sky,shdr,sfil,ppar

@@ -103,9 +103,11 @@ endif
      kcwi_poly_map,xin,yin,kx,ky,xout,yout,deg2d=deg2d
 
      ; set the pixel values to the wavelengths.
-     wavemap[xin-x0out+x0min,yin-ypad] = yout*dwout+wave0out
-     tmp_posmap[xin-x0out+x0min,yin-ypad] = xout ;-x0min+x0out
      qz = where(tmp_posmap ge -2/xbin and tmp_posmap le 140.0/xbin)
+     tmp_wavemap = wavemap - wavemap
+     tmp_wavemap[xin-x0out+x0min,yin-ypad] = yout*dwout+wave0out
+     wavemap[qz] = tmp_wavemap[qz]
+     tmp_posmap[xin-x0out+x0min,yin-ypad] = xout ;-x0min+x0out
      slicemap[qz]=s
      posmap[qz]=tmp_posmap[qz]
      tmp_posmap[*]=-100
