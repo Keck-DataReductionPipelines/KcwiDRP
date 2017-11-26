@@ -71,6 +71,7 @@ endif
   slicemap=wavemap+100
   posmap=wavemap-90.0
   tmp_posmap=posmap
+  tmp_wavemap = wavemap - wavemap
   ; loop over slices
   for s=0, 23 do begin
      qs = where(slice eq s and xi gt 0 and finite(xw) and finite(yw), nqs)
@@ -103,13 +104,12 @@ endif
      kcwi_poly_map,xin,yin,kx,ky,xout,yout,deg2d=deg2d
 
      ; set the pixel values to the wavelengths.
-     qz = where(tmp_posmap ge -2/xbin and tmp_posmap le 140.0/xbin)
-     tmp_wavemap = wavemap - wavemap
      tmp_wavemap[xin-x0out+x0min,yin-ypad] = yout*dwout+wave0out
-     wavemap[qz] = tmp_wavemap[qz]
      tmp_posmap[xin-x0out+x0min,yin-ypad] = xout ;-x0min+x0out
+     qz = where(tmp_posmap ge -2/xbin and tmp_posmap le 140.0/xbin)
      slicemap[qz]=s
      posmap[qz]=tmp_posmap[qz]
+     wavemap[qz] = tmp_wavemap[qz]
      tmp_posmap[*]=-100
   endfor
 
