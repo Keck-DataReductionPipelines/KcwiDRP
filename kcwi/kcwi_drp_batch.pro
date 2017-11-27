@@ -21,7 +21,9 @@
 ;	DARK		- set to run KCWI_STAGE2DARK (def: NO)
 ;	MINOSCANPIX	- set to minimum pixels required for overscan subtraction
 ;	LASTSTAGE	- set to the last stage you want run
-;	ONESTAGE	- set to a single stage you want run (overrides LASTSTAGE)
+;	STAGES		- set to a vector of stage numbers to perform
+;	ONESTAGE	- set to a single stage you want run 
+;				(overrides LASTSTAGE, STAGES)
 ;
 ; OUTPUTS:
 ;	None
@@ -38,10 +40,12 @@
 ;	2014-OCT-23	Added onestage keyword
 ;	2014-NOV-07	Added stage7std to nominal run
 ;	2017-NOV-18	Accounting for re-structure
+;	2017-NOV-26	Added STAGES keyword
 ;-
 pro kcwi_drp_batch,dirlist,dark=dark, $
 	minoscanpix=minoscanpix, $
 	laststage=laststage, $
+	stages=stages, $
 	onestage=onestage
 ;
 ; check keywords
@@ -79,49 +83,114 @@ for i=0,ndir-1 do begin
 			else: print,'Illegal stage: ',one
 		endcase
 	;
-	; otherwise run up to last stage
+	; otherwise run stages or run up to last stage
 	endif else begin
 		;
-		; archive any existing output directory
-		filestamp,ppar.reddir,/verbose
+		; STAGE 0 kcwi_prep
+		if keyword_set(stages) then begin
+			do_it = (1 eq 0)
+			t=where(stages eq 0, nt)
+			if nt gt 0 then do_it = (1 eq 1)
+		endif else $
+			do_it = (1 eq 1)
+		if do_it then begin
+			;
+			; archive any existing output directory
+			filestamp,ppar.reddir,/verbose
+			;
+			; make a new output directory
+			spawn,'mkdir '+ppar.reddir
+			;
+			; get the pipeline ready
+			kcwi_prep,/verbose,/display,minoscanpix=minoscanpix
+		endif
 		;
-		; make a new output directory
-		spawn,'mkdir '+ppar.reddir
-		;
-		; get the pipeline ready
-		kcwi_prep,/verbose,/display,minoscanpix=minoscanpix
-		;
-		; do basic ccd image reduction
-		kcwi_stage1
+		; STAGE 1 do basic ccd image reduction
+		if keyword_set(stages) then begin
+			do_it = (1 eq 0)
+			t = where(stages eq 1, nt)
+			if nt gt 0 then do_it = (1 eq 1)
+		endif else $
+			do_it = (1 eq 1)
+		if do_it then $
+			kcwi_stage1
 		if last le 1 then goto,done
 		;
-		; if requested do dark subtraction
-		if keyword_set(dark) then $
+		; STAGE 2 do dark subtraction
+		if keyword_set(stages) then begin
+			do_it = (1 eq 0)
+			t = where(stage eq 2, nt)
+			if nt gt 0 then do_it = (1 eq 1)
+		endif else $
+			do_it = (1 eq 1)
+		if do_it or keyword_set(dark) then $
 			kcwi_stage2dark
 		if last le 2 then goto,done
 		;
-		; do geometry solution
-		kcwi_stage3geom
+		; STAGE 3 do geometry solution
+		if keyword_set(stages) then begin
+			do_it = (1 eq 0)
+			t = where(stages eq 3, nt)
+			if nt gt 0 then do_it = (1 eq 1)
+		endif else $
+			do_it = (1 eq 1)
+		if do_it then $
+			kcwi_stage3geom
 		if last le 3 then goto,done
 		;
-		; do flat correction
-		kcwi_stage4flat
+		; STAGE 4 do flat correction
+		if keyword_set(stages) then begin
+			do_it = (1 eq 0)
+			t = where(stage eq 4, nt)
+			if nt gt 0 then do_it = (1 eq 1)
+		endif else $
+			do_it = (1 eq 1)
+		if do_it then $
+			kcwi_stage4flat
 		if last le 4 then goto,done
 		;
-		; do sky subtraction
-		kcwi_stage5sky
+		; STAGE 5 do sky subtraction
+		if keyword_set(stages) then begin
+			do_it = (1 eq 0)
+			t = where(stages eq 5, nt)
+			if nt gt 0 then do_it = (1 eq 1)
+		endif else $
+			do_it = (1 eq 1)
+		if do_it then $
+			kcwi_stage5sky
 		if last le 5 then goto,done
 		;
-		; do cube generation
-		kcwi_stage6cube
+		; STAGE 6 do cube generation
+		if keyword_set(stages) then begin
+			do_it = (1 eq 0)
+			t = where(stages eq 6, nt)
+			if nt gt 0 then do_it = (1 eq 1)
+		endif else $
+			do_it = (1 eq 1)
+		if do_it then $
+			kcwi_stage6cube
 		if last le 6 then goto,done
 		;
-		; do DAR correction
-		kcwi_stage7dar
+		; STAGE 7 do DAR correction
+		if keyword_set(stages) then begin
+			do_it = (1 eq 0)
+			t = where(stages eq 7, nt)
+			if nt gt 0 then do_it = (1 eq 1)
+		endif else $
+			do_it = (1 eq 1)
+		if do_it then $
+			kcwi_stage7dar
 		if last le 7 then goto,done
 		;
 		; do standard star calibration
-		kcwi_stage8std
+		if keyword_set(stages) then begin
+			do_it = (1 eq 0)
+			t = where(stages eq 8, nt)
+			if nt gt 0 then do_it = (1 eq 1)
+		endif else $
+			do_it = (1 eq 1)
+		if do_it then $
+			kcwi_stage8std
 		;
 		; done
 		done:
