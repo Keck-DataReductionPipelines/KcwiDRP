@@ -632,11 +632,23 @@ IDL> kcwi_print_cfgs,kcfg,/header
 New Flat Fielding and Sky Subtraction
 
 We have implemented the use of bspline fitting to determine the
-flat-fielding and illumination correction using the internal continuum
-flats.  These flats are combined and then corrected for internal vignetting
+flat-fielding and illumination corrections using the internal continuum
+flats.  These flats are combined, corrected for internal vignetting,
 and then used to characterize the illumination variation across slices and
-from slice to slice.  Since this process requires the geometry maps, the
-pipeline has been restructured to accomodate this method.
+from slice to slice.  The bspline method has also been found to do a very
+good job of characterizing the sky spectrum when combined with a suitable
+rejection threshold for object flux.  This method produces a sky model
+image that has much lower noise than a sky observation.  We are in the
+process of developing tools that allow regions where object flux dominates
+over sky flux to be masked out in the sky modeling.
+
+These corrections are done using the 2D images that are mapped to
+wavelength, slice position and slice number.  Since this process requires
+the cube geometry maps, but are applied to the 2D images, we now solve the
+geometry in stage 3, but don't generate cubes until stage 6.  Now, stage 4
+of the pipeline calculates and applies the flat-field and illumination
+correction, and stage 5 calculates and subtracts the sky model.  Stage 5 is
+optional.
 
 Alternate Calibration Directory
 

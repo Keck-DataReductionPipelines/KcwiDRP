@@ -16,7 +16,7 @@
 
 - added interactivity to flux standard calibration to improve fits.
 
-- masks now mainting byte format and now include more values.
+- masks now maintaining byte format and now include more values.
 
 - changed median stack of cont flats to mean to account for intensity decay.
 
