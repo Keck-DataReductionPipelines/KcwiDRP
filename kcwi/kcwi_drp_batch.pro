@@ -119,7 +119,7 @@ for i=0,ndir-1 do begin
 		; STAGE 2 do dark subtraction
 		if keyword_set(stages) then begin
 			do_it = (1 eq 0)
-			t = where(stage eq 2, nt)
+			t = where(stages eq 2, nt)
 			if nt gt 0 then do_it = (1 eq 1)
 		endif else $
 			do_it = (1 eq 1)
@@ -141,7 +141,7 @@ for i=0,ndir-1 do begin
 		; STAGE 4 do flat correction
 		if keyword_set(stages) then begin
 			do_it = (1 eq 0)
-			t = where(stage eq 4, nt)
+			t = where(stages eq 4, nt)
 			if nt gt 0 then do_it = (1 eq 1)
 		endif else $
 			do_it = (1 eq 1)
