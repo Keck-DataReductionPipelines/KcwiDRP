@@ -215,8 +215,7 @@ pro kcwi_make_flat,ppar,gfile
 	ffleft = 10/xbin
 	ffright = 70/xbin
 	buffer = 5.0/float(xbin)
-	refslice = kgeom.refbar/5
-	if xbin le 1 then refslice = 9
+	refslice = 9
 	ffslice = refslice
 	ffslice2 = refslice
 	sm = 25
@@ -242,9 +241,34 @@ pro kcwi_make_flat,ppar,gfile
 		print,wavemin,wavemax
 		q = where(slice eq refslice and wavemap ge wavemin and $
 			  wavemap le wavemax)
+		; account for spectral gradient
+		xflat=pos[q] 
+		yflat=mflat[q]
+		wflat=wavemap[q]
+		qflat=where(xflat ge flatl and xflat le flatr)
+		xflat=xflat[qflat]
+		yflat=yflat[qflat]
+		wflat=wflat[qflat]
+		sw=sort(wflat)
+		xwflat=xflat[sw]
+		ywflat=yflat[sw]
+		wwflat=wflat[sw]
+		plot,wwflat,ywflat
+		wavlinfit=polyfit(wwflat,ywflat,2)
+		wvidx=findgen(200)+5760
+		oplot,wvidx,poly(wvidx,wavlinfit),color=colordex('orange')
+		yflat=yflat/poly(wflat,wavlinfit)
+		s=sort(xflat)
+		xflat=xflat[s]
+		yflat=yflat[s]
+		wflat=wflat[s]
+		resflat=linfit(xflat,yflat)
+
 		; select the points we will fit for the vignetting 
 		xfit=pos[q]  
 		yfit=mflat[q]
+		wflat=wavemap[q]
+		yfit=yfit/poly(wflat,wavlinfit)
 		qfit=where(xfit ge fitl and xfit le fitr)
 		xfit=xfit[qfit]
 		yfit=yfit[qfit]
@@ -252,23 +276,13 @@ pro kcwi_make_flat,ppar,gfile
 		xfit=xfit[s]
 		yfit=yfit[s]
 		resfit=linfit(xfit,yfit)
-		; select the template region
-		xflat=pos[q] 
-		yflat=mflat[q]
-		qflat=where(xflat ge flatl and xflat le flatr)
-		xflat=xflat[qflat]
-		yflat=yflat[qflat]
-		s=sort(xflat)
-		xflat=xflat[s]
-		yflat=yflat[s]
-		resflat=linfit(xflat,yflat)
 		if do_plots then begin
-			plot,pos[q],mflat[q],psym=3,/xs,/nodata
+			plot,pos[q],mflat[q]/poly(wavemap[q],wavlinfit),psym=3,/xs,/nodata
 			oplot,allidx,resfit[0]+resfit[1]*allidx, $
 				color=colordex('purple')
 			oplot,allidx,resflat[0]+resflat[1]*allidx, $
 				color=colordex('red')
-			oplot,pos[q],mflat[q],psym=3
+			oplot,pos[q],mflat[q]/poly(wavemap[q],wavlinfit),psym=3
 			oplot,[fitl,fitl],!y.crange,color=colordex('blue')
 			oplot,[fitr,fitr],!y.crange,color=colordex('blue')
 			oplot,[flatl,flatl],!y.crange,color=colordex('green')
@@ -314,6 +328,62 @@ pro kcwi_make_flat,ppar,gfile
 	s=sort(xfr)
 	xfr=xfr[s]
 	yfr=yfr[s]
+	;; correction for BM where we see a ledge.
+        ;; added 171128
+        if strtrim(kgeom.gratid) eq 'BM' then begin
+           ledge_wave=kcwi_bm_ledge_position(kgeom.cwave)
+           print,kgeom.cwave,ledge_wave,kgeom.wavegood0,kgeom.wavegood1
+           if ( ledge_wave ge kgeom.wavegood0 and ledge_wave le kgeom.wavegood1 ) then begin
+              qledge=where(xfr ge ledge_wave-25 and xfr le ledge_wave+25,nqledge)
+              xledge=xfr[qledge]
+              yledge=yfr[qledge]
+              s=sort(xledge)
+              xledge=xledge[s]
+              yledge=yledge[s]
+              smyledge=smooth(yledge,150)
+              fpoints=findgen(101)/100.*50+ledge_wave-25
+              ledgefit=bspline_iterfit(xledge,smyledge,fullbkpt=fpoints,yfit=ylfit2,upper=1,lower=1)
+              ylfit=bspline_valu(fpoints,ledgefit)
+	      if do_plots then begin
+              	plot,xledge,smyledge,psym=3,/ys,/xs
+              	oplot,fpoints,ylfit,color=colordex('orange')
+	      endif
+              deriv=-(shift(ylfit,1)-shift(ylfit,-1))/2.0
+              deriv=deriv[2:-3]
+              xvals=fpoints[2:-3]
+              pkfit=mpfitpeak(xvals,deriv,apk,nterms=6)
+              ;; how far?
+              xlow=apk[1]-3-5
+              xhi=apk[1]-3
+              zlow=apk[1]+3
+              zhi=apk[1]+3+5
+              qlow=where(fpoints ge xlow and fpoints le xhi)
+              lowfit=linfit(fpoints[qlow],ylfit[qlow])
+              qhi=where(fpoints ge zlow and fpoints le zhi)
+              hifit=linfit(fpoints[qhi],ylfit[qhi])
+              ratio=(hifit[0]+hifit[1]*apk[1])/(lowfit[0]+lowfit[1]*apk[1])
+              print,ratio
+              qcorrect=where(xledge ge apk[1])
+              yledge[qcorrect]/=ratio
+              qcorr=where(xfr ge apk[1])
+              yfr[qcorr]/=ratio
+	      if do_plots then begin
+              	oplot,[xlow,xlow],!y.crange,color=colordex('blue'),linestyle=2
+              	oplot,[xhi,xhi],!y.crange,color=colordex('blue'),linestyle=2
+              	oplot,[zlow,zlow],!y.crange,color=colordex('red'),linestyle=2
+              	oplot,[zhi,zhi],!y.crange,color=colordex('red'),linestyle=2
+                oplot,fpoints,lowfit[0]+lowfit[1]*fpoints,color=colordex('purple'),linestyle=1
+              
+                oplot,fpoints,hifit[0]+hifit[1]*fpoints,color=colordex('darkgreen'),linestyle=1
+		if ppar.display ge 2 then read,'next: ',ask
+                plot,xledge,yledge,psym=4,/ys
+		if ppar.display ge 2 then read,'next: ',ask
+                plot,xfr,smooth(yfr,100),psym=3,xrange=[5200,5400],/ys,/xs
+                oplot,xfr,smooth(yfr,100),psym=3,color=colordex('orange')
+	      endif
+           endif
+        endif
+        ;; 
 	invvar=1/(1+abs(yfr))
 	n=100.0
 	bkpt = min(wavemap[qref])+findgen(n+1) * $
@@ -476,97 +546,11 @@ pro kcwi_make_flat,ppar,gfile
 	
 	qq=where(ratio lt 0)
 	ratio[qq]=0.0
-	qq=where(ratio ge 2)
-	ratio[qq]=2
+	qq=where(ratio ge 3)
+	ratio[qq]=3
 	
 	rff = repstr(ppar.masterflat,'_mflat','_ratio_f')
 	kcwi_write_image,ratio,hdr,rff,ppar
-
-	; select the pixels in the reference slice and correct positions
-	qff0=where(slice eq ffslice and pos ge ffleft and pos le ffright)
-	qff=where(slice eq ffslice2 and pos ge ffleft and pos le ffright)
-	; plot a little more than the KCWI blue range
-	if do_plots then begin
-		plot,wavemap[qff0],smooth(newflat[qff0],sm),psym=3, $
-			/xs,xrange=[kgeom.waveall0,kgeom.waveall1]
-	
-		oplot,wavemap[qff],smooth(newflat[qff],sm),psym=3, $
-			color=colordex('orange')
-		oplot,[kgeom.wavegood0,kgeom.wavegood0],!y.crange, $
-			color=colordex('green')
-		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
-			color=colordex('green')
-	endif
-	
-	; generate the bspline fit.
-	xf=wavemap[qff0]
-	yf=newflat[qff0]
-	s=sort(xf)
-	xf=xf[s]
-	yf=yf[s]
-	res=1/(1+abs(yf))
-	n=100.0
-	bkpt = min(wavemap[qff0])+findgen(n+1)*(max(wavemap[qff0]) - $
-	       min(wavemap[qff0]))/n
-	sft = bspline_iterfit(xf,yf,fullbkpt=bkpt,yfit=yfit)
-
-	xf1=wavemap[qff]
-	yf1=newflat[qff]
-	s=sort(xf1)
-	xf1=xf1[s]
-	yf1=yf1[s]
-	bkpt = min(wavemap[qff])+findgen(n+1)*(max(wavemap[qff]) - $
-	       min(wavemap[qff]))/n
-	sft0=bspline_iterfit(xf1,yf1,fullbkpt=bkpt,yfit=yfit1)
-	yfita=bspline_valu(xf,sft0)
-	
-	; so the spline works pretty good, but we need to stitch it together
-	; for the full wavelenth range... 
-	
-	;print,ec
-	if do_plots then begin
-		oplot,wavemap[qff0],yfit,color=colordex('blue'),psym=3
-		if ppar.display ge 2 then read,'next: ',ask
-
-		plot,wavemap[qff0],yfit-newflat[qff0],psym=3,/xs
-		if ppar.display ge 2 then read,'next: ',ask
-
-		plot,wavemap[qff0],smooth(newflat[qff0],sm),psym=3, $
-			/xs,xrange=[kgeom.waveall0,kgeom.waveall1]
-		oplot,wavemap[qff0],yfit,color=colordex('blue'),psym=3
-		oplot,wavemap[qff],smooth(newflat[qff],sm),psym=3, $
-			color=colordex('green')
-		oplot,wavemap[qff0],yfita,color=colordex('red'),psym=3
-		oplot,[kgeom.wavegood0,kgeom.wavegood0],!y.crange, $
-			color=colordex('orange')
-		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
-			color=colordex('orange')
-		if ppar.display ge 2 then read,'next: ',ask
-	endif
-	
-	qz = where(pos ge 0)
-	
-	xp=wavemap[qz]
-	newvals=bspline_valu(xp,sft)
-
-	if do_plots then begin
-		plot,xp,newvals,psym=3,title='newvals'
-		oplot,[kgeom.wavegood0,kgeom.wavegood0],!y.crange, $
-			color=colordex('green')
-		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
-			color=colordex('green')
-		if ppar.display ge 2 then read,'next: ',ask
-	endif
-	
-	comflat=newflat-newflat
-	comflat[qz]=newvals
-	cff = repstr(ppar.masterflat,'_mflat','_comflat')
-	kcwi_write_image,comflat,hdr,cff,ppar
-	
-	qnz = where(newflat ne 0)
-	ratio=newflat-newflat
-	ratio[qnz]=comflat[qnz]/newflat[qnz]
-
 	;
 	; update master flat header
 	sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
