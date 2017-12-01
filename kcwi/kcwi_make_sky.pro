@@ -230,12 +230,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf,fits=fits
 	fluxes=fluxes[s]
 	;
 	; knots
-	if kgeom.ifunum ge 3 then $
-		n = 8000 $
-	else if kgeom.ifunum eq 2 then $
-		n = 5000 $
-	else if kgeom.ifunum le 1 then $
-		n = 2000
+	n = fix(sm_sz[1] * 1.25)
 	;
 	; calculate break points for b splines
 	bkpt = min(waves) + findgen(n+1) * (max(waves) - min(waves)) / n
