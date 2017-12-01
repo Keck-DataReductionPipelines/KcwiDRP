@@ -157,6 +157,6 @@ endif
   kcwi_print_info,ppar,pre,"Writing",outfilesli,/info,format='(a,1x,a)'
   mwrfits, byte((slicemap)), outfilesli,hdr,/create
   kcwi_print_info,ppar,pre,"Writing",outfile,/info,format='(a,1x,a)'
-  mwrfits, float(wavemap), outfile, hdr,/create,/iscale
+  mwrfits, float(wavemap), outfile, hdr,/create
   kcwi_print_info,ppar,pre,"Generated reverse maps.",/info
 end

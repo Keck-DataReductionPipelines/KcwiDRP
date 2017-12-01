@@ -139,6 +139,9 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; get DAR padding in y
 	pad_y = sxpar(hdr,'DARPADY')
 	;
+	; get sky subtraction status
+	skycor = sxpar(hdr,'SKYCOR')
+	;
 	; get telescope and atm. correction
 	tel = strtrim(sxpar(hdr,'telescop',count=ntel),2)
 	if ntel le 0 then tel = 'Keck II'
@@ -200,52 +203,59 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	kcwi_print_info,ppar,pre,'Std slices; max, sl0, sl1, spatial cntrd', $
 		mxsl,sl0,sl1,cy,format='(a,3i4,f9.2)'
 	;
-	; do sky subtraction
-	scub = icub				; copy of input cube
-	skywin = ppar.psfwid/kcfg.xbinsize	; sky window width in pixels
+	; copy of input cube
+	scub = icub
 	;
-	; plotting prep
-	deepcolor
-	!p.background=colordex('white')
-	!p.color=colordex('black')
-	;
-	; for each relevant slice
-	for i=sl0,sl1 do begin
-		skyspec = fltarr(sz[2])
+	; do sky subtraction, if needed
+	if not skycor then begin
 		;
-		; for each wavelength
-		for j = 0,sz[2]-1 do begin
+		; sky window width in pixels
+		skywin = ppar.psfwid/kcfg.xbinsize
+		;
+		; plotting prep
+		deepcolor
+		!p.background=colordex('white')
+		!p.color=colordex('black')
+		;
+		; for each relevant slice
+		for i=sl0,sl1 do begin
+			skyspec = fltarr(sz[2])
 			;
-			; get y-spanning vector from input cube
-			skyv = reform(icub[i,gy0:gy1,j])
-			;
-			; avoid standard
-			gsky = where(yy le (cy-skywin) or yy ge (cy+skywin))
-			;
-			; median of what's left is sky value
-			sky = median(skyv[gsky])
-			;
-			; store the sky value at this wavelength,slice
-			skyspec[j] = sky
-			;
-			; perform subtraction
-			scub[i,*,j] = icub[i,*,j] - sky
+			; for each wavelength
+			for j = 0,sz[2]-1 do begin
+				;
+				; get y-spanning vector from input cube
+				skyv = reform(icub[i,gy0:gy1,j])
+				;
+				; avoid standard
+				gsky = where(yy le (cy-skywin) or $
+					     yy ge (cy+skywin))
+				;
+				; median of what's left is sky value
+				sky = median(skyv[gsky])
+				;
+				; store the sky value at this wavelength,slice
+				skyspec[j] = sky
+				;
+				; perform subtraction
+				scub[i,*,j] = icub[i,*,j] - sky
+			endfor
+			if plotsky then begin
+				yrng = get_plotlims(skyspec[gz])
+				plot,w,skyspec,title='Slice '+strn(i)+ $
+				    ' SKY, Img #: '+strn(kcfg.imgnum), $
+				    xtitle='Wave (A)',xran=[wall0,wall1],/xs,$
+				    ytitle='Sky e-',yran=yrng,/ys
+				oplot,[wgoo0,wgoo0],!y.crange, $
+				    color=colordex('green'),thick=3
+				oplot,[wgoo1,wgoo1],!y.crange, $
+				    color=colordex('green'),thick=3
+				read,'Next? (Q-quit plotting, <cr> - next): ',q
+				if strupcase(strmid(strtrim(q,2),0,1)) eq 'Q' then $
+					plotsky = 0
+			endif
 		endfor
-		if plotsky then begin
-			yrng = get_plotlims(skyspec[gz])
-			plot,w,skyspec,title='Slice '+strn(i)+ $
-				' SKY, Img #: '+strn(kcfg.imgnum), $
-				xtitle='Wave (A)', xran=[wall0,wall1], /xs, $
-				ytitle='Sky e-', yran=yrng, /ys
-			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
-				thick=3
-			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
-				thick=3
-			read,'Next? (Q-quit plotting, <cr> - next): ',q
-			if strupcase(strmid(strtrim(q,2),0,1)) eq 'Q' then $
-				plotsky = 0
-		endif
-	endfor
+	endif	; do sky subtraction (not skycor)
 	;
 	; apply extinction correction
 	ucub = scub	; uncorrected cube
