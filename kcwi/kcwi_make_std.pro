@@ -206,16 +206,16 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; copy of input cube
 	scub = icub
 	;
+	; sky window width in pixels
+	skywin = ppar.psfwid/kcfg.xbinsize
+	;
+	; plotting prep
+	deepcolor
+	!p.background=colordex('white')
+	!p.color=colordex('black')
+	;
 	; do sky subtraction, if needed
 	if not skycor then begin
-		;
-		; sky window width in pixels
-		skywin = ppar.psfwid/kcfg.xbinsize
-		;
-		; plotting prep
-		deepcolor
-		!p.background=colordex('white')
-		!p.color=colordex('black')
 		;
 		; for each relevant slice
 		for i=sl0,sl1 do begin
