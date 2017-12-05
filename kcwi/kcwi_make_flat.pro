@@ -200,25 +200,23 @@ pro kcwi_make_flat,ppar,gfile
 			stack[i,*,*] = im
 		endfor	; loop over remaining images
 		;
-		; create master flat from median (mean) stack
+		; create master flat and variance from sigma rejected mean
 		mflat = fltarr(nx,ny)
+		mfvar = fltarr(nx,ny)
 		for yi=0,ny-1 do for xi=0,nx-1 do begin
-			djs_iterstat,stack[*,xi,yi],mean=mn,sigrej=3.
+			djs_iterstat,stack[*,xi,yi],mean=mn,sigrej=3., $
+				sigma=sg
 			mflat[xi,yi] = mn
+			mfvar[xi,yi] = sg^2
 		endfor
 	endif
 	;
-	; do cr rejection
 	; readnoise
 	nba = sxpar(hdr,'NVIDINP')
 	avrn = 0.
 	for ia = 0,nba-1 do avrn = avrn + sxpar(hdr,'BIASRN'+strn(ia+1))
 	avrn = avrn / float(nba)
 	avrn = avrn / sqrt(nstack)
-;	kcwi_la_cosmic,mflat,ppar,crmsk,readn=avrn,gain=1.,objlim=4., $
-;		sigclip=7.0,ntcosmicray=ncrs,psfmodel=ppar.crpsfmod, $
-;		psffwhm=ppar.crpsffwhm,psfsize=ppar.crpsfsize, $
-;		bigkernel=ppar.crbigkern,bigykernel=ppar.crbigykern
 	;
 	; parameters for fitting
 	xbin = kgeom.xbinsize
@@ -580,15 +578,15 @@ pro kcwi_make_flat,ppar,gfile
 	; write out master image
 	sxdelpar,hdr,'MASTFLAT'
 	sxaddpar,hdr,'AVRDN',avrn,' Stack RN accounting for root n'
-	mskhdr = hdr
-	sxaddpar,hdr,'HISTORY','  Input image stack'
+	varhdr = hdr
+	sxaddpar,hdr,'HISTORY','  Master cflat image stack'
 	isf = repstr(ppar.masterflat,'_mflat','_mfimg')
 	kcwi_write_image,mflat,hdr,isf,ppar
 	;
-	; write out crmask file
-;	sxaddpar,mskhdr,'HISTORY','  Master flat CR mask'
-;	msf = repstr(ppar.masterflat,'_mflat','_mfmsk')
-;	kcwi_write_image,crmsk,mskhdr,msf,ppar,/iscale
+	; write out master variance
+	sxaddpar,varhdr,'HISTORY','  Master cflat stack variance'
+	vaf = repstr(ppar.masterflat,'_mflat','_mfvar')
+	kcwi_write_image,mfvar,varhdr,vaf,ppar
 	;
 	return
 end
