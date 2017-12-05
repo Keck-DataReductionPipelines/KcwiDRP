@@ -202,9 +202,23 @@ pro kcwi_make_flat,ppar,gfile
 		;
 		; create master flat from median (mean) stack
 		mflat = fltarr(nx,ny)
-		for yi=0,ny-1 do for xi=0,nx-1 do $
-			mflat[xi,yi] = mean(stack[*,xi,yi])
+		for yi=0,ny-1 do for xi=0,nx-1 do begin
+			djs_iterstat,stack[*,xi,yi],mean=mn,sigrej=3.
+			mflat[xi,yi] = mn
+		endfor
 	endif
+	;
+	; do cr rejection
+	; readnoise
+	nba = sxpar(hdr,'NVIDINP')
+	avrn = 0.
+	for ia = 0,nba-1 do avrn = avrn + sxpar(hdr,'BIASRN'+strn(ia+1))
+	avrn = avrn / float(nba)
+	avrn = avrn / sqrt(nstack)
+;	kcwi_la_cosmic,mflat,ppar,crmsk,readn=avrn,gain=1.,objlim=4., $
+;		sigclip=7.0,ntcosmicray=ncrs,psfmodel=ppar.crpsfmod, $
+;		psffwhm=ppar.crpsffwhm,psfsize=ppar.crpsfsize, $
+;		bigkernel=ppar.crbigkern,bigykernel=ppar.crbigykern
 	;
 	; parameters for fitting
 	xbin = kgeom.xbinsize
@@ -374,7 +388,7 @@ pro kcwi_make_flat,ppar,gfile
               	oplot,[zhi,zhi],!y.crange,color=colordex('red'),linestyle=2
                 oplot,fpoints,lowfit[0]+lowfit[1]*fpoints,color=colordex('purple'),linestyle=1
               
-                oplot,fpoints,hifit[0]+hifit[1]*fpoints,color=colordex('darkgreen'),linestyle=1
+                oplot,fpoints,hifit[0]+hifit[1]*fpoints,color=colordex('green'),linestyle=1
 		if ppar.display ge 2 then read,'next: ',ask
                 plot,xledge,yledge,psym=4,/ys
 		if ppar.display ge 2 then read,'next: ',ask
@@ -562,6 +576,19 @@ pro kcwi_make_flat,ppar,gfile
 	;
 	; write out image file
 	kcwi_write_image,ratio,hdr,ppar.masterflat,ppar
+	;
+	; write out master image
+	sxdelpar,hdr,'MASTFLAT'
+	sxaddpar,hdr,'AVRDN',avrn,' Stack RN accounting for root n'
+	mskhdr = hdr
+	sxaddpar,hdr,'HISTORY','  Input image stack'
+	isf = repstr(ppar.masterflat,'_mflat','_mfimg')
+	kcwi_write_image,mflat,hdr,isf,ppar
+	;
+	; write out crmask file
+;	sxaddpar,mskhdr,'HISTORY','  Master flat CR mask'
+;	msf = repstr(ppar.masterflat,'_mflat','_mfmsk')
+;	kcwi_write_image,crmsk,mskhdr,msf,ppar,/iscale
 	;
 	return
 end
