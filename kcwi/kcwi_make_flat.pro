@@ -145,11 +145,9 @@ pro kcwi_make_flat,ppar,gfile
 	nx = sz[0]
 	ny = sz[1]
 	;
-	; set up stacks
-	stack = fltarr(nf,nx,ny)
-	nstack = 1
-	stack[0,*,*] = im
-	mflat = im		; single image
+	; single image
+	mflat = im
+	mfvar = im
 	;
 	; how many images?
 	if nf eq 2 then begin
@@ -175,6 +173,11 @@ pro kcwi_make_flat,ppar,gfile
 		mflat = ( mflat + im ) / 2.0
 	endif else if nf ge 3 then begin
 		;
+		; set up stack
+		stack = fltarr(nf,nx,ny)
+		stack[0,*,*] = im
+		djs_iterstat,im,mean=ref_mn,sigrej=3.0
+		;
 		; loop over remaining images
 		for i=1,nf-1 do begin
 	    		;
@@ -196,8 +199,11 @@ pro kcwi_make_flat,ppar,gfile
 				return
 			endif
 			;
+			; get new image mean
+			djs_iterstat,im,mean=new_mn,sigrej=3.0
+			;
 			; insert into stack
-			stack[i,*,*] = im
+			stack[i,*,*] = im * (ref_mn/new_mn)
 		endfor	; loop over remaining images
 		;
 		; create master flat and variance from sigma rejected mean
@@ -216,17 +222,28 @@ pro kcwi_make_flat,ppar,gfile
 	avrn = 0.
 	for ia = 0,nba-1 do avrn = avrn + sxpar(hdr,'BIASRN'+strn(ia+1))
 	avrn = avrn / float(nba)
-	avrn = avrn / sqrt(nstack)
+	avrn = avrn / sqrt(nf)
 	;
 	; parameters for fitting
+	;
+	; binning in x (slice position)
 	xbin = kgeom.xbinsize
+	;
+	; vignetted slice position range
 	fitl = 4/xbin
 	fitr = 24/xbin
+	;
+	; un-vignetted slice position range
 	flatl = 34/xbin
 	flatr = 72/xbin
+	;
+	; flat fitting slice position range
 	ffleft = 10/xbin
 	ffright = 70/xbin
+	;
 	buffer = 5.0/float(xbin)
+	;
+	; reference slice
 	refslice = 9
 	ffslice = refslice
 	ffslice2 = refslice
@@ -241,22 +258,31 @@ pro kcwi_make_flat,ppar,gfile
 		deepcolor
 		!p.background=colordex('white')
 		!p.color=colordex('black')
+		th = 3
+		si = 1.75
 	endif
 	;
 	; correct vignetting if we are using internal flats
 	if internal then begin
+		;
+		; get good region for fitting
 		q=where(wavemap gt 0)
 		waves=minmax(wavemap[q])
 		dw=(waves[1]-waves[0])/30.0
 		wavemin=(waves[0]+waves[1])/2.0-dw
 		wavemax=(waves[0]+waves[1])/2.0+dw
 		print,wavemin,wavemax
+		;
+		; get reference slice data
 		q = where(slice eq refslice and wavemap ge wavemin and $
 			  wavemap le wavemax)
+		;
 		; account for spectral gradient
 		xflat=pos[q] 
 		yflat=mflat[q]
 		wflat=wavemap[q]
+		;
+		; fit wavelength slope
 		qflat=where(xflat ge flatl and xflat le flatr)
 		xflat=xflat[qflat]
 		yflat=yflat[qflat]
@@ -265,22 +291,22 @@ pro kcwi_make_flat,ppar,gfile
 		xwflat=xflat[sw]
 		ywflat=yflat[sw]
 		wwflat=wflat[sw]
-		plot,wwflat,ywflat
 		wavlinfit=polyfit(wwflat,ywflat,2)
-		wvidx=findgen(200)+5760
-		oplot,wvidx,poly(wvidx,wavlinfit),color=colordex('orange')
 		yflat=yflat/poly(wflat,wavlinfit)
+		pl_wlf = poly(wwflat,wavlinfit)
 		s=sort(xflat)
 		xflat=xflat[s]
 		yflat=yflat[s]
 		wflat=wflat[s]
 		resflat=linfit(xflat,yflat)
-
+		;
 		; select the points we will fit for the vignetting 
 		xfit=pos[q]  
 		yfit=mflat[q]
 		wflat=wavemap[q]
 		yfit=yfit/poly(wflat,wavlinfit)
+		;
+		; fit vignetted region
 		qfit=where(xfit ge fitl and xfit le fitr)
 		xfit=xfit[qfit]
 		yfit=yfit[qfit]
@@ -288,8 +314,25 @@ pro kcwi_make_flat,ppar,gfile
 		xfit=xfit[s]
 		yfit=yfit[s]
 		resfit=linfit(xfit,yfit)
+		;
+		; plot results
 		if do_plots then begin
-			plot,pos[q],mflat[q]/poly(wavemap[q],wavlinfit),psym=3,/xs,/nodata
+			;
+			; plot wavelength slope fit
+			yrng = get_plotlims([ywflat,pl_wlf])
+			plot,wwflat,ywflat,title='Wavelength Slope',charsi=si, $
+				charthi=th,xthick=th,ythick=th, $
+				xtitle='Wavelength (A)', $
+				ytitle='Flux (e-)',yran=yrng,/ys
+			oplot,wwflat,pl_wlf,color=colordex('orange')
+			if ppar.display ge 2 then read,'next: ',ask
+			;
+			; plot vignetting correction fits
+			plot,pos[q],mflat[q]/poly(wavemap[q],wavlinfit), $
+				title='Vignetting Characterization', $
+				charthi=th,charsi=si,psym=3,/nodata, $
+				xtitle='Slice Pos (px)',xthick=th,/xs, $
+				ytitle='Ratio',ythick=th
 			oplot,allidx,resfit[0]+resfit[1]*allidx, $
 				color=colordex('purple')
 			oplot,allidx,resflat[0]+resflat[1]*allidx, $
@@ -344,9 +387,12 @@ pro kcwi_make_flat,ppar,gfile
         ;; added 171128
         if strtrim(kgeom.gratid) eq 'BM' then begin
            ledge_wave=kcwi_bm_ledge_position(kgeom.cwave)
-           print,kgeom.cwave,ledge_wave,kgeom.wavegood0,kgeom.wavegood1
-           if ( ledge_wave ge kgeom.wavegood0 and ledge_wave le kgeom.wavegood1 ) then begin
-              qledge=where(xfr ge ledge_wave-25 and xfr le ledge_wave+25,nqledge)
+	   kcwi_print_info,ppar,pre,'BM ledge wavelength (A)',ledge_wave, $
+	   	format='(a,f10.2)'
+           if ( ledge_wave ge kgeom.wavegood0 and $
+	   	ledge_wave le kgeom.wavegood1 ) then begin
+              qledge=where(xfr ge ledge_wave-25 and $
+	      		   xfr le ledge_wave+25,nqledge)
               xledge=xfr[qledge]
               yledge=yfr[qledge]
               s=sort(xledge)
@@ -354,12 +400,9 @@ pro kcwi_make_flat,ppar,gfile
               yledge=yledge[s]
               smyledge=smooth(yledge,150)
               fpoints=findgen(101)/100.*50+ledge_wave-25
-              ledgefit=bspline_iterfit(xledge,smyledge,fullbkpt=fpoints,yfit=ylfit2,upper=1,lower=1)
+              ledgefit=bspline_iterfit(xledge,smyledge,fullbkpt=fpoints, $
+	      				yfit=ylfit2,upper=1,lower=1)
               ylfit=bspline_valu(fpoints,ledgefit)
-	      if do_plots then begin
-              	plot,xledge,smyledge,psym=3,/ys,/xs
-              	oplot,fpoints,ylfit,color=colordex('orange')
-	      endif
               deriv=-(shift(ylfit,1)-shift(ylfit,-1))/2.0
               deriv=deriv[2:-3]
               xvals=fpoints[2:-3]
@@ -380,21 +423,25 @@ pro kcwi_make_flat,ppar,gfile
               qcorr=where(xfr ge apk[1])
               yfr[qcorr]/=ratio
 	      if do_plots then begin
+	      	yrng = get_plotlims([smyledge,ylfit])
+              	plot,xledge,smyledge,title='BM Grating Ledge',psym=3, $
+			charsi=si,charth=th, $
+			xtitle='Wavelength (A)',xthick=th,/xs, $
+			ytitle='Flux (e-)',ythick=th,yran=yrng,/ys
+              	oplot,fpoints,ylfit,color=colordex('orange')
               	oplot,[xlow,xlow],!y.crange,color=colordex('blue'),linestyle=2
               	oplot,[xhi,xhi],!y.crange,color=colordex('blue'),linestyle=2
               	oplot,[zlow,zlow],!y.crange,color=colordex('red'),linestyle=2
               	oplot,[zhi,zhi],!y.crange,color=colordex('red'),linestyle=2
-                oplot,fpoints,lowfit[0]+lowfit[1]*fpoints,color=colordex('purple'),linestyle=1
-              
-                oplot,fpoints,hifit[0]+hifit[1]*fpoints,color=colordex('green'),linestyle=1
+                oplot,fpoints,lowfit[0]+lowfit[1]*fpoints, $
+			color=colordex('purple'),linestyle=1,thick=th
+                oplot,fpoints,hifit[0]+hifit[1]*fpoints, $
+			color=colordex('green'),linestyle=1,thick=th
+                oplot,xledge,yledge,psym=3
 		if ppar.display ge 2 then read,'next: ',ask
-                plot,xledge,yledge,psym=4,/ys
-		if ppar.display ge 2 then read,'next: ',ask
-                plot,xfr,smooth(yfr,100),psym=3,xrange=[5200,5400],/ys,/xs
-                oplot,xfr,smooth(yfr,100),psym=3,color=colordex('orange')
 	      endif
            endif
-        endif
+        endif	; if handling ledge in BM data
         ;; 
 	invvar=1/(1+abs(yfr))
 	n=100.0
@@ -441,13 +488,18 @@ pro kcwi_make_flat,ppar,gfile
 	waves=minwave+(maxwave-minwave)*findgen(nwaves+1)/nwaves
 
 	if do_plots then begin
-		plot,xfr,yfitr,xrange=[kgeom.waveall0,kgeom.waveall1]
+		yrng = get_plotlims([yfitr,yfitb,yfitd])
+		plot,xfr,yfitr,title='Blue/Red Fits',charsi=si,charthi=th, $
+			xtitle='Wavelength (A)',xthick=th, $
+			xrange=[kgeom.waveall0,kgeom.waveall1],/xs, $
+			ytitle='Flux (e-)',ythick=th,yrange=yrng,/ys
 		oplot,xfb,yfitb,color=colordex('blue')
 		oplot,xfd,yfitd,color=colordex('red')
 		oplot,[kgeom.wavegood0,kgeom.wavegood0],!y.crange, $
 			color=colordex('green')
 		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
 			color=colordex('green')
+		oplot,!x.crange,[0.,0.]
 		if ppar.display ge 2 then read,'next: ',ask
 	endif
 
@@ -476,11 +528,24 @@ pro kcwi_make_flat,ppar,gfile
 
 	if do_plots then begin
 		if nqb gt 1 then begin
-			plot,waves[qbluefit],refbluefit
+			;
+			; plot the blue fits
+			yrng = get_plotlims([refbluefit,bluefit])
+			yrng[0] = 0.
+			plot,waves[qbluefit],refbluefit,title='Blue Fits', $
+				charsi=si,charthi=th, $
+				xtitle='Wavelength (A)',xthick=th,/xs, $
+				ytitle='Flux (e-)',ythick=th,yran=yrng,/ys
 			oplot,waves[qbluefit],bluefit,color=colordex('blue')
 			if ppar.display ge 2 then read,'next: ',ask
-
-			plot,waves[qbluefit],refbluefit/bluefit,/ys
+			;
+			; plot blue ratios
+			yrng = get_plotlims([refbluefit/bluefit, $
+				bluelinfit[0]+bluelinfit[1]*waves[qbluefit]])
+			plot,waves[qbluefit],refbluefit/bluefit, $
+				title='Blue Ratio',charsi=si,charthi=th, $
+				xtitle='Wavelength (A)',xthick=th,/xs, $
+				ytitle='Ratio',ythick=th,yran=yrng,/ys
 			oplot,waves[qbluefit], $
 		      		bluelinfit[0]+bluelinfit[1]*waves[qbluefit], $
 		      		color=colordex('blue')
@@ -488,11 +553,24 @@ pro kcwi_make_flat,ppar,gfile
 		endif
 
 		if nqr gt 1 then begin
-			plot,waves[qredfit],refredfit
+			;
+			; plot the red fits
+			yrng = get_plotlims([refredfit,redfit])
+			yrng[0] = 0.
+			plot,waves[qredfit],refredfit,title='Red Fits', $
+				charsi=si,charthi=th, $
+				xtitle='Wavelength (A)',xthick=th,/xs, $
+				ytitle='Flux (e-)',ythick=th,yran=yrng,/ys
 			oplot,waves[qredfit],redfit,color=colordex('red')
 			if ppar.display ge 2 then read,'next: ',ask
-
-			plot,waves[qredfit],refredfit/redfit,/ys
+			;
+			; plot the red ratios
+			yrng = get_plotlims([refredfit/redfit, $
+				redlinfit[0]+redlinfit[1]*waves[qredfit]])
+			plot,waves[qredfit],refredfit/redfit, $
+				title='Red Ratio',charsi=si,charth=th, $
+				xtitle='Wavelength (A)',xthick=th,/xs, $
+				ytitle='Ratio',ythick=th,yran=yrng,/ys
 			oplot,waves[qredfit], $
 		      		redlinfit[0]+redlinfit[1]*waves[qredfit], $
 		      		color=colordex('red')
@@ -530,8 +608,12 @@ pro kcwi_make_flat,ppar,gfile
 	sftall=bspline_iterfit(allx,ally,fullbkpt=bkpt,yfit=yfitall)
 	
 	if do_plots then begin
-		plot,xfr,yfr,psym=3,xrange=[kgeom.waveall0,kgeom.waveall1], $
-			/xs,/nodata
+		yrng = get_plotlims([yfr,ally,yfitall,yfitr])
+		plot,xfr,yfr,title='B-Spline Fits to Flat',psym=3, $
+			charsi=si,charthi=th, /nodata, $
+			xtitle='Wavelength (A)',xthick=th, $
+			xrange=[kgeom.waveall0,kgeom.waveall1],/xs, $
+			ytitle='Flux (e-)',ythick=th,yran=yrng,/ys
 		oplot,allx,ally,psym=3,color=colordex('purple')
 		oplot,allx,yfitall,color=colordex('red'),thick=2
 		oplot,xfr,yfr,psym=3
@@ -555,14 +637,15 @@ pro kcwi_make_flat,ppar,gfile
 	ratio=newflat-newflat
 	qzer = where(newflat ne 0)
 	ratio[qzer]=comflat[qzer]/newflat[qzer]
-	
+	;
+	; trim negative points
 	qq=where(ratio lt 0)
 	ratio[qq]=0.0
-	qq=where(ratio ge 3)
-	ratio[qq]=3
-	
-	rff = repstr(ppar.masterflat,'_mflat','_ratio_f')
-	kcwi_write_image,ratio,hdr,rff,ppar
+	;
+	; trim high points near edges of slice
+	qq=where(ratio ge 3 and (pos le 4/xbin or pos ge 136/xbin), nfix)
+	if nfix gt 0 then $
+		ratio[qq]=0.0
 	;
 	; update master flat header
 	sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
