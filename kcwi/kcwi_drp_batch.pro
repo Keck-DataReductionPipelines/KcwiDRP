@@ -121,9 +121,12 @@ for i=0,ndir-1 do begin
 			do_it = (1 eq 0)
 			t = where(stages eq 2, nt)
 			if nt gt 0 then do_it = (1 eq 1)
-		endif else $
-			do_it = (1 eq 1)
-		if do_it or keyword_set(dark) then $
+		endif else begin
+			if keyword_set(dark) then $
+				do_it = (1 eq 1) $
+			else	do_it = (1 eq 0)
+		endelse
+		if do_it then $
 			kcwi_stage2dark
 		if last le 2 then goto,done
 		;
