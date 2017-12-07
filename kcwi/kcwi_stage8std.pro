@@ -254,10 +254,10 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					; do calibration
 					for is=0,sz[0]-1 do begin
 						for ix = 0, sz[1]-1 do begin
-							img[is,ix,*] = (img[is,ix,*]/expt) * mscal
+							img[is,ix,*] = (img[is,ix,*]/expt) * mscal * 1.d16
 							;
 							; convert variance to flux units (squared)
-							var[is,ix,*] = (var[is,ix,*]/expt^2) * mscal^2
+							var[is,ix,*] = (var[is,ix,*]/expt^2) * (mscal * 1.d16)^2
 						endfor
 					endfor
 					;
@@ -266,7 +266,6 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,mskhdr,'STDCOR','T',' std corrected?'
 					sxaddpar,mskhdr,'MSFILE',msfile,' master std file applied'
 					sxaddpar,mskhdr,'MSIMNO',msimgno,' master std image number'
-					sxaddpar,mskhdr,'BUNIT','FLAM',' brightness units'
 					;
 					; write out flux calibrated mask image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mcubes',/nodir)
@@ -277,7 +276,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,varhdr,'STDCOR','T',' std corrected?'
 					sxaddpar,varhdr,'MSFILE',msfile,' master std file applied'
 					sxaddpar,varhdr,'MSIMNO',msimgno,' master std image number'
-					sxaddpar,varhdr,'BUNIT','FLAM',' brightness units'
+					sxaddpar,varhdr,'BUNIT','FLAM16',' brightness units (Flam*10^16)'
 					;
 					; write out flux calibrated variance image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vcubes',/nodir)
@@ -288,7 +287,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,hdr,'STDCOR','T',' std corrected?'
 					sxaddpar,hdr,'MSFILE',msfile,' master std file applied'
 					sxaddpar,hdr,'MSIMNO',msimgno,' master std image number'
-					sxaddpar,hdr,'BUNIT','FLAM',' brightness units'
+					sxaddpar,hdr,'BUNIT','FLAM16',' brightness units (Flam*10^16)'
 					;
 					; write out flux calibrated intensity image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_icubes',/nodir)
@@ -311,7 +310,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,skyhdr,'STDCOR','T',' std corrected?'
 						sxaddpar,skyhdr,'MSFILE',msfile,' master std file applied'
 						sxaddpar,skyhdr,'MSIMNO',msimgno,' master std image number'
-						sxaddpar,skyhdr,'BUNIT','FLAM',' brightness units'
+						sxaddpar,skyhdr,'BUNIT','FLAM16',' brightness units (Flam*10^16)'
 						;
 						; write out flux calibrated sky panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_scubes',/nodir)
@@ -335,7 +334,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,objhdr,'STDCOR','T',' std corrected?'
 						sxaddpar,objhdr,'MSFILE',msfile,' master std file applied'
 						sxaddpar,objhdr,'MSIMNO',msimgno,' master std image number'
-						sxaddpar,objhdr,'BUNIT','FLAM',' brightness units'
+						sxaddpar,objhdr,'BUNIT','FLAM16',' brightness units (Flam*10^16)'
 						;
 						; write out flux calibrated obj panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocubes',/nodir)

@@ -504,7 +504,9 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				for ib=0,n_elements(blines)-1 do $
 					oplot,[blines[ib],blines[ib]],10.^!y.crange,color=colordex('blue'), $
 						linesty=2
-				read,'r - restore pts, d - delete pts, + - increase fit order, - - decrease fit order, f - re-fit, q - quit fitting: ',q
+				q = ''
+				while q eq '' do $
+					read,'r - restore pts, d - delete pts, + - increase fit order, - - decrease fit order, f - re-fit, q - quit fitting: ',q
 				;
 				; all done
 				if strupcase(strtrim(q,2)) eq 'Q' then begin

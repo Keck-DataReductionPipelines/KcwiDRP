@@ -115,6 +115,10 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		return
 	endif
 	;
+	; check BUNIT
+	bunit = strtrim(sxpar(hdr,'BUNIT'),2)
+	if bunit eq 'FLAM16' then icub = icub / 1.d16
+	;
 	; check standard
 	sname = strcompress(strlowcase(strtrim(kcfg.targname,2)),/remove)
 	;
