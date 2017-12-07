@@ -999,15 +999,31 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				;
 				; fitting range
 				fx1 = fx[y0:y1]
-				res = poly_fit(fx1,slp[y0:y1],9,measure_err=elp[y0:y1],/double)
-				scat1 = poly(fx1,res)
+				;
+				; breakpoints for b-spline
+				bkpta=min(fx1)+findgen(100)*(max(fx1)-min(fx1))/100.
+				bkptb=min(fx1)+findgen(20)*(max(fx1)-min(fx1))/20.
+				rez = where(bkpta gt bkptb[19])
+				bkpt = [bkptb,bkpta[rez]]
+				;
+				; fit and get results
+				res = bspline_iterfit(fx1,slp[y0:y1],fullbkpt=bkpt)
+				scat1 = bspline_valu(fx1,res)
 				;
 				; piece two
 				;
 				; fitting range
 				fx2 = fx[y2:y3] - min(fx[y2:y3])
-				res = poly_fit(fx2,slp[y2:y3],9,measure_err=elp[y2:y3],/double)
-				scat2 = poly(fx2,res)
+				;
+				; breakpoints for b-spline
+				bkpta=min(fx2)+findgen(100)*(max(fx2)-min(fx2))/100.
+				bkptb=min(fx2)+findgen(20)*(max(fx2)-min(fx2))/20.
+				;
+				; fit and get results
+				rez = where(bkpta lt bkptb[1])
+				bkpt = [bkpta[rez],bkptb[1:*]]
+				res = bspline_iterfit(fx2,slp[y2:y3],fullbkpt=bkpt)
+				scat2 = bspline_valu(fx[y2:y3]-min(fx[y2:y3]),res)
 				;
 				; plot if display set
 				if plotscat then begin
