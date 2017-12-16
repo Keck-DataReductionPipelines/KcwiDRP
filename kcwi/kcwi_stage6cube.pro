@@ -286,7 +286,21 @@ pro kcwi_stage6cube,procfname,ppfname,help=help,verbose=verbose, display=display
 								; write out obj cube
 								ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocube',/nodir)
 								kcwi_write_image,ocub,ochdr,ofil,kpars[i]
-							endif
+							;
+							; check for un-sky subtracted images
+							endif else begin
+								nfil = kcwi_get_imname(kpars[i],imgnum[i],'_intf',/reduced)
+								if file_test(nfil,/read) then begin
+									obj = mrdfits(nfil,0,objhdr,/fscale,/silent)
+									;
+                                                        		sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
+                                                        		kcwi_apply_geom,obj,objhdr,kgeom,kpars[i],ocub,ochdr
+									;
+									; write out obj cube
+									ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocube',/nodir)
+									kcwi_write_image,ocub,ochdr,ofil,kpars[i]
+								endif
+							endelse
 						endelse	; end apply dispersed geometry
 					; end if do_geom
 					endif else $

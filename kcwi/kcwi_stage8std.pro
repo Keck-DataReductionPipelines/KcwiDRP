@@ -276,7 +276,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,varhdr,'STDCOR','T',' std corrected?'
 					sxaddpar,varhdr,'MSFILE',msfile,' master std file applied'
 					sxaddpar,varhdr,'MSIMNO',msimgno,' master std image number'
-					sxaddpar,varhdr,'BUNIT','FLAM16',' brightness units (Flam*10^16)'
+					sxaddpar,varhdr,'BUNIT','FLAM16**2',' brightness units (Flam*10^16)^2'
 					;
 					; write out flux calibrated variance image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vcubes',/nodir)

@@ -456,6 +456,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				oplot,w,rsflx,thick=3,color=colordex('red')
 				oplot,[wlm0,wlm0],!y.crange,color=colordex('orange'),linesty=2
 				oplot,[wlm1,wlm1],!y.crange,color=colordex('orange'),linesty=2
+				oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
+				oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
 				for ib=0,n_elements(blines)-1 do $
 					oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('blue'), $
 						linesty=2
@@ -481,6 +483,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				oplot,!x.crange,[0,0]
 				oplot,[wlm0,wlm0],!y.crange,color=colordex('orange'),linesty=2
 				oplot,[wlm1,wlm1],!y.crange,color=colordex('orange'),linesty=2
+				oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
+				oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
 				if nb gt 0 then $
 					oplot,w[t[b]],rsd[t[b]],psym=7
 				for ib=0,n_elements(blines)-1 do $

@@ -149,7 +149,7 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 				;
 				; do we have master sky file?
 				do_sky = (1 eq 0)
-				if strtrim(kpars[i].mastersky,2) ne '' then begin
+				if strtrim(kpars[i].mastersky,2) ne '' and kcfg.shuffmod ne 1 then begin
 					msfile = kpars[i].mastersky
 					;
 					; is master sky already built?
@@ -282,9 +282,13 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					; write out sky corrected intensity image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_intk',/nodir)
 					kcwi_write_image,img,hdr,ofil,kpars[i]
-				endif else $
-					kcwi_print_info,ppar,pre,'skipping sky subtraction for: '+ $
+				endif else begin
+					if kcfg.shuffmod eq 1 then $
+						kcwi_print_info,ppar,pre,'sky already subtracted (N&S) for: '+ $
+							kcfg.obsfname $
+					else	kcwi_print_info,ppar,pre,'skipping sky subtraction for: '+ $
 							kcfg.obsfname
+				endelse
 				flush,ll
 			;
 			; end check if output file exists already

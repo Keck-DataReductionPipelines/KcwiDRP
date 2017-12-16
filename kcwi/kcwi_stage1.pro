@@ -1018,10 +1018,10 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				; breakpoints for b-spline
 				bkpta=min(fx2)+findgen(100)*(max(fx2)-min(fx2))/100.
 				bkptb=min(fx2)+findgen(20)*(max(fx2)-min(fx2))/20.
-				;
-				; fit and get results
 				rez = where(bkpta lt bkptb[1])
 				bkpt = [bkpta[rez],bkptb[1:*]]
+				;
+				; fit and get results
 				res = bspline_iterfit(fx2,slp[y2:y3],fullbkpt=bkpt)
 				scat2 = bspline_valu(fx[y2:y3]-min(fx[y2:y3]),res)
 				;
