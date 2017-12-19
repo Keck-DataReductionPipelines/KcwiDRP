@@ -53,6 +53,7 @@
 ;	2014-APR-03	Uses master ppar and link files
 ;	2014-SEP-29	Added infrastructure to handle selected processing
 ;	2017-MAY-24	Changed to proc control file and removed link file
+;	2017-DEC-18	Added scattered light subtraction
 ;-
 pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 	;
@@ -88,6 +89,9 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 		ppar.verbose = verbose
 	if n_elements(display) eq 1 then $
 		ppar.display = display
+	;
+	; do we plot?
+	do_plot = (ppar.display ge 1)
 	;
 	; log file
 	lgfil = reddir + 'kcwi_stage2dark.log'
@@ -155,6 +159,9 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 				; get dimensions
 				sz = size(img,/dimension)
 				;
+				; does this image need dark subtraction?
+				do_dark = kcwi_do_dark(img,hdr,plot_test=do_plot)
+				;
 				; get exposure time
 				exptime = kcfg.exptime
 				;
@@ -185,13 +192,21 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 					    obfil,/warning
 				endelse
 				;
+				; add history record
+				sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
+				sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
+				sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
+				;
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-				; STAGE 2: DARK SUBTRACTION
+				; STAGE 2-A: DARK SUBTRACTION
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;
 				; do we have a master dark file?
-				do_dark = (1 eq 0)	; assume no to begin with
-				if strtrim(kpars[i].masterdark,2) ne '' then begin
+				if strtrim(kpars[i].masterdark,2) eq '' then begin
+					;
+					; no master dark
+					do_dark = (1 eq 0)
+				endif else begin
 					;
 					; master dark file name
 					mdfile = kpars[i].masterdark
@@ -206,11 +221,12 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 						; log that we got it
 						kcwi_print_info,ppar,pre,'dark file = '+mdfile
 					endif else begin
+						do_dark = (1 eq 0)
 						;
 						; log that we haven't got it
 						kcwi_print_info,ppar,pre,'dark file not found: '+mdfile,/error
 					endelse
-				endif
+				endelse
 				;
 				; let's read in or create master dark
 				if do_dark then begin
@@ -257,37 +273,28 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 					msk = msk + mdmsk
 					;
 					; update header
-					sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,mskhdr,'DARKSUB','T',' dark subtracted?'
 					sxaddpar,mskhdr,'MDFILE',mdfile,' master dark file applied'
 					sxaddpar,mskhdr,'DARKSCL',fac,' dark scale factor'
 					;
-					; write out dark corrected mask image
-					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mskd',/nodir)
-					kcwi_write_image,msk,mskhdr,ofil,kpars[i]
-					;
 					; update header
-					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,varhdr,'DARKSUB','T',' dark subtracted?'
 					sxaddpar,varhdr,'MDFILE',mdfile,' master dark file applied'
 					sxaddpar,varhdr,'DARKSCL',fac,' dark scale factor'
 					;
-					; output dark corrected variance image
-					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vard',/nodir)
-					kcwi_write_image,var,varhdr,ofil,kpars[i]
-					;
 					; update header
-					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,hdr,'DARKSUB','T',' dark subtracted?'
 					sxaddpar,hdr,'MDFILE',mdfile,' master dark file applied'
 					sxaddpar,hdr,'DARKSCL',fac,' dark scale factor'
 					;
-					; write out dark corrected intensity image
-					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_intd',/nodir)
-					kcwi_write_image,img,hdr,ofil,kpars[i]
-					;
 					; handle the case when no dark frames were taken
 				endif else begin
+					;
+					; in case we do scattered light
+					sxaddpar,mskhdr,'DARKSUB','F',' dark subtracted?'
+					sxaddpar,varhdr,'DARKSUB','F',' dark subtracted?'
+					sxaddpar,hdr,'DARKSUB','F',' dark subtracted?'
+					;
 					if strpos(kcfg.obstype,'cal') ge 0 then $
 						kcwi_print_info,ppar,pre,'cals do not get dark subtracted: '+ $
 							kcfg.obsfname,/info $
@@ -295,6 +302,156 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 							kcfg.obsfname,/warning
 				endelse
 				flush,ll
+				;
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				; BEGIN STAGE 2-B: SCATTERED LIGHT SUBTRACTION
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				;
+				; only do scattered light subtraction only if N&S mask not in
+				do_scat = (kcfg.nasmask eq 0)
+				;
+				; should we subtract scattered light?
+				if do_scat then begin
+					;
+					; get x range of scattered light region
+					sz = size(img,/dim)
+					x0 = sz[0] / 2 - 180 / kcfg.xbinsize
+					x1 = sz[0] / 2 + 180 / kcfg.xbinsize
+					;
+					; get y ranges (fit in two pieces)
+					y0 = 0
+					y1 = (sz[1]/2) - 1
+					y2 = y1 + 1
+					y3 = sz[1] - 1
+					;
+					; fitted x values
+					fx = findgen(sz[1])
+					;
+					; scattered light and variance vectors
+					simg = img[x0:x1,y0:y3]
+					vimg = var[x0:x1,y0:y3]
+					;
+					; get scattered light profile
+					slp = median(simg,dimen=1)
+					elp = sqrt(median(vimg,dimen=1))
+					;
+					; fit in two pieces
+					;
+					; piece one
+					;
+					; fitting range
+					fx1 = fx[y0:y1]
+					;
+					; breakpoints for b-spline
+					bkpta=min(fx1)+findgen(100)*(max(fx1)-min(fx1))/100.
+					bkptb=min(fx1)+findgen(20)*(max(fx1)-min(fx1))/20.
+					rez = where(bkpta gt bkptb[19])
+					bkpt = [bkptb,bkpta[rez]]
+					;
+					; fit and get results
+					res = bspline_iterfit(fx1,slp[y0:y1],fullbkpt=bkpt)
+					scat1 = bspline_valu(fx1,res)
+					;
+					; piece two
+					;
+					; fitting range
+					fx2 = fx[y2:y3] - min(fx[y2:y3])
+					;
+					; breakpoints for b-spline
+					bkpta=min(fx2)+findgen(100)*(max(fx2)-min(fx2))/100.
+					bkptb=min(fx2)+findgen(20)*(max(fx2)-min(fx2))/20.
+					rez = where(bkpta lt bkptb[1])
+					bkpt = [bkpta[rez],bkptb[1:*]]
+					;
+					; fit and get results
+					res = bspline_iterfit(fx2,slp[y2:y3],fullbkpt=bkpt)
+					scat2 = bspline_valu(fx[y2:y3]-min(fx[y2:y3]),res)
+					;
+					; plot if display set
+					if do_plot then begin
+						deepcolor
+						!p.background=colordex('white')
+						!p.color=colordex('black')
+						plot,fx,slp,/xs,psym=1,xtitle='ROW',ytitle='Scattered Light (e-)', $
+							title='Image: '+strn(imgnum[i]), $
+							charth=2,charsi=1.5,xthi=2,ythi=2
+						oplot,fx,elp,color=colordex('blue')
+						oplot,fx[y0:y1],scat1,thick=3,color=colordex('red')
+						oplot,fx[y2:y3],scat2,thick=3,color=colordex('red')
+						kcwi_legend,['Data', 'Fit', 'Err'],thick=[1,3,1], $
+							charthi=2,charsi=1.5, $
+							color=[colordex('C'),colordex('R'),colordex('B')], $
+							linesty=[0,0,0]
+						;
+						; make interactive if display greater than 1
+						if do_plot and kpars[i].display ge 2 then begin
+							q = ''
+							read,'Next? (Q-quit plotting, <cr>-next): ',q
+							if strupcase(strmid(q,0,1)) eq 'Q' then do_plot = 0
+						endif
+						;
+						; plot scattered light
+						plfil = kcwi_get_imname(kpars[i],imgnum[i],'_scat',/reduced)
+						plfil = strmid(plfil,0,strpos(plfil,'.fit'))
+						psfile,plfil
+						kcwi_print_info,ppar,pre,'plotting scattered light to: '+plfil+'.ps'
+						deepcolor
+						!p.background=colordex('white')
+						!p.color=colordex('black')
+						plot,fx,slp,/xs,psym=1,xtitle='ROW',ytitle='Scattered Light (e-)', $
+							title='Image: '+strn(imgnum[i]), $
+							charth=2,charsi=1.5,xthi=2,ythi=2
+						oplot,fx,elp,color=colordex('blue')
+						oplot,fx[y0:y1],scat1,thick=3,color=colordex('red')
+						oplot,fx[y2:y3],scat2,thick=3,color=colordex('red')
+						kcwi_legend,['Data', 'Fit', 'Err'],thick=[1,3,1], $
+							charthi=2,charsi=1.5, $
+							color=[colordex('C'),colordex('R'),colordex('B')], $
+							linesty=[0,0,0]
+						psclose
+					endif
+					;
+					; subtract scat
+					for xi=0,sz[0]-1 do begin
+						img[xi,y0:y1] = img[xi,y0:y1] - scat1
+						img[xi,y2:y3] = img[xi,y2:y3] - scat2
+					endfor
+					;
+					; update headers
+					sxaddpar,mskhdr,'SCATCOR','T',' scattered light subtracted?'
+					sxaddpar,varhdr,'SCATCOR','T',' scattered light subtracted?'
+					sxaddpar,hdr,'SCATCOR','T',' scattered light subtracted?'
+					;
+					; log
+					kcwi_print_info,ppar,pre,'scattered light subtracted'
+				endif else begin
+					sxaddpar,mskhdr,'SCATCOR','F',' scattered light subtracted?'
+					sxaddpar,varhdr,'SCATCOR','F',' scattered light subtracted?'
+					sxaddpar,hdr,'SCATCOR','F',' scattered light subtracted?'
+					;
+					; log
+					kcwi_print_info,ppar,pre,'scattered light NOT subtracted'
+				endelse
+				;
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				; END   STAGE 2-B: SCATTERED LIGHT SUBTRACTION
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				;
+				; write out results?
+				if do_scat or do_dark then begin
+					;
+					; write out dark corrected mask image
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mskd',/nodir)
+					kcwi_write_image,msk,mskhdr,ofil,kpars[i]
+					;
+					; output dark corrected variance image
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vard',/nodir)
+					kcwi_write_image,var,varhdr,ofil,kpars[i]
+					;
+					; write out dark corrected intensity image
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_intd',/nodir)
+					kcwi_write_image,img,hdr,ofil,kpars[i]
+				endif
 			;
 			; end check if output file exists already
 			endif else begin

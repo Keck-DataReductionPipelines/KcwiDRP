@@ -71,7 +71,6 @@
 ;	2014-SEP-29	Added infrastructure to handle selected processing
 ;	2017-APR-15	Added cosmic ray exposure time threshhold (60s)
 ;	2017-MAY-24	Changed to proc control file and removed link file
-;	2017-JUL-21	Added scattered light subtraction step
 ;-
 pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 	;
@@ -146,7 +145,6 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 	;
 	; plot status
 	doplots = (ppar.display ge 1)
-	plotscat = (ppar.display ge 1)
 	;
 	; gather configuration data on each observation in rawdir
 	kcwi_print_info,ppar,pre,'Number of input images',nproc
@@ -308,17 +306,13 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			; BEGIN STAGE 1-B: OVERSCAN SUBTRACTION
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
-			; only do overscan subtraction if no bias is available
-			do_oscan = (sxpar(hdr,'BIASSUB') eq 0)
-			;
 			; number of overscan pixels in each row
 			oscan_pix = bsec[0,0,1] - bsec[0,0,0]
 			;
 			; do we have enough overscan to get good statistics?
-			if do_oscan and oscan_pix ge kpars[i].minoscanpix then begin
+			if oscan_pix ge kpars[i].minoscanpix then begin
 				;
 				; loop over amps
-				avrn = 0.
 				for ia = 0, namps-1 do begin
 					;
 					; overscan x range - buffer avoids edge effects
@@ -332,16 +326,6 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					; row range (y)
 					osy0	= bsec[ia,1,0]
 					osy1	= bsec[ia,1,1]
-					;
-					; get gain
-					gain = sxpar(hdr,'GAIN'+strn(ia+1),count=ngain)
-					if ngain eq 0 then gain = sxpar(hdr,'CCDGAIN')
-					;
-					; get readnoise
-					mo = moment(reform(img[osx0:osx1,osy0:osy1]))
-					mbias_rn[ia] = gain * sqrt(mo[1])
-					sxaddpar,hdr,'OSCNRN'+strn(ia+1),mbias_rn[ia],' amp'+strn(ia+1)+' RN in e- from oscan'
-					avrn = avrn + mbias_rn[ia]
 					;
 					; collapse each row
 					osvec = median(img[osx0:osx1,osy0:osy1],dim=1)
@@ -373,6 +357,13 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					mo = moment(resid)
 					mnrs = mo[0]
 					sdrs = sqrt(mo[1])
+					;
+					; get readnoise
+					if not sxpar(hdr,'BIASSUB') then begin
+						kcwi_print_info,ppar,pre,'Using overscan for computing readnoise'
+						mbias_rn[ia] = sdrs
+					endif
+					sxaddpar,hdr,'OSCNRN'+strn(ia+1),sdrs,' amp'+strn(ia+1)+' RN in e- from oscan'
 					;
 					; plot if display set
 					if doplots then begin
@@ -407,7 +398,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					endfor
 					;
 					; log
-					kcwi_print_info,ppar,pre,'overscan readnoise in e- for amp '+strn(ia+1), mbias_rn[ia]
+					kcwi_print_info,ppar,pre,'overscan readnoise in e- for amp '+strn(ia+1), sdrs
 					kcwi_print_info,ppar,pre,'overscan '+strtrim(string(ia+1),2)+'/'+ $
 						strtrim(string(namps),2)+' (x0,x1,y0,y1): '+ $
 						    strtrim(string(osx0),2)+','+strtrim(string(osx1),2)+ $
@@ -424,7 +415,6 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						if strupcase(strmid(q,0,1)) eq 'Q' then doplots = 0
 					endif
 				endfor	; loop over amps
-				avrn = avrn / float(namps)
 				;
 				; update header
 				sxaddpar,hdr,'OSCANSUB','T',' overscan subtracted?'
@@ -435,12 +425,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					kcwi_write_image,img,hdr,ofil,kpars[i]
 				endif
 			endif else begin	; not doing oscan sub
-				if do_oscan then begin
-					kcwi_print_info,ppar,pre,'not enough overscan pixels to subtract', $
-						oscan_pix,/warning
-					kcwi_print_info,ppar,pre,'using default readnoise',kpars[i].readnoise,/warning
-				endif else $
-					kcwi_print_info,ppar,pre,'skipping oscan sub, already bias subtracted'
+				kcwi_print_info,ppar,pre,'not enough overscan pixels to subtract', $
+					oscan_pix,/warning
+				kcwi_print_info,ppar,pre,'using default readnoise',kpars[i].readnoise,/warning
 				sxaddpar,hdr,'OSCANSUB','F',' overscan subtracted?'
 			endelse
 			;
@@ -960,143 +947,6 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			; END   STAGE 1-I: IMAGE RECTIFICATION
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; BEGIN STAGE 1-J: SCATTERED LIGHT SUBTRACTION
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;
-			; only do scattered light subtraction only if N&S mask not in
-			do_scat = (kcfg.nasmask eq 0)
-			;
-			; should we subtract scattered light?
-			if do_scat then begin
-				;
-				; get x range of scattered light region
-				sz = size(img,/dim)
-				x0 = sz[0] / 2 - 180 / kcfg.xbinsize
-				x1 = sz[0] / 2 + 180 / kcfg.xbinsize
-				;
-				; get y ranges (fit in two pieces)
-				y0 = 0
-				y1 = (sz[1]/2) - 1
-				y2 = y1 + 1
-				y3 = sz[1] - 1
-				;
-				; fitted x values
-				fx = findgen(sz[1])
-				;
-				; scattered light and variance vectors
-				simg = img[x0:x1,y0:y3]
-				vimg = var[x0:x1,y0:y3]
-				;
-				; get scattered light profile
-				slp = median(simg,dimen=1)
-				elp = sqrt(median(vimg,dimen=1))
-				;
-				; fit in two pieces
-				;
-				; piece one
-				;
-				; fitting range
-				fx1 = fx[y0:y1]
-				;
-				; breakpoints for b-spline
-				bkpta=min(fx1)+findgen(100)*(max(fx1)-min(fx1))/100.
-				bkptb=min(fx1)+findgen(20)*(max(fx1)-min(fx1))/20.
-				rez = where(bkpta gt bkptb[19])
-				bkpt = [bkptb,bkpta[rez]]
-				;
-				; fit and get results
-				res = bspline_iterfit(fx1,slp[y0:y1],fullbkpt=bkpt)
-				scat1 = bspline_valu(fx1,res)
-				;
-				; piece two
-				;
-				; fitting range
-				fx2 = fx[y2:y3] - min(fx[y2:y3])
-				;
-				; breakpoints for b-spline
-				bkpta=min(fx2)+findgen(100)*(max(fx2)-min(fx2))/100.
-				bkptb=min(fx2)+findgen(20)*(max(fx2)-min(fx2))/20.
-				rez = where(bkpta lt bkptb[1])
-				bkpt = [bkpta[rez],bkptb[1:*]]
-				;
-				; fit and get results
-				res = bspline_iterfit(fx2,slp[y2:y3],fullbkpt=bkpt)
-				scat2 = bspline_valu(fx[y2:y3]-min(fx[y2:y3]),res)
-				;
-				; plot if display set
-				if plotscat then begin
-					deepcolor
-					!p.background=colordex('white')
-					!p.color=colordex('black')
-					plot,fx,slp,/xs,psym=1,xtitle='ROW',ytitle='Scattered Light (e-)', $
-						title='Image: '+strn(imgnum[i]), $
-						charth=2,charsi=1.5,xthi=2,ythi=2
-					oplot,fx,elp,color=colordex('blue')
-					oplot,fx[y0:y1],scat1,thick=3,color=colordex('red')
-					oplot,fx[y2:y3],scat2,thick=3,color=colordex('red')
-					kcwi_legend,['Data', 'Fit', 'Err'],thick=[1,3,1], $
-						charthi=2,charsi=1.5, $
-						color=[colordex('C'),colordex('R'),colordex('B')], $
-						linesty=[0,0,0]
-					;
-					; make interactive if display greater than 1
-					if plotscat and kpars[i].display ge 2 then begin
-						q = ''
-						read,'Next? (Q-quit plotting, <cr>-next): ',q
-						if strupcase(strmid(q,0,1)) eq 'Q' then plotscat = 0
-					endif
-					;
-					; plot scattered light
-					plfil = kcwi_get_imname(kpars[i],imgnum[i],'_scat',/reduced)
-					plfil = strmid(plfil,0,strpos(plfil,'.fit'))
-					psfile,plfil
-					kcwi_print_info,ppar,pre,'plotting scattered light to: '+plfil+'.ps'
-					deepcolor
-					!p.background=colordex('white')
-					!p.color=colordex('black')
-					plot,fx,slp,/xs,psym=1,xtitle='ROW',ytitle='Scattered Light (e-)', $
-						title='Image: '+strn(imgnum[i]), $
-						charth=2,charsi=1.5,xthi=2,ythi=2
-					oplot,fx,elp,color=colordex('blue')
-					oplot,fx[y0:y1],scat1,thick=3,color=colordex('red')
-					oplot,fx[y2:y3],scat2,thick=3,color=colordex('red')
-					kcwi_legend,['Data', 'Fit', 'Err'],thick=[1,3,1], $
-						charthi=2,charsi=1.5, $
-						color=[colordex('C'),colordex('R'),colordex('B')], $
-						linesty=[0,0,0]
-					psclose
-				endif
-				;
-				; subtract scat
-				for xi=0,sz[0]-1 do begin
-					img[xi,y0:y1] = img[xi,y0:y1] - scat1
-					img[xi,y2:y3] = img[xi,y2:y3] - scat2
-				endfor
-				;
-				; update header
-				sxaddpar,hdr,'SCATCOR','T',' scattered light subtracted?'
-				;
-				; log
-				kcwi_print_info,ppar,pre,'scattered light subtracted'
-				;
-				; output gain-corrected image
-				if kpars[i].saveintims eq 1 then begin
-					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_s',/nodir)
-					kcwi_write_image,img,hdr,ofil,kpars[i]
-				endif
-			endif else begin
-				sxaddpar,hdr,'SCATCOR','F',' scattered light subtracted?'
-				;
-				; log
-				kcwi_print_info,ppar,pre,'scattered light NOT subtracted'
-			endelse
-			;
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; END   STAGE 1-J: SCATTERED LIGHT SUBTRACTION
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;
 			;
 			; write out mask image
 			ofil = kcwi_get_imname(kpars[i],imgnum[i],'_msk',/nodir)
