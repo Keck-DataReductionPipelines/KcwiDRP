@@ -9,7 +9,12 @@
 ;	Determine if input image has dark current signatures.
 ;
 ; CALLING SEQUENCE:
-;	Result = KCWI_DO_DARK( Im, Hdr)
+;	Result = KCWI_DO_DARK( Im, Hdr, Ppar)
+;
+; INPUTS:
+;	Im	- '_int' image to dark subtract
+;	Hdr	- image header
+;	Ppar	- Pipline parameter struct
 ;
 ; RETURNS:
 ;	True (1) if dark current signatures are significant,
@@ -19,10 +24,18 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2017-12-18	Initial version
 ;-
-function kcwi_do_dark, im, hdr, plot_test=plot_test
+function kcwi_do_dark, im, hdr, ppar
 ;
-; return value
-retval = (1 eq 0)
+; setup
+pre = 'KCWI_DO_DARK'
+q=''
+retval = (1 eq 0)	; default return value
+;
+; test ppar input
+if kcwi_verify_ppar(ppar,/init) ne 0 then begin
+	print,pre+': Error pipeline parameter struct not initialized'
+	return, retval
+endif
 ;
 ; get binning
 binstr = sxpar(hdr,'BINNING')
@@ -45,7 +58,9 @@ res = poly_fit(findgen(n_elements(tvec)),tvec,5,yfit=tfit)
 tsub = tvec - tfit
 ;
 ; smooth
-tsmo = smooth(tsub,11)
+if ybin le 1 then $
+	tsmo = smooth(tsub,11) $
+else	tsmo = smooth(tsub,5)
 ;
 ; calculate test moments
 lmo = moment(tsmo[contlo[0]:contlo[1]])
@@ -58,15 +73,21 @@ tsig = 1.5 * ( (sqrt(lmo[1]) + sqrt(hmo[1])) / 2.0 )
 ; test
 if sqrt(mmo[1]) gt tsig then retval = (1 eq 1)
 ;
-if keyword_set(plot_test) then begin
-	if retval then begin
-		tlab = 'Dark Signature Test: YES'
-		print,'Yes',sqrt(mmo[1]), tsig, format='(a3,1x,2f8.4)'
-	endif else begin
-		tlab = 'Dark Signature Test: NO'
-		print,'No ',sqrt(mmo[1]), tsig, format='(a3,1x,2f8.4)'
-	endelse
-	q=''
+; plot title includes results of test
+if retval then begin
+	tlab = 'Dark Signature Test: YES'
+	kcwi_print_info,ppar,pre,'DS Test (drk?, msig, tsig)','YES', $
+		sqrt(mmo[1]), tsig, format='(a,a,1x,2f8.4)'
+endif else begin
+	tlab = 'Dark Signature Test: NO'
+	kcwi_print_info,ppar,pre,'DS Test (drk?, msig, tsig)','NO ', $
+		sqrt(mmo[1]), tsig, format='(a,a,1x,2f8.4)'
+endelse
+;
+; display test plot
+if ppar.display ge 2 then begin
+	;
+	; set up plotting
 	deepcolor
 	!p.background=colordex('white')
 	!p.color=colordex('black')
@@ -79,6 +100,8 @@ if keyword_set(plot_test) then begin
 	oplot,[contmi[1],contmi[1]],!y.crange,linesty=2
 	oplot,[conthi[0],conthi[0]],!y.crange,linesty=2
 	oplot,[conthi[1],conthi[1]],!y.crange,linesty=2
+	;
+	; make interactive if display >= 2
 	read,'next: ',q
 endif
 ;

@@ -160,7 +160,7 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 				sz = size(img,/dimension)
 				;
 				; does this image need dark subtraction?
-				do_dark = kcwi_do_dark(img,hdr,plot_test=do_plot)
+				do_dark = kcwi_do_dark(img,hdr,kpars[i])
 				;
 				; get exposure time
 				exptime = kcfg.exptime
@@ -201,46 +201,14 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 				; STAGE 2-A: DARK SUBTRACTION
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;
-				; do we have a master dark file?
-				if strtrim(kpars[i].masterdark,2) eq '' then begin
-					;
-					; no master dark
-					do_dark = (1 eq 0)
-				endif else begin
-					;
-					; master dark file name
-					mdfile = kpars[i].masterdark
-					;
-					; master dark image ppar filename
-					mdppfn = repstr(mdfile,'.fits','.ppar')
-					;
-					; check access
-					if file_test(mdppfn) then begin
-						do_dark = (1 eq 1)
-						;
-						; log that we got it
-						kcwi_print_info,ppar,pre,'dark file = '+mdfile
-					endif else begin
-						do_dark = (1 eq 0)
-						;
-						; log that we haven't got it
-						kcwi_print_info,ppar,pre,'dark file not found: '+mdfile,/error
-					endelse
-				endelse
-				;
 				; let's read in or create master dark
-				if do_dark then begin
+				if do_dark and (1 eq 0) then begin 	; skip for now
 					;
-					; build master dark if necessary
-					if not file_test(mdfile) then begin
-						;
-						; build master dark
-					 	dpar = kcwi_read_ppar(mdppfn)
-						dpar.loglun  = kpars[i].loglun
-						dpar.verbose = kpars[i].verbose
-						dpar.display = kpars[i].display
-						kcwi_make_dark,dpar
-					endif
+					; master dark filename
+					mdfile = strmid(obfil,0,strpos(obfil,'.fit')) + '_mdark.fits'
+					;
+					; create master dark
+					kcwi_make_dark,obfil,mdfile,kpars[i]
 					;
 					; read in master dark
 					mdark = mrdfits(mdfile,0,mdhdr,/fscale,/silent)
@@ -335,37 +303,54 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 					slp = median(simg,dimen=1)
 					elp = sqrt(median(vimg,dimen=1))
 					;
-					; fit in two pieces
+					; are there dark signatures?
+					if do_dark then begin
+						;
+						; fit in two pieces
+						;
+						; piece one
+						;
+						; fitting range
+						fx1 = fx[y0:y1]
+						;
+						; breakpoints for b-spline
+						bkpta=min(fx1)+findgen(100)*(max(fx1)-min(fx1))/100.
+						bkptb=min(fx1)+findgen(20)*(max(fx1)-min(fx1))/20.
+						rez = where(bkpta gt bkptb[19])
+						bkpt = [bkptb,bkpta[rez]]
+						;
+						; fit and get results
+						res = bspline_iterfit(fx1,slp[y0:y1],fullbkpt=bkpt)
+						scat1 = bspline_valu(fx1,res)
+						;
+						; piece two
+						;
+						; fitting range
+						fx2 = fx[y2:y3] - min(fx[y2:y3])
+						;
+						; breakpoints for b-spline
+						bkpta=min(fx2)+findgen(100)*(max(fx2)-min(fx2))/100.
+						bkptb=min(fx2)+findgen(20)*(max(fx2)-min(fx2))/20.
+						rez = where(bkpta lt bkptb[1])
+						bkpt = [bkpta[rez],bkptb[1:*]]
+						;
+						; fit and get results
+						res = bspline_iterfit(fx2,slp[y2:y3],fullbkpt=bkpt)
+						scat2 = bspline_valu(fx[y2:y3]-min(fx[y2:y3]),res)
+						;
+						; assemble scattered light profile
+						scat = [scat1,scat2]
 					;
-					; piece one
-					;
-					; fitting range
-					fx1 = fx[y0:y1]
-					;
-					; breakpoints for b-spline
-					bkpta=min(fx1)+findgen(100)*(max(fx1)-min(fx1))/100.
-					bkptb=min(fx1)+findgen(20)*(max(fx1)-min(fx1))/20.
-					rez = where(bkpta gt bkptb[19])
-					bkpt = [bkptb,bkpta[rez]]
-					;
-					; fit and get results
-					res = bspline_iterfit(fx1,slp[y0:y1],fullbkpt=bkpt)
-					scat1 = bspline_valu(fx1,res)
-					;
-					; piece two
-					;
-					; fitting range
-					fx2 = fx[y2:y3] - min(fx[y2:y3])
-					;
-					; breakpoints for b-spline
-					bkpta=min(fx2)+findgen(100)*(max(fx2)-min(fx2))/100.
-					bkptb=min(fx2)+findgen(20)*(max(fx2)-min(fx2))/20.
-					rez = where(bkpta lt bkptb[1])
-					bkpt = [bkpta[rez],bkptb[1:*]]
-					;
-					; fit and get results
-					res = bspline_iterfit(fx2,slp[y2:y3],fullbkpt=bkpt)
-					scat2 = bspline_valu(fx[y2:y3]-min(fx[y2:y3]),res)
+					; no dark signatures
+					endif else begin
+						;
+						; fit in one piece
+						;
+						; break points for bspline
+						bkpt=min(fx)+findgen(40)*(max(fx)-min(fx))/40.
+						res = bspline_iterfit(fx,slp,fullbkpt=bkpt)
+						scat = bspline_valu(fx,res)
+					endelse	; no dark signatures
 					;
 					; plot if display set
 					if do_plot then begin
@@ -376,8 +361,7 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 							title='Image: '+strn(imgnum[i]), $
 							charth=2,charsi=1.5,xthi=2,ythi=2
 						oplot,fx,elp,color=colordex('blue')
-						oplot,fx[y0:y1],scat1,thick=3,color=colordex('red')
-						oplot,fx[y2:y3],scat2,thick=3,color=colordex('red')
+						oplot,fx,scat,thick=3,color=colordex('red')
 						kcwi_legend,['Data', 'Fit', 'Err'],thick=[1,3,1], $
 							charthi=2,charsi=1.5, $
 							color=[colordex('C'),colordex('R'),colordex('B')], $
@@ -402,8 +386,7 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 							title='Image: '+strn(imgnum[i]), $
 							charth=2,charsi=1.5,xthi=2,ythi=2
 						oplot,fx,elp,color=colordex('blue')
-						oplot,fx[y0:y1],scat1,thick=3,color=colordex('red')
-						oplot,fx[y2:y3],scat2,thick=3,color=colordex('red')
+						oplot,fx,scat,thick=3,color=colordex('red')
 						kcwi_legend,['Data', 'Fit', 'Err'],thick=[1,3,1], $
 							charthi=2,charsi=1.5, $
 							color=[colordex('C'),colordex('R'),colordex('B')], $
@@ -412,10 +395,8 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 					endif
 					;
 					; subtract scat
-					for xi=0,sz[0]-1 do begin
-						img[xi,y0:y1] = img[xi,y0:y1] - scat1
-						img[xi,y2:y3] = img[xi,y2:y3] - scat2
-					endfor
+					for xi=0,sz[0]-1 do $
+						img[xi,y0:y3] = img[xi,y0:y3] - scat
 					;
 					; update headers
 					sxaddpar,mskhdr,'SCATCOR','T',' scattered light subtracted?'

@@ -606,10 +606,11 @@ pro kcwi_make_flat,ppar,gfile
 	n=100.0
 	bkpt=min(allx)+findgen(n+1)*(max(allx)-min(allx))/n
 	sftall=bspline_iterfit(allx,ally,fullbkpt=bkpt,yfit=yfitall)
+	fdecomp,ppar.masterflat,disk,dir,flrute,ext
 	
 	if do_plots then begin
 		yrng = get_plotlims([yfr,ally,yfitall,yfitr])
-		plot,xfr,yfr,title='B-Spline Fits to Flat',psym=3, $
+		plot,xfr,yfr,title='B-Spline Fits to Flat: '+flrute,psym=3, $
 			charsi=si,charthi=th, /nodata, $
 			xtitle='Wavelength (A)',xthick=th, $
 			xrange=[kgeom.waveall0,kgeom.waveall1],/xs, $
