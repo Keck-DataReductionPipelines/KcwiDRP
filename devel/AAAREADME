@@ -6,6 +6,7 @@ kcwi_arc_lines.pro		obsolete	line finder
 kcwi_cflat_anal.pro		development	charge transfer analysis
 kcwi_comp_profs.pro		development	compare slice profile images
 kcwi_cube_fwhm.pro		development	measure arc cube FWHMs
+kcwi_extract.pro		development	extract spectra from cube
 kcwi_get_lines.pro		obsolete	line centroider
 kcwi_group_obs.pro		development	group objects by name
 kcwi_group_rr.pro		obsolete	group relative resp. ims

@@ -38,14 +38,22 @@ dsl = 3600.d0 * sxpar(hdr,'SLSCL')
 ; field-of-view
 xasec = fix( sz[0] * dsl + 0.5 )
 yasec = fix( sz[1] * dpx + 0.5 )
-xsize = fix( xasec/0.05 )
-ysize = fix( yasec/0.05 )
+xsize = xasec*10
+ysize = yasec*10
+new_dx = float(xasec)/float(xsize)
+new_dy = float(yasec)/float(ysize)
 ;
 ; rectify cube
-cube = congrid(cub, xasec/0.05, yasec/0.05, sz[2])
+cube = congrid(cub, xsize, ysize, sz[2])
+;
+; update header
+sxaddpar,hdr,'CD1_1',-(new_dx)/3600.d0
+sxaddpar,hdr,'CD2_2',(new_dy)/3600.d0
+sxaddpar,hdr,'CRPIX1',xsize/2.0
+sxaddpar,hdr,'CRPIX2',ysize/2.0
 ;
 ; display it
-atv,cube
+atv,cube,header=hdr
 ;
 return
 end
