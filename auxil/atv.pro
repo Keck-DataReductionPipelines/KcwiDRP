@@ -163,14 +163,21 @@ state = {                   $
         pan_offset: [0L, 0L], $ ; image offset in pan window
         cube: 0, $              ; is main image a 3d cube?
         osiriscube: 0, $        ; is cube an osiris-style (l,y,x) cube?
+        kcwicube: 0, $          ; is cube a kcwi-style (x,y,l) cube?
         slice: 0, $             ; which slice of cube to display
+        wave: 0., $             ; which wavelength of cube to display
         slicebase_id: 0, $      ; widget id of slice base
         slicer_id: 0, $         ; widget id of slice slider
         sliceselect_id: 0, $    ; widget id of slice selector
+        waveselect_id: 0, $     ; widget id of wavelength selector
         slicecombine_id: 0, $   ; widget id of slice combine box
         slicecombine: 1, $      ; # slices to combine
         slicecombine_method: 1, $ ; 0 for average, 1 for median
         nslices: 0, $           ; number of slices
+	crslice: 0, $           ; wavelength reference slice
+        dwave: 0., $            ; wavelengths/slice
+        wave0: 0., $            ; min wavelength
+        wave1: 0., $            ; max wavelength
         frame: 1L, $            ; put frame around ps output?
         framethick: 6, $        ; thickness of frame
         plot_coord: [0L, 0L], $ ; cursor position for a plot
@@ -218,7 +225,7 @@ state = {                   $
         radius_id: 0L, $        ; id of radius widget
         innersky_id: 0L, $      ; id of inner sky widget
         outersky_id: 0L, $      ; id of outer sky widget
-        magunits: 0, $          ; 0=counts, 1=magnitudes
+        magunits: 1, $          ; 0=counts, 1=magnitudes
         skytype: 0, $           ; 0=idlphot,1=median,2=no sky subtract
         exptime: 1.0, $         ; exposure time for photometry
         photzpt: 25.0, $        ; magnitude zeropoint
@@ -437,10 +444,9 @@ top_menu_desc = [ $
                 {cw_pdmenu_s, 0, 'Blue-White'}, $
                 {cw_pdmenu_s, 0, 'Red-Orange'}, $
                 {cw_pdmenu_s, 0, 'Green-White'}, $
-; commented out color maps that I don't really like
-;                {cw_pdmenu_s, 0, 'Rainbow'}, $
-;                {cw_pdmenu_s, 0, 'BGRY'}, $
-;                {cw_pdmenu_s, 0, 'Stern Special'}, $
+                {cw_pdmenu_s, 0, 'Rainbow'}, $
+                {cw_pdmenu_s, 0, 'BGRY'}, $
+                {cw_pdmenu_s, 0, 'Stern Special'}, $
                 {cw_pdmenu_s, 0, 'SAURON'}, $
                 {cw_pdmenu_s, 0, 'Viridis'}, $
                 {cw_pdmenu_s, 0, 'Magma'}, $
@@ -2566,17 +2572,22 @@ crpix = float(sxpar(*state.head_ptr,'CRPIX1', /silent)) - 1
 crval = float(sxpar(*state.head_ptr,'CRVAL1', /silent))
 shifta = float(sxpar(*state.head_ptr, 'SHIFTA1', /silent))
 
-if ((state.cube EQ 1) AND (state.osiriscube EQ 1)) then begin
-   wavelength = crval + ((state.slice - crpix) * cd)
-endif else begin
-   wavelength = crval + ((state.coord[0] - crpix) * cd) + (shifta * cd)
-endelse
+if state.cube EQ 1 then begin
+   if state.osiriscube EQ 1 then begin
+      wavelength = crval + ((state.slice - crpix) * cd)
+   endif else if state.kcwicube EQ 1 then begin
+      cd = float(sxpar(*state.head_ptr,'CD3_3', /silent))
+      crpix = float(sxpar(*state.head_ptr,'CRPIX3', /silent)) - 1
+      crval = float(sxpar(*state.head_ptr,'CRVAL3', /silent))
+      wavelength = crval + ((state.slice - crpix) * cd)
+   endif else begin
+      wavelength = crval + ((state.coord[0] - crpix) * cd) + (shifta * cd)
+   endelse
+endif
 
 wstring = string(wavelength, format='(F8.2)')
 
 wavestring = strcompress('Wavelength:  ' + wstring + ' ' + state.cunit)
- 
-   
 
 return, wavestring
 
@@ -3223,6 +3234,9 @@ case s of
       main_image_cube = 0
       state.cube = 0
       state.nslices = 0
+      state.dwave = 0.
+      state.wave0 = 0.
+      state.wave1 = 0.
       atv_killcube
       end
    3: begin
@@ -3240,6 +3254,9 @@ case s of
       newimage = 1
       state.cube = 0
       state.nslices = 0
+      state.dwave = 0.
+      state.wave0 = 0.
+      state.wave1 = 0.
       atv_killcube
       head = ''
       atv_setheader, head
@@ -3745,6 +3762,17 @@ endelse
 
 state.nslices = (size(main_image_cube))[3]
 
+;  test for KCWI cube
+if currinst EQ 'KCWI' then begin
+   state.kcwicube = 1
+   state.crslice = sxpar(head, 'CRPIX3') - 1
+   state.wave0 = sxpar(head,'CRVAL3')
+   state.dwave = sxpar(head,'CD3_3')
+   state.wave1 = state.wave0 + (state.nslices - state.crslice) * state.dwave
+endif else begin
+   state.kcwicube = 0
+endelse
+
 ; Create the slicer widgets if not already there
 if (not(xregistered('atvslicer', /noshow))) then begin
 
@@ -3762,6 +3790,17 @@ if (not(xregistered('atvslicer', /noshow))) then begin
                              /return_events, $
                              xsize = 7)
    state.sliceselect_id = sliceselect
+
+   if state.kcwicube then begin
+      waveselect = cw_field(slicebase, $
+                             uvalue = 'waveselect', $
+                             /floating,  $
+                             title = 'Select Wave:', $
+                             value = state.wave,  $
+                             /return_events, $
+                             xsize = 7)
+      state.waveselect_id = waveselect
+   endif
 
    slicer = widget_slider(slicebase, /drag, scroll = 1, $
                           scr_xsize = 250, frame = 5, $
@@ -3801,6 +3840,7 @@ if (not(xregistered('atvslicer', /noshow))) then begin
 endif
 
 state.slice = 0
+state.wave = state.wave0
 widget_control, state.slicer_id, set_value = 0
 widget_control, state.sliceselect_id, set_value = 0
 widget_control, state.slicer_id, set_slider_max = state.nslices-1
@@ -3830,6 +3870,7 @@ endif
 state.cube = 0
 state.slice = 0
 state.osiriscube = 0
+state.kcwicube = 0
 state.slicecombine = 1
 main_image_cube = 0
 
@@ -3856,11 +3897,26 @@ endelse
 
 if (event_name EQ 'sliceslider') then begin
    widget_control, state.sliceselect_id, set_value = state.slice
+   if state.kcwicube then begin
+      state.wave = state.wave0 + (state.slice - state.crslice) * state.dwave
+      widget_control, state.waveselect_id, set_value = state.wave
+   endif
 endif
 
 
 if (event_name EQ 'sliceselect') then begin
    state.slice = 0 > event.value < (state.nslices-1)
+   if state.kcwicube then begin
+      state.wave = state.wave0 + (state.slice - state.crslice) * state.dwave
+      widget_control, state.waveselect_id, set_value = state.wave
+   endif
+   widget_control, state.sliceselect_id, set_value = state.slice
+   widget_control, state.slicer_id, set_value = state.slice
+endif
+
+if (event_name EQ 'waveselect') then begin
+   state.slice = 0 > ( fix( (event.value - state.wave0) / state.dwave ) + $
+   			    state.crslice ) < (state.nslices-1)
    widget_control, state.sliceselect_id, set_value = state.slice
    widget_control, state.slicer_id, set_value = state.slice
 endif
@@ -5230,6 +5286,8 @@ state.head_ptr = ptr_new(head)
 
 ; get exposure time for photometry, if present, otherwise set to 1s
 state.exptime = float(sxpar(head, 'EXPTIME'))
+if strcompress(string(sxpar(head, 'CURRINST')), /remove_all) eq 'KCWI' then $
+	state.exptime = float(sxpar(head, 'XPOSURE'))
 if (state.exptime LE 0.0) then state.exptime = 1.0
 
 ; try to get gain and readnoise from header?
@@ -9729,13 +9787,14 @@ widget_control, state.photerror_id, set_value = errstring
 
 ; Uncomment next lines if you want atv to output the WCS coords of 
 ; the centroid for the photometry object:
-;if (state.wcstype EQ 'angle') then begin
-;    xy2ad, state.centerpos[0], state.centerpos[1], *(state.astr_ptr), $
-;      clon, clat
-;    wcsstring = atv_wcsstring(clon, clat, (*state.astr_ptr).ctype,  $
-;                state.equinox, state.display_coord_sys, state.display_equinox)
-;    print, 'Centroid WCS coords: ', wcsstring
-;endif
+if (state.wcstype EQ 'angle') then begin
+    xy2ad, state.centerpos[0], state.centerpos[1], *(state.astr_ptr), $
+      clon, clat
+    wcsstring = atv_wcsstring(clon, clat, (*state.astr_ptr).ctype,  $
+                state.equinox, state.display_coord_sys, state.display_equinox, $
+		state.display_base60)
+    print, 'Centroid WCS coords: ', wcsstring
+endif
 
 atv_tvphot
 
@@ -11230,9 +11289,6 @@ if (not(xregistered('atv', /noshow))) then begin
     ; structure doesn't exist any more so don't set active window.
     if (block EQ 0) then state.active_window_id = userwindow
 endif
-
-
-
 
 end
 

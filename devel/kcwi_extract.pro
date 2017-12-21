@@ -54,6 +54,7 @@ sxaddpar,hdr,'CRPIX2',ysize/2.0
 ;
 ; display it
 atv,cube,header=hdr
+;fluxer,cube,header=hdr
 ;
 return
 end
