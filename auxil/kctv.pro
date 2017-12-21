@@ -1,7 +1,7 @@
 ;+
 ;
 ; NAME:
-;       ATV
+;       KCTV
 ; 
 ; PURPOSE: 
 ;       Interactive display of 2-D images.
@@ -10,13 +10,13 @@
 ;       Image display.
 ;
 ; CALLING SEQUENCE:
-;       atv [,array_name OR fits_file] [,min = min_value] [,max=max_value] 
+;       kctv [,array_name OR fits_file] [,min = min_value] [,max=max_value] 
 ;           [,/linear] [,/log] [,/histeq] [,/asinh] [,/block]
 ;           [,/align] [,/stretch] [,header = header]
 ;
 ; REQUIRED INPUTS:
-;       None.  If atv is run with no inputs, the window widgets
-;       are realized and images can subsequently be passed to atv
+;       None.  If kctv is run with no inputs, the window widgets
+;       are realized and images can subsequently be passed to kctv
 ;       from the command line or from the pull-down file menu.
 ;
 ; OPTIONAL INPUTS:
@@ -31,7 +31,7 @@
 ;       log:        use log stretch 
 ;       histeq:     use histogram equalization
 ;       asinh:      use asinh stretch
-;       block:      block IDL command line until ATV terminates
+;       block:      block IDL command line until KCTV terminates
 ;       align:      align image with previously displayed image
 ;       stretch:    keep same min and max as previous image
 ;       header:     FITS image header (string array) for use with data array
@@ -40,11 +40,11 @@
 ;       None.  
 ; 
 ; COMMON BLOCKS:
-;       atv_state:  contains variables describing the display state
-;       atv_images: contains the internal copies of the display image
-;       atv_color:  contains colormap vectors
-;       atv_pdata:  contains plot and text annotation information
-;       atv_spectrum: contains information about extracted spectrum
+;       kctv_state:  contains variables describing the display state
+;       kctv_images: contains the internal copies of the display image
+;       kctv_color:  contains colormap vectors
+;       kctv_pdata:  contains plot and text annotation information
+;       kctv_spectrum: contains information about extracted spectrum
 ;
 ; RESTRICTIONS:
 ;       Requires IDL version 8.0 or greater.
@@ -54,12 +54,12 @@
 ;       Some features may not work under all operating systems.
 ;
 ; EXAMPLE:
-;       To start atv running, just enter the command 'atv' at the idl
+;       To start kctv running, just enter the command 'kctv' at the idl
 ;       prompt, either with or without an array name or fits file name 
-;       as an input.  Only one atv window will be created at a time,
-;       so if one already exists and another image is passed to atv
+;       as an input.  Only one kctv window will be created at a time,
+;       so if one already exists and another image is passed to kctv
 ;       from the idl command line, the new image will be displayed in 
-;       the pre-existing atv window.
+;       the pre-existing kctv window.
 ;
 ; MODIFICATION HISTORY:
 ;       Written/maintained by Aaron J. Barth, with contributions by 
@@ -73,18 +73,18 @@
 ;
 ; ;
 ;----------------------------------------------------------------------
-;        atv startup and initialization routines
+;        kctv startup and initialization routines
 ;----------------------------------------------------------------------
 
-pro atv_initcommon
+pro kctv_initcommon
 
-; Routine to initialize the atv common blocks.  Use common blocks so
-; that other IDL programs can access the atv internal data easily.
+; Routine to initialize the kctv common blocks.  Use common blocks so
+; that other IDL programs can access the kctv internal data easily.
 
-common atv_state, state
-common atv_color, r_vector, g_vector, b_vector, user_r, user_g, user_b
-common atv_pdata, atvplotlist
-common atv_images, $
+common kctv_state, state
+common kctv_color, r_vector, g_vector, b_vector, user_r, user_g, user_b
+common kctv_pdata, kctvplotlist
+common kctv_images, $
    main_image, $
    main_image_cube, $
    display_image, $
@@ -124,7 +124,7 @@ state = {                   $
         track_window_id: 0L, $  ; widget id of tracking window
         pan_widget_id: 0L, $    ; widget id of pan window
         pan_window_id: 0L, $    ; window id of pan window
-        active_window_id: 0L, $ ; user's active window outside atv
+        active_window_id: 0L, $ ; user's active window outside kctv
         active_window_pmulti: lonarr(5), $ ; user's active window p.multi
         location_bar_id: 0L, $  ; id of (x,y,value) label
         wcs_bar_id: 0L, $       ; id of WCS label widget
@@ -232,7 +232,7 @@ state = {                   $
         photprint: 0, $         ; print phot results to file?
         photprint_id: 0L, $     ; id of phot print button
         photfile: 0L, $         ; file unit of phot file
-        photfilename: 'atvphot.dat', $ ; filename of phot file
+        photfilename: 'kctvphot.dat', $ ; filename of phot file
         skyresult_id: 0L, $     ; id of sky widget
         photresult_id: 0L, $    ; id of photometry result widget
         photerror_id: 0L, $,    ; id of photometry error widget
@@ -244,9 +244,9 @@ state = {                   $
         showradplot_id: 0L, $   ; id of button to show/hide radplot
         photwarning_id: 0L, $   ; id of photometry warning widget
         photwarning: ' ', $     ; photometry warning text
-        photerrors: 0, $        ; calculate photometric errors?
+        photerrors: 1, $        ; calculate photometric errors?
         ccdgain: 1.0, $         ; CCD gain
-        ccdrn: 0.0, $           ; read noise
+        ccdrn: 5.0, $           ; read noise
         centerboxsize: 9L, $    ; centering box size
         aprad: 5.0, $           ; aperture photometry radius
         innersky: 10.0, $       ; inner sky radius
@@ -298,6 +298,12 @@ state = {                   $
         x_back3_id: 0, $        ; widget id for upper background 1
         x_back4_id: 0, $        ; widget id for upper background 2
         x_fixed: 0, $           ; hold extraction parameters fixed?
+	drill_zregion: [0L, 0L], $ ; drill z region
+	drill_aper: 4., $       ; drill aperture radius
+	drill_backsub: 0, $	; drill background subtraction on?
+	drill_back1: 15., $	; drill inner background radius
+	drill_back2: 25., $	; drill outer background radius
+	drill_fixed: 0, $	; hold drill parameters fixed?
         activator: 0, $         ; is "activator" mode on?
         delimiter: '/', $       ; filesystem level delimiter 
         default_align: 1, $     ; align next image by default?
@@ -314,7 +320,7 @@ state = {                   $
         cubehelix_gamma: 1.0  $ ; cubehelix gamma parameter
         }
 
-atvplotlist = list()
+kctvplotlist = list()
 
 blink_image1 = 0
 blink_image2 = 0
@@ -324,14 +330,14 @@ end
 
 ;---------------------------------------------------------------------
 
-pro atv_startup
+pro kctv_startup
 
-; This routine initializes the atv internal variables, and creates and
-; realizes the window widgets.  It is only called by the atv main
-; program level, when there is no previously existing atv window.
+; This routine initializes the kctv internal variables, and creates and
+; realizes the window widgets.  It is only called by the kctv main
+; program level, when there is no previously existing kctv window.
 
-common atv_state
-common atv_color
+common kctv_state
+common kctv_color
 
 
 ; save the user color table and pmulti first
@@ -343,11 +349,11 @@ tvlct, user_r, user_g, user_b, /get
 if (!d.table_size LT 12) then begin
     message, 'Too few colors available for color table'
     tvlct, user_r, user_g, user_b
-    atv_shutdown
+    kctv_shutdown
 endif
 
 ; Initialize the common blocks
-atv_initcommon
+kctv_initcommon
 
 ; seems to be necessary to check the decomposed type when first
 ; starting up in a new idl session, otherwise color map changes fail
@@ -370,9 +376,9 @@ endcase
 state.ncolors = !d.table_size
 
 
-; If compiling atv to make a sav file for the atv virtual machine,
+; If compiling kctv to make a sav file for the kctv virtual machine,
 ; always do it for 24-bit color with retain & decomposed set.
-; Uncomment this block to compile atv for idl vm.  For some reason,
+; Uncomment this block to compile kctv for idl vm.  For some reason,
 ; idl vm gets !d.n_colors=256 even on a 24-bit display, so we need
 ; this to work around it to force 24-bit mode.
 ;device, true_color=24
@@ -381,7 +387,7 @@ state.ncolors = !d.table_size
 ;state.bitdepth=24
 
 ; For normal idl operation, use the following.  Comment this block out
-; if compiling atv for idl vm.
+; if compiling kctv for idl vm.
 if (!d.n_colors LE 256) then begin
     state.bitdepth = 8 
 endif else begin
@@ -396,7 +402,7 @@ state.screen_xsize = (get_screen_size())[0]
 state.screen_ysize = (get_screen_size())[1]
 
 ; Get the current window id and color table
-atv_getwindow
+kctv_getwindow
 
 ; error check on state.panel_side
 if (state.panel_side NE 0 AND $
@@ -407,16 +413,16 @@ if (state.panel_side NE 0 AND $
 ; on, save their widget ids in state variables
 
 if (state.panel_side LE 1) then begin   ; panels on left or right
-   base = widget_base(title = 'atv', $
+   base = widget_base(title = 'kctv', $
                       /row, /base_align_top, $
                       app_mbar = top_menu, $
-                      uvalue = 'atv_base', $
+                      uvalue = 'kctv_base', $
                       /tlb_size_events)
 endif else begin                        ; panels on top
-   base = widget_base(title = 'atv', $  
+   base = widget_base(title = 'kctv', $  
                       /column, /base_align_right, $
                       app_mbar = top_menu, $
-                      uvalue = 'atv_base', $
+                      uvalue = 'kctv_base', $
                       /tlb_size_events)
 endelse
 
@@ -512,7 +518,7 @@ top_menu_desc = [ $
                 {cw_pdmenu_s, 0, 'Ecliptic (J2000)'}, $
                 {cw_pdmenu_s, 2, 'Native'}, $
                 {cw_pdmenu_s, 1, 'Help'}, $ ; help menu
-                {cw_pdmenu_s, 2, 'ATV Help'} $
+                {cw_pdmenu_s, 2, 'KCTV Help'} $
                 ]
 
 top_menu = cw_pdmenu(top_menu, top_menu_desc, $
@@ -825,9 +831,9 @@ state.colorbar_window_id = tmp_value
 
 ; set the event handlers
 
-widget_control, top_menu, event_pro = 'atv_topmenu_event'
-widget_control, state.draw_widget_id, event_pro = 'atv_draw_event'
-widget_control, state.pan_widget_id, event_pro = 'atv_pan_event'
+widget_control, top_menu, event_pro = 'kctv_topmenu_event'
+widget_control, state.draw_widget_id, event_pro = 'kctv_draw_event'
+widget_control, state.pan_widget_id, event_pro = 'kctv_pan_event'
 
 ; Find window padding sizes needed for resizing routines.
 ; Add extra padding for menu bar, since this isn't included in 
@@ -839,22 +845,22 @@ drawbasegeom = widget_info(state.draw_base_id, /geometry)
 
 
 ; Initialize the vectors that hold the current color table.
-; See the routine atv_stretchct to see why we do it this way.
+; See the routine kctv_stretchct to see why we do it this way.
 
 r_vector = bytarr(state.ncolors)
 g_vector = bytarr(state.ncolors)
 b_vector = bytarr(state.ncolors)
 
-atv_getct, 0
+kctv_getct, 0
 state.invert_colormap = 0
 
 ; Create a pixmap window to hold the pan image
 window, /free, xsize=state.pan_window_size, ysize=state.pan_window_size, $
   /pixmap
 state.pan_pixmap = !d.window
-atv_resetwindow
+kctv_resetwindow
 
-atv_colorbar
+kctv_colorbar
 
 widget_control, state.base_id, tlb_get_size=tmp_event
 state.base_pad = tmp_event - state.draw_window_size
@@ -864,13 +870,13 @@ end
 
 ;--------------------------------------------------------------------
 
-pro atv_colorbar
+pro kctv_colorbar
 
 ; Routine to tv the colorbar 
 
-common atv_state
+common kctv_state
 
-atv_setwindow, state.colorbar_window_id
+kctv_setwindow, state.colorbar_window_id
 
 if (state.panel_side LE 1) then begin
    xsize = state.colorbar_size[0]
@@ -886,32 +892,32 @@ endelse
 
 cgimage, a, /tv, /noerase
 
-atv_resetwindow
+kctv_resetwindow
 
 end
 
 ;-------------------------------------------------------------------
 
-pro atvclear
+pro kctvclear
 
-; displays a small blank image, useful for clearing memory if atv is
+; displays a small blank image, useful for clearing memory if kctv is
 ; displaying a huge image.
 
-atv, fltarr(10,10)
+kctv, fltarr(10,10)
 
 end
 
 
 ;--------------------------------------------------------------------
-;                  main atv event loops
+;                  main kctv event loops
 ;--------------------------------------------------------------------
 
-pro atv_topmenu_event, event
+pro kctv_topmenu_event, event
 
 ; Event handler for top menu
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 widget_control, event.id, get_uvalue = event_name
 
@@ -919,129 +925,129 @@ if (!d.name NE state.graphicsdevice and event_name NE 'Quit') then return
 if (state.bitdepth EQ 24) then true = 1 else true = 0
 
 ; Need to get active window here in case mouse goes to menu from top
-; of atv window without entering the main base
-atv_getwindow
+; of kctv window without entering the main base
+kctv_getwindow
 
 
 case event_name of
     
 ; File menu options:
     'ReadFits': begin
-        atv_readfits, newimage=newimage
+        kctv_readfits, newimage=newimage
         if (newimage EQ 1) then begin
-            atv_getstats, align=state.default_align
+            kctv_getstats, align=state.default_align
             if (state.default_align EQ 0) then begin
                 state.zoom_level =  0
                 state.zoom_factor = 1.0
             endif
             if (state.default_stretch EQ 0 AND $
-                state.default_autoscale EQ 1) then atv_autoscale
-            if (state.firstimage EQ 1) then atv_autoscale
-            atv_set_minmax
-            atv_displayall
-            atv_settitle
+                state.default_autoscale EQ 1) then kctv_autoscale
+            if (state.firstimage EQ 1) then kctv_autoscale
+            kctv_set_minmax
+            kctv_displayall
+            kctv_settitle
             state.firstimage = 0
         endif
     end
-    'WriteFits': atv_writefits
-    'WritePS' : atv_writeps
-    'PNG': atv_writeimage, 'png'
-    'JPEG': atv_writeimage, 'jpg'
-    'TIFF': atv_writeimage, 'tiff'
+    'WriteFits': kctv_writefits
+    'WritePS' : kctv_writeps
+    'PNG': kctv_writeimage, 'png'
+    'JPEG': kctv_writeimage, 'jpg'
+    'TIFF': kctv_writeimage, 'tiff'
     'GetImage':
-    ' DSS': atv_getdss
-    ' FIRST': atv_getfirst
-    'LoadRegions': atv_loadregion
-    'SaveRegions': atv_saveregion
-    'Quit':     if (state.activator EQ 0) then atv_shutdown $
+    ' DSS': kctv_getdss
+    ' FIRST': kctv_getfirst
+    'LoadRegions': kctv_loadregion
+    'SaveRegions': kctv_saveregion
+    'Quit':     if (state.activator EQ 0) then kctv_shutdown $
       else state.activator = 0
 ; ColorMap menu options:            
-    'Grayscale': atv_getct, 0
-    'Blue-White': atv_getct, 1
-    'Red-Orange': atv_getct, 3
-    'BGRY': atv_getct, 4
-    'Rainbow': atv_getct, 13
-    'Stern Special': atv_getct, 15
-    'Green-White': atv_getct, 8
-    'SAURON': atv_makect, event_name
-    'Cubehelix': atv_makect, event_name
-    'Cubehelix Settings': atv_set_cubehelix
-    'Viridis': atv_makect, event_name
-    'Magma': atv_makect, event_name
+    'Grayscale': kctv_getct, 0
+    'Blue-White': kctv_getct, 1
+    'Red-Orange': kctv_getct, 3
+    'BGRY': kctv_getct, 4
+    'Rainbow': kctv_getct, 13
+    'Stern Special': kctv_getct, 15
+    'Green-White': kctv_getct, 8
+    'SAURON': kctv_makect, event_name
+    'Cubehelix': kctv_makect, event_name
+    'Cubehelix Settings': kctv_set_cubehelix
+    'Viridis': kctv_makect, event_name
+    'Magma': kctv_makect, event_name
 ; Scaling options:
     'Linear': begin
         state.scaling = 0
-        atv_displayall
+        kctv_displayall
     end
     'Log': begin
         state.scaling = 1
-        atv_displayall
+        kctv_displayall
     end
 
     'HistEq': begin
         state.scaling = 2
-        atv_displayall
+        kctv_displayall
     end
 
     'Asinh': begin
         state.scaling = 3
-        atv_displayall
+        kctv_displayall
     end
 
     'Asinh Settings': begin
-        atv_setasinh
+        kctv_setasinh
     end
 
 ; Label options:
-    'TextLabel': atv_textlabel
-    'Arrow': atv_setarrow
-    'Contour': atv_oplotcontour
-    'Compass': atv_setcompass
-    'ScaleBar': atv_setscalebar
-    'Region': atv_setregion
-    'EraseLast': atverase, 1
-    'EraseAll': atverase
+    'TextLabel': kctv_textlabel
+    'Arrow': kctv_setarrow
+    'Contour': kctv_oplotcontour
+    'Compass': kctv_setcompass
+    'ScaleBar': kctv_setscalebar
+    'Region': kctv_setregion
+    'EraseLast': kctverase, 1
+    'EraseAll': kctverase
 
 ; Blink options:
     'SetBlink1': begin   
-        atv_setwindow, state.draw_window_id
+        kctv_setwindow, state.draw_window_id
         blink_image1 = tvrd(true = true) 
     end
     'SetBlink2': begin   
-        atv_setwindow, state.draw_window_id
+        kctv_setwindow, state.draw_window_id
         blink_image2 = tvrd(true = true)
     end
     'SetBlink3': begin   
-        atv_setwindow, state.draw_window_id
+        kctv_setwindow, state.draw_window_id
         blink_image3 = tvrd(true = true)
     end
 
-    'MakeRGB' : atv_makergb
+    'MakeRGB' : kctv_makergb
 
 ; Zoom/Rotate options
-    '1/16x': atv_zoom, 'onesixteenth'
-    '1/8x': atv_zoom, 'oneeighth'
-    '1/4x': atv_zoom, 'onefourth'
-    '1/2x': atv_zoom, 'onehalf'
-    '1x': atv_zoom, 'one'
-    '2x': atv_zoom, 'two'
-    '4x': atv_zoom, 'four'
-    '8x': atv_zoom, 'eight'
-    '16x': atv_zoom, 'sixteen'
-    'Invert X': atv_invert, 'x'
-    'Invert Y': atv_invert, 'y'
-    'Invert XY': atv_invert, 'xy'
-    'Rotate': atv_rotate, '0', /get_angle
-    '0 deg': atv_rotate, '0'
-    '90 deg': atv_rotate, '90'
-    '180 deg': atv_rotate, '180'
-    '270 deg': atv_rotate, '270'
+    '1/16x': kctv_zoom, 'onesixteenth'
+    '1/8x': kctv_zoom, 'oneeighth'
+    '1/4x': kctv_zoom, 'onefourth'
+    '1/2x': kctv_zoom, 'onehalf'
+    '1x': kctv_zoom, 'one'
+    '2x': kctv_zoom, 'two'
+    '4x': kctv_zoom, 'four'
+    '8x': kctv_zoom, 'eight'
+    '16x': kctv_zoom, 'sixteen'
+    'Invert X': kctv_invert, 'x'
+    'Invert Y': kctv_invert, 'y'
+    'Invert XY': kctv_invert, 'xy'
+    'Rotate': kctv_rotate, '0', /get_angle
+    '0 deg': kctv_rotate, '0'
+    '90 deg': kctv_rotate, '90'
+    '180 deg': kctv_rotate, '180'
+    '270 deg': kctv_rotate, '270'
 
 ; Info options:
-    'Photometry': atv_apphot
-    'ImageHeader': atv_headinfo
-    'Statistics': atv_showstats
-    'PixelTable': atv_pixtable
+    'Photometry': kctv_apphot
+    'ImageHeader': kctv_headinfo
+    'Statistics': kctv_showstats
+    'PixelTable': kctv_pixtable
 
 ; Coordinate system options:
     '--------------':
@@ -1049,87 +1055,87 @@ case event_name of
        state.display_coord_sys = 'RA--'
        state.display_equinox = 'J2000'
        state.display_base60 = 1B
-       atv_gettrack             ; refresh coordinate window
+       kctv_gettrack             ; refresh coordinate window
     END 
     'RA,dec (B1950)': BEGIN 
        state.display_coord_sys = 'RA--'
        state.display_equinox = 'B1950'
        state.display_base60 = 1B
-       atv_gettrack             ; refresh coordinate window
+       kctv_gettrack             ; refresh coordinate window
     END
     'RA,dec (J2000) deg': BEGIN 
        state.display_coord_sys = 'RA--'
        state.display_equinox = 'J2000'
        state.display_base60 = 0B
-       atv_gettrack             ; refresh coordinate window
+       kctv_gettrack             ; refresh coordinate window
     END 
     'Galactic': BEGIN 
        state.display_coord_sys = 'GLON'
-       atv_gettrack             ; refresh coordinate window
+       kctv_gettrack             ; refresh coordinate window
     END 
     'Ecliptic (J2000)': BEGIN 
        state.display_coord_sys = 'ELON'
        state.display_equinox = 'J2000'
-       atv_gettrack             ; refresh coordinate window
+       kctv_gettrack             ; refresh coordinate window
     END 
     'Native': BEGIN 
        IF (state.wcstype EQ 'angle') THEN BEGIN 
           state.display_coord_sys = strmid((*state.astr_ptr).ctype[0], 0, 4)
           state.display_equinox = state.equinox
-          atv_gettrack          ; refresh coordinate window
+          kctv_gettrack          ; refresh coordinate window
        ENDIF 
     END 
 
     
 ; Help options:            
-    'ATV Help': atv_help
+    'KCTV Help': kctv_help
     
     else: print, 'Unknown event in file menu!'
 endcase
 
-; Need to test whether atv is still alive, since the quit option
+; Need to test whether kctv is still alive, since the quit option
 ; might have been selected.
-if (xregistered('atv', /noshow)) then atv_resetwindow
+if (xregistered('kctv', /noshow)) then kctv_resetwindow
 
 
 end
 
 ;--------------------------------------------------------------------
 
-pro atv_draw_event, event
+pro kctv_draw_event, event
 
 ; top-level event handler for draw widget events
 
-common atv_state
+common kctv_state
 
 if (!d.name NE state.graphicsdevice) then return
 
 if (event.type EQ 0 or event.type EQ 1 or event.type EQ 2) then begin
     case state.mousemode of
-        'color':  atv_draw_color_event, event
-        'zoom':   atv_draw_zoom_event, event
-        'blink':  atv_draw_blink_event, event
-        'imexam': atv_draw_phot_event, event
-        'vector': atv_draw_vector_event, event
+        'color':  kctv_draw_color_event, event
+        'zoom':   kctv_draw_zoom_event, event
+        'blink':  kctv_draw_blink_event, event
+        'imexam': kctv_draw_phot_event, event
+        'vector': kctv_draw_vector_event, event
     endcase
 endif
 
 if (event.type EQ 5 or event.type EQ 6) then $
-  atv_draw_keyboard_event, event
+  kctv_draw_keyboard_event, event
 
-if (xregistered('atv', /noshow)) then $
+if (xregistered('kctv', /noshow)) then $
   widget_control, state.draw_widget_id, /sensitive, /input_focus
 
 end
 
 ;--------------------------------------------------------------------
 
-pro atv_draw_color_event, event
+pro kctv_draw_color_event, event
 
 ; Event handler for color mode
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 ;if (!d.name NE state.graphicsdevice) then return
 
@@ -1137,27 +1143,27 @@ case event.type of
     0: begin           ; button press
         if (event.press EQ 1) then begin
             state.cstretch = 1
-            atv_stretchct, event.x, event.y, /getcursor
-            atv_resetwindow
-            atv_colorbar
+            kctv_stretchct, event.x, event.y, /getcursor
+            kctv_resetwindow
+            kctv_colorbar
         endif else begin
-            atv_zoom, 'none', /recenter
+            kctv_zoom, 'none', /recenter
         endelse
     end
     1: begin
        if (event.release EQ 1) then begin
           state.cstretch = 0    ; button release for button 1
-          if (state.bitdepth EQ 24) then atv_refresh
-          atv_draw_motion_event, event
+          if (state.bitdepth EQ 24) then kctv_refresh
+          kctv_draw_motion_event, event
        endif
     end
     2: begin                ; motion event
         if (state.cstretch EQ 1) then begin
-            atv_stretchct, event.x, event.y, /getcursor 
-            atv_resetwindow
-            if (state.bitdepth EQ 24) then atv_refresh, /fast
+            kctv_stretchct, event.x, event.y, /getcursor 
+            kctv_resetwindow
+            if (state.bitdepth EQ 24) then kctv_refresh, /fast
         endif else begin 
-            atv_draw_motion_event, event
+            kctv_draw_motion_event, event
         endelse
     end 
 endcase
@@ -1168,12 +1174,12 @@ end
 
 ;--------------------------------------------------------------------
 
-pro atv_draw_keyboard_event, event
+pro kctv_draw_keyboard_event, event
 
 
-common atv_state
-common atv_images
-common atv_color
+common kctv_state
+common kctv_images
+common kctv_color
 
 ; Only want to look for key presses, not key releases.
 if (event.release EQ 1) then return
@@ -1186,44 +1192,45 @@ if (event.type EQ 5) then begin
     if (state.bitdepth EQ 24) then true = 1 else true = 0
     
     case eventchar of
-        '1': atv_move_cursor, eventchar
-        '2': atv_move_cursor, eventchar
-        '3': atv_move_cursor, eventchar
-        '4': atv_move_cursor, eventchar
-        '6': atv_move_cursor, eventchar
-        '7': atv_move_cursor, eventchar
-        '8': atv_move_cursor, eventchar
-        '9': atv_move_cursor, eventchar
-        'r': atv_rowplot, /newcoord
-        'c': atv_colplot, /newcoord
-        's': atv_surfplot, /newcoord
-        't': atv_contourplot, /newcoord
-        'h': atv_histplot, /newcoord
-        'p': atv_apphot
-        'i': atv_showstats
-        'm': atv_changemode
+        '1': kctv_move_cursor, eventchar
+        '2': kctv_move_cursor, eventchar
+        '3': kctv_move_cursor, eventchar
+        '4': kctv_move_cursor, eventchar
+        '6': kctv_move_cursor, eventchar
+        '7': kctv_move_cursor, eventchar
+        '8': kctv_move_cursor, eventchar
+        '9': kctv_move_cursor, eventchar
+        'r': kctv_rowplot, /newcoord
+        'c': kctv_colplot, /newcoord
+        's': kctv_surfplot, /newcoord
+        't': kctv_contourplot, /newcoord
+        'h': kctv_histplot, /newcoord
+        'p': kctv_apphot
+        'i': kctv_showstats
+        'm': kctv_changemode
         'w': print, state.coord
-        'x': atvextract, /newcoord
-        'e': atverase
-        '-': atv_zoom, 'out'
-        '=': atv_zoom, 'in'
-        '+': atv_zoom, 'in'
+        'x': kctvextract, /newcoord
+	'd': kctvdrill, /newcoord
+        'e': kctverase
+        '-': kctv_zoom, 'out'
+        '=': kctv_zoom, 'in'
+        '+': kctv_zoom, 'in'
         '!': begin  
-            atv_setwindow, state.draw_window_id
+            kctv_setwindow, state.draw_window_id
             blink_image1 = tvrd(true = true) 
-            atv_resetwindow
+            kctv_resetwindow
         end
         '@': begin  
-            atv_setwindow, state.draw_window_id
+            kctv_setwindow, state.draw_window_id
             blink_image2 = tvrd(true = true) 
-            atv_resetwindow
+            kctv_resetwindow
         end
         '#': begin  
-            atv_setwindow, state.draw_window_id
+            kctv_setwindow, state.draw_window_id
             blink_image3 = tvrd(true = true) 
-            atv_resetwindow
+            kctv_resetwindow
         end
-        'q': if (state.activator EQ 0) then atv_shutdown $
+        'q': if (state.activator EQ 0) then kctv_shutdown $
         else state.activator = 0
 
         else:                   ;any other key press does nothing
@@ -1234,41 +1241,41 @@ endif
 ; Starting with IDL 6.0, can generate events on arrow keys:
 if (event.type EQ 6) then begin
     case event.key of
-        5: atv_move_cursor, '4'
-        6: atv_move_cursor, '6'
-        7: atv_move_cursor, '8'
-        8: atv_move_cursor, '2'
+        5: kctv_move_cursor, '4'
+        6: kctv_move_cursor, '6'
+        7: kctv_move_cursor, '8'
+        8: kctv_move_cursor, '2'
         else:
     endcase
 endif 
    
-if (xregistered('atv', /noshow)) then $
+if (xregistered('kctv', /noshow)) then $
   widget_control, state.draw_widget_id, /sensitive, /input_focus
 
 end
 
 ;-------------------------------------------------------------------
 
-pro atv_activate
+pro kctv_activate
 
 ; This routine is a workaround to use when you hit an error message or
-; a "stop" command in another program while running atv.  If you want
-; atv to become active again without typing "retall" and losing your
-; current session variables, type "atv_activate" to temporarily
-; activate atv again.  This will de-activate the command line but
-; allow atv to be used until you hit "q" in atv or kill the atv
+; a "stop" command in another program while running kctv.  If you want
+; kctv to become active again without typing "retall" and losing your
+; current session variables, type "kctv_activate" to temporarily
+; activate kctv again.  This will de-activate the command line but
+; allow kctv to be used until you hit "q" in kctv or kill the kctv
 ; window. 
 
-; Also, if you need to call atv from a command-line idl program and
-; have that program wait until you're done looking at an image in atv
-; before moving on to its next step, you can call atv_activate after
-; sending your image to atv.  This will make your external program
-; stop until you quit out of atv_activate mode.
+; Also, if you need to call kctv from a command-line idl program and
+; have that program wait until you're done looking at an image in kctv
+; before moving on to its next step, you can call kctv_activate after
+; sending your image to kctv.  This will make your external program
+; stop until you quit out of kctv_activate mode.
 
-common atv_state
+common kctv_state
 
-if (not(xregistered('atv', /noshow))) then begin
-    print, 'No ATV window currently exists.'
+if (not(xregistered('kctv', /noshow))) then begin
+    print, 'No KCTV window currently exists.'
     return
 endif
 
@@ -1280,8 +1287,8 @@ while (activator EQ 1) do begin
     wait, 0.01
     void = widget_event(/nowait)
     
-; If atv is killed by the window manager, then by the time we get here
-; the state structure has already been destroyed by atv_shutdown.
+; If kctv is killed by the window manager, then by the time we get here
+; the state structure has already been destroyed by kctv_shutdown.
     if (size(state, /type) NE 8) then begin
         activator = 0
     endif else begin
@@ -1296,11 +1303,11 @@ end
 
 ;-------------------------------------------------------------------
 
-pro atv_changemode
+pro kctv_changemode
 
 ; Use 'm' keypress to cycle through mouse modes
 
-common atv_state
+common kctv_state
 
 case state.mousemode of
     'color': begin
@@ -1330,44 +1337,44 @@ end
 
 ;------------------------------------------------------------------
 
-pro atv_draw_zoom_event, event
+pro kctv_draw_zoom_event, event
 
 ; Event handler for zoom mode
 
-common atv_state
+common kctv_state
  
 if (!d.name NE state.graphicsdevice) then return
 
 if (event.type EQ 0) then begin 
     case event.press of
-        1: atv_zoom, 'in', /recenter
-        2: atv_zoom, 'none', /recenter
-        4: atv_zoom, 'out', /recenter
+        1: kctv_zoom, 'in', /recenter
+        2: kctv_zoom, 'none', /recenter
+        4: kctv_zoom, 'out', /recenter
     endcase
 endif
 
-if (event.type EQ 2) then atv_draw_motion_event, event
+if (event.type EQ 2) then kctv_draw_motion_event, event
 
-if (xregistered('atv', /noshow)) then $
+if (xregistered('kctv', /noshow)) then $
   widget_control, state.draw_widget_id, /sensitive, /input_focus
 
 end
 
 ;---------------------------------------------------------------------
 
-pro atv_draw_blink_event, event
+pro kctv_draw_blink_event, event
 
 ; Event handler for blink mode
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 if (!d.name NE state.graphicsdevice) then return
 if (state.bitdepth EQ 24) then true = 1 else true = 0
 
 case event.type of
     0: begin                    ; button press
-        atv_setwindow, state.draw_window_id
+        kctv_setwindow, state.draw_window_id
                                 ; define the unblink image if needed
         if ((state.newrefresh EQ 1) AND (state.blinks EQ 0)) then begin
             unblink_image = tvrd(true = true)
@@ -1388,7 +1395,7 @@ case event.type of
     
     1: begin                    ; button release
         if (n_elements(unblink_image) EQ 0) then return ; just in case
-        atv_setwindow, state.draw_window_id
+        kctv_setwindow, state.draw_window_id
         state.blinks = (state.blinks - event.release) > 0
         case state.blinks of
             0: tv, unblink_image, true = true
@@ -1428,35 +1435,35 @@ case event.type of
             end
         endcase
     end
-    2: atv_draw_motion_event, event ; motion event
+    2: kctv_draw_motion_event, event ; motion event
 endcase
 
 widget_control, state.draw_widget_id, /sensitive, /input_focus
-atv_resetwindow
+kctv_resetwindow
 
 end
 
 ;-------------------------------------------------------------------
 
-pro atv_draw_phot_event, event
+pro kctv_draw_phot_event, event
 
 ; Event handler for ImExam mode
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 if (!d.name NE state.graphicsdevice) then return
 
 if (event.type EQ 0) then begin
     case event.press of
-        1: atv_apphot
-        2: atv_zoom, 'none', /recenter
-        4: atv_showstats
+        1: kctv_apphot
+        2: kctv_zoom, 'none', /recenter
+        4: kctv_showstats
         else: 
     endcase
 endif
 
-if (event.type EQ 2) then atv_draw_motion_event, event
+if (event.type EQ 2) then kctv_draw_motion_event, event
 
 widget_control, state.draw_widget_id, /sensitive, /input_focus
 
@@ -1465,11 +1472,11 @@ end
 
 ;--------------------------------------------------------------------
 
-pro atv_draw_motion_event, event
+pro kctv_draw_motion_event, event
 
 ; Event handler for motion events in draw window
 
-common atv_state
+common kctv_state
 
 if (!d.name NE state.graphicsdevice) then return
 
@@ -1477,31 +1484,31 @@ tmp_event = [event.x, event.y]
 state.coord = $
   round( (0.5 >  ((tmp_event / state.zoom_factor) + state.offset) $
           < (state.image_size - 0.5) ) - 0.5)
-atv_gettrack
+kctv_gettrack
 
 widget_control, state.draw_widget_id, /sensitive, /input_focus
 
-;if atv_pixtable on, then create a 5x5 array of pixel values and the 
+;if kctv_pixtable on, then create a 5x5 array of pixel values and the 
 ;X & Y location strings that are fed to the pixel table 
 
-if (xregistered('atv_pixtable', /noshow)) then atv_pixtable_update
+if (xregistered('kctv_pixtable', /noshow)) then kctv_pixtable_update
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_draw_vector_event, event
+pro kctv_draw_vector_event, event
 
 ; Check for left button press/depress, then get coords at point 1 and 
-; point 2.  Call atv_lineplot.  Calculate vector distance between
-; endpoints and plot Vector Distance vs. Pixel Value with atv_vectorplot
+; point 2.  Call kctv_lineplot.  Calculate vector distance between
+; endpoints and plot Vector Distance vs. Pixel Value with kctv_vectorplot
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 if (!d.name NE state.graphicsdevice) then return
 
-;atv_setwindow, state.draw_window_id
+;kctv_setwindow, state.draw_window_id
 
 case event.type of
    0: begin                     ; button press
@@ -1510,7 +1517,7 @@ case event.type of
          state.vector_coord1[0] = state.coord[0]
          state.vector_coord1[1] = state.coord[1]
          state.vectorstart = [event.x, event.y]
-         atv_drawvector, event
+         kctv_drawvector, event
          state.vectorpress = 1
       endif
       if ((event.press EQ 2) AND (state.vectorpress EQ 0)) then begin          
@@ -1518,7 +1525,7 @@ case event.type of
          state.vector_coord1[0] = state.coord[0]
          state.vector_coord1[1] = state.coord[1]
          state.vectorstart = [event.x, event.y]
-         atv_drawvector, event
+         kctv_drawvector, event
          state.vectorpress = 2
       endif
       if ((event.press EQ 4) AND (state.vectorpress EQ 0)) then begin 
@@ -1526,7 +1533,7 @@ case event.type of
          state.vector_coord1[0] = state.coord[0]
          state.vector_coord1[1] = state.coord[1]
          state.vectorstart = [event.x, event.y]
-         atv_drawdepth, event
+         kctv_drawdepth, event
          state.vectorpress = 4
       endif
    end
@@ -1536,32 +1543,32 @@ case event.type of
          state.vectorpress = 0
          state.vector_coord2[0] = state.coord[0]
          state.vector_coord2[1] = state.coord[1]
-         atv_drawvector, event
-         atv_vectorplot, /newcoord
+         kctv_drawvector, event
+         kctv_vectorplot, /newcoord
       endif
       if ((event.release EQ 2) AND (state.vectorpress EQ 2)) then begin 
          ; left button release
          state.vectorpress = 0
          state.vector_coord2[0] = state.coord[0]
          state.vector_coord2[1] = state.coord[1]
-         atv_drawvector, event
-         atv_gaussfit, /newcoord
+         kctv_drawvector, event
+         kctv_gaussfit, /newcoord
       endif
       if ((event.release EQ 4) AND (state.vectorpress EQ 4)) then begin
          ; right button release
          state.vectorpress = 0
          state.vector_coord2[0] = state.coord[0]
          state.vector_coord2[1] = state.coord[1]
-         atv_drawdepth, event
-         atv_depthplot, /newcoord
+         kctv_drawdepth, event
+         kctv_depthplot, /newcoord
       endif
 
    end
    2: begin                     ; motion event
-      atv_draw_motion_event, event 
-      if (state.vectorpress EQ 1) then atv_drawvector, event
-      if (state.vectorpress EQ 2) then atv_drawvector, event
-      if (state.vectorpress EQ 4) then atv_drawdepth, event
+      kctv_draw_motion_event, event 
+      if (state.vectorpress EQ 1) then kctv_drawvector, event
+      if (state.vectorpress EQ 2) then kctv_drawvector, event
+      if (state.vectorpress EQ 4) then kctv_drawdepth, event
    end
    
    
@@ -1575,9 +1582,9 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_drawvector, event
+pro kctv_drawvector, event
 
-common atv_state
+common kctv_state
 
 ; button press: create initial pixmap and start drawing vector
 if (event.type EQ 0) then begin
@@ -1586,21 +1593,21 @@ if (event.type EQ 0) then begin
     state.vector_pixmap_id = !d.window
     device, copy=[0, 0, state.draw_window_size[0], $
                   state.draw_window_size[1], 0, 0, state.draw_window_id]
-    atv_resetwindow
+    kctv_resetwindow
 endif
 
 ; button release: redisplay initial image
 if (event.type EQ 1) then begin
-    atv_setwindow, state.draw_window_id
+    kctv_setwindow, state.draw_window_id
     device, copy=[0, 0, state.draw_window_size[0], $
                   state.draw_window_size[1], 0, 0, state.vector_pixmap_id]
-    atv_resetwindow
+    kctv_resetwindow
     wdelete, state.vector_pixmap_id
 endif
 
 ; motion event: redraw with new vector    
 if (event.type EQ 2) then begin
-    atv_setwindow, state.draw_window_id
+    kctv_setwindow, state.draw_window_id
 
     device, copy=[0, 0, state.draw_window_size[0], $
                   state.draw_window_size[1], 0, 0, state.vector_pixmap_id]
@@ -1609,7 +1616,7 @@ if (event.type EQ 2) then begin
 
     cgplots, xvector, yvector, /device, color = state.box_color
 
-    atv_resetwindow
+    kctv_resetwindow
 endif
 
 
@@ -1617,11 +1624,11 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_drawdepth, event
+pro kctv_drawdepth, event
 
 ; draw the box showing the region selected for a depth plot
 
-common atv_state
+common kctv_state
 
 
 ; button press: create initial pixmap and start drawing vector
@@ -1631,22 +1638,22 @@ if (event.type EQ 0) then begin
     state.vector_pixmap_id = !d.window
     device, copy=[0, 0, state.draw_window_size[0], $
                   state.draw_window_size[1], 0, 0, state.draw_window_id]
-    atv_resetwindow
+    kctv_resetwindow
 endif
 
 ; button release: redisplay initial image
 if (event.type EQ 1) then begin
-    atv_setwindow, state.draw_window_id
+    kctv_setwindow, state.draw_window_id
     device, copy=[0, 0, state.draw_window_size[0], $
                   state.draw_window_size[1], 0, 0, state.vector_pixmap_id]
-    atv_resetwindow
+    kctv_resetwindow
     wdelete, state.vector_pixmap_id
 endif
 
 ; motion event: redraw with new vector    
 if (event.type EQ 2) then begin
 
-    atv_setwindow, state.draw_window_id
+    kctv_setwindow, state.draw_window_id
 
     device, copy=[0, 0, state.draw_window_size[0], $
                   state.draw_window_size[1], 0, 0, state.vector_pixmap_id]
@@ -1657,7 +1664,7 @@ if (event.type EQ 2) then begin
 
     cgplots, xvector, yvector, /device, color = state.box_color
 
-    atv_resetwindow
+    kctv_resetwindow
 endif
 
 
@@ -1665,27 +1672,27 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_pan_event, event
+pro kctv_pan_event, event
 
 ; event procedure for moving the box around in the pan window
 
-common atv_state
+common kctv_state
 
 if (!d.name NE state.graphicsdevice) then return
 
 case event.type of
     0: begin                     ; button press
         widget_control, state.pan_widget_id, draw_motion_events = 1
-        atv_pantrack, event
+        kctv_pantrack, event
     end
     1: begin                     ; button release
         widget_control, state.pan_widget_id, draw_motion_events = 0
         widget_control, state.pan_widget_id, /clear_events
-        atv_pantrack, event
-        atv_refresh, /panfast
+        kctv_pantrack, event
+        kctv_refresh, /panfast
     end
     2: begin
-        atv_pantrack, event     ; motion event
+        kctv_pantrack, event     ; motion event
         widget_control, state.pan_widget_id, /clear_events
     end
     else:
@@ -1695,14 +1702,14 @@ end
 
 ;--------------------------------------------------------------------
 
-pro atv_event, event
+pro kctv_event, event
 
-; Main event loop for atv top-level base, and for all the buttons.
+; Main event loop for kctv top-level base, and for all the buttons.
 
-common atv_state
-common atv_images
-common atv_color
-common atv_pdata
+common kctv_state
+common kctv_images
+common kctv_color
+common kctv_pdata
 
 
 widget_control, event.id, get_uvalue = uvalue
@@ -1710,15 +1717,15 @@ widget_control, event.id, get_uvalue = uvalue
 if (!d.name NE state.graphicsdevice and uvalue NE 'done') then return
 
 ; Get currently active window
-atv_getwindow
+kctv_getwindow
 
 case uvalue of
 
-    'atv_base': begin     
+    'kctv_base': begin     
         c = where(tag_names(event) EQ 'ENTER', count)
         if (count EQ 0) then begin       ; resize event
-            atv_resize
-            atv_refresh
+            kctv_resize
+            kctv_refresh
         endif
     end
 
@@ -1738,36 +1745,36 @@ case uvalue of
         g_vector = reverse(g_vector)
         b_vector = reverse(b_vector)
 
-        atv_setwindow, state.draw_window_id
-        atv_stretchct
-        atv_resetwindow
+        kctv_setwindow, state.draw_window_id
+        kctv_stretchct
+        kctv_resetwindow
 
 ; For 24-bit color, need to refresh display after stretching color
 ; map.  Can refresh in /fast mode if there are no overplots
         if (state.bitdepth EQ 24) then begin
-            if (n_elements(atvplotlist) GT 0) then begin
-                atv_refresh
+            if (n_elements(kctvplotlist) GT 0) then begin
+                kctv_refresh
             endif else begin
-                atv_refresh, /fast
+                kctv_refresh, /fast
             endelse
         endif
     end
     
-    'restretch_button': atv_restretch
+    'restretch_button': kctv_restretch
 
     'min_text': begin     ; text entry in 'min = ' box
-        atv_get_minmax, uvalue, event.value
-        atv_displayall
+        kctv_get_minmax, uvalue, event.value
+        kctv_displayall
     end
 
     'max_text': begin     ; text entry in 'max = ' box
-        atv_get_minmax, uvalue, event.value
-        atv_displayall
+        kctv_get_minmax, uvalue, event.value
+        kctv_displayall
     end
 
     'autoscale_button': begin   ; autoscale the image
-        atv_autoscale
-        atv_displayall
+        kctv_autoscale
+        kctv_displayall
     end
 
     'full_range': begin    ; display the full intensity range
@@ -1777,24 +1784,24 @@ case uvalue of
             state.min_value = state.max_value - 1
             state.max_value = state.max_value + 1
         endif
-        atv_set_minmax
-        atv_displayall
+        kctv_set_minmax
+        kctv_displayall
     end
     
-    'zoom_in':  atv_zoom, 'in'         ; zoom buttons
-    'zoom_out': atv_zoom, 'out'
-    'zoom_one': atv_zoom, 'one'
+    'zoom_in':  kctv_zoom, 'in'         ; zoom buttons
+    'zoom_out': kctv_zoom, 'out'
+    'zoom_one': kctv_zoom, 'one'
 
     'center': begin   ; center image and preserve current zoom level
         state.centerpix = round(state.image_size / 2.)
-        atv_refresh
+        kctv_refresh
     end
 
-    'fullview': atv_fullview
+    'fullview': kctv_fullview
 
-;    'sliceselect': atv_setslice, event
+;    'sliceselect': kctv_setslice, event
 
-    'done':  if (state.activator EQ 0) then atv_shutdown $
+    'done':  if (state.activator EQ 0) then kctv_shutdown $
       else state.activator = 0
 
     else:  print, 'No match for uvalue....'  ; bad news if this happens
@@ -1804,14 +1811,14 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_message, msg_txt, msgtype=msgtype, window=window
+pro kctv_message, msg_txt, msgtype=msgtype, window=window
 
 ; Routine to display an error or warning message.  Message can be
 ; displayed either to the IDL command line or to a popup window,
 ; depending on whether /window is set.
 ; msgtype must be 'warning', 'error', or 'information'.
 
-common atv_state
+common kctv_state
 
 if (n_elements(window) EQ 0) then window = 0
 
@@ -1832,34 +1839,34 @@ endelse
 end
 
 ;-----------------------------------------------------------------------
-;      main atv routines for scaling, displaying, cursor tracking...
+;      main kctv routines for scaling, displaying, cursor tracking...
 ;-----------------------------------------------------------------------
 
-pro atv_displayall, newslice=newslice
+pro kctv_displayall, newslice=newslice
 
 ; Call the routines to scale the image, make the pan image, and
 ; re-display everything.  Use this if the scaling changes (log/
 ; linear/ histeq), or if min or max are changed, or if a new image or
-; image slice is passed to atv.  If the display image has just been
+; image slice is passed to kctv.  If the display image has just been
 ; moved around or zoomed without a change in scaling, then just call
-; atv_refresh rather than this routine.
+; kctv_refresh rather than this routine.
 
 ; the /newslice option cuts down on flickering in the pan window when
 ; selecting a new data cube slice from the slicer widget slider
 
-atv_scaleimage
-atv_makepan
+kctv_scaleimage
+kctv_makepan
 if (keyword_set(newslice)) then begin
-   atv_refresh, /panfast
+   kctv_refresh, /panfast
 endif else begin
-   atv_refresh
+   kctv_refresh
 endelse
 
 end
 
 ;---------------------------------------------------------------------
 
-pro atv_refresh, fast = fast, panfast = panfast
+pro kctv_refresh, fast = fast, panfast = panfast
 
 ; Make the display image from the scaled_image, and redisplay the pan
 ; image and tracking image. 
@@ -1871,55 +1878,55 @@ pro atv_refresh, fast = fast, panfast = panfast
 ; display_image, but keep the pan_image the same except for the
 ; location of the green box.
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
-atv_getwindow
+kctv_getwindow
 if (not(keyword_set(fast))) then begin
-    atv_getoffset
-    atv_getdisplay
-    atv_displaymain
-    atv_plotall
+    kctv_getoffset
+    kctv_getdisplay
+    kctv_displaymain
+    kctv_plotall
 endif else begin
-    atv_displaymain
+    kctv_displaymain
 endelse
 
 ; now redo the pan window as needed
 
-atv_setwindow, state.pan_pixmap
+kctv_setwindow, state.pan_pixmap
 erase
 cgimage, pan_image, state.pan_offset[0], state.pan_offset[1], /tv, $
          background = 'black'
-atv_panoplot
-atv_resetwindow
+kctv_panoplot
+kctv_resetwindow
 
 
 ; redisplay the pan image 
 
-atv_setwindow, state.pan_window_id
+kctv_setwindow, state.pan_window_id
 
 if not(keyword_set(fast) OR keyword_set(panfast)) then begin
    cgimage, pan_image, state.pan_offset[0], state.pan_offset[1], /tv, $
             background = 'black'
 endif
 
-atv_panoplot
-atv_resetwindow
+kctv_panoplot
+kctv_resetwindow
 
 ; save the pixmap again with no box
-atv_setwindow, state.pan_pixmap
+kctv_setwindow, state.pan_pixmap
 erase
 cgimage, pan_image, state.pan_offset[0], state.pan_offset[1], /tv, $
          background = 'black'
-atv_panoplot, /nobox
-atv_resetwindow
+kctv_panoplot, /nobox
+kctv_resetwindow
 
-if (state.bitdepth EQ 24) then atv_colorbar
+if (state.bitdepth EQ 24) then kctv_colorbar
    
 ; redisplay the tracking image
-if (not(keyword_set(fast))) then atv_gettrack
+if (not(keyword_set(fast))) then kctv_gettrack
    
-atv_resetwindow
+kctv_resetwindow
 
 state.newrefresh = 1
 
@@ -1928,14 +1935,14 @@ end
 
 ;--------------------------------------------------------------------
 
-pro atv_getdisplay
+pro kctv_getdisplay
 
 ; make the display image from the scaled image by applying the zoom
 ; factor and matching to the size of the draw window, and display the
 ; image.
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 widget_control, /hourglass   
 
@@ -1974,23 +1981,23 @@ end
 
 ;-----------------------------------------------------------------------
 
-pro atv_displaymain
+pro kctv_displaymain
 
 ; Display the main image and overplots
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
-atv_setwindow, state.draw_window_id
+kctv_setwindow, state.draw_window_id
 cgimage, display_image, /tv, /noerase
-atv_resetwindow
+kctv_resetwindow
 
 end
 
 ;--------------------------------------------------------------------
 
-pro atv_getoffset
-common atv_state
+pro kctv_getoffset
+common kctv_state
 
 ; Routine to calculate the display offset for the current value of
 ; state.centerpix, which is the central pixel in the display window.
@@ -2004,12 +2011,12 @@ end
 ;----------------------------------------------------------------------
 
 
-pro atv_makepan
+pro kctv_makepan
 
 ; Make the 'pan' image that shows a miniature version of the full image.
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 sizeratio = state.image_size[1] / state.image_size[0]
 
@@ -2039,12 +2046,12 @@ end
 ;----------------------------------------------------------------------
 
 
-pro atv_move_cursor, direction
+pro kctv_move_cursor, direction
 
 ; Use keypad arrow keys to step cursor one pixel at a time.
 ; Get the new track image, and update the cursor position.
 
-common atv_state
+common kctv_state
 
 i = 1L
 
@@ -2074,30 +2081,30 @@ endcase
 
 newpos = (state.coord - state.offset + 0.5) * state.zoom_factor
 
-atv_setwindow,  state.draw_window_id
+kctv_setwindow,  state.draw_window_id
 tvcrs, newpos[0], newpos[1], /device
-atv_resetwindow
+kctv_resetwindow
 
-atv_gettrack
+kctv_gettrack
 
 ; If pixel table widget is open, update pixel values and cursor position
-if (xregistered('atv_pixtable', /noshow)) then atv_pixtable_update
+if (xregistered('kctv_pixtable', /noshow)) then kctv_pixtable_update
 
 
 ; Prevent the cursor move from causing a mouse event in the draw window
 widget_control, state.draw_widget_id, /clear_events
 
-atv_resetwindow
+kctv_resetwindow
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_set_minmax
+pro kctv_set_minmax
 
 ; Updates the min and max text boxes with new values.
 
-common atv_state
+common kctv_state
 
 widget_control, state.min_text_id, set_value = string(state.min_value)
 widget_control, state.max_text_id, set_value = string(state.max_value)
@@ -2106,12 +2113,12 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_get_minmax, uvalue, newvalue
+pro kctv_get_minmax, uvalue, newvalue
 
 ; Change the min and max state variables when user inputs new numbers
 ; in the text boxes. 
 
-common atv_state
+common kctv_state
 
 case uvalue of
     
@@ -2129,14 +2136,14 @@ case uvalue of
         
 endcase
 
-atv_set_minmax
+kctv_set_minmax
 
 end
 
 ;--------------------------------------------------------------------
 
-pro atv_zoom, zchange, recenter = recenter
-common atv_state
+pro kctv_zoom, zchange, recenter = recenter
+common kctv_state
 
 ; Routine to do zoom in/out and recentering of image.  The /recenter
 ; option sets the new display center to the current cursor position.
@@ -2158,35 +2165,35 @@ case zchange of
     'sixteen': state.zoom_level = 4
     'one':   state.zoom_level =  0
     'none':  ; no change to zoom level: recenter on current mouse position
-    else:  print,  'problem in atv_zoom!'
+    else:  print,  'problem in kctv_zoom!'
 endcase
 
 state.zoom_factor = (2.0)^(state.zoom_level)
 
 if (n_elements(recenter) GT 0) then begin
     state.centerpix = state.coord
-    atv_getoffset
+    kctv_getoffset
 endif
 
-atv_refresh, /panfast
+kctv_refresh, /panfast
 
 
 if (n_elements(recenter) GT 0) then begin
     newpos = (state.coord - state.offset + 0.5) * state.zoom_factor
-    atv_setwindow,  state.draw_window_id
+    kctv_setwindow,  state.draw_window_id
     tvcrs, newpos[0], newpos[1], /device 
-    atv_resetwindow
-    atv_gettrack
+    kctv_resetwindow
+    kctv_gettrack
 endif
 
-atv_resetwindow
+kctv_resetwindow
 
 end
 
 ;-----------------------------------------------------------------------
 
-pro atv_fullview
-common atv_state
+pro kctv_fullview
+common kctv_state
 
 ; set the zoom level so that the full image fits in the display window
 
@@ -2199,17 +2206,17 @@ state.zoom_factor = (2.0)^(state.zoom_level)
 ; recenter
 state.centerpix = round(state.image_size / 2.)
 
-atv_refresh
+kctv_refresh
 
-atv_resetwindow
+kctv_resetwindow
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_invert, ichange
-common atv_state
-common atv_images
+pro kctv_invert, ichange
+common kctv_state
+common kctv_images
 
 ; Routine to do image axis-inversion (X,Y,X&Y)
 
@@ -2219,7 +2226,7 @@ case ichange of
             hreverse, main_image, *(state.head_ptr), $
               main_image, *(state.head_ptr), 1, /silent
             head = *(state.head_ptr)
-            atv_setheader, head
+            kctv_setheader, head
         endif else begin
             main_image = reverse(main_image,1)
         endelse
@@ -2230,7 +2237,7 @@ case ichange of
             hreverse, main_image, *(state.head_ptr), $
               main_image, *(state.head_ptr), 2, /silent
             head = *(state.head_ptr)
-            atv_setheader, head
+            kctv_setheader, head
         endif else begin
             main_image = reverse(main_image,2)
         endelse
@@ -2245,31 +2252,31 @@ case ichange of
             hreverse, main_image, *(state.head_ptr), $
               main_image, *(state.head_ptr), 2, /silent
             head = *(state.head_ptr)
-            atv_setheader, head
+            kctv_setheader, head
         endif else begin
             main_image = reverse(main_image,1)
             main_image = reverse(main_image,2)
         endelse
     end
     
-    else:  print,  'problem in atv_invert!'
+    else:  print,  'problem in kctv_invert!'
 endcase
 
-atv_getstats, /align, /noerase
+kctv_getstats, /align, /noerase
 
 ;Redisplay inverted image with current zoom, update pan, and refresh image
-atv_displayall
+kctv_displayall
 
 ;make sure that the image arrays are updated for line/column plots, etc.
-atv_resetwindow
+kctv_resetwindow
 
 end
 
 ;------------------------------------------------------------------
 
-pro atv_rotate, rchange, get_angle=get_angle
-common atv_state
-common atv_images
+pro kctv_rotate, rchange, get_angle=get_angle
+common kctv_state
+common kctv_images
 
 ; Routine to do image rotation
 
@@ -2340,27 +2347,27 @@ endelse
 ;Update header information after rotation if header is present
 if ptr_valid(state.head_ptr) then begin
   head = *(state.head_ptr)
-  atv_setheader, head
+  kctv_setheader, head
 endif
 
-atv_getstats, /align, /noerase
+kctv_getstats, /align, /noerase
 
 ;Redisplay image with current zoom, update pan, and refresh image
-atv_displayall
+kctv_displayall
 
 ;make sure that the image arrays are updated for line/column plots, etc.
-atv_resetwindow
+kctv_resetwindow
 
 end
 
 ;------------------------------------------------------------------
 
-pro atv_autoscale
+pro kctv_autoscale
 
 ; Routine to auto-scale the image.  
 
-common atv_state 
-common atv_images
+common kctv_state 
+common kctv_images
 
 widget_control, /hourglass
 
@@ -2386,20 +2393,20 @@ endif
 
 state.asinh_beta = state.skysig
 
-atv_set_minmax
+kctv_set_minmax
 
 end  
 
 ;--------------------------------------------------------------------
 
-pro atv_restretch
+pro kctv_restretch
 
 ; Routine to restretch the min and max to preserve the display
 ; visually but use the full color map linearly.  Written by DF, and
 ; tweaked and debugged by AJB.  It doesn't always work exactly the way
 ; you expect (especially in log-scaling mode), but mostly it works fine.
 
-common atv_state
+common kctv_state
 
 sx = state.brightness
 sy = state.contrast
@@ -2437,30 +2444,30 @@ if (state.scaling EQ 3) then begin
 endif
 
 ; do this differently for 8 or 24 bit color, to prevent flashing
-atv_setwindow, state.draw_window_id
+kctv_setwindow, state.draw_window_id
 if (state.bitdepth EQ 8) then begin
-    atv_set_minmax
-    atv_displayall
+    kctv_set_minmax
+    kctv_displayall
     state.brightness = 0.5      ; reset these
     state.contrast = 0.5
-    atv_stretchct
+    kctv_stretchct
 endif else begin
     state.brightness = 0.5      ; reset these
     state.contrast = 0.5
-    atv_stretchct
-    atv_set_minmax
-    atv_displayall
+    kctv_stretchct
+    kctv_set_minmax
+    kctv_displayall
 endelse
-atv_resetwindow
+kctv_resetwindow
 
 end
 
 ;---------------------------------------------------------------------
 
-function atv_wcsstring, lon, lat, ctype, equinox, disp_type, disp_equinox, $
+function kctv_wcsstring, lon, lat, ctype, equinox, disp_type, disp_equinox, $
             disp_base60
 
-common atv_state
+common kctv_state
 
 ; Routine to return a string which displays cursor coordinates.
 ; Allows choice of various coordinate systems.
@@ -2558,12 +2565,12 @@ END
 
 ;----------------------------------------------------------------------
 
-function atv_wavestring
+function kctv_wavestring
 
 ; function to return string with wavelength info for spectral images.
 ; Currently works for HST STIS 2-d images.
 
-common atv_state
+common kctv_state
 
 cd = float(sxpar(*state.head_ptr,'CD1_1', /silent))
 if (cd EQ 0.0) then $
@@ -2596,14 +2603,14 @@ end
 ;--------------------------------------------------------------------
 
 
-pro atv_gettrack
+pro kctv_gettrack
 
 ; Create the image to display in the track window that tracks
 ; cursor movements.  Also update the coordinate display and the
 ; (x,y) and pixel value.
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 ; Get x and y for center of track window
 
@@ -2624,7 +2631,7 @@ track_image = rebin(track, $
                     state.track_window_size, state.track_window_size, $
                     /sample)
 
-atv_setwindow, state.track_window_id
+kctv_setwindow, state.track_window_id
 cgimage, track_image, /tv, /noerase
 
 ; Overplot an X on the central pixel in the track window, to show the
@@ -2648,7 +2655,7 @@ widget_control, state.location_bar_id, set_value = loc_string
 if (state.wcstype EQ 'angle') then begin
     xy2ad, state.coord[0], state.coord[1], *(state.astr_ptr), lon, lat
 
-    wcsstring = atv_wcsstring(lon, lat, (*state.astr_ptr).ctype,  $
+    wcsstring = kctv_wcsstring(lon, lat, (*state.astr_ptr).ctype,  $
                               state.equinox, state.display_coord_sys, $
                               state.display_equinox, state.display_base60)
 
@@ -2657,28 +2664,28 @@ if (state.wcstype EQ 'angle') then begin
 endif    
 
 if (state.wcstype EQ 'lambda') then begin
-    wavestring = atv_wavestring()
+    wavestring = kctv_wavestring()
     widget_control, state.wcs_bar_id, set_value = wavestring
 endif
 
-atv_resetwindow
+kctv_resetwindow
 
 end
 
 
 ;----------------------------------------------------------------------
 
-pro atv_panoplot, nobox = nobox
+pro kctv_panoplot, nobox = nobox
 
 ; Routine to add overplots to the pan window or pan pixmap.  
-; A replacement for the old atv_drawbox.  Now, has an option to not
+; A replacement for the old kctv_drawbox.  Now, has an option to not
 ; draw the box (will still draw the weathervane).  Also, does not set
 ; the window, so this draws to the current window, and the calling
 ; routine must set the window.  This can either be the pan window or
 ; the pan_pixmap window
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 view_min = round(state.centerpix - $
         (0.5 * state.draw_window_size / state.zoom_factor)) 
@@ -2719,11 +2726,11 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_pantrack, event
+pro kctv_pantrack, event
 
 ; routine to track the view box in the pan window during cursor motion
 
-common atv_state
+common kctv_state
 
 ; get the new box coords and draw the new box
 
@@ -2735,21 +2742,21 @@ newpos = state.pan_offset > tmp_event < $
 state.centerpix = round( (newpos - state.pan_offset ) / state.pan_scale)
 
 
-atv_setwindow, state.pan_window_id
-atv_panoplot
-atv_resetwindow
-atv_getoffset
+kctv_setwindow, state.pan_window_id
+kctv_panoplot
+kctv_resetwindow
+kctv_getoffset
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_resize
+pro kctv_resize
 
 ; Routine to resize the draw window when a top-level resize event
 ; occurs.  
 
-common atv_state
+common kctv_state
 
 widget_control, state.base_id, tlb_get_size=tmp_event
 
@@ -2768,7 +2775,7 @@ widget_control, state.draw_widget_id, $
 
 state.draw_window_size = [newxsize, newysize]
 
-atv_colorbar
+kctv_colorbar
 
 widget_control, state.base_id, /clear_events
 widget_control, state.draw_base_id, /sensitive, /input_focus
@@ -2778,13 +2785,13 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_scaleimage
+pro kctv_scaleimage
 
 ; Create a byte-scaled copy of the image, scaled according to
 ; the state.scaling parameter.
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 ; Since this can take some time for a big image, set the cursor 
 ; to an hourglass until control returns to the event loop.
@@ -2833,11 +2840,11 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_setasinh
+pro kctv_setasinh
 
 ; get the asinh beta parameter
 
-common atv_state
+common kctv_state
 
 b = string(state.asinh_beta)
 
@@ -2849,28 +2856,28 @@ formdesc = [formline, $
            '0, button, Cancel, quit']
 
 textform = cw_form(formdesc, ids=ids, /column, $
-                 title = 'atv asinh stretch settings')
+                 title = 'kctv asinh stretch settings')
 
 if (textform.tag2 EQ 1) then return
 
 state.asinh_beta = float(textform.tag0)
 
-atv_displayall
+kctv_displayall
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_getstats, align=align, noerase=noerase
+pro kctv_getstats, align=align, noerase=noerase
 
 ; Get basic image stats: min and max, and size.
 ; set align keyword to preserve alignment of previous image
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 ; this routine operates on main_image, which is in the
-; atv_images common block
+; kctv_images common block
 
 widget_control, /hourglass
 
@@ -2926,27 +2933,27 @@ endif
 state.coord = round(state.image_size / 2.)
 IF (NOT keyword_set(align) OR (state.firstimage EQ 1)) THEN $
   state.centerpix = round(state.image_size / 2.)
-atv_getoffset
+kctv_getoffset
 
 ; Clear all plot annotations
-if (not(keyword_set(noerase))) then atverase, /norefresh  
+if (not(keyword_set(noerase))) then kctverase, /norefresh  
 
 end
 
 ;-------------------------------------------------------------------
 
-pro atv_setwindow, windowid
+pro kctv_setwindow, windowid
 
 ; replacement for wset.  Reads the current active window first.
 ; This should be used when the currently active window is an external
-; (i.e. non-atv) idl window.  Use atv_setwindow to set the window to
-; one of the atv windows, then display something to that window, then
-; use atv_resetwindow to set the current window back to the currently
+; (i.e. non-kctv) idl window.  Use kctv_setwindow to set the window to
+; one of the kctv windows, then display something to that window, then
+; use kctv_resetwindow to set the current window back to the currently
 ; active external window.  Make sure that device is not set to
 ; postscript, because if it is we can't display anything.
 
-common atv_state
-common atv_color
+common kctv_state
+common kctv_color
 
 
 state.active_window_pmulti = !p.multi
@@ -2954,8 +2961,8 @@ state.active_window_pmulti = !p.multi
 
 tvlct, user_r, user_g, user_b, /get
 
-; regenerate atv color table
-atv_stretchct
+; regenerate kctv color table
+kctv_stretchct
 
 if (!d.name NE 'PS') then begin
     state.active_window_id = !d.window
@@ -2967,16 +2974,16 @@ end
 
 ;---------------------------------------------------------------------
 
-pro atv_resetwindow
+pro kctv_resetwindow
 
 ; reset to current active window
 
-common atv_state
-common atv_color
+common kctv_state
+common kctv_color
 
 
 ; The empty command used below is put there to make sure that all
-; graphics to the previous atv window actually get displayed to screen
+; graphics to the previous kctv window actually get displayed to screen
 ; before we wset to a different window.  Without it, some line
 ; graphics would not actually appear on screen.
 ; Also reset to user's external color map and p.multi.
@@ -2995,12 +3002,12 @@ end
 
 ;------------------------------------------------------------------
 
-pro atv_getwindow
+pro kctv_getwindow
 
 ; get currently active window id
 
-common atv_state
-common atv_color
+common kctv_state
+common kctv_color
 
 if (!d.name NE 'PS') then begin
     state.active_window_id = !d.window
@@ -3014,21 +3021,21 @@ end
 ;-------------------------------------------------------------------
 
 
-pro atv_pixtable
+pro kctv_pixtable
 
 ; Create a table widget that will show a 5x5 array of pixel values
 ; around the current cursor position
 
-if (not(xregistered('atv_pixtable', /noshow))) then begin
+if (not(xregistered('kctv_pixtable', /noshow))) then begin
 
-  common atv_state
-  common atv_images
+  common kctv_state
+  common kctv_images
 
   state.pixtable_base_id = $
     widget_base(/base_align_right, $
                  group_leader = state.base_id, $
                  /column, $
-                 title = 'atv pixel table')
+                 title = 'kctv pixel table')
 
   state.pixtable_tbl_id = $
     widget_table(state.pixtable_base_id,   $
@@ -3041,7 +3048,7 @@ if (not(xregistered('atv_pixtable', /noshow))) then begin
                                 uvalue = 'pixtable_done')
 
   widget_control, state.pixtable_base_id, /realize
-  xmanager, 'atv_pixtable', state.pixtable_base_id, /no_block
+  xmanager, 'kctv_pixtable', state.pixtable_base_id, /no_block
 
 endif
 
@@ -3049,9 +3056,9 @@ end
 
 ;---------------------------------------------------------------------
 
-pro atv_pixtable_event, event
+pro kctv_pixtable_event, event
 
-common atv_state
+common kctv_state
 
 widget_control, event.id, get_uvalue = uvalue
 
@@ -3064,10 +3071,10 @@ end
 
 ;--------------------------------------------------------------------
 
-pro atv_pixtable_update
+pro kctv_pixtable_update
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 zcenter = (0 > state.coord < state.image_size[0:1])
 
@@ -3123,14 +3130,14 @@ end
 ;    Fits file reading routines
 ;--------------------------------------------------------------------
 
-pro atv_readfits, fitsfilename=fitsfilename, newimage=newimage
+pro kctv_readfits, fitsfilename=fitsfilename, newimage=newimage
 
 ; Read in a new image when user goes to the File->ReadFits menu.
 ; Do a reasonable amount of error-checking first, to prevent unwanted
 ; crashes. 
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 newimage = 0
 cancelled = 0
@@ -3169,12 +3176,12 @@ endelse
 
 ; Check validity of fits file header 
 if (n_elements(strcompress(head, /remove_all)) LT 2) then begin
-    atv_message, 'File does not appear to be a valid FITS image!', $
+    kctv_message, 'File does not appear to be a valid FITS image!', $
       window = window, msgtype = 'error'
     return
 endif
 if (!ERR EQ -1) then begin
-    atv_message, $
+    kctv_message, $
       'Selected file does not appear to be a valid FITS image!', $
       msgtype = 'error', window = window
     return
@@ -3184,7 +3191,7 @@ endif
 ; New: use fits_open rather than fits_info
 fits_open, fitsfile, fcb, message = message
 if (message NE '') then begin
-    atv_message, message, msgtype='error', /window
+    kctv_message, message, msgtype='error', /window
     return
 end
 numext = fcb.nextend
@@ -3196,7 +3203,7 @@ naxis = sxpar(head, 'NAXIS')
 
 ; Make sure it's not a 1-d spectrum
 if (numext EQ 0 AND naxis LT 2) then begin
-    atv_message, 'Selected file is not a 2-d FITS image!', $
+    kctv_message, 'Selected file is not a 2-d FITS image!', $
       window = window, msgtype = 'error'
     return
 endif
@@ -3207,21 +3214,21 @@ state.title_extras = ''
 ; data format:
 
 if ((checkfz EQ '.fz')) then begin
-   atv_fpack_read, fitsfile, numext, head, cancelled
+   kctv_fpack_read, fitsfile, numext, head, cancelled
 ; Next block is for Keck LRIS multiext data.  If you have installed
-; readmhdufits.pro and want to use it with atv, uncomment the next 3
-; lines below and also uncomment the atv_lris_read subroutine.
+; readmhdufits.pro and want to use it with kctv, uncomment the next 3
+; lines below and also uncomment the kctv_lris_read subroutine.
 ;endif else if ((numext GT 1) AND $
 ;               (instrume EQ 'LRIS' or instrume EQ 'LRISBLUE')) then begin
-;   atv_lris_read, fitsfile, head, cancelled
+;   kctv_lris_read, fitsfile, head, cancelled
 endif else if ((numext GT 0) AND (instrume NE 'WFPC2')) then begin
-   atv_fitsext_read, fitsfile, numext, head, cancelled
+   kctv_fitsext_read, fitsfile, numext, head, cancelled
 endif else if ((instrume EQ 'WFPC2') AND (naxis EQ 3)) then begin
-   atv_wfpc2_read, fitsfile, head, cancelled
+   kctv_wfpc2_read, fitsfile, head, cancelled
 endif else if ((naxis EQ 3) AND (origin EQ '2MASS')) then begin
-   atv_2mass_read, fitsfile, head, cancelled
+   kctv_2mass_read, fitsfile, head, cancelled
 endif else begin
-   atv_plainfits_read, fitsfile, head, cancelled
+   kctv_plainfits_read, fitsfile, head, cancelled
 endelse
 
 if (cancelled EQ 1) then return
@@ -3230,24 +3237,24 @@ if (cancelled EQ 1) then return
 s = (size(main_image))[0]
 case s of
    2: begin
-      atv_setheader, head
+      kctv_setheader, head
       main_image_cube = 0
       state.cube = 0
       state.nslices = 0
       state.dwave = 0.
       state.wave0 = 0.
       state.wave1 = 0.
-      atv_killcube
+      kctv_killcube
       end
    3: begin
       main_image_cube = main_image
       main_image = 0
       state.cube = 1
-      atv_setheader, head
-      atv_initcube
+      kctv_setheader, head
+      kctv_initcube
    end
    else: begin
-      atv_message, 'Selected file is not a 2-D fits image!', $
+      kctv_message, 'Selected file is not a 2-D fits image!', $
       msgtype = 'error', window = window
       main_image_cube = 0
       main_image = fltarr(512, 512)
@@ -3257,9 +3264,9 @@ case s of
       state.dwave = 0.
       state.wave0 = 0.
       state.wave1 = 0.
-      atv_killcube
+      kctv_killcube
       head = ''
-      atv_setheader, head
+      kctv_setheader, head
       fitsfile = ''
    end
 endcase
@@ -3267,7 +3274,7 @@ endcase
 
 ; Make sure it's a 2-d image
 ;if ( (size(main_image))[0] NE 2 ) then begin
-;    atv_message, 'Selected file is not a 2-D fits image!', $
+;    kctv_message, 'Selected file is not a 2-D fits image!', $
 ;      msgtype = 'error', window = window
 ;    main_image = fltarr(512, 512)
 ;    newimage = 1
@@ -3287,12 +3294,12 @@ end
 ;  Subroutines for reading specific data formats
 ;---------------------------------------------------------------
 
-pro atv_fitsext_read, fitsfile, numext, head, cancelled
+pro kctv_fitsext_read, fitsfile, numext, head, cancelled
 
 ; Fits reader for fits extension files
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 numlist = ''
 for i = 1, numext do begin
@@ -3328,7 +3335,7 @@ endelse
 head = headfits(fitsfile, exten=extension)
 xten = strcompress(sxpar(head, 'XTENSION'), /remove_all)
 if (xten EQ 'BINTABLE') then begin
-    atv_message, 'File appears to be a FITS table, not an image.', $
+    kctv_message, 'File appears to be a FITS table, not an image.', $
       msgtype='error', /window
     cancelled = 1
     return
@@ -3353,15 +3360,15 @@ end
 
 ;----------------------------------------------------------------
 
-pro atv_fpack_read, fitsfile, numext, head, cancelled
+pro kctv_fpack_read, fitsfile, numext, head, cancelled
 
 ; fits reader for fpack-compressed .fz images with no extensions.   Note: uses
 ; readfits.pro to handle .fz format, but this does not handle header
 ; inheritance for extensions.  This is why we still use fits_read for
 ; normal, non-fz format images with extensions.
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 main_image = 0
 
@@ -3412,7 +3419,7 @@ end
 
 ;------------------------------------------------------------------
 
-pro atv_lris_read, fitsfile, head, cancelled
+pro kctv_lris_read, fitsfile, head, cancelled
 
 ;; This routine is used to read in Keck LRIS raw data mosaics and
 ;; assemble them into a single array for viewing.  This routine is
@@ -3420,11 +3427,11 @@ pro atv_lris_read, fitsfile, head, cancelled
 ;; mosaic data won't get compilation errors if they don't have the
 ;; Keck readhdufits.pro routine.  If you want to use this routine to
 ;; look at LRIS data, then uncomment this routine, uncomment the
-;; commented-out LRIS block in the atv_readfits routine, and download
+;; commented-out LRIS block in the kctv_readfits routine, and download
 ;; the readmhdufits.pro routine from the Keck LRIS web site:
 ;; http://www2.keck.hawaii.edu/inst/lris/readmhdufits.html
 
-;common atv_images
+;common kctv_images
 ;main_image=0
 ;main_image = readmhdufits(fitsfile, header=head, /notrim, /nobias)
 
@@ -3432,9 +3439,9 @@ end
 
 ;------------------------------------------------------------------
 
-pro atv_plainfits_read, fitsfile, head, cancelled
+pro kctv_plainfits_read, fitsfile, head, cancelled
 
-common atv_images
+common kctv_images
 
 ; Fits reader for plain fits files, no extensions.
 
@@ -3445,12 +3452,12 @@ end
 
 ;------------------------------------------------------------------
 
-pro atv_wfpc2_read, fitsfile, head, cancelled
+pro kctv_wfpc2_read, fitsfile, head, cancelled
     
 ; Fits reader for 4-panel HST WFPC2 images
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 droptext = strcompress('0, droplist,PC|WF2|WF3|WF4|Mosaic,' + $
                        'label_left = Select WFPC2 CCD:, set_value=0')
@@ -3492,11 +3499,11 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_2mass_read, fitsfile, head, cancelled
+pro kctv_2mass_read, fitsfile, head, cancelled
     
 ; Fits reader for 3-plane 2MASS Extended Source J/H/Ks data cube.
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 droptext = strcompress('0, droplist,J|H|Ks,' + $
                        'label_left = Select 2MASS Band:, set_value=0')
@@ -3533,10 +3540,10 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_getdss
+pro kctv_getdss
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 formdesc = ['0, text, , label_left=Object Name: , width=15, tag=objname', $
             '0, button, NED|SIMBAD, set_value=1, label_left=Object Lookup:, exclusive, tag=lookupsource', $
@@ -3549,12 +3556,12 @@ formdesc = ['0, text, , label_left=Object Name: , width=15, tag=objname', $
             '0, button, GetImage, tag=getimage, quit', $
             '0, button, Cancel, tag=cancel, quit']    
 
-archiveform = cw_form(formdesc, /column, title = 'atv: Get DSS Image')
+archiveform = cw_form(formdesc, /column, title = 'kctv: Get DSS Image')
 
 if (archiveform.cancel EQ 1) then return
 
 if (archiveform.imsize LE 0.0 OR archiveform.imsize GT 60.0) then begin
-    atv_message, 'Image size must be between 0 and 60 arcmin.', $
+    kctv_message, 'Image size must be between 0 and 60 arcmin.', $
       msgtype='error', /window
     return
 endif
@@ -3564,7 +3571,7 @@ case archiveform.band of
     1: band = '2b'
     2: band = '2r'
     3: band = '2i'
-    else: print, 'error in atv_getdss!'
+    else: print, 'error in kctv_getdss!'
 endcase
     
 ;case archiveform.lookupsource of
@@ -3582,14 +3589,14 @@ if (archiveform.objname NE '') then begin
     querysimbad, archiveform.objname, ra, dec, found=found, ned=ned, $
       errmsg=errmsg
     if (found EQ 0) then begin
-        atv_message, errmsg, msgtype='error', /window
+        kctv_message, errmsg, msgtype='error', /window
         return
     endif
 endif else begin
     ;  user entered ra, dec
     rastring = archiveform.ra
     decstring = archiveform.dec
-    atv_getradec, rastring, decstring, ra, dec
+    kctv_getradec, rastring, decstring, ra, dec
 endelse
 
 ; as of nov 2006, stsci server doesn't seem to recognize '2i'
@@ -3602,16 +3609,16 @@ endif else begin
       survey=band, /eso
 endelse
 
-atv, temporary(tmpimg), header=temporary(tmphdr)
+kctv, temporary(tmpimg), header=temporary(tmphdr)
 
 end
 
 ;-----------------------------------------------------------------
 
-pro atv_getfirst
+pro kctv_getfirst
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 ; This feature is currently disabled in the top-level menu.  FIRST
 ; changed their image server to send out images as "chunked" data
@@ -3628,12 +3635,12 @@ formdesc = ['0, text, , label_left=Object Name: , width=15, tag=objname', $
             '0, button, GetImage, tag=getimage, quit', $
             '0, button, Cancel, tag=cancel, quit']    
 
-archiveform = cw_form(formdesc, /column, title = 'atv: Get FIRST Image')
+archiveform = cw_form(formdesc, /column, title = 'kctv: Get FIRST Image')
 
 if (archiveform.cancel EQ 1) then return
 
 if (archiveform.imsize LE 0.0 OR archiveform.imsize GT 30.0) then begin
-    atv_message, 'Image size must be between 0 and 30 arcmin.', $
+    kctv_message, 'Image size must be between 0 and 30 arcmin.', $
       msgtype='error', /window
     return
 endif
@@ -3651,7 +3658,7 @@ if (archiveform.objname NE '') then begin
     querysimbad, archiveform.objname, ra, dec, found=found, ned=ned, $
       errmsg=errmsg
     if (found EQ 0) then begin
-        atv_message, errmsg, msgtype='error', /window
+        kctv_message, errmsg, msgtype='error', /window
         return
     endif
     
@@ -3676,7 +3683,7 @@ endif else begin
     ;  user entered ra, dec
     rastring = archiveform.ra
     decstring = archiveform.dec
-    atv_getradec, rastring, decstring, ra, dec
+    kctv_getradec, rastring, decstring, ra, dec
 
 endelse
 
@@ -3694,10 +3701,10 @@ url = strcompress(url + '&Equinox=J2000&ImageSize=' + imsize + $
 result = webget(url)
 
 if (n_elements(result.image) LE 1) then begin
-    atv_message, result.text, msgtype='error', /window
+    kctv_message, result.text, msgtype='error', /window
     return
 endif else begin  ; valid image
-    atv, result.image, header=result.imageheader
+    kctv, result.image, header=result.imageheader
     result.header = ''
     result.text =  ''
     result.imageheader = ''
@@ -3708,7 +3715,7 @@ end
 
 ;-----------------------------------------------------------------
 
-pro atv_getradec, rastring, decstring, ra, dec
+pro kctv_getradec, rastring, decstring, ra, dec
 
 ; converts ra and dec strings in hh:mm:ss and dd:mm:ss to decimal degrees
 ; new and improved version by Hal Weaver, 9/6/2010
@@ -3721,12 +3728,12 @@ end
 
 ;---------------------------------------------------------------
 
-pro atv_initcube
+pro kctv_initcube
 
 ; routine to initialize the data cube slice selector
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 
 ; First: if data cube is in OSIRIS IFU (lambda,x,y) format, re-form it
@@ -3774,9 +3781,9 @@ endif else begin
 endelse
 
 ; Create the slicer widgets if not already there
-if (not(xregistered('atvslicer', /noshow))) then begin
+if (not(xregistered('kctvslicer', /noshow))) then begin
 
-   wtitle = 'atv data cube slicer'
+   wtitle = 'kctv data cube slicer'
 
    slicebase = widget_base(group_leader = state.base_id, $
                            title = wtitle, /column)
@@ -3835,7 +3842,7 @@ if (not(xregistered('atvslicer', /noshow))) then begin
                       /row)
 
    widget_control, slicebase, /realize
-   xmanager, 'atvslicer', state.slicebase_id, /no_block
+   xmanager, 'kctvslicer', state.slicebase_id, /no_block
 
 endif
 
@@ -3850,20 +3857,20 @@ if (state.slicecombine GT state.nslices) then begin
    widget_control, state.slicecombine_id, set_value = state.slicecombine
 endif
 
-atvslicer_event
+kctvslicer_event
 
 end
 
 ;-------------------------------------------------------------------
 
-pro atv_killcube
+pro kctv_killcube
 
 ; kill data cube slicer widget and go back to non-cube 2d image mode
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
-if (xregistered('atvslicer', /noshow)) then begin
+if (xregistered('kctvslicer', /noshow)) then begin
    widget_control, state.slicebase_id, /destroy
 endif
 
@@ -3878,10 +3885,10 @@ end
 
 ;-------------------------------------------------------------------
 
-pro atvslicer_event, event
+pro kctvslicer_event, event
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 ; event handler for data cube slice selector widgets
 
@@ -3974,8 +3981,8 @@ endelse
 
 ; if new slice selected from slider, display it
 if (n_elements(event) NE 0) then begin
-   atv_settitle
-   atv_displayall, /newslice
+   kctv_settitle
+   kctv_displayall, /newslice
 endif
 
 
@@ -3986,17 +3993,17 @@ end
 ;----------------------------------------------------------------------
 
 
-pro atv_writefits
+pro kctv_writefits
 
 ; Writes image to a FITS file
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 ; Get filename to save image
 
 filename = dialog_pickfile(filter = '*.fits', $ 
-                           file = 'atv.fits', $
+                           file = 'kctv.fits', $
                            default_extension = '.fits', $
                            dialog_parent =  state.base_id, $
                            path = state.current_dir, $
@@ -4008,7 +4015,7 @@ if (tmp_dir NE '') then state.current_dir = tmp_dir
 if (strcompress(filename, /remove_all) EQ '') then return   ; cancel
 
 if (filename EQ state.current_dir) then begin
-  atv_message, 'Must indicate filename to save.', msgtype = 'error', /window
+  kctv_message, 'Must indicate filename to save.', msgtype = 'error', /window
   return
 endif
 
@@ -4024,13 +4031,13 @@ end
 
 ;-----------------------------------------------------------------------
 
-pro atv_writeimage, imgtype
+pro kctv_writeimage, imgtype
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 
-tmpfilename = strcompress('atv.' + strlowcase(imgtype), /remove_all)
+tmpfilename = strcompress('kctv.' + strlowcase(imgtype), /remove_all)
 filename = dialog_pickfile(file = tmpfilename, $
                            dialog_parent = state.base_id, $
                            path = state.current_dir, $
@@ -4039,18 +4046,18 @@ filename = dialog_pickfile(file = tmpfilename, $
 if (tmp_dir NE '') then state.current_dir = tmp_dir
 if (strcompress(filename, /remove_all) EQ '') then return   ; cancel
 if (filename EQ state.current_dir) then begin
-  atv_message, 'Must indicate filename to save.', msgtype = 'error', /window
+  kctv_message, 'Must indicate filename to save.', msgtype = 'error', /window
   return
 endif
 
 ; From here down this routine is based on Liam E. Gumley's SAVEIMAGE
-; program, modified for use with ATV.
+; program, modified for use with KCTV.
 
 quality = 75 ; for jpeg output
 
 ;- Check for TVRD capable device
 if ((!d.flags and 128)) eq 0 then begin
-    atv_message, 'Unsupported graphics device- cannot create image.', $
+    kctv_message, 'Unsupported graphics device- cannot create image.', $
       msgtype='error', /window
     return
 endif
@@ -4136,33 +4143,33 @@ if (imgtype eq 'jpg') or (imgtype eq 'tiff') then begin
 endif
    
 
-atv_resetwindow
+kctv_resetwindow
 
 end
 
 ;----------------------------------------------------------------------
 
 
-pro atv_makergb
+pro kctv_makergb
 
 ; Makes an RGB truecolor png image from the 3 blink channels.
 ; Can be saved using file->writeimage.
 ; Note- untested for 8-bit displays.  May not work there.
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 if (n_elements(blink_image1) EQ 1 OR $
     n_elements(blink_image2) EQ 1 OR $
     n_elements(blink_image3) EQ 1) then begin
     
-    atv_message, $
+    kctv_message, $
       'You need to set the 3 blink channels first to make an RGB image.', $
       msgtype = 'error', /window
     return
 endif
 
-atv_getwindow
+kctv_getwindow
 
 window, /free, xsize = state.draw_window_size[0], $ 
   ysize = state.draw_window_size[1], /pixmap
@@ -4184,34 +4191,34 @@ image = tvrd(/true)
 
 wdelete, tempwindow
 
-atv_setwindow, state.draw_window_id
+kctv_setwindow, state.draw_window_id
 tv, image, /true
-atv_resetwindow
+kctv_resetwindow
 
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_writeps
+pro kctv_writeps
 
 ; Writes an encapsulated postscript file of the current display.
 ; Calls cmps_form to get postscript file parameters.
 
-; Note. cmps_form blocks the command line but doesn't block atv
+; Note. cmps_form blocks the command line but doesn't block kctv
 ; menus.  If we have one cmps_form active and invoke another one, it
 ; would crash.  Use state.ispsformon to keep track of whether we have
 ; one active already or not.
 
-common atv_state
-common atv_images
-common atv_color
+common kctv_state
+common kctv_images
+common kctv_color
 
 if (state.ispsformon EQ 1) then return
 
-; cmps_form.pro crashes if atv is in blocking mode.
+; cmps_form.pro crashes if kctv is in blocking mode.
 if (state.block EQ 1) then begin
-    atv_message, 'PS output is disabled in blocking mode.', $
+    kctv_message, 'PS output is disabled in blocking mode.', $
       msgtype = 'warning', /window
     return
 endif
@@ -4231,11 +4238,11 @@ ysize = (state.draw_window_size[1] / state.zoom_factor) > $
   (view_max[1] - view_min[1] + 1)
 
 aspect = float(ysize) / float(xsize)
-fname = strcompress(state.current_dir + 'atv.ps', /remove_all)
+fname = strcompress(state.current_dir + 'kctv.ps', /remove_all)
 
-atv_setwindow, state.draw_window_id
+kctv_setwindow, state.draw_window_id
 tvlct, rr, gg, bb, /get
-atv_resetwindow
+kctv_resetwindow
 
 ; make sure that we don't keep the cmps_form window as the active window
 external_window_id = !d.window
@@ -4250,7 +4257,7 @@ psforminfo = cmps_form(cancel = canceled, create = create, $
                      bits_per_pixel=8, $
                      filename = fname, $
                      button_names = ['Create PS File'])
-atv_setwindow, external_window_id
+kctv_setwindow, external_window_id
 
 state.ispsformon = 0
 if (canceled) then return
@@ -4311,7 +4318,7 @@ newdisplay[startpos[0], startpos[1]] = temporary(dimage)
 ; if there's blank space around the image border, keep it black
 
 tv, newdisplay
-atv_plotall
+kctv_plotall
 
 
 if (state.frame EQ 1) then begin    ; put frame around image
@@ -4335,7 +4342,7 @@ end
 ;       routines for defining the color maps
 ;----------------------------------------------------------------------
 
-pro atv_stretchct, brightness, contrast,  getcursor = getcursor
+pro kctv_stretchct, brightness, contrast,  getcursor = getcursor
 
 ; routine to change color stretch for given values of brightness and contrast.
 ; Complete rewrite 2000-Sep-21 - Doug Finkbeiner
@@ -4343,8 +4350,8 @@ pro atv_stretchct, brightness, contrast,  getcursor = getcursor
 ; without changing the state.brightness and state.contrast values.
 ; Better for surface plots in plot window.
 
-common atv_state
-common atv_color
+common kctv_state
+common kctv_color
 
 ; if GETCURSOR then assume mouse position passed and save as
 ; state.brightness and state.contrast.  If no params passed, then use
@@ -4386,16 +4393,16 @@ end
 
 ;------------------------------------------------------------------
 
-pro atv_getct, tablenum
+pro kctv_getct, tablenum
 
 ; Read in a pre-defined color table, and invert if necessary.
 
-common atv_color
-common atv_state
-common atv_images
+common kctv_color
+common kctv_state
+common kctv_images
 
 
-atv_setwindow, state.draw_window_id
+kctv_setwindow, state.draw_window_id
 loadct, tablenum, /silent
 tvlct, r, g, b, /get
 
@@ -4409,25 +4416,25 @@ r_vector = r
 g_vector = g
 b_vector = b
 
-atv_stretchct
+kctv_stretchct
 
 ; need this to re-set to external color table
-atv_resetwindow
+kctv_resetwindow
 
 if (state.bitdepth EQ 24 AND (n_elements(pan_image) GT 10) ) then $
-  atv_refresh
+  kctv_refresh
 
 
 end
 
 ;--------------------------------------------------------------------
 
-pro atv_makect, tablename
+pro kctv_makect, tablename
 
 ; Define new color tables here.  Invert if necessary.
 
-common atv_state
-common atv_color
+common kctv_state
+common kctv_color
 
 case tablename of
 
@@ -5023,29 +5030,29 @@ r_vector = temporary(r)
 g_vector = temporary(g)
 b_vector = temporary(b)
 
-atv_stretchct
+kctv_stretchct
 
 ; need this to preserve external color map
-atv_resetwindow
+kctv_resetwindow
 
-if (state.bitdepth EQ 24) then atv_refresh
+if (state.bitdepth EQ 24) then kctv_refresh
 
 end
 
 ;--------------------------------------------------------------------
 
-pro atv_set_cubehelix
+pro kctv_set_cubehelix
 
-common atv_state
-common atv_color
+common kctv_state
+common kctv_color
 
-if (not (xregistered('atv_cubehelix', /noshow))) then begin
+if (not (xregistered('kctv_cubehelix', /noshow))) then begin
 
    cubehelix_base = $
       widget_base(/base_align_center, $
                   group_leader = state.base_id, $
                   /column, $
-                  title = 'atv cubehelix settings', $
+                  title = 'kctv cubehelix settings', $
                   uvalue = 'cubehelix_base')
 
 
@@ -5090,25 +5097,25 @@ if (not (xregistered('atv_cubehelix', /noshow))) then begin
                                   uvalue = 'cubehelix_done')
 
    widget_control, cubehelix_base, /realize
-   xmanager, 'atv_cubehelix', cubehelix_base, /no_block
+   xmanager, 'kctv_cubehelix', cubehelix_base, /no_block
 
    widget_control, cubehelix_plot, get_value = tmp_value
    state.cubehelix_plot_id = tmp_value
 
-   atv_resetwindow
+   kctv_resetwindow
 
 endif
 
-atv_cubehelix_event
+kctv_cubehelix_event
 
 end
 
 ;-------------------------------------------------------------------
 
-pro atv_cubehelix_event, event
+pro kctv_cubehelix_event, event
 
-common atv_state
-common atv_color
+common kctv_state
+common kctv_color
 
 if (n_elements(event) GT 0) then begin
    widget_control, event.id, get_uvalue = uvalue
@@ -5163,11 +5170,11 @@ case uvalue of
    else:
 endcase
 
-if (xregistered('atv_cubehelix')) then begin
+if (xregistered('kctv_cubehelix')) then begin
 
-   atv_makect, 'Cubehelix'
+   kctv_makect, 'Cubehelix'
    
-   atv_setwindow, state.cubehelix_plot_id
+   kctv_setwindow, state.cubehelix_plot_id
    xvector = findgen(256)
    cgplot, [0], [0], /nodata, xrange = [0,255], yrange = [0,255], $
            xtitle = 'Colormap Level', ytitle = 'Intensity', charsize=1.0, $
@@ -5191,7 +5198,7 @@ if (xregistered('atv_cubehelix')) then begin
            /device, xticks=1, xminor=1, yticks=1, yminor=1, $
            xtickname = [' ',' '], ytickname = [' ',' ']
 
-   atv_resetwindow
+   kctv_resetwindow
 endif
 
 end
@@ -5200,11 +5207,11 @@ end
 ;    routines dealing with image header, title,  and related info
 ;--------------------------------------------------------------------
 
-pro atv_settitle
+pro kctv_settitle
 
 ; Update title bar with the image file name
 
-common atv_state
+common kctv_state
 
 if (state.title_extras EQ 'firstimage') then return
 
@@ -5218,7 +5225,7 @@ if (state.cube EQ 1) then begin
 endif
 
 if (state.imagename EQ '') then begin
-   title = strcompress('atv: ' + state.title_extras)
+   title = strcompress('kctv: ' + state.title_extras)
    widget_control, state.base_id, tlb_set_title = title
    
 endif else begin
@@ -5234,7 +5241,7 @@ endif else begin
    slash = strpos(state.imagename, state.delimiter, /reverse_search)
    if (slash NE -1) then name = strmid(state.imagename, slash+1) $
    else name = state.imagename
-   title = strcompress('atv:  '+ name + '  ' + state.title_extras)
+   title = strcompress('kctv:  '+ name + '  ' + state.title_extras)
    
    if (title_object NE '') then  $
       title = strcompress(title + ': ' + title_object)
@@ -5247,24 +5254,24 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_setheader, head
+pro kctv_setheader, head
 
 ; Routine to keep the image header using a pointer to a 
-; heap variable.  If there is no header (i.e. if atv has just been
+; heap variable.  If there is no header (i.e. if kctv has just been
 ; passed a data array rather than a filename), then make the
 ; header pointer a null pointer.  Get astrometry info from the 
 ; header if available.  If there's no astrometry information, set 
 ; state.astr_ptr to be a null pointer.
 
-common atv_state
+common kctv_state
 
 ; Kill the header info window when a new image is read in
 
-if (xregistered('atv_headinfo')) then begin
+if (xregistered('kctv_headinfo')) then begin
     widget_control, state.headinfo_base_id, /destroy
 endif
 
-if (xregistered('atv_stats')) then begin
+if (xregistered('kctv_stats')) then begin
     widget_control, state.stats_base_id, /destroy
 endif
 
@@ -5478,18 +5485,18 @@ end
 ;---------------------------------------------------------------------
 
 
-pro atv_headinfo
+pro kctv_headinfo
 
-common atv_state
+common kctv_state
 
 ; If there's no header, kill the headinfo window and exit this
 ; routine.
 if (not(ptr_valid(state.head_ptr))) then begin
-    if (xregistered('atv_headinfo')) then begin
+    if (xregistered('kctv_headinfo')) then begin
         widget_control, state.headinfo_base_id, /destroy
     endif
 
-    atv_message, 'No header information available for this image!', $
+    kctv_message, 'No header information available for this image!', $
       msgtype = 'error', /window
     return
 endif
@@ -5497,13 +5504,13 @@ endif
 
 ; If there is header information but not headinfo window,
 ; create the headinfo window.
-if (not(xregistered('atv_headinfo', /noshow))) then begin
+if (not(xregistered('kctv_headinfo', /noshow))) then begin
 
     headinfo_base = $
       widget_base(/base_align_right, $
                   group_leader = state.base_id, $
                   /column, $
-                  title = 'atv image header information', $
+                  title = 'kctv image header information', $
                   uvalue = 'headinfo_base')
     state.headinfo_base_id = headinfo_base
 
@@ -5520,7 +5527,7 @@ if (not(xregistered('atv_headinfo', /noshow))) then begin
                               uvalue = 'headinfo_done')
 
     widget_control, headinfo_base, /realize
-    xmanager, 'atv_headinfo', headinfo_base, /no_block
+    xmanager, 'kctv_headinfo', headinfo_base, /no_block
 
 endif
 
@@ -5529,9 +5536,9 @@ end
 
 ;---------------------------------------------------------------------
 
-pro atv_headinfo_event, event
+pro kctv_headinfo_event, event
 
-common atv_state
+common kctv_state
 
 widget_control, event.id, get_uvalue = uvalue
 
@@ -5546,21 +5553,21 @@ end
 ;             routines to do plot overlays
 ;----------------------------------------------------------------------
 
-pro atv_plot1plot, iplot
-common atv_pdata
-common atv_state
+pro kctv_plot1plot, iplot
+common kctv_pdata
+common kctv_state
 
 ; Plot a point or line overplot on the image
 
-atv_setwindow, state.draw_window_id
+kctv_setwindow, state.draw_window_id
 
 widget_control, /hourglass
 
-x = atvplotlist[iplot].x
-y = atvplotlist[iplot].y
-cgplot, x, y, _extra = atvplotlist[iplot].options, /overplot
+x = kctvplotlist[iplot].x
+y = kctvplotlist[iplot].y
+cgplot, x, y, _extra = kctvplotlist[iplot].options, /overplot
 
-atv_resetwindow
+kctv_resetwindow
 state.newrefresh=1
 
 
@@ -5568,30 +5575,30 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_plot1text, iplot
-common atv_pdata
-common atv_state
+pro kctv_plot1text, iplot
+common kctv_pdata
+common kctv_state
 
 ; Plot a text overlay on the image
-atv_setwindow, state.draw_window_id
+kctv_setwindow, state.draw_window_id
 
 widget_control, /hourglass
 
-x = atvplotlist[iplot].x
-y = atvplotlist[iplot].y
-text = atvplotlist[iplot].text
-cgtext, x, y, text, _extra = atvplotlist[iplot].options
+x = kctvplotlist[iplot].x
+y = kctvplotlist[iplot].y
+text = kctvplotlist[iplot].text
+cgtext, x, y, text, _extra = kctvplotlist[iplot].options
 
-atv_resetwindow
+kctv_resetwindow
 state.newrefresh=1
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_plot1arrow, iplot
-common atv_pdata
-common atv_state
+pro kctv_plot1arrow, iplot
+common kctv_pdata
+common kctv_state
 
 ; TO DO: incorporate as a region overplot
 
@@ -5599,14 +5606,14 @@ common atv_state
 ; ending coordinate
 
 ; Plot a arrow overlay on the image
-atv_setwindow, state.draw_window_id
+kctv_setwindow, state.draw_window_id
 
 widget_control, /hourglass
 
-x1 = atvplotlist[iplot].x1
-y1 = atvplotlist[iplot].y1
-x2 = atvplotlist[iplot].x2
-y2 = atvplotlist[iplot].y2
+x1 = kctvplotlist[iplot].x1
+y1 = kctvplotlist[iplot].y1
+x2 = kctvplotlist[iplot].x2
+y2 = kctvplotlist[iplot].y2
 
 dy = float(y2 - y1)
 dx = float(x2 - x1)
@@ -5615,20 +5622,20 @@ length = sqrt(dx^2 + dy^2) * state.zoom_factor
 arrowsize = [length, 9, 35]
 
 one_arrow, x1, y1, theta, '', arrowsize=arrowsize, $
-           _extra = atvplotlist[iplot].options, /data
+           _extra = kctvplotlist[iplot].options, /data
 
-atv_resetwindow
+kctv_resetwindow
 state.newrefresh=1
 end
 
 
 ;----------------------------------------------------------------------
 
-function atv_degperpix, hdr 
+function kctv_degperpix, hdr 
              
 ; This program calculates the pixel scale (deg/pixel) and returns the value
 
-common atv_state
+common kctv_state
 
 On_error,2                      ;Return to caller
 
@@ -5657,9 +5664,9 @@ end
 
 ;----------------------------------------------------------------------
 
-function atv_wcs2pix, coords, coord_sys=coord_sys, line=line
+function kctv_wcs2pix, coords, coord_sys=coord_sys, line=line
 
-common atv_state
+common kctv_state
 
 ; check validity of state.astr_ptr and state.head_ptr before
 ; proceeding to grab wcs information
@@ -5672,8 +5679,8 @@ if ptr_valid(state.astr_ptr) then begin
     disp_base60 = state.display_base60
     bastr = *(state.astr_ptr)
     
-; function to convert an ATV region from wcs coordinates to pixel coordinates
-    degperpix = atv_degperpix(*(state.head_ptr))
+; function to convert an KCTV region from wcs coordinates to pixel coordinates
+    degperpix = kctv_degperpix(*(state.head_ptr))
     
 ; need numerical equinox values
     IF (equinox EQ 'J2000') THEN num_equinox = 2000.0 ELSE $
@@ -5863,16 +5870,16 @@ end
 ;----------------------------------------------------------------------
 
 
-pro atv_plot1region, iplot
-common atv_pdata
-common atv_state
+pro kctv_plot1region, iplot
+common kctv_pdata
+common kctv_state
 
 ; Plot a region overlay on the image
-atv_setwindow, state.draw_window_id
+kctv_setwindow, state.draw_window_id
 
 widget_control, /hourglass
 
-reg_array = atvplotlist[iplot].reg_array
+reg_array = kctvplotlist[iplot].reg_array
 
 n_reg = n_elements(reg_array)
 
@@ -5955,42 +5962,42 @@ for i=0, n_reg-1 do begin
         
 ; Check that a WCS region is not overplotted on image with no WCS
         if (NOT ptr_valid(state.astr_ptr)) then begin
-            atv_message, $
+            kctv_message, $
               'WCS Regions cannot be displayed on image without WCS information in header.', $
               msgtype='error', /window
 ; Erase pstruct that was formed for this region.
-            atverase, 1
+            kctverase, 1
             return
         endif
         
         case strlowcase(coords_arr[index_coord_system]) of
             'j2000': begin
                 if (strlowcase(reg_type) ne 'line') then $
-                  coords_arr = atv_wcs2pix(coords_arr, coord_sys='j2000') $
+                  coords_arr = kctv_wcs2pix(coords_arr, coord_sys='j2000') $
                 else $
                   coords_arr = $
-                  atv_wcs2pix(coords_arr, coord_sys='j2000', /line) 
+                  kctv_wcs2pix(coords_arr, coord_sys='j2000', /line) 
             end
             'b1950': begin
                 if (strlowcase(reg_type) ne 'line') then $
-                  coords_arr = atv_wcs2pix(coords_arr, coord_sys='b1950') $
+                  coords_arr = kctv_wcs2pix(coords_arr, coord_sys='b1950') $
                 else $
                   coords_arr = $
-                  atv_wcs2pix(coords_arr, coord_sys='b1950', /line)
+                  kctv_wcs2pix(coords_arr, coord_sys='b1950', /line)
             end
             'galactic': begin
                 if (strlowcase(reg_type) ne 'line') then $
-                  coords_arr = atv_wcs2pix(coords_arr, coord_sys='galactic') $
+                  coords_arr = kctv_wcs2pix(coords_arr, coord_sys='galactic') $
                 else $
                   coords_arr = $
-                  atv_wcs2pix(coords_arr, coord_sys='galactic', /line)
+                  kctv_wcs2pix(coords_arr, coord_sys='galactic', /line)
             end
             'ecliptic': begin
                 if (strlowcase(reg_type) ne 'line') then $
-                  coords_arr = atv_wcs2pix(coords_arr, coord_sys='ecliptic') $
+                  coords_arr = kctv_wcs2pix(coords_arr, coord_sys='ecliptic') $
                 else $
                   coords_arr = $
-                  atv_wcs2pix(coords_arr, coord_sys='ecliptic', /line)
+                  kctv_wcs2pix(coords_arr, coord_sys='ecliptic', /line)
             end
             else: 
         endcase
@@ -6000,33 +6007,33 @@ for i=0, n_reg-1 do begin
             
 ; Check that a WCS region is not overplotted on image with no WCS
             if (NOT ptr_valid(state.astr_ptr)) then begin
-                atv_message, $
+                kctv_message, $
                   'WCS Regions cannot be displayed on image without WCS', $
                   msgtype='error', /window
                 return
             endif
             
             if (strlowcase(reg_type) ne 'line') then $
-              coords_arr = atv_wcs2pix(coords_arr,coord_sys='current') $
+              coords_arr = kctv_wcs2pix(coords_arr,coord_sys='current') $
             else $
-              coords_arr = atv_wcs2pix(coords_arr,coord_sys='current', /line)
+              coords_arr = kctv_wcs2pix(coords_arr,coord_sys='current', /line)
         endif else begin
             if (strlowcase(reg_type) ne 'line') then $
-              coords_arr = atv_wcs2pix(coords_arr,coord_sys='pixel') $
+              coords_arr = kctv_wcs2pix(coords_arr,coord_sys='pixel') $
             else $
-              coords_arr = atv_wcs2pix(coords_arr,coord_sys='pixel', /line)
+              coords_arr = kctv_wcs2pix(coords_arr,coord_sys='pixel', /line)
         endelse
         
     endelse
     
 
 ; use cgplot colors by name
-    tstruct = atvplotlist[iplot]
+    tstruct = kctvplotlist[iplot]
     tstruct.options.color = string(color_str)    
-    atvplotlist[iplot] = tstruct
+    kctvplotlist[iplot] = tstruct
 
-    atv_setwindow,state.draw_window_id
-    atv_plotwindow  
+    kctv_setwindow,state.draw_window_id
+    kctv_plotwindow  
     
     case strlowcase(reg_type) of
         
@@ -6045,11 +6052,11 @@ for i=0, n_reg-1 do begin
             endif
 
             tvcircle, radius, xcenter, ycenter, $
-              _extra = atvplotlist[iplot].options, /device
+              _extra = kctvplotlist[iplot].options, /device
            
 
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
-              alignment=0.5, _extra = atvplotlist[iplot].options, /device
+              alignment=0.5, _extra = kctvplotlist[iplot].options, /device
         end
         'box': begin
             angle = 0           ; initialize angle to 0
@@ -6072,10 +6079,10 @@ for i=0, n_reg-1 do begin
 
 ; angle = -angle because tvbox rotates clockwise
             tvbox, width_arr, xcenter, ycenter, angle=-angle, $
-              _extra = atvplotlist[iplot].options, /device
+              _extra = kctvplotlist[iplot].options, /device
             
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
-              alignment=0.5, _extra = atvplotlist[iplot].options, /device
+              alignment=0.5, _extra = kctvplotlist[iplot].options, /device
         end
         
         'ellipse': begin
@@ -6100,11 +6107,11 @@ for i=0, n_reg-1 do begin
                 yradius = yradius / state.draw_window_size[1] * !d.y_size
             endif
 
-              atv_plot1ellipse, xradius, yradius, xcenter, ycenter, angle, $
-              _extra = atvplotlist[iplot].options
+              kctv_plot1ellipse, xradius, yradius, xcenter, ycenter, angle, $
+              _extra = kctvplotlist[iplot].options
             
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
-              alignment=0.5, _extra = atvplotlist[iplot].options, /device
+              alignment=0.5, _extra = kctvplotlist[iplot].options, /device
         end
         'polygon': begin
             n_vert = n_elements(coords_arr) / 2
@@ -6131,10 +6138,10 @@ for i=0, n_reg-1 do begin
             ycenter = total(ypoints) / n_elements(ypoints)
             
             plots, xpoints, ypoints,  $
-              _extra = atvplotlist[iplot].options         
+              _extra = kctvplotlist[iplot].options         
             
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
-              alignment=0.5, _extra = atvplotlist[iplot].options, /device
+              alignment=0.5, _extra = kctvplotlist[iplot].options, /device
         end
         'line': begin
             x1 = (float(coords_arr[0]) - state.offset[0] + 0.5) * $
@@ -6157,10 +6164,10 @@ for i=0, n_reg-1 do begin
             endif
 
             plots, xpoints, ypoints, /device, $
-              _extra = atvplotlist[iplot].options
+              _extra = kctvplotlist[iplot].options
             
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
-              alignment=0.5, _extra = atvplotlist[iplot].options, /device
+              alignment=0.5, _extra = kctvplotlist[iplot].options, /device
         end
 
         ; these are all the region types we have defined so far.  
@@ -6172,22 +6179,22 @@ for i=0, n_reg-1 do begin
     
 endfor
 
-atv_resetwindow
+kctv_resetwindow
 state.newrefresh=1
 end
 
 ;----------------------------------------------------------------------
 
 
-pro atv_plot1contour, iplot
-common atv_pdata
-common atv_state
+pro kctv_plot1contour, iplot
+common kctv_pdata
+common kctv_state
 
 ; Overplot contours on the image
 
 ; TO DO: fix labels/font size for contour
 
-atv_setwindow, state.draw_window_id
+kctv_setwindow, state.draw_window_id
 widget_control, /hourglass
 
 xrange = !x.crange
@@ -6195,11 +6202,11 @@ yrange = !y.crange
 
 ; The following allows for 2 conditions, depending upon whether X and Y
 ; are set
-dims = size( atvplotlist[iplot].z, /dim )
+dims = size( kctvplotlist[iplot].z, /dim )
 
-x = atvplotlist[iplot].x
-y = atvplotlist[iplot].y
-z = atvplotlist[iplot].z
+x = kctvplotlist[iplot].x
+y = kctvplotlist[iplot].y
+z = kctvplotlist[iplot].z
 
 if  (size(x, /n_elements ) EQ dims[0]   $
    and size(y, /n_elements) EQ dims[1]) then begin
@@ -6207,58 +6214,58 @@ if  (size(x, /n_elements ) EQ dims[0]   $
    cgcontour, z, x, y, $
               position=[0,0,1,1], xrange=xrange, yrange=yrange, $
               xstyle=5, ystyle=5, /noerase, $
-              _extra = atvplotlist[iplot].options
+              _extra = kctvplotlist[iplot].options
    
 endif else begin
    
    cgcontour, z, $
               position=[0,0,1,1], xrange=xrange, yrange=yrange, $
               xstyle=5, ystyle=5, /noerase, $
-              _extra = atvplotlist[iplot].options
+              _extra = kctvplotlist[iplot].options
    
 endelse
 
-atv_resetwindow
+kctv_resetwindow
 state.newrefresh=1
 end
 
 ;---------------------------------------------------------------------
 
-pro atv_plot1compass, iplot
+pro kctv_plot1compass, iplot
 
 ; Uses idlastro routine arrows to plot compass arrows.
 
-common atv_pdata
-common atv_state
+common kctv_pdata
+common kctv_state
 
-atv_setwindow, state.draw_window_id
+kctv_setwindow, state.draw_window_id
 
 widget_control, /hourglass
 
 arrows, *(state.head_ptr), $
-  atvplotlist[iplot].x, $
-  atvplotlist[iplot].y, $
-  thick = atvplotlist[iplot].thick, $
-  charsize = atvplotlist[iplot].charsize, $
-  arrowlen = atvplotlist[iplot].arrowlen, $
-  color = atvplotlist[iplot].color, $
-  notvertex = atvplotlist[iplot].notvertex, $
+  kctvplotlist[iplot].x, $
+  kctvplotlist[iplot].y, $
+  thick = kctvplotlist[iplot].thick, $
+  charsize = kctvplotlist[iplot].charsize, $
+  arrowlen = kctvplotlist[iplot].arrowlen, $
+  color = kctvplotlist[iplot].color, $
+  notvertex = kctvplotlist[iplot].notvertex, $
   /data
 
-atv_resetwindow
+kctv_resetwindow
 state.newrefresh=1
 end
 
 ;---------------------------------------------------------------------
 
-pro atv_plot1scalebar, iplot
+pro kctv_plot1scalebar, iplot
 
 ; uses modified version of idlastro routine arcbar to plot a scalebar
 
-common atv_pdata
-common atv_state
+common kctv_pdata
+common kctv_state
 
-atv_setwindow, state.draw_window_id
+kctv_setwindow, state.draw_window_id
 widget_control, /hourglass
 
 ; routine arcbar doesn't recognize color=0, because it uses 
@@ -6267,35 +6274,35 @@ widget_control, /hourglass
 
 !p.color = 0
 
-atv_arcbar, *(state.head_ptr), $
-  atvplotlist[iplot].arclen, $
-  position = atvplotlist[iplot].position, $
-  thick = atvplotlist[iplot].thick, $
-  size = atvplotlist[iplot].size, $
-  color = atvplotlist[iplot].color, $
-  seconds = atvplotlist[iplot].seconds, $
+kctv_arcbar, *(state.head_ptr), $
+  kctvplotlist[iplot].arclen, $
+  position = kctvplotlist[iplot].position, $
+  thick = kctvplotlist[iplot].thick, $
+  size = kctvplotlist[iplot].size, $
+  color = kctvplotlist[iplot].color, $
+  seconds = kctvplotlist[iplot].seconds, $
   /data
 
-atv_resetwindow
+kctv_resetwindow
 state.newrefresh=1
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_arcbar, hdr, arclen, LABEL = label, SIZE = size, THICK = thick, $
+pro kctv_arcbar, hdr, arclen, LABEL = label, SIZE = size, THICK = thick, $
                 DATA =data, COLOR = color, POSITION = position, $
                 NORMAL = normal, SECONDS=SECONDS
 
-common atv_state
+common kctv_state
 
 ; This is a copy of the IDL Astronomy User's Library routine 'arcbar',
-; abbreviated for atv and modified to work with zoomed images.  For
+; abbreviated for kctv and modified to work with zoomed images.  For
 ; the revision history of the original arcbar routine, look at
 ; arcbar.pro in the pro/astro subdirectory of the IDL Astronomy User's
 ; Library.
 
-; Modifications for atv:
-; Modified to work with zoomed ATV images, AJB Jan. 2000 
+; Modifications for kctv:
+; Modified to work with zoomed KCTV images, AJB Jan. 2000 
 ; Moved text label upwards a bit for better results, AJB Jan. 2000
 ; Modified to work with cgplot, apr 2011
 
@@ -6373,10 +6380,10 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_plotwindow
-common atv_state
+pro kctv_plotwindow
+common kctv_state
 
-atv_setwindow, state.draw_window_id
+kctv_setwindow, state.draw_window_id
 
 ; Set plot window
 
@@ -6401,12 +6408,12 @@ endelse
 plot, [0], [0], /nodata, position=[0,0,1,1], $
  xrange=xrange, yrange=yrange, xstyle=5, ystyle=5, /noerase
 
-atv_resetwindow
+kctv_resetwindow
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_plot1ellipse, rmax, rmin, xc, yc, pos_ang, _extra = _extra
+pro kctv_plot1ellipse, rmax, rmin, xc, yc, pos_ang, _extra = _extra
 
 ; This is a modified version of Wayne Landsman's tvellipse, changed so
 ; that it won't ask for interactive input under any circumstances.
@@ -6432,28 +6439,28 @@ end
 
 ;---------------------------------------------------------------------
 
-pro atv_plotall
-common atv_state
-common atv_pdata
+pro kctv_plotall
+common kctv_state
+common kctv_pdata
 
 ; Routine to overplot all line, text, and contour plots
 
-nplot = n_elements(atvplotlist)
+nplot = n_elements(kctvplotlist)
 
 if (nplot EQ 0) then return
 
-atv_plotwindow
+kctv_plotwindow
 
 for iplot = 0, nplot-1 do begin
-    case atvplotlist[iplot].type of
-        'points'  : atv_plot1plot, iplot
-        'text'    : atv_plot1text, iplot
-        'arrow'   : atv_plot1arrow, iplot
-        'contour' : atv_plot1contour, iplot
-        'compass' : atv_plot1compass, iplot
-        'scalebar': atv_plot1scalebar, iplot
-        'region'  : atv_plot1region, iplot
-        else      : print, 'Problem in atv_plotall!'   
+    case kctvplotlist[iplot].type of
+        'points'  : kctv_plot1plot, iplot
+        'text'    : kctv_plot1text, iplot
+        'arrow'   : kctv_plot1arrow, iplot
+        'contour' : kctv_plot1contour, iplot
+        'compass' : kctv_plot1compass, iplot
+        'scalebar': kctv_plot1scalebar, iplot
+        'region'  : kctv_plot1region, iplot
+        else      : print, 'Problem in kctv_plotall!'   
     endcase
 endfor
 
@@ -6461,20 +6468,20 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atvplot, x, y, _extra = options
-common atv_pdata
-common atv_state
+pro kctvplot, x, y, _extra = options
+common kctv_pdata
+common kctv_state
 
 ; Routine to read in line plot data and options, store in a heap
 ; variable structure, and plot the line plot
 
-if (not(xregistered('atv', /noshow))) then begin
-    print, 'You need to start ATV first!'
+if (not(xregistered('kctv', /noshow))) then begin
+    print, 'You need to start KCTV first!'
     return
 endif
 
 if (N_params() LT 1) then begin
-   print, 'Too few parameters for ATVPLOT.'
+   print, 'Too few parameters for KCTVPLOT.'
    return
 endif
 
@@ -6490,30 +6497,30 @@ pstruct = {type: 'points',   $  ; points
            options: options  $  ; plot keyword options
           }
 
-atvplotlist.add, pstruct
+kctvplotlist.add, pstruct
 
-atv_plotwindow
-nplot = n_elements(atvplotlist)
-atv_plot1plot, nplot-1
+kctv_plotwindow
+nplot = n_elements(kctvplotlist)
+kctv_plot1plot, nplot-1
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atvxyouts, x, y, text, _extra = options
-common atv_pdata
-common atv_state
+pro kctvxyouts, x, y, text, _extra = options
+common kctv_pdata
+common kctv_state
 
 ; Routine to read in text overplot string and options, store in a heap
 ; variable structure, and overplot the text
 
-if (not(xregistered('atv', /noshow))) then begin
-    print, 'You need to start ATV first!'
+if (not(xregistered('kctv', /noshow))) then begin
+    print, 'You need to start KCTV first!'
     return
 endif
 
 if (N_params() LT 3) then begin
-   print, 'Too few parameters for ATVXYOUTS'
+   print, 'Too few parameters for KCTVXYOUTS'
    return
 endif
 
@@ -6534,30 +6541,30 @@ pstruct = {type: 'text',   $    ; type of plot
            options: options  $  ; plot keyword options
           }
 
-atvplotlist.add, pstruct
+kctvplotlist.add, pstruct
 
-atv_plotwindow
-nplot = n_elements(atvplotlist)
-atv_plot1text, nplot-1
+kctv_plotwindow
+nplot = n_elements(kctvplotlist)
+kctv_plot1text, nplot-1
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atvarrow, x1, y1, x2, y2, _extra = options
-common atv_pdata
-common atv_state
+pro kctvarrow, x1, y1, x2, y2, _extra = options
+common kctv_pdata
+common kctv_state
 
 ; Routine to read in arrow overplot options, store in a heap
 ; variable structure, and overplot the arrow
 
-if (not(xregistered('atv', /noshow))) then begin
-    print, 'You need to start ATV first!'
+if (not(xregistered('kctv', /noshow))) then begin
+    print, 'You need to start KCTV first!'
     return
 endif
 
 if (N_params() LT 4) then begin
-   print, 'Too few parameters for ATVARROW'
+   print, 'Too few parameters for KCTVARROW'
    return
 endif
 
@@ -6576,34 +6583,34 @@ pstruct = {type: 'arrow',   $   ; type of plot
            options: options  $  ; plot keyword options
           }
 
-atvplotlist.add, pstruct
+kctvplotlist.add, pstruct
 
-atv_plotwindow
-nplot = n_elements(atvplotlist)
-atv_plot1arrow, nplot-1
+kctv_plotwindow
+nplot = n_elements(kctvplotlist)
+kctv_plot1arrow, nplot-1
 
 end
 
 
 ;---------------------------------------------------------------------
 
-pro atvcontour, z, x, y, _extra = options
-common atv_pdata
-common atv_state
+pro kctvcontour, z, x, y, _extra = options
+common kctv_pdata
+common kctv_state
 
 ; Routine to read in contour plot data and options, store in a heap
 ; variable structure, and overplot the contours.  Data to be contoured
-; need not be the same dataset displayed in the atv window, but it
+; need not be the same dataset displayed in the kctv window, but it
 ; should have the same x and y dimensions in order to align the
 ; overplot correctly.
 
-if (not(xregistered('atv', /noshow))) then begin
-    print, 'You need to start ATV first!'
+if (not(xregistered('kctv', /noshow))) then begin
+    print, 'You need to start KCTV first!'
     return
 endif
 
 if (N_params() LT 1) then begin
-   print, 'Too few parameters for ATVCONTOUR.'
+   print, 'Too few parameters for KCTVCONTOUR.'
    return
 endif
 
@@ -6626,40 +6633,40 @@ pstruct = {type: 'contour',  $  ; type of plot
            options: options  $  ; plot keyword options
           }
 
-atvplotlist.add, pstruct
+kctvplotlist.add, pstruct
 
-atv_plotwindow
-nplot = n_elements(atvplotlist)
-atv_plot1contour, nplot-1
+kctv_plotwindow
+nplot = n_elements(kctvplotlist)
+kctv_plot1contour, nplot-1
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atverase, nerase, norefresh = norefresh
-common atv_pdata
+pro kctverase, nerase, norefresh = norefresh
+common kctv_pdata
 
-; Routine to erase line plots from ATVPLOT, text from ATVXYOUTS, and
-; contours from ATVCONTOUR.
+; Routine to erase line plots from KCTVPLOT, text from KCTVXYOUTS, and
+; contours from KCTVCONTOUR.
 
-nplot = n_elements(atvplotlist)
+nplot = n_elements(kctvplotlist)
 
 if (n_params() LT 1) then begin
-   if (nplot GE 1) then atvplotlist.remove, /all
+   if (nplot GE 1) then kctvplotlist.remove, /all
 endif else begin
    if (nerase GT nplot) then nerase = nplot
    for i = 1, nerase do begin
-      atvplotlist.remove
+      kctvplotlist.remove
    endfor
 endelse
 
-if (NOT keyword_set(norefresh)) then atv_refresh
+if (NOT keyword_set(norefresh)) then kctv_refresh
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_labelcolor, index, colorname
+pro kctv_labelcolor, index, colorname
   
 ; translates menu options back to color names. Note that we use red as
 ; the first menu option by default, so red and black are switched from
@@ -6681,9 +6688,9 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_textlabel
+pro kctv_textlabel
 
-; widget front end for atvxyouts
+; widget front end for kctvxyouts
 
 formdesc = ['0, text, , label_left=Text: , width=15', $
             '0, integer, , label_left=x: ', $
@@ -6697,14 +6704,14 @@ formdesc = ['0, text, , label_left=Text: , width=15', $
             '0, button, DrawText, quit']
             
 textform = cw_form(formdesc, /column, $
-                   title = 'atv text label')
+                   title = 'kctv text label')
 
 
 if (textform.tag9 EQ 1) then begin
 
-   atv_labelcolor, textform.tag3, labelcolor
+   kctv_labelcolor, textform.tag3, labelcolor
 
-   atvxyouts, textform.tag1, textform.tag2, textform.tag0, $
+   kctvxyouts, textform.tag1, textform.tag2, textform.tag0, $
               color = labelcolor, charsize = textform.tag4, $
               charthick = textform.tag5, orientation = textform.tag6
 endif
@@ -6713,9 +6720,9 @@ end
 
 ;---------------------------------------------------------------------
 
-pro atv_setarrow
+pro kctv_setarrow
 
-; widget front end for atvarrow
+; widget front end for kctvarrow
 
 formdesc = ['0, integer, , label_left=Tail x: ', $
             '0, integer, , label_left=Tail y: ', $
@@ -6729,13 +6736,13 @@ formdesc = ['0, integer, , label_left=Tail x: ', $
             '0, button, DrawArrow, quit']
             
 textform = cw_form(formdesc, /column, $
-                   title = 'atv arrow')
+                   title = 'kctv arrow')
 
 if (textform.tag9 EQ 1) then begin
 
-   atv_labelcolor, textform.tag4, labelcolor
+   kctv_labelcolor, textform.tag4, labelcolor
 
-   atvarrow, textform.tag0, textform.tag1, $
+   kctvarrow, textform.tag0, textform.tag1, $
              textform.tag2, textform.tag3, $
              color = labelcolor, thick = textform.tag5, $
              hthick = textform.tag6
@@ -6747,12 +6754,12 @@ end
 
 ;--------------------------------------------------------------------
 
-pro atv_oplotcontour
+pro kctv_oplotcontour
 
-; widget front end for atvcontour
+; widget front end for kctvcontour
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 minvalstring = strcompress('0, float, ' + string(state.min_value) + $
                            ', label_left=MinValue: , width=15 ')
@@ -6770,14 +6777,14 @@ formdesc = ['0, droplist, red|black|green|blue|cyan|magenta|yellow|white,label_l
             '0, button, DrawContour, quit']
             
 cform = cw_form(formdesc, /column, $
-                   title = 'atv text label')
+                   title = 'kctv text label')
 
 
 if (cform.tag8 EQ 1) then begin
 
-   atv_labelcolor, cform.tag0, labelcolor
+   kctv_labelcolor, cform.tag0, labelcolor
 
-   atvcontour, main_image, c_color = labelcolor, $
+   kctvcontour, main_image, c_color = labelcolor, $
 ;      c_charsize = cform.tag1, c_charthick = cform.tag2, $
                c_linestyle = cform.tag1, $
                c_thick = cform.tag2, $
@@ -6789,16 +6796,16 @@ end
 
 ;---------------------------------------------------------------------
 
-pro atv_setcompass
+pro kctv_setcompass
 
 ; Routine to prompt user for compass parameters
 
-common atv_state
-common atv_images
-common atv_pdata
+common kctv_state
+common kctv_images
+common kctv_pdata
 
 if (state.wcstype NE 'angle') then begin 
-    atv_message, 'Cannot get coordinate info for this image!', $
+    kctv_message, 'Cannot get coordinate info for this image!', $
       msgtype = 'error', /window
     return
 endif
@@ -6826,14 +6833,14 @@ formdesc = [ $
              '0, button, DrawCompass, quit']
             
 cform = cw_form(formdesc, /column, $
-                   title = 'atv compass properties')
+                   title = 'kctv compass properties')
 
 if (cform.tag8 EQ 1) then return
 
 cform.tag0 = 0 > cform.tag0 < (state.image_size[0] - 1)
 cform.tag1 = 0 > cform.tag1 < (state.image_size[1] - 1)
 
-atv_labelcolor, cform.tag3, labelcolor
+kctv_labelcolor, cform.tag3, labelcolor
 
 
 pstruct = {type: 'compass',  $  ; type of plot
@@ -6846,27 +6853,27 @@ pstruct = {type: 'compass',  $  ; type of plot
            arrowlen: cform.tag6 $
           }
 
-atvplotlist.add, pstruct
+kctvplotlist.add, pstruct
 
-atv_plotwindow
-nplot = n_elements(atvplotlist)
-atv_plot1compass, nplot-1
+kctv_plotwindow
+nplot = n_elements(kctvplotlist)
+kctv_plot1compass, nplot-1
 
 end
 
 ;---------------------------------------------------------------------
 
-pro atv_setscalebar
+pro kctv_setscalebar
 
 ; Routine to prompt user for scalebar parameters
 
-common atv_state
-common atv_images
-common atv_pdata
+common kctv_state
+common kctv_images
+common kctv_pdata
 
 
 if (state.wcstype NE 'angle') then begin 
-    atv_message, 'Cannot get coordinate info for this image!', $
+    kctv_message, 'Cannot get coordinate info for this image!', $
       msgtype = 'error', /window
     return
 endif
@@ -6894,11 +6901,11 @@ formdesc = [ $
              '0, button, DrawScalebar, quit']
             
 cform = cw_form(formdesc, /column, $
-                   title = 'atv scalebar properties')
+                   title = 'kctv scalebar properties')
 
 if (cform.tag8 EQ 1) then return
 
-atv_labelcolor, cform.tag4, labelcolor
+kctv_labelcolor, cform.tag4, labelcolor
 
 cform.tag0 = 0 > cform.tag0 < (state.image_size[0] - 1)
 cform.tag1 = 0 > cform.tag1 < (state.image_size[1] - 1)
@@ -6916,27 +6923,27 @@ pstruct = {type: 'scalebar',  $  ; type of plot
            size: cform.tag6 $
           }
 
-atvplotlist.add, pstruct
+kctvplotlist.add, pstruct
 
-atv_plotwindow
-nplot = n_elements(atvplotlist)
-atv_plot1scalebar, nplot-1
+kctv_plotwindow
+nplot = n_elements(kctvplotlist)
+kctv_plot1scalebar, nplot-1
 
 end
 
 ;------------------------------------------------------------------
 
 
-pro atv_loadregion
+pro kctv_loadregion
 
-common atv_state
-common atv_pdata
+common kctv_state
+common kctv_pdata
 
 ; Routine to read in region filename, store in a heap variable
 ; structure, and overplot the regions
 
-if (not(xregistered('atv', /noshow))) then begin
-    print, 'You need to start ATV first!'
+if (not(xregistered('kctv', /noshow))) then begin
+    print, 'You need to start KCTV first!'
     return
 endif
 
@@ -6952,35 +6959,35 @@ pstruct = {type:'region', $            ; type of plot
            options: options $          ; plot keyword options
           }
 
-atvplotlist.add, pstruct
+kctvplotlist.add, pstruct
 
-atv_plotwindow
-iplot = n_elements(atvplotlist) - 1
-atv_plot1region, iplot
+kctv_plotwindow
+iplot = n_elements(kctvplotlist) - 1
+kctv_plot1region, iplot
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_saveregion
+pro kctv_saveregion
 
 ; Save currently displayed regions to a file
 
-common atv_state
-common atv_pdata
+common kctv_state
+common kctv_pdata
 
-reg_savefile = dialog_pickfile(file='atv.reg', filter='*.reg', /write) 
+reg_savefile = dialog_pickfile(file='kctv.reg', filter='*.reg', /write) 
 
 if (reg_savefile ne '') then begin 
   openw, lun, reg_savefile, /get_lun
 
-  nplot = n_elements(atvplotlist)
+  nplot = n_elements(kctvplotlist)
 
   for iplot = 0, nplot-1 do begin
-     if (atvplotlist[iplot].type eq 'region') then begin
-        n_regions = n_elements(atvplotlist[iplot].reg_array)
+     if (kctvplotlist[iplot].type eq 'region') then begin
+        n_regions = n_elements(kctvplotlist[iplot].reg_array)
       for n = 0, n_regions - 1 do begin
-        printf, lun, strcompress(atvplotlist[iplot].reg_array[n])
+        printf, lun, strcompress(kctvplotlist[iplot].reg_array[n])
       endfor
     endif
   endfor
@@ -6997,15 +7004,15 @@ end
 
 ;--------------------------------------------------------------------
 
-pro atv_setregion_event, event
+pro kctv_setregion_event, event
 
 
-; Event handler for atv_setregion.  Region plot structure created from
-; information in form widget.  Plotting routine atv_plot1region is
+; Event handler for kctv_setregion.  Region plot structure created from
+; information in form widget.  Plotting routine kctv_plot1region is
 ; then called.
 
-common atv_state
-common atv_pdata
+common kctv_state
+common kctv_pdata
 
 CASE event.tag OF
     
@@ -7149,11 +7156,11 @@ CASE event.tag OF
                   options: options $
                  }
 
-       atvplotlist.add, pstruct
+       kctvplotlist.add, pstruct
        
-       atv_plotwindow
-       nplot = n_elements(atvplotlist)
-       atv_plot1region, nplot-1
+       kctv_plotwindow
+       nplot = n_elements(kctvplotlist)
+       kctv_plot1region, nplot-1
             
         
 ;       if ptr_valid(state.reg_ids_ptr) then ptr_free, state.reg_ids_ptr
@@ -7168,15 +7175,15 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_setregion
+pro kctv_setregion
 
 ; Widget front-end for plotting individual regions on image
 
-common atv_state
-common atv_images
-common atv_pdata  
+common kctv_state
+common kctv_images
+common kctv_pdata  
 
-if (not(xregistered('atv_setregion', /noshow))) then begin
+if (not(xregistered('kctv_setregion', /noshow))) then begin
 
 regionbase = widget_base(/row, group_leader=state.base_id)
   
@@ -7198,13 +7205,13 @@ formdesc = ['0, droplist, circle|box|ellipse|line,label_left=Region:, set_value=
             '0, button, Done, quit, TAG=quit ', $
             '0, button, DrawRegion, quit, TAG=draw']
   
-regionform = cw_form(regionbase, formdesc, /column, title = 'atv region',$
+regionform = cw_form(regionbase, formdesc, /column, title = 'kctv region',$
                      IDS=reg_ids_ptr)
 state.regionform_id = regionbase
 
 widget_control, regionbase, /REALIZE
 
-xmanager, 'atv_setregion', regionbase, /no_block
+xmanager, 'kctv_setregion', regionbase, /no_block
 
 reg_ids_ptr = reg_ids_ptr(where(widget_info(reg_ids_ptr,/type) eq 3 OR $
                                 widget_info(reg_ids_ptr,/type) eq 8))
@@ -7229,7 +7236,7 @@ widget_control,(*state.reg_ids_ptr)[11],sensitive=0
 ;    if (state.wcstype EQ 'angle') then begin
 ;        xy2ad, state.coord[0], state.coord[1], *(state.astr_ptr), lon, lat
 ;        
-;        wcsstring = atv_wcsstring(lon, lat, (*state.astr_ptr).ctype,  $
+;        wcsstring = kctv_wcsstring(lon, lat, (*state.astr_ptr).ctype,  $
 ;                                  state.equinox, state.display_coord_sys, $
 ;                                  state.display_equinox, state.display_base60)
 ;        ;;
@@ -7273,7 +7280,7 @@ widget_control,(*state.reg_ids_ptr)[11],sensitive=0
 ;      strcompress(string(state.coord[1]), /remove_all)
 ;endelse
 
-xmanager, 'atv_setregion', regionbase
+xmanager, 'kctv_setregion', regionbase
 
 endif else begin
     
@@ -7283,7 +7290,7 @@ endif else begin
         if (state.wcstype EQ 'angle') then begin
             xy2ad, state.coord[0], state.coord[1], *(state.astr_ptr), lon, lat
             
-            wcsstring = atv_wcsstring(lon, lat, (*state.astr_ptr).ctype,  $
+            wcsstring = kctv_wcsstring(lon, lat, (*state.astr_ptr).ctype,  $
                                       state.equinox, state.display_coord_sys, $
                                       state.display_equinox, state.display_base60)
 
@@ -7336,17 +7343,17 @@ end
 ;          routines for drawing in the lineplot window
 ;---------------------------------------------------------------------
 
-pro atv_lineplot_init
+pro kctv_lineplot_init
 
 ; This routine creates the window for line plots
 
-common atv_state
+common kctv_state
 
 state.lineplot_base_id = $
   widget_base(group_leader = state.base_id, $
               /row, $
               /base_align_right, $
-              title = 'atv plot', $
+              title = 'kctv plot', $
               /tlb_size_events, $
               uvalue = 'lineplot_base')
 
@@ -7488,19 +7495,19 @@ drawgeom = widget_info(state.lineplot_widget_id, /geometry)
 state.lineplot_pad[0] = basegeom.xsize - drawgeom.xsize
 state.lineplot_pad[1] = basegeom.ysize - drawgeom.ysize
     
-xmanager, 'atv_lineplot', state.lineplot_base_id, /no_block
+xmanager, 'kctv_lineplot', state.lineplot_base_id, /no_block
 
-atv_resetwindow
+kctv_resetwindow
 end
 
 ;--------------------------------------------------------------------
 
-pro atv_rowplot, ps=ps, fullrange=fullrange, newcoord=newcoord
+pro kctv_rowplot, ps=ps, fullrange=fullrange, newcoord=newcoord
 
 ; draws a new row plot in the plot window or to postscript output
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 if (keyword_set(ps)) then begin
     thick = 3
@@ -7516,8 +7523,8 @@ if (keyword_set(newcoord)) then state.plot_coord = state.coord
 
 if (not (keyword_set(ps))) then begin
     newplot = 0
-    if (not (xregistered('atv_lineplot', /noshow))) then begin
-        atv_lineplot_init
+    if (not (xregistered('kctv_lineplot', /noshow))) then begin
+        kctv_lineplot_init
         newplot = 1
     endif 
 
@@ -7549,7 +7556,7 @@ if (not (keyword_set(ps))) then begin
     state.lineplot_ymax = ymax
 
     state.plot_type = 'rowplot'
-    atv_setwindow, state.lineplot_window_id
+    kctv_setwindow, state.lineplot_window_id
     erase
     
 endif
@@ -7568,7 +7575,7 @@ cgplot, main_image[*, state.plot_coord[1]], $
 
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
-  atv_resetwindow
+  kctv_resetwindow
 endif
 
 end
@@ -7576,10 +7583,10 @@ end
 
 ;--------------------------------------------------------------------
 
-pro atv_colplot, ps=ps, fullrange=fullrange, newcoord=newcoord
+pro kctv_colplot, ps=ps, fullrange=fullrange, newcoord=newcoord
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 if (keyword_set(ps)) then begin
    thick = 3
@@ -7595,8 +7602,8 @@ if (keyword_set(newcoord)) then state.plot_coord = state.coord
 
 if (not (keyword_set(ps))) then begin
     newplot = 0
-    if (not (xregistered('atv_lineplot', /noshow))) then begin
-        atv_lineplot_init
+    if (not (xregistered('kctv_lineplot', /noshow))) then begin
+        kctv_lineplot_init
         newplot = 1
     endif 
 
@@ -7628,7 +7635,7 @@ if (not (keyword_set(ps))) then begin
     state.lineplot_ymax = ymax
 
     state.plot_type = 'colplot'
-    atv_setwindow, state.lineplot_window_id
+    kctv_setwindow, state.lineplot_window_id
     erase
     
 endif
@@ -7649,7 +7656,7 @@ cgplot, main_image[state.plot_coord[0], *], $
 
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
-  atv_resetwindow
+  kctv_resetwindow
 endif
 
 end
@@ -7657,10 +7664,10 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_vectorplot, ps=ps, fullrange=fullrange, newcoord=newcoord
+pro kctv_vectorplot, ps=ps, fullrange=fullrange, newcoord=newcoord
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 if (keyword_set(ps)) then begin
    thick = 3
@@ -7712,8 +7719,8 @@ endfor
 if (not (keyword_set(ps))) then begin
 
     newplot = 0
-    if (not (xregistered('atv_lineplot', /noshow))) then begin
-        atv_lineplot_init
+    if (not (xregistered('kctv_lineplot', /noshow))) then begin
+        kctv_lineplot_init
         newplot = 1
     endif
     
@@ -7746,7 +7753,7 @@ if (not (keyword_set(ps))) then begin
     state.lineplot_ymax = ymax
 
     state.plot_type = 'vectorplot'
-    atv_setwindow, state.lineplot_window_id
+    kctv_setwindow, state.lineplot_window_id
     erase
 
 endif
@@ -7781,17 +7788,17 @@ cgplot, vectdist, pixval, $
 
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
-  atv_resetwindow
+  kctv_resetwindow
 endif
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_gaussfit, ps=ps, fullrange=fullrange, newcoord=newcoord
+pro kctv_gaussfit, ps=ps, fullrange=fullrange, newcoord=newcoord
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 if (keyword_set(ps)) then begin
    thick = 3
@@ -7843,8 +7850,8 @@ endfor
 if (not (keyword_set(ps))) then begin
 
     newplot = 0
-    if (not (xregistered('atv_lineplot', /noshow))) then begin
-        atv_lineplot_init
+    if (not (xregistered('kctv_lineplot', /noshow))) then begin
+        kctv_lineplot_init
         newplot = 1
     endif
     
@@ -7877,7 +7884,7 @@ if (not (keyword_set(ps))) then begin
     state.lineplot_ymax = ymax
 
     state.plot_type = 'gaussplot'
-    atv_setwindow, state.lineplot_window_id
+    kctv_setwindow, state.lineplot_window_id
     erase
 
 endif
@@ -7923,7 +7930,7 @@ endif
 
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
-  atv_resetwindow
+  kctv_resetwindow
 endif
 
 end
@@ -7931,10 +7938,10 @@ end
 
 ;--------------------------------------------------------------------
 
-pro atv_depthplot, ps=ps, fullrange=fullrange, newcoord=newcoord
+pro kctv_depthplot, ps=ps, fullrange=fullrange, newcoord=newcoord
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 if (state.cube NE 1) then return
 
@@ -7977,8 +7984,8 @@ pixval = total(total(pixval,1),1)
 if (not (keyword_set(ps))) then begin
 
     newplot = 0
-    if (not (xregistered('atv_lineplot', /noshow))) then begin
-        atv_lineplot_init
+    if (not (xregistered('kctv_lineplot', /noshow))) then begin
+        kctv_lineplot_init
         newplot = 1
     endif
     
@@ -8011,7 +8018,7 @@ if (not (keyword_set(ps))) then begin
     state.lineplot_ymax = ymax
 
     state.plot_type = 'depthplot'
-    atv_setwindow, state.lineplot_window_id
+    kctv_setwindow, state.lineplot_window_id
     erase
 
 endif
@@ -8045,17 +8052,17 @@ cgplot, wave, pixval, $
 
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
-  atv_resetwindow
+  kctv_resetwindow
 endif
 
 end
 
 ;--------------------------------------------------------------------
 
-pro atv_surfplot, ps=ps, fullrange=fullrange, newcoord=newcoord
+pro kctv_surfplot, ps=ps, fullrange=fullrange, newcoord=newcoord
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 if (keyword_set(ps)) then begin
    thick = 3
@@ -8071,8 +8078,8 @@ endelse
 if (not (keyword_set(ps))) then begin
 
     newplot = 0
-    if (not (xregistered('atv_lineplot', /noshow))) then begin
-        atv_lineplot_init
+    if (not (xregistered('kctv_lineplot', /noshow))) then begin
+        kctv_lineplot_init
         newplot = 1
     endif
     
@@ -8115,7 +8122,7 @@ if (not (keyword_set(ps))) then begin
     endif
 
     state.plot_type = 'surfplot'
-    atv_setwindow, state.lineplot_window_id
+    kctv_setwindow, state.lineplot_window_id
     erase
     
 ; now get plot coords from the widget box   
@@ -8150,7 +8157,7 @@ yran = lindgen(ydim) + state.lineplot_ymin
 
 ; reload the color table of the main window with default brightness
 ; and contrast, to make the surface plot come out ok
-atv_stretchct, 0.5, 0.5
+kctv_stretchct, 0.5, 0.5
 
 cgloadct, 1, /brewer, /reverse
 cgsurf, shade_image, shades=bytscl(shade_image), $
@@ -8160,7 +8167,7 @@ cgsurf, shade_image, shades=bytscl(shade_image), $
 
 if (not (keyword_set(ps))) then begin 
     widget_control, state.lineplot_base_id, /clear_events
-    atv_resetwindow
+    kctv_resetwindow
 endif
 
 end
@@ -8168,7 +8175,7 @@ end
 
 ;--------------------------------------------------------------------
 
-pro atv_contourplot, ps=ps, fullrange=fullrange, newcoord=newcoord
+pro kctv_contourplot, ps=ps, fullrange=fullrange, newcoord=newcoord
 
 if (keyword_set(ps)) then begin
    thick = 3
@@ -8180,14 +8187,14 @@ endif else begin
    background = 'black'
 endelse
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 if (not (keyword_set(ps))) then begin
 
     newplot = 0
-    if (not (xregistered('atv_lineplot', /noshow))) then begin
-        atv_lineplot_init
+    if (not (xregistered('kctv_lineplot', /noshow))) then begin
+        kctv_lineplot_init
         newplot = 1
     endif
     
@@ -8230,7 +8237,7 @@ if (not (keyword_set(ps))) then begin
     endif
 
     state.plot_type = 'contourplot'
-    atv_setwindow, state.lineplot_window_id
+    kctv_setwindow, state.lineplot_window_id
     erase
     
 ; now get plot coords from the widget box   
@@ -8285,17 +8292,17 @@ cgcontour, temporary(contour_image), $
 
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
-  atv_resetwindow
+  kctv_resetwindow
 endif
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_histplot, ps=ps, fullrange=fullrange, newcoord=newcoord
+pro kctv_histplot, ps=ps, fullrange=fullrange, newcoord=newcoord
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 
 if (keyword_set(ps)) then begin
@@ -8311,8 +8318,8 @@ endelse
 if (not (keyword_set(ps))) then begin
 
     newplot = 0
-    if (not (xregistered('atv_lineplot', /noshow))) then begin
-        atv_lineplot_init
+    if (not (xregistered('kctv_lineplot', /noshow))) then begin
+        kctv_lineplot_init
         newplot = 1
     endif
     
@@ -8340,7 +8347,7 @@ if (not (keyword_set(ps))) then begin
     endif
 
     state.plot_type = 'histplot'
-    atv_setwindow, state.lineplot_window_id
+    kctv_setwindow, state.lineplot_window_id
     erase
 endif
 
@@ -8412,7 +8419,7 @@ plothist, hist_image, xhist, yhist, bin=state.binsize, /NaN, $
 
 if (not (keyword_set(ps))) then begin 
     widget_control, state.lineplot_base_id, /clear_events
-    atv_resetwindow
+    kctv_resetwindow
 endif
 
 end
@@ -8420,10 +8427,10 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_lineplot_event, event
+pro kctv_lineplot_event, event
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 widget_control, event.id, get_uvalue = uvalue
 
@@ -8440,15 +8447,15 @@ case uvalue of
           ysize = (state.lineplot_size[1] > state.lineplot_min_size[1])
 
         case state.plot_type of
-            'rowplot': atv_rowplot
-            'colplot': atv_colplot
-            'vectorplot': atv_vectorplot
-            'gaussplot': atv_gaussfit
-            'histplot': atv_histplot
-            'surfplot': atv_surfplot
-            'contourplot': atv_contourplot
-            'specplot': atv_specplot
-            'depthplot': atv_depthplot
+            'rowplot': kctv_rowplot
+            'colplot': kctv_colplot
+            'vectorplot': kctv_vectorplot
+            'gaussplot': kctv_gaussfit
+            'histplot': kctv_histplot
+            'surfplot': kctv_surfplot
+            'contourplot': kctv_contourplot
+            'specplot': kctv_specplot
+            'depthplot': kctv_depthplot
         endcase
     end
 
@@ -8459,15 +8466,15 @@ case uvalue of
     
     'lineplot_fullrange': begin
         case state.plot_type of
-            'rowplot': atv_rowplot, /fullrange
-            'colplot': atv_colplot, /fullrange
-            'vectorplot': atv_vectorplot, /fullrange
-            'gaussplot': atv_gaussfit, /fullrange
-            'histplot': atv_histplot, /fullrange
-            'surfplot': atv_surfplot, /fullrange
-            'contourplot': atv_contourplot, /fullrange
-            'specplot': atv_specplot, /fullrange
-            'depthplot': atv_depthplot, /fullrange
+            'rowplot': kctv_rowplot, /fullrange
+            'colplot': kctv_colplot, /fullrange
+            'vectorplot': kctv_vectorplot, /fullrange
+            'gaussplot': kctv_gaussfit, /fullrange
+            'histplot': kctv_histplot, /fullrange
+            'surfplot': kctv_surfplot, /fullrange
+            'contourplot': kctv_contourplot, /fullrange
+            'specplot': kctv_specplot, /fullrange
+            'depthplot': kctv_depthplot, /fullrange
             else:
         endcase
     end
@@ -8476,7 +8483,7 @@ case uvalue of
     'lineplot_ps': begin
 
        if (state.ispsformon EQ 1) then return
-        fname = strcompress(state.current_dir + 'atv_plot.ps', /remove_all)
+        fname = strcompress(state.current_dir + 'kctv_plot.ps', /remove_all)
         state.ispsformon = 1
         lpforminfo = cmps_form(cancel = canceled, create = create, $
                              parent = state.lineplot_base_id, $
@@ -8515,15 +8522,15 @@ case uvalue of
         device, _extra = lpforminfo
         
         case (state.plot_type) of
-            'rowplot': atv_rowplot, /ps
-            'colplot': atv_colplot, /ps
-            'vectorplot': atv_vectorplot, /ps
-            'gaussplot': atv_gaussfit, /ps
-            'histplot': atv_histplot, /ps
-            'surfplot': atv_surfplot, /ps
-            'contourplot': atv_contourplot, /ps
-            'specplot': atv_specplot, /ps
-            'depthplot': atv_depthplot, /ps
+            'rowplot': kctv_rowplot, /ps
+            'colplot': kctv_colplot, /ps
+            'vectorplot': kctv_vectorplot, /ps
+            'gaussplot': kctv_gaussfit, /ps
+            'histplot': kctv_histplot, /ps
+            'surfplot': kctv_surfplot, /ps
+            'contourplot': kctv_contourplot, /ps
+            'specplot': kctv_specplot, /ps
+            'depthplot': kctv_depthplot, /ps
             else:
         endcase
         
@@ -8538,15 +8545,15 @@ case uvalue of
        state.plotcharsize = newcharsize
        widget_control, state.lineplot_charsize_id, set_value = newcharsize
        case state.plot_type of
-          'rowplot': atv_rowplot
-          'colplot': atv_colplot
-          'vectorplot': atv_vectorplot
-          'gaussplot': atv_gaussfit
-          'histplot': atv_histplot
-          'surfplot': atv_surfplot
-          'contourplot': atv_contourplot
-          'specplot': atv_specplot
-          'depthplot': atv_depthplot
+          'rowplot': kctv_rowplot
+          'colplot': kctv_colplot
+          'vectorplot': kctv_vectorplot
+          'gaussplot': kctv_gaussfit
+          'histplot': kctv_histplot
+          'surfplot': kctv_surfplot
+          'contourplot': kctv_contourplot
+          'specplot': kctv_specplot
+          'depthplot': kctv_depthplot
        endcase
 
     end
@@ -8589,14 +8596,14 @@ case uvalue of
         widget_control, state.lineplot_ymax_id, set_value = ymax
 
         case state.plot_type of
-            'rowplot': atv_rowplot
-            'colplot': atv_colplot
-            'vectorplot': atv_vectorplot
-            'gaussplot': atv_gaussfit
-            'surfplot': atv_surfplot
-            'contourplot': atv_contourplot
-            'specplot': atv_specplot
-            'depthplot': atv_depthplot
+            'rowplot': kctv_rowplot
+            'colplot': kctv_colplot
+            'vectorplot': kctv_vectorplot
+            'gaussplot': kctv_gaussfit
+            'surfplot': kctv_surfplot
+            'contourplot': kctv_contourplot
+            'specplot': kctv_specplot
+            'depthplot': kctv_depthplot
 
             'histplot': begin
 
@@ -8639,14 +8646,14 @@ case uvalue of
                 if (event.id EQ state.histplot_binsize_id) then begin
                     b = event.value
                     if (event.value LE 0) then begin
-                        atv_message, 'Bin size must be >0.', $
+                        kctv_message, 'Bin size must be >0.', $
                           msgtype='error', /window
                         widget_control, state.histplot_binsize_id, $
                           set_value = 1.0
                     endif
                 endif
                 
-                atv_histplot
+                kctv_histplot
             end 
              
             else:
@@ -8663,12 +8670,12 @@ end
 ;                         help window
 ;---------------------------------------------------------------------
 
-pro atv_help
-common atv_state
+pro kctv_help
+common kctv_state
 
 h = strarr(132)
 i = 0
-h[i] =  'ATV HELP'
+h[i] =  'KCTV HELP'
 i = i + 1
 h[i] =  ''
 i = i + 1
@@ -8682,7 +8689,7 @@ h[i] =  'File->WriteImage:       Write an output png, jpg, or tiff image of the 
 i = i + 1
 h[i] =  'File->GetImage:         Download an archival image based on object name or coordinates'  
 i = i + 1
-h[i] =  'File->Quit:             Quits atv'
+h[i] =  'File->Quit:             Quits kctv'
 i = i + 1
 h[i] =  'ColorMap Menu:          Selects color table'
 i = i + 1
@@ -8798,7 +8805,7 @@ h[i] = 'Zoom1:           sets zoom level to original scale'
 i = i + 1
 h[i] = 'Center:          centers image on display window'
 i = i + 1
-;h[i] = 'Done:            quits atv'
+;h[i] = 'Done:            quits kctv'
 ;i = i + 1
 h[i] = ''
 i = i + 1
@@ -8833,17 +8840,17 @@ h[i] = '    -: zoom out'
 i = i + 1
 h[i] = '    + or =: zoom in'
 i = i + 1
-h[i] = '    q: quits atv'
+h[i] = '    q: quits kctv'
 i = i + 2
 h[i] = 'IDL COMMAND LINE HELP:'
 i = i + 1
-h[i] =  'To pass an array to atv:'
+h[i] =  'To pass an array to kctv:'
 i = i + 1
-h[i] =  '   atv, array_name [, options]'
+h[i] =  '   kctv, array_name [, options]'
 i = i + 1
-h[i] = 'To pass a fits filename to atv:'
+h[i] = 'To pass a fits filename to kctv:'
 i = i + 1
-h[i] = '    atv, fitsfile_name [, options] (enclose filename in single quotes) '
+h[i] = '    kctv, fitsfile_name [, options] (enclose filename in single quotes) '
 i = i + 1
 h[i] = 'Command-line options are: '
 i = i + 1
@@ -8853,17 +8860,17 @@ h[i]  = '   [,/block] [,/align] [,/stretch] [,header=header]'
 i = i + 2
 h[i] = 'To overplot a contour plot on the draw window:'
 i = i + 1
-h[i] = '    atvcontour, array_name [, options...]'
+h[i] = '    kctvcontour, array_name [, options...]'
 i = i + 1
 h[i] = 'To overplot text on the draw window: '
 i = i + 1
-h[i] = '    atvxyouts, x, y, text_string [, options]  (enclose string in single quotes)'
+h[i] = '    kctvxyouts, x, y, text_string [, options]  (enclose string in single quotes)'
 i = i + 1
 h[i] = 'To overplot points or lines on the current plot:'
 i = i + 1
-h[i] = '    atvplot, xvector, yvector [, options]'
+h[i] = '    kctvplot, xvector, yvector [, options]'
 i = i + 2
-h[i] = 'The options for atvcontour, atvxyouts, and atvplot are essentially'
+h[i] = 'The options for kctvcontour, kctvxyouts, and kctvplot are essentially'
 i = i + 1
 h[i] =  'the same as those for the idl contour, xyouts, and plot commands,'
 i = i + 1
@@ -8873,26 +8880,26 @@ h[i] = 'The default color for overplots is red.'
 i = i + 2
 h[i] = 'Other commands:'
 i = i + 1
-h[i] = 'atverase [, N]:       erases all (or last N) plots and text'
+h[i] = 'kctverase [, N]:       erases all (or last N) plots and text'
 i = i + 1
-h[i] = 'atvclear: displays a small blank image (can be useful to clear memory)'
+h[i] = 'kctvclear: displays a small blank image (can be useful to clear memory)'
 i = i + 1
-h[i] = 'atv_activate: reanimates a frozen atv if another idl program crashes or hits a stop'
+h[i] = 'kctv_activate: reanimates a frozen kctv if another idl program crashes or hits a stop'
 i = i + 1
-h[i] = 'atv_shutdown:   quits atv'
+h[i] = 'kctv_shutdown:   quits kctv'
 i = i + 2
-h[i] = 'NOTE: If atv should crash, type atv_shutdown at the idl prompt.'
+h[i] = 'NOTE: If kctv should crash, type kctv_shutdown at the idl prompt.'
 i = i + 3
-h[i] = strcompress('ATV.PRO version '+state.version)
+h[i] = strcompress('KCTV.PRO version '+state.version)
 i = i + 1
 h[i] = 'For full instructions, or to download the most recent version, go to:'
 i = i + 1
 h[i] = 'http://www.physics.uci.edu/~barth/atv'
 
 
-if (not (xregistered('atv_help', /noshow))) then begin
+if (not (xregistered('kctv_help', /noshow))) then begin
 
-helptitle = strcompress('atv v' + state.version + ' help')
+helptitle = strcompress('kctv v' + state.version + ' help')
 
     help_base =  widget_base(group_leader = state.base_id, $
                              /column, $
@@ -8911,7 +8918,7 @@ helptitle = strcompress('atv v' + state.version + ' help')
                               uvalue = 'help_done')
 
     widget_control, help_base, /realize
-    xmanager, 'atv_help', help_base, /no_block
+    xmanager, 'kctv_help', help_base, /no_block
     
 endif
 
@@ -8919,7 +8926,7 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_help_event, event
+pro kctv_help_event, event
 
 widget_control, event.id, get_uvalue = uvalue
 
@@ -8934,12 +8941,12 @@ end
 ;      Routines for displaying image statistics
 ;----------------------------------------------------------------------
 
-pro atv_stats_refresh
+pro kctv_stats_refresh
 
 ; Calculate box statistics and update the results
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 b = round((state.statboxsize - 1) / 2)
 
@@ -8979,16 +8986,16 @@ widget_control, state.statbox_median_id, set_value = tmp_string
 tmp_string = strcompress('StdDev:  ' + string(cutstddev))
 widget_control, state.statbox_stdev_id, set_value = tmp_string
 
-atv_tvstats
+kctv_tvstats
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_stats_event, event
+pro kctv_stats_event, event
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 widget_control, event.id, get_uvalue = uvalue
 
@@ -8999,17 +9006,17 @@ case uvalue of
         if ( (state.statboxsize / 2 ) EQ $
              round(state.statboxsize / 2.)) then $
           state.statboxsize = state.statboxsize + 1
-        atv_stats_refresh
+        kctv_stats_refresh
     end
 
     'statxcenter': begin
         state.cursorpos[0] = 0 > long(event.value) < (state.image_size[0] - 1)
-        atv_stats_refresh
+        kctv_stats_refresh
     end
 
     'statycenter': begin
         state.cursorpos[1] = 0 > long(event.value) < (state.image_size[1] - 1)
-        atv_stats_refresh
+        kctv_stats_refresh
     end
 
     'showstatzoom': begin
@@ -9028,7 +9035,7 @@ case uvalue of
                   set_value='Show Region'
              end
          endcase
-         atv_stats_refresh
+         kctv_stats_refresh
     end
 
     'stats_done': widget_control, event.top, /destroy
@@ -9040,24 +9047,24 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_showstats
+pro kctv_showstats
 
 ; Brings up a widget window for displaying image statistics
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
-common atv_state
+common kctv_state
 
 state.cursorpos = state.coord
 
-if (not (xregistered('atv_stats', /noshow))) then begin
+if (not (xregistered('kctv_stats', /noshow))) then begin
 
     stats_base = $
       widget_base(group_leader = state.base_id, $
                   /column, $
                   /base_align_center, $
-                  title = 'atv image statistics', $
+                  title = 'kctv image statistics', $
                   uvalue = 'stats_base')
     state.stats_base_id = stats_base
     
@@ -9132,30 +9139,30 @@ if (not (xregistered('atv_stats', /noshow))) then begin
 
     widget_control, stats_base, /realize
     
-    xmanager, 'atv_stats', stats_base, /no_block
+    xmanager, 'kctv_stats', stats_base, /no_block
     
     widget_control, state.statzoom_widget_id, get_value = tmp_val
     state.statzoom_window_id = tmp_val
 
-    atv_resetwindow
+    kctv_resetwindow
 
 endif
 
-atv_stats_refresh
+kctv_stats_refresh
 
 end
 
 ;---------------------------------------------------------------------
 
 
-pro atv_tvstats
+pro kctv_tvstats
 
 ; Routine to display the zoomed region around a stats point
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
-atv_setwindow, state.statzoom_window_id
+kctv_setwindow, state.statzoom_window_id
 erase
 
 x = round(state.cursorpos[0])
@@ -9219,14 +9226,14 @@ if (!d.x_size GT 10) then begin
    cgimage, image,  /axes, xrange = x_ran, yrange = y_ran
 endif
 
-atv_resetwindow
+kctv_resetwindow
 end
 
 ;----------------------------------------------------------------------
 ;        aperture photometry and radial profile routines
 ;---------------------------------------------------------------------
 
-pro atv_imcenterf, xcen, ycen
+pro kctv_imcenterf, xcen, ycen
 
 ; program to calculate the center of mass of an image around
 ; the point (x,y), return the answer in (xcen,ycen).
@@ -9241,8 +9248,8 @@ pro atv_imcenterf, xcen, ycen
 ;      around centroid until the shifts become smaller 
 ;      than MINSHIFT (0.3 pixels) 
 
-common atv_images
-common atv_state
+common kctv_images
+common kctv_state
 
 ; iteration controls
 MINSHIFT = 0.3
@@ -9347,7 +9354,7 @@ end
 
 ;----------------------------------------------------------------------
 
-function atv_splinefwhm, rad, prof, splrad, splprof
+function kctv_splinefwhm, rad, prof, splrad, splprof
 
 ; given a radial profile (counts vs radius) will use
 ; a spline to extract the FWHM
@@ -9359,7 +9366,7 @@ function atv_splinefwhm, rad, prof, splrad, splprof
 ;
 ; original version by M. Liu, adapted for ATV by AJB
 
-common atv_state
+common kctv_state
 
 nrad = n_elements(rad)
 
@@ -9400,7 +9407,7 @@ end
 
 ;-----------------------------------------------------------------------
 
-pro atv_radplotf, x, y, fwhm
+pro kctv_radplotf, x, y, fwhm
 
 ; Program to calculate radial profile of an image
 ; given aperture location, range of sizes, and inner and 
@@ -9409,8 +9416,8 @@ pro atv_radplotf, x, y, fwhm
 ; 
 ; original version by M. Liu, adapted for inclusion in ATV by AJB
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 ; set defaults
 inrad = 0.5*sqrt(2)
@@ -9554,7 +9561,7 @@ radpts[0,*] = sqrt(distsq[w])
 radpts[1,*] = img[w]
 
 ; compute FWHM via spline interpolation of radial profile
-fwhm = atv_splinefwhm(out[*,0],out[*,6])
+fwhm = kctv_splinefwhm(out[*,0],out[*,6])
 
 ; plot the results
 
@@ -9583,18 +9590,18 @@ end
 
 ;-----------------------------------------------------------------------
 
-pro atv_apphot_refresh
+pro kctv_apphot_refresh
 
 ; Do aperture photometry using idlastro daophot routines.
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 state.photwarning = 'Warnings: None.'
 
 ; Center on the object position nearest to the cursor
 if (state.centerboxsize GT 0) then begin
-    atv_imcenterf, x, y
+    kctv_imcenterf, x, y
 endif else begin   ; no centering
     x = state.cursorpos[0]
     y = state.cursorpos[1]
@@ -9627,8 +9634,8 @@ maxy = (y + state.outersky) < (state.image_size[1] - 1)
 
 subimg = main_image[minx:maxx, miny:maxy]
 if (finite(mean(subimg)) EQ 0) then begin
-    atv_message, $
-      'Sorry- ATV can not do photometry on regions containing NaN values.', $
+    kctv_message, $
+      'Sorry- KCTV can not do photometry on regions containing NaN values.', $
       /window, msgtype = 'error'
     return
 endif
@@ -9698,9 +9705,9 @@ if (state.magunits EQ 1) then begin    ; apply zeropoint
 endif
 
 
-; Run atv_radplotf and plot the results
-atv_setwindow, state.radplot_window_id
-atv_radplotf, x, y, fwhm
+; Run kctv_radplotf and plot the results
+kctv_setwindow, state.radplot_window_id
+kctv_radplotf, x, y, fwhm
 
 ; overplot the phot apertures on radial plot
 cgplots, [state.aprad, state.aprad], !y.crange, line = 2, $
@@ -9727,7 +9734,7 @@ cgplots, !x.crange, [sky, sky], color='blue', thick=2, psym=0, line = 2
 cgtext, /data, state.innersky + (0.1*(state.outersky-state.innersky)), $
   sky+0.07*(!y.crange[1] - sky), 'sky level', color='blue', charsize=1.5
 
-atv_resetwindow
+kctv_resetwindow
 
 ; write results to file if requested  
 if (state.photprint EQ 1) then begin
@@ -9760,7 +9767,7 @@ tmp_string4 = string(fwhm, format='("FWHM (pix): ",g7.3)' )
 
 if (state.wcstype EQ 'angle') then begin
    xy2ad, x, y, *(state.astr_ptr), lon, lat
-   tmp_string5 = atv_wcsstring(lon, lat, (*state.astr_ptr).ctype,  $
+   tmp_string5 = kctv_wcsstring(lon, lat, (*state.astr_ptr).ctype,  $
                              state.equinox, state.display_coord_sys, $
                              state.display_equinox, state.display_base60)
 endif else begin
@@ -9785,33 +9792,33 @@ widget_control, state.fwhm_id, set_value = tmp_string4
 widget_control, state.photwarning_id, set_value=state.photwarning
 widget_control, state.photerror_id, set_value = errstring
 
-; Uncomment next lines if you want atv to output the WCS coords of 
+; Uncomment next lines if you want kctv to output the WCS coords of 
 ; the centroid for the photometry object:
 if (state.wcstype EQ 'angle') then begin
     xy2ad, state.centerpos[0], state.centerpos[1], *(state.astr_ptr), $
       clon, clat
-    wcsstring = atv_wcsstring(clon, clat, (*state.astr_ptr).ctype,  $
+    wcsstring = kctv_wcsstring(clon, clat, (*state.astr_ptr).ctype,  $
                 state.equinox, state.display_coord_sys, state.display_equinox, $
 		state.display_base60)
     print, 'Centroid WCS coords: ', wcsstring
 endif
 
-atv_tvphot
+kctv_tvphot
 
-atv_resetwindow
+kctv_resetwindow
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_tvphot
+pro kctv_tvphot
 
 ; Routine to display the zoomed region around a photometry point,
 ; with circles showing the photometric apterture and sky radii.
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
-atv_setwindow, state.photzoom_window_id
+kctv_setwindow, state.photzoom_window_id
 erase
 
 x = round(state.centerpos[0])
@@ -9890,15 +9897,15 @@ if (state.skytype NE 2) then begin
       color='magenta', thick=2, psym=0
 endif
 
-atv_resetwindow
+kctv_resetwindow
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_apphot_event, event
+pro kctv_apphot_event, event
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 widget_control, event.id, get_uvalue = uvalue
 
@@ -9914,12 +9921,12 @@ case uvalue of
                  round(state.centerboxsize / 2.)) then $
               state.centerboxsize = state.centerboxsize + 1
         endelse
-        atv_apphot_refresh
+        kctv_apphot_refresh
     end
         
     'radius': begin
         state.aprad = 1.0 > event.value < state.innersky
-        atv_apphot_refresh
+        kctv_apphot_refresh
     end
 
     'innersky': begin
@@ -9927,12 +9934,12 @@ case uvalue of
         state.innersky = 2 > state.innersky
         if (state.outersky EQ state.innersky + 1) then $
           state.outersky = state.outersky + 1
-        atv_apphot_refresh
+        kctv_apphot_refresh
     end
 
     'outersky': begin
         state.outersky = event.value > (state.innersky + 2)
-        atv_apphot_refresh
+        kctv_apphot_refresh
     end
 
     'showradplot': begin
@@ -9953,7 +9960,7 @@ case uvalue of
                   set_value='Show radial profile'
              end
          endcase
-         atv_apphot_refresh
+         kctv_apphot_refresh
     end
 
     'photprint': begin
@@ -9998,10 +10005,10 @@ case uvalue of
 
 ;    'magunits': begin
 ;        state.magunits = event.value
-;        atv_apphot_refresh
+;        kctv_apphot_refresh
 ;    end
 
-    'photsettings': atv_apphot_settings
+    'photsettings': kctv_apphot_settings
 
     'apphot_done': widget_control, event.top, /destroy
     else:
@@ -10011,11 +10018,11 @@ end
 
 ;----------------------------------------------------------------------
 
-pro atv_apphot_settings
+pro kctv_apphot_settings
 
 ; Routine to get user input on various photometry settings
 
-common atv_state
+common kctv_state
 
 skyline = strcompress('0, button, IDLPhot Sky Mode|Median Sky|No Sky Subtraction,'+$
                       'exclusive,' + $
@@ -10070,7 +10077,7 @@ formdesc = [skyline, $
             '0, button, Cancel, quit']
 
 textform = cw_form(formdesc, /column, $
-                   title = 'atv photometry settings')
+                   title = 'kctv photometry settings')
 
 if (textform.tag13 EQ 1) then return ; cancelled
 
@@ -10084,27 +10091,27 @@ state.ccdrn = 0 > textform.tag7
 
 if (state.exptime LE 0) then state.exptime = 1.0
 
-atv_apphot_refresh
+kctv_apphot_refresh
 
 end
 
 ;----------------------------------------------------------------------
 
-pro atv_apphot
+pro kctv_apphot
 
 ; aperture photometry front end
 
-common atv_state
+common kctv_state
 
 state.cursorpos = state.coord
 
-if (not (xregistered('atv_apphot', /noshow))) then begin
+if (not (xregistered('kctv_apphot', /noshow))) then begin
 
     apphot_base = $
       widget_base(/base_align_center, $
                   group_leader = state.base_id, $
                   /column, $
-                  title = 'atv aperture photometry', $
+                  title = 'kctv aperture photometry', $
                   uvalue = 'apphot_base')
     
     apphot_top_base = widget_base(apphot_base, /row, /base_align_center)
@@ -10249,12 +10256,12 @@ if (not (xregistered('atv_apphot', /noshow))) then begin
     widget_control, state.radplot_widget_id, get_value=tmp_value
     state.radplot_window_id = tmp_value
 
-    xmanager, 'atv_apphot', apphot_base, /no_block
+    xmanager, 'kctv_apphot', apphot_base, /no_block
     
-    atv_resetwindow
+    kctv_resetwindow
 endif
 
-atv_apphot_refresh
+kctv_apphot_refresh
 
 end
 
@@ -10262,9 +10269,9 @@ end
 ;    Spectral extraction routines
 ;---------------------------------------------------------------------
 
-function atv_get_tracepoint, yslice, traceguess
+function kctv_get_tracepoint, yslice, traceguess
 
-common atv_state
+common kctv_state
 
 ; find the trace points by simple centroiding after subtracting off
 ; the background level.  iterate up to maxrep times to fine-tune the
@@ -10311,11 +10318,11 @@ end
 
 ;-----------------------------------------------------------------
 
-pro atv_trace, newcoord
+pro kctv_trace, newcoord
 
-common atv_state
-common atv_images
-common atv_spectrum, traceinit, tracecenters, tracepoints, $
+common kctv_state
+common kctv_images
+common kctv_spectrum, traceinit, tracecenters, tracepoints, $
    xspec, fulltrace, spectrum
 
 if (keyword_set(newcoord) AND state.x_fixed EQ 0) then begin
@@ -10378,7 +10385,7 @@ for i = midtracepoint, ntracepoints-1 do begin
       tracepoints[i] = traceguess
       ycen = traceguess
    endif else begin
-      ycen = atv_get_tracepoint(yslice, traceguess)
+      ycen = kctv_get_tracepoint(yslice, traceguess)
       tracepoints[i] = ycen
    endelse
    
@@ -10411,7 +10418,7 @@ for i = midtracepoint-1, 0, -1 do begin
       tracepoints[i] = traceguess
       ycen = traceguess
    endif else begin
-      ycen = atv_get_tracepoint(yslice, traceguess)
+      ycen = kctv_get_tracepoint(yslice, traceguess)
       tracepoints[i] = ycen
    endelse
    
@@ -10435,31 +10442,27 @@ end
 
 ;------------------------------------------------------------------
 
-pro atvextract, newcoord=newcoord
+pro kctvdrill, newcoord=newcoord
 
-common atv_state
-common atv_images
-common atv_spectrum
+common kctv_state
+common kctv_images
+common kctv_spectrum
 
+if (state.cube EQ 0) then return
 
-if (state.image_size[0] LT 50) OR (state.image_size[1]) LT 20 $
-   then return
+if (not (xregistered('kctv_drill', /noshow))) then kctvdrill_init
 
-if (state.cube EQ 1) then return
-
-if (not (xregistered('atv_extract', /noshow))) then atvextract_init
-
-atverase
+kctverase
 
 if (state.x_traceheight GT state.image_size[1]) then begin
    state.x_traceheight = state.image_size[1]
    widget_control, state.x_traceheight_id, set_value = state.x_traceheight
 endif
 
-if (state.x_fixed EQ 0) then atv_trace, newcoord
+if (state.x_fixed EQ 0) then kctv_trace, newcoord
 
-atvplot, tracepoints, tracecenters, psym=1
-atvplot, fulltrace, xspec, color='blue'
+kctvplot, tracepoints, tracecenters, psym=1
+kctvplot, fulltrace, xspec, color='blue'
 
 xsize = state.x_xregion[1] - state.x_xregion[0] + 1
 ysize = state.image_size[1]
@@ -10517,31 +10520,131 @@ for i = xspec[0], max(xspec) do begin
    
 endfor
 
-atvplot, fulltrace + state.x_xupper, xspec, color='yellow'
-atvplot, fulltrace + state.x_xlower, xspec, color='yellow'
+kctvplot, fulltrace + state.x_xupper, xspec, color='yellow'
+kctvplot, fulltrace + state.x_xlower, xspec, color='yellow'
 
 if (state.x_backsub EQ 1) then begin
-   atvplot, fulltrace + state.x_back1, xspec, color='magenta'
-   atvplot, fulltrace + state.x_back2, xspec, color='magenta'
-   atvplot, fulltrace + state.x_back3, xspec, color='magenta'
-   atvplot, fulltrace + state.x_back4, xspec, color='magenta'
+   kctvplot, fulltrace + state.x_back1, xspec, color='magenta'
+   kctvplot, fulltrace + state.x_back2, xspec, color='magenta'
+   kctvplot, fulltrace + state.x_back3, xspec, color='magenta'
+   kctvplot, fulltrace + state.x_back4, xspec, color='magenta'
 endif
 
 
-atv_specplot, /newcoord
+kctv_specplot, /newcoord
+
+
+end	; kcwidrill
+
+;-----------------------------------------------------------------
+
+pro kctvextract, newcoord=newcoord
+
+common kctv_state
+common kctv_images
+common kctv_spectrum
+
+
+if (state.image_size[0] LT 50) OR (state.image_size[1]) LT 20 $
+   then return
+
+if (state.cube EQ 1) then return
+
+if (not (xregistered('kctv_extract', /noshow))) then kctvextract_init
+
+kctverase
+
+if (state.x_traceheight GT state.image_size[1]) then begin
+   state.x_traceheight = state.image_size[1]
+   widget_control, state.x_traceheight_id, set_value = state.x_traceheight
+endif
+
+if (state.x_fixed EQ 0) then kctv_trace, newcoord
+
+kctvplot, tracepoints, tracecenters, psym=1
+kctvplot, fulltrace, xspec, color='blue'
+
+xsize = state.x_xregion[1] - state.x_xregion[0] + 1
+ysize = state.image_size[1]
+
+nxpoints = state.x_xupper - state.x_xlower
+
+spectrum = dblarr(xsize)
+
+for i = xspec[0], max(xspec) do begin
+
+   j = i - xspec[0]
+   ; error check to see if spectrum runs off the top or bottom of image
+   if (((fulltrace[j] + state.x_back1) LT 0) or $
+       ((fulltrace[j] + state.x_back4) GT ysize)) then begin
+      
+      spectrum[j] = 0
+      
+   endif else begin
+   ; extract the spectrum accounting for partial pixels at the
+   ; aperture edges.  ybottom and ytop are the upper and lower limits
+   ; for full pixels in the extraction aperture.
+      ytop = fix(fulltrace[j] + state.x_xupper - 0.5) 
+      ybottom = fix(fulltrace[j] + state.x_xlower + 0.5) + 1
+
+      ; these are the fractions of a pixel
+      ; at the upper and lower edges of the
+      ; extraction aperture
+      upperfraction = fulltrace[j] + state.x_xupper - 0.5 - ytop
+      lowerfraction = 1.0 - upperfraction
+
+      ; contribution from complete pixels in the extraction window
+      signal = total(main_image[ybottom:ytop, i])
+
+      ; add in fractional pixels at aperture edges
+      uppersignal = upperfraction * main_image[ytop+1, i]
+      lowersignal = lowerfraction * main_image[ybottom-1, i]
+
+      signal = signal + uppersignal + lowersignal
+
+      ; for the background, just use full pixels
+      if (state.x_backsub EQ 1) then begin
+         lowerback = median( main_image[fulltrace[j]+state.x_back1: $
+                                        fulltrace[j]+state.x_back2, i])
+         upperback = median( main_image[fulltrace[j]+state.x_back3: $
+                                        fulltrace[j]+state.x_back4, i])
+         meanback = mean([lowerback,upperback])
+         background = meanback * float(nxpoints)
+
+         signal = signal - background
+      endif
+
+      spectrum[j] = signal
+      
+   endelse
+   
+endfor
+
+kctvplot, fulltrace + state.x_xupper, xspec, color='yellow'
+kctvplot, fulltrace + state.x_xlower, xspec, color='yellow'
+
+if (state.x_backsub EQ 1) then begin
+   kctvplot, fulltrace + state.x_back1, xspec, color='magenta'
+   kctvplot, fulltrace + state.x_back2, xspec, color='magenta'
+   kctvplot, fulltrace + state.x_back3, xspec, color='magenta'
+   kctvplot, fulltrace + state.x_back4, xspec, color='magenta'
+endif
+
+
+kctv_specplot, /newcoord
 
 
 end
 
 ;-----------------------------------------------------------------
 
-pro atv_specplot, ps=ps, fullrange=fullrange, newcoord=newcoord
+pro kctv_specplot, ps=ps, fullrange=fullrange, newcoord=newcoord
 
 ; draws a new row plot in the plot window or to postscript output
 
-common atv_state
-common atv_images
-common atv_spectrum
+common kctv_state
+common kctv_images
+common kctv_spectrum
 
 if (keyword_set(ps)) then begin
    thick = 3
@@ -10557,8 +10660,8 @@ if (keyword_set(newcoord)) then newcoord = 1 else newcoord = 0
 
 if (not (keyword_set(ps))) then begin
     newplot = 0
-    if (not (xregistered('atv_lineplot', /noshow))) then begin
-        atv_lineplot_init
+    if (not (xregistered('kctv_lineplot', /noshow))) then begin
+        kctv_lineplot_init
         newplot = 1
     endif 
 
@@ -10590,7 +10693,7 @@ if (not (keyword_set(ps))) then begin
     state.lineplot_ymax = ymax
 
     state.plot_type = 'specplot'
-    atv_setwindow, state.lineplot_window_id
+    kctv_setwindow, state.lineplot_window_id
     erase
     
 endif
@@ -10610,18 +10713,107 @@ cgplot, xspec, spectrum, $
 
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
-  atv_resetwindow
+  kctv_resetwindow
 endif
 
 end
 
 ;-------------------------------------------------------------------
 
-pro atvextract_init
+pro kctvdrill_init
+
+; initialize the drill widget
+
+common kctv_state
+
+; reset the drilling region when starting up
+state.drill_zregion = [0, state.image_size[2]-1]
+state.drill_backsub = 1
+state.drill_fixed = 0
+
+drill_base = widget_base(/base_align_left, $
+                  group_leader = state.base_id, $
+                  /column, $
+                  title = 'kctv spectral cube drilling', $
+                  uvalue = 'drill_base')
+
+drill_id = widget_base(drill_base, /row, /base_align_left)
+
+state.drillaper_id = cw_field(drill_id, /floating, /return_events, $
+                          title = 'Ap radius (px):', $
+                          uvalue = 'drillaper', $
+                          value = state.drillaper, $
+                          xsize = 7)
+
+zregion_base = widget_base(drill_base, /row, /base_align_left)
+
+state.drill_zregion = [0, state.image_size[2]-1]
+
+state.drill_zstart_id = cw_field(zregion_base, /long, /return_events, $
+                    title = 'Extraction start:', $
+                    uvalue = 'zstart', $
+                    value = state.drill_zregion[0], $
+                    xsize = 5)
+
+state.drill_zend_id = cw_field(zregion_base, /long, /return_events, $
+                    title = 'end:', $
+                    uvalue = 'zend', $
+                    value = state.drill_zregion[1], $
+                    xsize = 5)
+
+x_backsub = cw_bgroup(drill_base, ['on', 'off'], $\
+                      uvalue = 'backsub', $
+                      button_uvalue = ['on', 'off'], $
+                      /exclusive, set_value = 0, $
+                      label_left = 'Background subtraction: ', $
+                      /no_release, $
+                      /row)
+
+drillback_base = widget_base(drill_base, /row, /base_align_left)
+
+state.drill_back1_id = cw_field(drillbacka_base, /floating, /return_events, $
+                    title = 'Background radii:', $
+                    uvalue = 'drill_back1', $
+                    value = state.drill_back1, $
+                    xsize = 7)
+
+state.drill_back2_id = cw_field(drillbacka_base, /floating, /return_events, $
+                    title = 'to', $
+                    uvalue = 'drill_back2', $
+                    value = state.drill_back2, $
+                    xsize = 7)
+
+drill_fixbutton = cw_bgroup(drill_base, ['Toggle parameter hold'], $\
+                      uvalue = 'drill_fixed', $
+                      /no_release, $
+                      /row)
+
+drill_writespectbutton = cw_bgroup(drill_base, $
+                               ['Write spectrum as FITS', $
+                                'Write spectrum as text'], $
+                               uvalue = 'writespect', $
+                               button_uvalue = ['fits', 'text'], $
+                               /no_release, /row)
+
+drill_done = $
+   widget_button(drill_base, $
+                 value = 'Done', $
+                 uvalue = 'drill_done')
+    
+
+widget_control, drill_base, /realize
+xmanager, 'kctv_drill', drill_base, /no_block
+kctv_resetwindow
+
+end
+
+;-------------------------------------------------------------------------
+
+pro kctvextract_init
 
 ; initialize the extraction widget
 
-common atv_state
+common kctv_state
 
 ; reset the extraction region when starting up
 state.x_xregion = [0, state.image_size[0]-1]
@@ -10631,7 +10823,7 @@ state.x_fixed = 0
 extract_base = widget_base(/base_align_left, $
                   group_leader = state.base_id, $
                   /column, $
-                  title = 'atv spectral extraction', $
+                  title = 'kctv spectral extraction', $
                   uvalue = 'extract_base')
 
 trace_id = widget_base(extract_base, /row, /base_align_left)
@@ -10739,16 +10931,16 @@ extract_done = $
     
 
 widget_control, extract_base, /realize
-xmanager, 'atv_extract', extract_base, /no_block
-atv_resetwindow
+xmanager, 'kctv_extract', extract_base, /no_block
+kctv_resetwindow
 
 end
 
 ;-------------------------------------------------------------------------
 
-pro atv_extract_event, event
+pro kctv_extract_event, event
 
-common atv_state
+common kctv_state
 
 widget_control, event.id, get_uvalue = uvalue
 
@@ -10760,7 +10952,7 @@ case uvalue of
          state.x_tracestep = state.x_tracestep + 1
       widget_control, state.x_tracestep_id, $
                       set_value = state.x_tracestep
-      atvextract
+      kctvextract
    end
    
    'traceheight': begin
@@ -10768,21 +10960,21 @@ case uvalue of
       state.x_traceheight = state.x_traceheight < state.image_size[1]
       widget_control, state.x_traceheight_id, $
                       set_value = state.x_traceheight
-      atvextract
+      kctvextract
    end
 
    'traceorder': begin
       state.x_traceorder = 0 > event.value < 10
       widget_control, state.x_traceorder_id, $
                       set_value = state.x_traceorder
-      atvextract
+      kctvextract
    end
 
    'xstart': begin
       state.x_xregion[0] = 0 > event.value < (state.x_xregion[1] - 50)
       widget_control, state.x_xstart_id, $
                       set_value = state.x_xregion[0]
-      atvextract
+      kctvextract
    end
 
    'xend': begin
@@ -10790,7 +10982,7 @@ case uvalue of
                         (state.image_size[0] - 1)
       widget_control, state.x_xend_id, $
                       set_value = state.x_xregion[1]
-      atvextract
+      kctvextract
    end
 
    'lower': begin
@@ -10799,7 +10991,7 @@ case uvalue of
          state.x_xlower = state.x_back2 + 1
       widget_control, state.x_xlower_id, $
                       set_value = state.x_xlower
-      atvextract
+      kctvextract
    end
 
    'upper': begin
@@ -10808,13 +11000,13 @@ case uvalue of
          state.x_xupper = state.x_back3 - 1
       widget_control, state.x_xupper_id, $
                       set_value = state.x_xupper
-      atvextract
+      kctvextract
    end
 
    'backsub': begin
       if (event.value EQ 'on') then state.x_backsub = 1 $
       else state.x_backsub = 0
-      atvextract
+      kctvextract
    end
    
    'back1': begin
@@ -10822,21 +11014,21 @@ case uvalue of
                       (state.x_back2 - 1)
       widget_control, state.x_back1_id, $
                       set_value = state.x_back1
-      atvextract
+      kctvextract
    end
 
    'back2': begin
       state.x_back2 = (state.x_back1 + 1) > event.value < (state.x_xlower - 1)
       widget_control, state.x_back2_id, $
                       set_value = state.x_back2
-      atvextract
+      kctvextract
    end
 
    'back3': begin
       state.x_back3 = (state.x_xupper + 1) > event.value < (state.x_back4 - 1)
       widget_control, state.x_back3_id, $
                       set_value = state.x_back3
-      atvextract
+      kctvextract
    end
 
    'back4': begin
@@ -10844,7 +11036,7 @@ case uvalue of
                       (0.5 * state.image_size[1])
       widget_control, state.x_back4_id, $
                       set_value = state.x_back4
-      atvextract
+      kctvextract
    end
 
    'fixed': begin
@@ -10879,9 +11071,9 @@ case uvalue of
 
    'writespect': begin
       if (event.value EQ 'fits') then begin
-         atv_writespecfits
+         kctv_writespecfits
       endif else begin
-         atv_writespectext
+         kctv_writespectext
       endelse   
    end
 
@@ -10893,14 +11085,14 @@ end
 
 ;-----------------------------------------------------------------
 
-pro atv_writespecfits
+pro kctv_writespecfits
 
-common atv_state
-common atv_spectrum
+common kctv_state
+common kctv_spectrum
 
 filename = dialog_pickfile(group=state.base_id, $
                            filter = '*.fits', $
-                           file = 'atvspectrum.fits', $
+                           file = 'kctvspectrum.fits', $
                            default_extension = '.fits', $
                            /write, $
                            /overwrite_prompt, $
@@ -10959,14 +11151,14 @@ end
 
 ;------------------------------------------------------------------
 
-pro atv_writespectext
+pro kctv_writespectext
 
-common atv_state
-common atv_spectrum
+common kctv_state
+common kctv_spectrum
 
 filename = dialog_pickfile(group=state.base_id, $
                            /write, $
-                           file = 'atvspectrum.txt', $
+                           file = 'kctvspectrum.txt', $
                            /overwrite_prompt, $
                            path = state.current_dir, $
                            get_path = tmp_dir, $
@@ -11012,18 +11204,18 @@ end
 ;    shutdown routine
 ;--------------------------------------------------------------------
 
-pro atv_shutdown, windowid
+pro kctv_shutdown, windowid
 
-; routine to kill the atv window(s) and clear variables to conserve
-; memory when quitting atv.  The windowid parameter is used when
-; atv_shutdown is called automatically by the xmanager, if atv is
+; routine to kill the kctv window(s) and clear variables to conserve
+; memory when quitting kctv.  The windowid parameter is used when
+; kctv_shutdown is called automatically by the xmanager, if kctv is
 ; killed by the window manager.
 
-common atv_images
-common atv_state
-common atv_color
-common atv_pdata
-common atv_spectrum
+common kctv_images
+common kctv_state
+common kctv_color
+common kctv_pdata
+common kctv_spectrum
 
 if (state.photprint EQ 1) then begin
    free_lun, state.photfile
@@ -11034,7 +11226,7 @@ tvlct, user_r, user_g, user_b
 !p.multi = state.active_window_pmulti
 
 ; Kill top-level base if it still exists
-if (xregistered ('atv')) then widget_control, state.base_id, /destroy
+if (xregistered ('kctv')) then widget_control, state.base_id, /destroy
 
 if (size(state, /tname) EQ 'STRUCT') then begin
     if (!d.name EQ state.graphicsdevice) then wdelete, state.pan_pixmap
@@ -11047,7 +11239,7 @@ endif
 ; execute function, it's incompatible with IDL virtual machine.  So,
 ; just set these variables to zero.
 
-atvplotlist=0
+kctvplotlist=0
 maxplot=0
 main_image=0
 main_image_cube=0
@@ -11077,14 +11269,14 @@ end
 
 
 ;--------------------------------------------------------------------
-;    atv main program.  needs to be last in order to compile.
+;    kctv main program.  needs to be last in order to compile.
 ;---------------------------------------------------------------------
 
-; Main program routine for ATV.  If there is no current ATV session,
-; then run atv_startup to create the widgets.  If ATV already exists,
-; then display the new image to the current ATV window.
+; Main program routine for KCTV.  If there is no current KCTV session,
+; then run kctv_startup to create the widgets.  If KCTV already exists,
+; then display the new image to the current KCTV window.
 
-pro atv, image, $
+pro kctv, image, $
          min = minimum, $
          max = maximum, $
          autoscale = autoscale,  $
@@ -11097,11 +11289,11 @@ pro atv, image, $
          stretch = stretch, $
          header = header
 
-common atv_state
-common atv_images
+common kctv_state
+common kctv_images
 
 if (long(strmid(!version.release,0,1)) LT 8) then begin
-    print, 'ATV requires IDL version 8.0 or greater.'
+    print, 'KCTV requires IDL version 8.0 or greater.'
     retall
 endif
 
@@ -11109,8 +11301,8 @@ if (not(keyword_set(block))) then block = 0 else block = 1
 
 newimage = 0
 
-if ( (n_params() EQ 0) AND (xregistered('atv', /noshow))) then begin
-    print, 'USAGE: atv, array_name OR fitsfile'
+if ( (n_params() EQ 0) AND (xregistered('kctv', /noshow))) then begin
+    print, 'USAGE: kctv, array_name OR fitsfile'
     print, '         [,min = min_value] [,max=max_value] '
     print, '         [,/linear] [,/log] [,/histeq] [,/block]'
     print, '         [,/align] [,/stretch] [,header=header]'
@@ -11118,7 +11310,7 @@ if ( (n_params() EQ 0) AND (xregistered('atv', /noshow))) then begin
 endif
 
 if (!d.name NE 'X' AND !d.name NE 'WIN' AND !d.name NE 'MAC') then begin
-    print, 'Graphics device must be set to X, WIN, or MAC for ATV to work.'
+    print, 'Graphics device must be set to X, WIN, or MAC for KCTV to work.'
     retall
  endif
 
@@ -11127,23 +11319,23 @@ if (!d.name NE 'X' AND !d.name NE 'WIN' AND !d.name NE 'MAC') then begin
 if (strcompress(!version.os_name) EQ 'Mac OS X') then $
    device, retain = 2
 
-; Before starting up atv, get the user's external window id.  We can't
-; use the atv_getwindow routine yet because we haven't run atv
-; startup.  A subtle issue: atv_resetwindow won't work the first time
+; Before starting up kctv, get the user's external window id.  We can't
+; use the kctv_getwindow routine yet because we haven't run kctv
+; startup.  A subtle issue: kctv_resetwindow won't work the first time
 ; through because xmanager doesn't get called until the end of this
 ; routine.  So we have to deal with the external window explicitly in
 ; this routine.
-if (not (xregistered('atv', /noshow))) then begin
+if (not (xregistered('kctv', /noshow))) then begin
    userwindow = !d.window
-   atv_startup
+   kctv_startup
    align = 0B     ; align, stretch keywords make no sense if we are
    stretch = 0B   ; just starting up. 
 
 ; Startup message, if desired   
-;   print
-;   msgstring = strcompress('ATV ' + state.version + ' starting. ')
-;   print, msgstring  
-;   print
+   print
+   msgstring = strcompress('KCTV ' + state.version + ' starting. ')
+   print, msgstring  
+   print
 
 endif
 
@@ -11157,7 +11349,7 @@ if ( (n_params() NE 0) AND (size(image, /tname) EQ 'STRING')) then begin
     if (count EQ 0) then begin
         print, 'ERROR: File not found!'
     endif else begin
-        atv_readfits, fitsfilename=image, newimage=newimage
+        kctv_readfits, fitsfilename=image, newimage=newimage
         if (state.firstimage EQ 1) then begin
             align = 0
             stretch = 0
@@ -11171,7 +11363,7 @@ if ( (n_params() NE 0) AND (size(image, /tname) NE 'STRING') AND $
     print, 'ERROR: Data array does not exist!'
 endif
 
-; If user has passed atv a data array, read it into main_image.
+; If user has passed kctv a data array, read it into main_image.
 if ( (n_params() NE 0) AND (size(image, /tname) NE 'STRING') AND $
      (size(image, /tname) NE 'UNDEFINED')) then begin
 ; Make sure it's a 2-d array
@@ -11185,18 +11377,18 @@ if ( (n_params() NE 0) AND (size(image, /tname) NE 'STRING') AND $
       newimage = 1
       state.imagename = ''
       state.title_extras = ''
-      atv_setheader, header
+      kctv_setheader, header
       
       ; check for cube
       if ((size(image))[0] EQ 3) then begin
          main_image_cube = main_image
          main_image = 0
          state.cube = 1
-         atv_initcube
+         kctv_initcube
       endif else begin   ; plain 2d image
          state.cube = 0
          main_image_cube = 0
-         atv_killcube      
+         kctv_killcube      
       endelse
 
       if (state.firstimage EQ 1) then begin
@@ -11218,7 +11410,7 @@ if (n_elements(main_image) LE 1) then begin
     autoscale = 0
     imagename = ''
     newimage = 2             ; flag for startup image
-    atv_setheader, ''
+    kctv_setheader, ''
     state.title_extras = 'firstimage'
 endif
 
@@ -11226,7 +11418,7 @@ endif
 if (newimage GE 1) then begin  
 ; skip this part if new image is invalid or if user selected 'cancel'
 ; in dialog box
-    atv_getstats, align=align
+    kctv_getstats, align=align
     
     display_image = 0
 
@@ -11254,35 +11446,35 @@ if (newimage GE 1) then begin
        if (keyword_set(autoscale) OR $
            ((state.default_autoscale EQ 1) AND (n_elements(minimum) EQ 0) $
             AND (n_elements(maximum) EQ 0)) ) $
-         then atv_autoscale
+         then kctv_autoscale
     ENDIF 
 
-;    if (state.firstimage EQ 1 AND newimage EQ 1) then atv_autoscale
-    if (state.firstimage EQ 1) then atv_autoscale
+;    if (state.firstimage EQ 1 AND newimage EQ 1) then kctv_autoscale
+    if (state.firstimage EQ 1) then kctv_autoscale
     if (newimage EQ 1) then state.firstimage = 0  ; now have a real image
         
-    atv_set_minmax
+    kctv_set_minmax
     
     IF ((NOT keyword_set(align)) AND state.default_align EQ 0) THEN BEGIN 
        state.zoom_level = 0
        state.zoom_factor = 1.0
     ENDIF 
 
-    atv_displayall
-    atv_settitle
+    kctv_displayall
+    kctv_settitle
     
-    atv_resetwindow
+    kctv_resetwindow
 endif
 
 state.block = block
 
 ; Register the widget with xmanager if it's not already registered
-if (not(xregistered('atv', /noshow))) then begin
+if (not(xregistered('kctv', /noshow))) then begin
     nb = abs(block - 1)
-    xmanager, 'atv', state.base_id, no_block = nb, cleanup = 'atv_shutdown'
+    xmanager, 'kctv', state.base_id, no_block = nb, cleanup = 'kctv_shutdown'
     wset, userwindow
     ; if blocking mode is set, then when the procedure reaches this
-    ; line atv has already been terminated.  If non-blocking, then
+    ; line kctv has already been terminated.  If non-blocking, then
     ; the procedure continues below.  If blocking, then the state
     ; structure doesn't exist any more so don't set active window.
     if (block EQ 0) then state.active_window_id = userwindow
