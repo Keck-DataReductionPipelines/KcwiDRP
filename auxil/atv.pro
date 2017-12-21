@@ -8821,7 +8821,7 @@ h[i] = '    p: aperture photometry at current position'
 i = i + 1
 h[i] = '    i: image statistics at current position'
 i = i + 1
-h[i] = '    x: extract spectrum horizontally at current position'
+h[i] = '    x: extract spectrum vertically at current position'
 i = i + 1
 h[i] = '    m: cycles through mouse modes'
 i = i + 1
@@ -10320,13 +10320,13 @@ common atv_spectrum, traceinit, tracecenters, tracepoints, $
 
 if (keyword_set(newcoord) AND state.x_fixed EQ 0) then begin
 ; get new starting position from cursor
-   xstart = state.x_tracestep > state.coord[0] < $
-            (state.image_size[0] - state.x_tracestep)
-   traceguess = ((state.x_traceheight / 2.)) > state.coord[1] < $
-                (state.image_size[1] - (state.x_traceheight / 2.))
-   traceinit = [xstart, traceguess]
+   xstart = state.x_tracestep > state.coord[1] < $
+            (state.image_size[1] - state.x_tracestep)
+   traceguess = ((state.x_traceheight / 2.)) > state.coord[0] < $
+                (state.image_size[0] - (state.x_traceheight / 2.))
+   traceinit = [traceguess, xstart]
 
-   state.x_xregion = [0, state.image_size[0]-1]
+   state.x_xregion = [0, state.image_size[1]-1]
 
    widget_control, state.x_xstart_id, $
                    set_value = state.x_xregion[0]
@@ -10334,12 +10334,12 @@ if (keyword_set(newcoord) AND state.x_fixed EQ 0) then begin
                    set_value = state.x_xregion[1]
 
 endif else begin
-   xstart = traceinit[0]
-   traceguess = traceinit[1]
+   xstart = traceinit[1]
+   traceguess = traceinit[0]
 endelse
 
-xsize = state.x_xregion[1] - state.x_xregion[0] + 1
-ysize = state.image_size[1]
+xsize = state.image_size[1]
+ysize = state.x_xregion[1] - state.x_xregion[0] + 1
 
 twidth = fix(state.x_tracestep / 2)
 ntracepoints = fix(xsize / state.x_tracestep)
@@ -10353,11 +10353,11 @@ m = min(abs(tracecenters-xstart), midtracepoint)
 ; peak up on the first trace point
 xtracestart = xstart - twidth
 xtraceend = xstart + twidth
-tracecutout = main_image[xtracestart:xtraceend, *]
+tracecutout = main_image[*, xtracestart:xtraceend]
 
 ymin = 1 > (traceguess - (state.x_traceheight / 2.))
 ymax = (traceguess + (state.x_traceheight / 2.)) < (ysize - 2)
-yslice = (total(tracecutout,1))[ymin:ymax]
+yslice = (total(tracecutout,2))[ymin:ymax]
 w = where(yslice EQ max(yslice), count)
 if (count EQ 1) then traceguess = traceguess - (state.x_traceheight/2.) + w
 
@@ -10366,8 +10366,8 @@ for i = midtracepoint, ntracepoints-1 do begin
    xtracestart = tracecenters[i] - twidth
    xtraceend = tracecenters[i] + twidth
    
-   tracecutout = main_image[xtracestart:xtraceend, *]
-   yslice = total(tracecutout,1)
+   tracecutout = main_image[*, xtracestart:xtraceend]
+   yslice = total(tracecutout,2)
    
    ; replace NaNs when tracing to avert disaster
    w = where(finite(yslice) EQ 0, count)
@@ -10401,8 +10401,8 @@ for i = midtracepoint-1, 0, -1 do begin
    xtracestart = tracecenters[i] - twidth
    xtraceend = tracecenters[i] + twidth
    
-   tracecutout = main_image[xtracestart:xtraceend, *]
-   yslice = total(tracecutout,1)
+   tracecutout = main_image[*, xtracestart:xtraceend]
+   yslice = total(tracecutout,2)
    
    w = where(finite(yslice) EQ 0, count)
    if (count GT 0) then yslice[w] = 0
@@ -10458,8 +10458,8 @@ endif
 
 if (state.x_fixed EQ 0) then atv_trace, newcoord
 
-atvplot, tracecenters, tracepoints, psym=1
-atvplot, xspec, fulltrace, color='blue'
+atvplot, tracepoints, tracecenters, psym=1
+atvplot, fulltrace, xspec, color='blue'
 
 xsize = state.x_xregion[1] - state.x_xregion[0] + 1
 ysize = state.image_size[1]
@@ -10491,22 +10491,20 @@ for i = xspec[0], max(xspec) do begin
       lowerfraction = 1.0 - upperfraction
 
       ; contribution from complete pixels in the extraction window
-      signal = total(main_image[i, ybottom:ytop])
+      signal = total(main_image[ybottom:ytop, i])
 
       ; add in fractional pixels at aperture edges
-      uppersignal = upperfraction * main_image[i, ytop+1]
-      lowersignal = lowerfraction * main_image[i, ybottom-1]
+      uppersignal = upperfraction * main_image[ytop+1, i]
+      lowersignal = lowerfraction * main_image[ybottom-1, i]
 
       signal = signal + uppersignal + lowersignal
 
       ; for the background, just use full pixels
       if (state.x_backsub EQ 1) then begin
-         lowerback = median( main_image[i, $
-                                        fulltrace[j]+state.x_back1: $
-                                        fulltrace[j]+state.x_back2])
-         upperback = median( main_image[i, $
-                                        fulltrace[j]+state.x_back3: $
-                                        fulltrace[j]+state.x_back4])
+         lowerback = median( main_image[fulltrace[j]+state.x_back1: $
+                                        fulltrace[j]+state.x_back2, i])
+         upperback = median( main_image[fulltrace[j]+state.x_back3: $
+                                        fulltrace[j]+state.x_back4, i])
          meanback = mean([lowerback,upperback])
          background = meanback * float(nxpoints)
 
@@ -10519,14 +10517,14 @@ for i = xspec[0], max(xspec) do begin
    
 endfor
 
-atvplot, xspec, fulltrace + state.x_xupper, color='yellow'
-atvplot, xspec, fulltrace + state.x_xlower, color='yellow'
+atvplot, fulltrace + state.x_xupper, xspec, color='yellow'
+atvplot, fulltrace + state.x_xlower, xspec, color='yellow'
 
 if (state.x_backsub EQ 1) then begin
-   atvplot, xspec, fulltrace + state.x_back1, color='magenta'
-   atvplot, xspec, fulltrace + state.x_back2, color='magenta'
-   atvplot, xspec, fulltrace + state.x_back3, color='magenta'
-   atvplot, xspec, fulltrace + state.x_back4, color='magenta'
+   atvplot, fulltrace + state.x_back1, xspec, color='magenta'
+   atvplot, fulltrace + state.x_back2, xspec, color='magenta'
+   atvplot, fulltrace + state.x_back3, xspec, color='magenta'
+   atvplot, fulltrace + state.x_back4, xspec, color='magenta'
 endif
 
 
@@ -10601,7 +10599,7 @@ cgplot, xspec, spectrum, $
         xst = 3, yst = 3, psym = 10, $
         title = strcompress('Extracted Spectrum'), $
         
-        xtitle = 'Column', $
+        xtitle = 'Row', $
         ytitle = 'Counts', $
         xmargin=[10,3], $
         xran = [state.lineplot_xmin, state.lineplot_xmax], $
