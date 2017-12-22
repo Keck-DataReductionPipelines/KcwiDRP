@@ -304,6 +304,11 @@ state = {                   $
 	drill_back1: 15., $	; drill inner background radius
 	drill_back2: 25., $	; drill outer background radius
 	drill_fixed: 0, $	; hold drill parameters fixed?
+	drillaper_id: 0L, $	; widget id for drill aperture
+	drill_zstart_id: 0L, $	; widget id for drill z start
+	drill_zend_id: 0L, $	; widget id for drill z end
+	drill_back1_id: 0L, $	; widget id for drill back1
+	drill_back2_id: 0L, $	; widget id for drill back2
         activator: 0, $         ; is "activator" mode on?
         delimiter: '/', $       ; filesystem level delimiter 
         default_align: 1, $     ; align next image by default?
@@ -10454,82 +10459,22 @@ if (not (xregistered('kctv_drill', /noshow))) then kctvdrill_init
 
 kctverase
 
-if (state.x_traceheight GT state.image_size[1]) then begin
-   state.x_traceheight = state.image_size[1]
-   widget_control, state.x_traceheight_id, set_value = state.x_traceheight
-endif
+;if (state.drill_fixed EQ 0) then kctv_drill, newcoord
 
-if (state.x_fixed EQ 0) then kctv_trace, newcoord
+zsize = state.drill_zregion[1] - state.drill_zregion[0] + 1
 
-kctvplot, tracepoints, tracecenters, psym=1
-kctvplot, fulltrace, xspec, color='blue'
+spectrum = dblarr(zsize)
+xspec = dblarr(zsize)
 
-xsize = state.x_xregion[1] - state.x_xregion[0] + 1
-ysize = state.image_size[1]
+for i = 0, zsize-1 do begin
 
-nxpoints = state.x_xupper - state.x_xlower
-
-spectrum = dblarr(xsize)
-
-for i = xspec[0], max(xspec) do begin
-
-   j = i - xspec[0]
-   ; error check to see if spectrum runs off the top or bottom of image
-   if (((fulltrace[j] + state.x_back1) LT 0) or $
-       ((fulltrace[j] + state.x_back4) GT ysize)) then begin
+   j = state.drill_zregion[0] + i
+   xp = fix(state.coord[0])
+   yp = fix(state.coord[1])
+   spectrum[i] = main_image_cube[xp,yp,j]
+   xspec[i] = state.wave0 + (j - state.crslice) * state.dwave
       
-      spectrum[j] = 0
-      
-   endif else begin
-   ; extract the spectrum accounting for partial pixels at the
-   ; aperture edges.  ybottom and ytop are the upper and lower limits
-   ; for full pixels in the extraction aperture.
-      ytop = fix(fulltrace[j] + state.x_xupper - 0.5) 
-      ybottom = fix(fulltrace[j] + state.x_xlower + 0.5) + 1
-
-      ; these are the fractions of a pixel
-      ; at the upper and lower edges of the
-      ; extraction aperture
-      upperfraction = fulltrace[j] + state.x_xupper - 0.5 - ytop
-      lowerfraction = 1.0 - upperfraction
-
-      ; contribution from complete pixels in the extraction window
-      signal = total(main_image[ybottom:ytop, i])
-
-      ; add in fractional pixels at aperture edges
-      uppersignal = upperfraction * main_image[ytop+1, i]
-      lowersignal = lowerfraction * main_image[ybottom-1, i]
-
-      signal = signal + uppersignal + lowersignal
-
-      ; for the background, just use full pixels
-      if (state.x_backsub EQ 1) then begin
-         lowerback = median( main_image[fulltrace[j]+state.x_back1: $
-                                        fulltrace[j]+state.x_back2, i])
-         upperback = median( main_image[fulltrace[j]+state.x_back3: $
-                                        fulltrace[j]+state.x_back4, i])
-         meanback = mean([lowerback,upperback])
-         background = meanback * float(nxpoints)
-
-         signal = signal - background
-      endif
-
-      spectrum[j] = signal
-      
-   endelse
-   
 endfor
-
-kctvplot, fulltrace + state.x_xupper, xspec, color='yellow'
-kctvplot, fulltrace + state.x_xlower, xspec, color='yellow'
-
-if (state.x_backsub EQ 1) then begin
-   kctvplot, fulltrace + state.x_back1, xspec, color='magenta'
-   kctvplot, fulltrace + state.x_back2, xspec, color='magenta'
-   kctvplot, fulltrace + state.x_back3, xspec, color='magenta'
-   kctvplot, fulltrace + state.x_back4, xspec, color='magenta'
-endif
-
 
 kctv_specplot, /newcoord
 
@@ -10727,8 +10672,8 @@ pro kctvdrill_init
 common kctv_state
 
 ; reset the drilling region when starting up
-state.drill_zregion = [0, state.image_size[2]-1]
-state.drill_backsub = 1
+state.drill_zregion = [0, state.nslices-1]
+state.drill_backsub = 0
 state.drill_fixed = 0
 
 drill_base = widget_base(/base_align_left, $
@@ -10742,12 +10687,12 @@ drill_id = widget_base(drill_base, /row, /base_align_left)
 state.drillaper_id = cw_field(drill_id, /floating, /return_events, $
                           title = 'Ap radius (px):', $
                           uvalue = 'drillaper', $
-                          value = state.drillaper, $
+                          value = state.drill_aper, $
                           xsize = 7)
 
 zregion_base = widget_base(drill_base, /row, /base_align_left)
 
-state.drill_zregion = [0, state.image_size[2]-1]
+state.drill_zregion = [0, state.nslices-1]
 
 state.drill_zstart_id = cw_field(zregion_base, /long, /return_events, $
                     title = 'Extraction start:', $
@@ -10771,13 +10716,13 @@ x_backsub = cw_bgroup(drill_base, ['on', 'off'], $\
 
 drillback_base = widget_base(drill_base, /row, /base_align_left)
 
-state.drill_back1_id = cw_field(drillbacka_base, /floating, /return_events, $
+state.drill_back1_id = cw_field(drillback_base, /floating, /return_events, $
                     title = 'Background radii:', $
                     uvalue = 'drill_back1', $
                     value = state.drill_back1, $
                     xsize = 7)
 
-state.drill_back2_id = cw_field(drillbacka_base, /floating, /return_events, $
+state.drill_back2_id = cw_field(drillback_base, /floating, /return_events, $
                     title = 'to', $
                     uvalue = 'drill_back2', $
                     value = state.drill_back2, $
@@ -10937,6 +10882,90 @@ kctv_resetwindow
 end
 
 ;-------------------------------------------------------------------------
+
+pro kctv_drill_event, event
+
+common kctv_state
+
+widget_control, event.id, get_uvalue = uvalue
+
+case uvalue of
+   
+   'drillaper': begin
+      state.drill_aper = 1.0 > event.value < 50.0
+      widget_control, state.drillaper_id, $
+                      set_value = state.drill_aper
+      kctvdrill
+   end
+   
+   'zstart': begin
+      state.drill_zregion[0] = 0 > event.value < (state.drill_zregion[1] - 50)
+      widget_control, state.drill_zstart_id, $
+                      set_value = state.drill_zregion[0]
+      kctvdrill
+   end
+
+   'zend': begin
+      state.drill_zregion[1] = (state.drill_zregion[0] + 50) > event.value < $ 
+                        (state.nslices - 1)
+      widget_control, state.drill_zend_id, $
+                      set_value = state.drill_zregion[1]
+      kctvdrill
+   end
+
+   'drill_back1': begin
+      state.drill_back1 = state.drill_aper > event.value < (state.drill_back2 - 5)
+      widget_control, state.drill_back1_id, $
+                      set_value = state.drill_back1
+      kctvdrill
+   end
+
+   'drill_back2': begin
+      state.drill_back2 = (state.drill_back1 + 5) > event.value 
+      widget_control, state.drill_back2_id, $
+                      set_value = state.drill_back2
+      kctvdrill
+   end
+
+   'backsub': begin
+      if (event.value EQ 'on') then state.drill_backsub = 1 $
+      else state.drill_backsub = 0
+      kctvdrill
+   end
+   
+   'fixed': begin
+      if (state.drill_fixed EQ 1) then begin
+         widget_control, state.drillaper_id, sensitive=1
+         widget_control, state.drill_zstart_id, sensitive=1
+         widget_control, state.drill_zend_id, sensitive=1
+         widget_control, state.drill_back1_id, sensitive=1
+         widget_control, state.drill_back2_id, sensitive=1
+         state.drill_fixed = 0
+      endif else begin
+         widget_control, state.drillaper_id, sensitive=0
+         widget_control, state.drill_zstart_id, sensitive=0
+         widget_control, state.drill_zend_id, sensitive=0
+         widget_control, state.drill_back1_id, sensitive=0
+         widget_control, state.drill_back2_id, sensitive=0
+         state.drill_fixed = 1
+      endelse
+   end
+
+   'writespect': begin
+      if (event.value EQ 'fits') then begin
+         kctv_writespecfits
+      endif else begin
+         kctv_writespectext
+      endelse   
+   end
+
+   'extract_done': widget_control, event.top, /destroy
+   else:
+endcase
+
+end
+
+;-----------------------------------------------------------------
 
 pro kctv_extract_event, event
 
@@ -11122,13 +11151,26 @@ endif else begin
    shifta = 0
 endelse
 
-if (crval NE 0) AND (cd NE 0) then begin
+
+if state.kcwicube then begin
+   cd = state.dwave
+   crpix = state.crslice
+   crval = state.wave0
+   shifta = 0.
    ; get wavelength scale, accounting for extraction start and end
-   wavelength = crval + ((dindgen(state.image_size[0]) - crpix) * cd) + $
+   wavelength = crval + ((dindgen(state.nslices) - crpix) * cd) + $
                 (shifta * cd)
-   wavelength = wavelength[state.x_xregion[0]:state.x_xregion[1]]
+   wavelength = wavelength[state.drill_zregion[0]:state.drill_zregion[1]]
 endif else begin
-   wavelength = xspec
+
+   if (crval NE 0) AND (cd NE 0) then begin
+      ; get wavelength scale, accounting for extraction start and end
+      wavelength = crval + ((dindgen(state.image_size[0]) - crpix) * cd) + $
+                (shifta * cd)
+      wavelength = wavelength[state.x_xregion[0]:state.x_xregion[1]]
+   endif else begin
+      wavelength = xspec
+   endelse
 endelse
 
 ; note, this works for linear wavelength scales only
@@ -11179,13 +11221,25 @@ endif else begin
    shifta = 0
 endelse
 
-if (crval NE 0) AND (cd NE 0) then begin
+if state.kcwicube then begin
+   cd = state.dwave
+   crpix = state.crslice
+   crval = state.wave0
+   shifta = 0.
    ; get wavelength scale, accounting for extraction start and end
-   wavelength = crval + ((dindgen(state.image_size[0]) - crpix) * cd) + $
+   wavelength = crval + ((dindgen(state.nslices) - crpix) * cd) + $
                 (shifta * cd)
-   wavelength = wavelength[state.x_xregion[0]:state.x_xregion[1]]
+   wavelength = wavelength[state.drill_zregion[0]:state.drill_zregion[1]]
 endif else begin
-   wavelength = xspec
+
+   if (crval NE 0) AND (cd NE 0) then begin
+      ; get wavelength scale, accounting for extraction start and end
+      wavelength = crval + ((dindgen(state.image_size[0]) - crpix) * cd) + $
+                (shifta * cd)
+      wavelength = wavelength[state.x_xregion[0]:state.x_xregion[1]]
+   endif else begin
+      wavelength = xspec
+   endelse
 endelse
 
 openw, unit0, filename, /get_lun
