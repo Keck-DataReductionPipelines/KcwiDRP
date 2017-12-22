@@ -119,7 +119,7 @@ state = {                   $
         draw_base_id: 0L, $     ; id of base holding draw window
         draw_window_id: 0L, $   ; window id of draw window
         draw_widget_id: 0L, $   ; widget id of draw widget
-        mousemode: "color", $   ; color, blink, zoom, or imexam
+        mousemode: "imexam", $  ; color, blink, zoom, imexam, or drill
         mode_droplist_id: 0L, $ ; id of mode droplist widget
         track_window_id: 0L, $  ; widget id of tracking window
         pan_widget_id: 0L, $    ; widget id of pan window
@@ -172,6 +172,8 @@ state = {                   $
         waveselect_id: 0, $     ; widget id of wavelength selector
         slicecombine_id: 0, $   ; widget id of slice combine box
         slicecombine: 1, $      ; # slices to combine
+        wavecombine_id: 0, $    ; widget id of wave combine box
+        wavecombine: 0., $      ; # waves to combine
         slicecombine_method: 1, $ ; 0 for average, 1 for median
         nslices: 0, $           ; number of slices
 	crslice: 0, $           ; wavelength reference slice
@@ -298,17 +300,13 @@ state = {                   $
         x_back3_id: 0, $        ; widget id for upper background 1
         x_back4_id: 0, $        ; widget id for upper background 2
         x_fixed: 0, $           ; hold extraction parameters fixed?
+        drill_coord: [0L, 0L], $ ; cursor position for a cube drilling
 	drill_zregion: [0L, 0L], $ ; drill z region
-	drill_aper: 4., $       ; drill aperture radius
-	drill_backsub: 0, $	; drill background subtraction on?
-	drill_back1: 15., $	; drill inner background radius
-	drill_back2: 25., $	; drill outer background radius
 	drill_fixed: 0, $	; hold drill parameters fixed?
-	drillaper_id: 0L, $	; widget id for drill aperture
 	drill_zstart_id: 0L, $	; widget id for drill z start
 	drill_zend_id: 0L, $	; widget id for drill z end
-	drill_back1_id: 0L, $	; widget id for drill back1
-	drill_back2_id: 0L, $	; widget id for drill back2
+	drill_wavestart_id: 0L, $ ; widget id for drill wave start
+	drill_waveend_id: 0L, $	; widget id for drill wave end
         activator: 0, $         ; is "activator" mode on?
         delimiter: '/', $       ; filesystem level delimiter 
         default_align: 1, $     ; align next image by default?
@@ -625,7 +623,7 @@ if (state.panel_side LE 1) then begin
    mode_label = widget_label(modebase,value='Mouse Mode:')
 
 
-   modelist = ['Color', 'Zoom', 'Blink', 'ImExam', 'Vector']
+   modelist = ['Color', 'Zoom', 'Blink', 'ImExam', 'Vector', 'Drill']
    mode_droplist_id = widget_droplist(modebase, $
                                       uvalue = 'mode', $
                                       value = modelist)
@@ -750,7 +748,7 @@ endif else begin
    
    mode_label = widget_label(buttonbar_base,value='Mouse Mode: ')
    
-   modelist = ['Color', 'Zoom', 'Blink', 'ImExam', 'Vector']
+   modelist = ['Color', 'Zoom', 'Blink', 'ImExam', 'Vector', 'Drill']
    mode_droplist_id = widget_droplist(buttonbar_base, $
                                       uvalue = 'mode', $
                                       value = modelist)
@@ -1122,6 +1120,7 @@ if (event.type EQ 0 or event.type EQ 1 or event.type EQ 2) then begin
         'blink':  kctv_draw_blink_event, event
         'imexam': kctv_draw_phot_event, event
         'vector': kctv_draw_vector_event, event
+        'drill': kctv_draw_drill_event, event
     endcase
 endif
 
@@ -1332,6 +1331,10 @@ case state.mousemode of
         widget_control, state.mode_droplist_id, set_droplist_select=4
     end
     'vector': begin
+        state.mousemode = 'drill'
+        widget_control, state.mode_droplist_id, set_droplist_select=5
+    end
+    'drill': begin
         state.mousemode = 'color'
         widget_control, state.mode_droplist_id, set_droplist_select=0
     end
@@ -1450,6 +1453,36 @@ end
 
 ;-------------------------------------------------------------------
 
+pro kctv_draw_drill_event, event
+
+; Event handler for ImExam mode
+
+common kctv_state
+common kctv_images
+
+if (!d.name NE state.graphicsdevice) then return
+
+if (event.type EQ 0) then begin
+    case event.press of
+        1: begin
+	      kctv_apphot
+	      if state.kcwicube then kctvdrill,/newcoord,/drill
+	   end
+        2: kctv_zoom, 'none', /recenter
+        4: kctv_showstats
+        else: 
+    endcase
+endif
+
+if (event.type EQ 2) then kctv_draw_motion_event, event
+
+widget_control, state.draw_widget_id, /sensitive, /input_focus
+
+
+end
+
+;--------------------------------------------------------------------
+
 pro kctv_draw_phot_event, event
 
 ; Event handler for ImExam mode
@@ -1461,7 +1494,10 @@ if (!d.name NE state.graphicsdevice) then return
 
 if (event.type EQ 0) then begin
     case event.press of
-        1: kctv_apphot
+        1: begin
+	      kctv_apphot
+	      if state.kcwicube then kctvdrill,/newcoord
+	   end
         2: kctv_zoom, 'none', /recenter
         4: kctv_showstats
         else: 
@@ -1740,6 +1776,7 @@ case uvalue of
         2: state.mousemode = 'blink'
         3: state.mousemode = 'imexam'
         4: state.mousemode = 'vector'
+        5: state.mousemode = 'drill'
         else: print, 'Unknown mouse mode!'
     endcase
 
@@ -2907,7 +2944,7 @@ state.image_max = maxx
 ; Get sky value for autoscaling and asinh stretch.  Eliminate
 ; zero-valued and NaN pixels from sky calculation, i.e. for HST ACS
 ; drizzled images, WFPC2 mosaics, or Spitzer images.
-w = where(finite(statimage) AND (main_image NE 0.0), goodcount)
+w = where(finite(statimage) AND (statimage NE 0.0), goodcount)
 if (goodcount GT 25) then begin
     sky, statimage[w], skymode, skysig, /silent
 endif else if (goodcount GT 5 AND goodcount LE 25) then begin
@@ -2926,6 +2963,7 @@ if (skysig LE 0.0) then skysig = 1.0
 state.skymode = skymode
 state.skysig = skysig
 ;state.asinh_beta = state.skysig
+print,'skymode, skysig: ',skymode, skysig
 
 if (state.min_value GE state.max_value) then begin
     state.min_value = state.min_value - 1
@@ -3794,7 +3832,9 @@ if (not(xregistered('kctvslicer', /noshow))) then begin
                            title = wtitle, /column)
    state.slicebase_id = slicebase
 
-   sliceselect = cw_field(slicebase, $
+   selectbase = widget_base(slicebase, /row)
+
+   sliceselect = cw_field(selectbase, $
                              uvalue = 'sliceselect', $
                              /integer,  $
                              title = 'Select Slice:', $
@@ -3804,14 +3844,13 @@ if (not(xregistered('kctvslicer', /noshow))) then begin
    state.sliceselect_id = sliceselect
 
    if state.kcwicube then begin
-      waveselect = cw_field(slicebase, $
+      state.waveselect_id = cw_field(selectbase, $
                              uvalue = 'waveselect', $
                              /floating,  $
                              title = 'Select Wave:', $
                              value = state.wave,  $
                              /return_events, $
                              xsize = 7)
-      state.waveselect_id = waveselect
    endif
 
    slicer = widget_slider(slicebase, /drag, scroll = 1, $
@@ -3837,6 +3876,16 @@ if (not(xregistered('kctvslicer', /noshow))) then begin
 
    noslice = widget_button(combinebase, uvalue = 'noslice', $
                            value = 'None')
+
+   state.wavecombine = state.slicecombine * state.dwave
+
+   state.wavecombine_id = cw_field(combinebase, $
+                                    uvalue = 'wavecombine', $
+                                    /floating, $
+                                    title = '# Waves to combine: ', $
+                                    value = state.wavecombine, $
+                                    /return_events, $
+                                    xsize = 7)
 
    averagebase = cw_bgroup(slicebase, ['average', 'median'], $\
                       uvalue = 'average', $
@@ -3935,11 +3984,19 @@ endif
 
 if (event_name EQ 'allslice') then begin
    state.slicecombine = state.nslices
+   if state.kcwicube then begin
+      state.wavecombine = state.slicecombine * state.dwave
+      widget_control, state.wavecombine_id, set_value = state.wavecombine
+   endif
    widget_control, state.slicecombine_id, set_value = state.slicecombine
 endif
 
 if (event_name EQ 'noslice') then begin
    state.slicecombine = 1
+   if state.kcwicube then begin
+      state.wavecombine = state.slicecombine * state.dwave
+      widget_control, state.wavecombine_id, set_value = state.wavecombine
+   endif
    widget_control, state.slicecombine_id, set_value = state.slicecombine
 endif
    
@@ -3953,6 +4010,15 @@ endif
 
 if (event_name EQ 'slicecombine') then begin
    state.slicecombine = 1 > event.value < state.nslices
+   if state.kcwicube then begin
+      state.wavecombine = state.slicecombine * state.dwave
+      widget_control, state.wavecombine_id, set_value = state.wavecombine
+   endif
+   widget_control, state.slicecombine_id, set_value = state.slicecombine
+endif
+
+if (event_name EQ 'wavecombine') then begin
+   state.slicecombine = 1 > (event.value/state.dwave) < state.nslices
    widget_control, state.slicecombine_id, set_value = state.slicecombine
 endif
 
@@ -8460,6 +8526,7 @@ case uvalue of
             'surfplot': kctv_surfplot
             'contourplot': kctv_contourplot
             'specplot': kctv_specplot
+            'drillplot': kctv_drillplot
             'depthplot': kctv_depthplot
         endcase
     end
@@ -8479,6 +8546,7 @@ case uvalue of
             'surfplot': kctv_surfplot, /fullrange
             'contourplot': kctv_contourplot, /fullrange
             'specplot': kctv_specplot, /fullrange
+            'drillplot': kctv_drillplot, /fullrange
             'depthplot': kctv_depthplot, /fullrange
             else:
         endcase
@@ -8535,6 +8603,7 @@ case uvalue of
             'surfplot': kctv_surfplot, /ps
             'contourplot': kctv_contourplot, /ps
             'specplot': kctv_specplot, /ps
+            'drillplot': kctv_drillplot, /ps
             'depthplot': kctv_depthplot, /ps
             else:
         endcase
@@ -8558,6 +8627,7 @@ case uvalue of
           'surfplot': kctv_surfplot
           'contourplot': kctv_contourplot
           'specplot': kctv_specplot
+          'drillplot': kctv_drillplot
           'depthplot': kctv_depthplot
        endcase
 
@@ -8608,6 +8678,7 @@ case uvalue of
             'surfplot': kctv_surfplot
             'contourplot': kctv_contourplot
             'specplot': kctv_specplot
+            'drillplot': kctv_drillplot
             'depthplot': kctv_depthplot
 
             'histplot': begin
@@ -10447,7 +10518,7 @@ end
 
 ;------------------------------------------------------------------
 
-pro kctvdrill, newcoord=newcoord
+pro kctvdrill, newcoord=newcoord, drill=drill
 
 common kctv_state
 common kctv_images
@@ -10455,11 +10526,14 @@ common kctv_spectrum
 
 if (state.cube EQ 0) then return
 
+if keyword_set(newcoord) then begin
+   if keyword_set(drill) then $
+   	state.drill_coord = state.cursorpos $
+   else state.drill_coord = fix( state.centerpos + 0.5 )
+endif
+
 if (not (xregistered('kctv_drill', /noshow))) then kctvdrill_init
 
-kctverase
-
-;if (state.drill_fixed EQ 0) then kctv_drill, newcoord
 
 zsize = state.drill_zregion[1] - state.drill_zregion[0] + 1
 
@@ -10469,14 +10543,20 @@ xspec = dblarr(zsize)
 for i = 0, zsize-1 do begin
 
    j = state.drill_zregion[0] + i
-   xp = fix(state.coord[0])
-   yp = fix(state.coord[1])
-   spectrum[i] = main_image_cube[xp,yp,j]
+   x0 = 0 > fix(state.drill_coord[0] - state.aprad) < $
+   		(state.image_size[0] - 1)
+   x1 = 0 > fix(state.drill_coord[0] + state.aprad) < $
+   		(state.image_size[0] - 1)
+   y0 = 0 > fix(state.drill_coord[1] - state.aprad) < $
+   		(state.image_size[1] - 1)
+   y1 = 0 > fix(state.drill_coord[1] + state.aprad) < $
+   		(state.image_size[1] - 1)
+   spectrum[i] = mean(main_image_cube[x0:x1,y0:y1,j])
    xspec[i] = state.wave0 + (j - state.crslice) * state.dwave
       
 endfor
 
-kctv_specplot, /newcoord
+kctv_drillplot, /newcoord
 
 
 end	; kcwidrill
@@ -10665,6 +10745,91 @@ end
 
 ;-------------------------------------------------------------------
 
+pro kctv_drillplot, ps=ps, fullrange=fullrange, newcoord=newcoord
+
+; draws a new row plot in the plot window or to postscript output
+
+common kctv_state
+common kctv_images
+common kctv_spectrum
+
+if (keyword_set(ps)) then begin
+   thick = 3
+   color = 'black'
+   background = 'white'
+endif else begin
+   thick = 1
+   color = 'white'
+   background = 'black'
+endelse
+
+if (keyword_set(newcoord)) then newcoord = 1 else newcoord = 0
+
+if (not (keyword_set(ps))) then begin
+    newplot = 0
+    if (not (xregistered('kctv_lineplot', /noshow))) then begin
+        kctv_lineplot_init
+        newplot = 1
+    endif 
+
+    widget_control, state.histbutton_base_id, map=0
+    widget_control, state.holdrange_button_id, sensitive=1
+
+    widget_control, state.lineplot_xmin_id, get_value=xmin
+    widget_control, state.lineplot_xmax_id, get_value=xmax
+    widget_control, state.lineplot_ymin_id, get_value=ymin
+    widget_control, state.lineplot_ymax_id, get_value=ymax
+
+    if (newplot EQ 1 OR state.plot_type NE 'drillplot' OR $
+        keyword_set(fullrange) OR $
+        ((state.holdrange_value EQ 0) AND newcoord EQ 1)) then begin
+        xmin = min(xspec)
+        xmax = max(xspec)
+        ymin = min(spectrum)
+        ymax = max(spectrum) 
+    endif
+   
+    widget_control, state.lineplot_xmin_id, set_value=xmin
+    widget_control, state.lineplot_xmax_id, set_value=xmax
+    widget_control, state.lineplot_ymin_id, set_value=ymin
+    widget_control, state.lineplot_ymax_id, set_value=ymax
+
+    state.lineplot_xmin = xmin
+    state.lineplot_xmax = xmax
+    state.lineplot_ymin = ymin
+    state.lineplot_ymax = ymax
+
+    state.plot_type = 'drillplot'
+    kctv_setwindow, state.lineplot_window_id
+    erase
+    
+endif
+
+tlab = 'Extracted Spectrum ['+string(state.drill_coord[0],form='(i4)') + $
+	',' + string(state.drill_coord[1],form='(i4)') + ']'
+
+cgplot, xspec, spectrum, $
+        xst = 3, yst = 3, psym = 10, $
+        title = tlab, $
+        
+        xtitle = 'Wavelength (A)', $
+        ytitle = 'Counts', $
+        xmargin=[10,3], $
+        xran = [state.lineplot_xmin, state.lineplot_xmax], $
+        yran = [state.lineplot_ymin, state.lineplot_ymax], $
+        thick = thick, xthick = thick, ythick = thick, charthick = thick, $
+        charsize = state.plotcharsize
+
+
+if (not (keyword_set(ps))) then begin 
+  widget_control, state.lineplot_base_id, /clear_events
+  kctv_resetwindow
+endif
+
+end
+
+;-------------------------------------------------------------------
+
 pro kctvdrill_init
 
 ; initialize the drill widget
@@ -10673,7 +10838,6 @@ common kctv_state
 
 ; reset the drilling region when starting up
 state.drill_zregion = [0, state.nslices-1]
-state.drill_backsub = 0
 state.drill_fixed = 0
 
 drill_base = widget_base(/base_align_left, $
@@ -10684,18 +10848,12 @@ drill_base = widget_base(/base_align_left, $
 
 drill_id = widget_base(drill_base, /row, /base_align_left)
 
-state.drillaper_id = cw_field(drill_id, /floating, /return_events, $
-                          title = 'Ap radius (px):', $
-                          uvalue = 'drillaper', $
-                          value = state.drill_aper, $
-                          xsize = 7)
-
 zregion_base = widget_base(drill_base, /row, /base_align_left)
 
 state.drill_zregion = [0, state.nslices-1]
 
 state.drill_zstart_id = cw_field(zregion_base, /long, /return_events, $
-                    title = 'Extraction start:', $
+                    title = 'Slice start:', $
                     uvalue = 'zstart', $
                     value = state.drill_zregion[0], $
                     xsize = 5)
@@ -10706,26 +10864,20 @@ state.drill_zend_id = cw_field(zregion_base, /long, /return_events, $
                     value = state.drill_zregion[1], $
                     xsize = 5)
 
-x_backsub = cw_bgroup(drill_base, ['on', 'off'], $\
-                      uvalue = 'backsub', $
-                      button_uvalue = ['on', 'off'], $
-                      /exclusive, set_value = 0, $
-                      label_left = 'Background subtraction: ', $
-                      /no_release, $
-                      /row)
+waveregion_base = widget_base(drill_base, /row, /base_align_left)
 
-drillback_base = widget_base(drill_base, /row, /base_align_left)
-
-state.drill_back1_id = cw_field(drillback_base, /floating, /return_events, $
-                    title = 'Background radii:', $
-                    uvalue = 'drill_back1', $
-                    value = state.drill_back1, $
+state.drill_wavestart_id = cw_field(waveregion_base, /floating, /return_events, $
+                    title = 'Wave start (A):', $
+                    uvalue = 'wavestart', $
+                    value = state.wave0 + (state.drill_zregion[0] - $
+		    	state.crslice) * state.dwave, $
                     xsize = 7)
 
-state.drill_back2_id = cw_field(drillback_base, /floating, /return_events, $
-                    title = 'to', $
-                    uvalue = 'drill_back2', $
-                    value = state.drill_back2, $
+state.drill_waveend_id = cw_field(waveregion_base, /floating, /return_events, $
+                    title = 'end:', $
+                    uvalue = 'waveend', $
+                    value = state.wave0 + (state.drill_zregion[1] - $
+		    	state.crslice) * state.dwave, $
                     xsize = 7)
 
 drill_fixbutton = cw_bgroup(drill_base, ['Toggle parameter hold'], $\
@@ -10890,18 +11042,14 @@ common kctv_state
 widget_control, event.id, get_uvalue = uvalue
 
 case uvalue of
-   
-   'drillaper': begin
-      state.drill_aper = 1.0 > event.value < 50.0
-      widget_control, state.drillaper_id, $
-                      set_value = state.drill_aper
-      kctvdrill
-   end
-   
+
    'zstart': begin
       state.drill_zregion[0] = 0 > event.value < (state.drill_zregion[1] - 50)
       widget_control, state.drill_zstart_id, $
                       set_value = state.drill_zregion[0]
+      widget_control, state.drill_wavestart_id, $
+                      set_value = state.wave0 + (state.drill_zregion[0] - $
+				      state.crslice) * state.dwave
       kctvdrill
    end
 
@@ -10910,43 +11058,41 @@ case uvalue of
                         (state.nslices - 1)
       widget_control, state.drill_zend_id, $
                       set_value = state.drill_zregion[1]
+      widget_control, state.drill_waveend_id, $
+                      set_value = state.wave0 + (state.drill_zregion[1] - $
+				      state.crslice) * state.dwave
       kctvdrill
    end
 
-   'drill_back1': begin
-      state.drill_back1 = state.drill_aper > event.value < (state.drill_back2 - 5)
-      widget_control, state.drill_back1_id, $
-                      set_value = state.drill_back1
+   'wavestart': begin
+      state.drill_zregion[0] = 0 > ( (event.value - state.wave0) / $
+      		state.dwave + state.crslice ) < (state.drill_zregion[1] - 50)
+      widget_control, state.drill_zstart_id, $
+                      set_value = state.drill_zregion[0]
       kctvdrill
    end
 
-   'drill_back2': begin
-      state.drill_back2 = (state.drill_back1 + 5) > event.value 
-      widget_control, state.drill_back2_id, $
-                      set_value = state.drill_back2
-      kctvdrill
-   end
-
-   'backsub': begin
-      if (event.value EQ 'on') then state.drill_backsub = 1 $
-      else state.drill_backsub = 0
+   'waveend': begin
+      state.drill_zregion[1] = (state.drill_zregion[0] + 50) > ( (event.value - $
+      		state.wave0) / state.dwave + state.crslice ) < $ 
+                        (state.nslices - 1)
+      widget_control, state.drill_zend_id, $
+                      set_value = state.drill_zregion[1]
       kctvdrill
    end
    
-   'fixed': begin
+   'drill_fixed': begin
       if (state.drill_fixed EQ 1) then begin
-         widget_control, state.drillaper_id, sensitive=1
          widget_control, state.drill_zstart_id, sensitive=1
          widget_control, state.drill_zend_id, sensitive=1
-         widget_control, state.drill_back1_id, sensitive=1
-         widget_control, state.drill_back2_id, sensitive=1
+         widget_control, state.drill_wavestart_id, sensitive=1
+         widget_control, state.drill_waveend_id, sensitive=1
          state.drill_fixed = 0
       endif else begin
-         widget_control, state.drillaper_id, sensitive=0
          widget_control, state.drill_zstart_id, sensitive=0
          widget_control, state.drill_zend_id, sensitive=0
-         widget_control, state.drill_back1_id, sensitive=0
-         widget_control, state.drill_back2_id, sensitive=0
+         widget_control, state.drill_wavestart_id, sensitive=0
+         widget_control, state.drill_waveend_id, sensitive=0
          state.drill_fixed = 1
       endelse
    end
@@ -10959,7 +11105,7 @@ case uvalue of
       endelse   
    end
 
-   'extract_done': widget_control, event.top, /destroy
+   'drill_done': widget_control, event.top, /destroy
    else:
 endcase
 
