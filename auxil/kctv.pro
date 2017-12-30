@@ -119,7 +119,7 @@ state = {                   $
         draw_base_id: 0L, $     ; id of base holding draw window
         draw_window_id: 0L, $   ; window id of draw window
         draw_widget_id: 0L, $   ; widget id of draw widget
-        mousemode: "imexam", $  ; color, blink, zoom, imexam, or drill
+        mousemode: "color", $   ; color, blink, zoom, imexam, or drill
         mode_droplist_id: 0L, $ ; id of mode droplist widget
         track_window_id: 0L, $  ; widget id of tracking window
         pan_widget_id: 0L, $    ; widget id of pan window
@@ -219,6 +219,7 @@ state = {                   $
         binsize: 0.0, $         ; binsize for histogram plots
         regionform_id: 0L, $    ; id of region form widget
         reg_ids_ptr: ptr_new(), $ ; ids for region form widget
+	nregions: 0L, $         ; number of regions currently plotted
         cursorpos: lonarr(2), $ ; cursor x,y for photometry & stats
         centerpos: fltarr(2), $ ; centered x,y for photometry
         cursorpos_id: 0L, $     ; id of cursorpos widget
@@ -623,7 +624,7 @@ if (state.panel_side LE 1) then begin
    mode_label = widget_label(modebase,value='Mouse Mode:')
 
 
-   modelist = ['Color', 'Zoom', 'Blink', 'ImExam', 'Vector', 'Drill']
+   modelist = ['Color', 'Zoom', 'Blink', 'ImExam', 'Vector']
    mode_droplist_id = widget_droplist(modebase, $
                                       uvalue = 'mode', $
                                       value = modelist)
@@ -748,7 +749,7 @@ endif else begin
    
    mode_label = widget_label(buttonbar_base,value='Mouse Mode: ')
    
-   modelist = ['Color', 'Zoom', 'Blink', 'ImExam', 'Vector', 'Drill']
+   modelist = ['Color', 'Zoom', 'Blink', 'ImExam', 'Vector']
    mode_droplist_id = widget_droplist(buttonbar_base, $
                                       uvalue = 'mode', $
                                       value = modelist)
@@ -1120,7 +1121,6 @@ if (event.type EQ 0 or event.type EQ 1 or event.type EQ 2) then begin
         'blink':  kctv_draw_blink_event, event
         'imexam': kctv_draw_phot_event, event
         'vector': kctv_draw_vector_event, event
-        'drill': kctv_draw_drill_event, event
     endcase
 endif
 
@@ -1331,10 +1331,6 @@ case state.mousemode of
         widget_control, state.mode_droplist_id, set_droplist_select=4
     end
     'vector': begin
-        state.mousemode = 'drill'
-        widget_control, state.mode_droplist_id, set_droplist_select=5
-    end
-    'drill': begin
         state.mousemode = 'color'
         widget_control, state.mode_droplist_id, set_droplist_select=0
     end
@@ -1452,36 +1448,6 @@ kctv_resetwindow
 end
 
 ;-------------------------------------------------------------------
-
-pro kctv_draw_drill_event, event
-
-; Event handler for ImExam mode
-
-common kctv_state
-common kctv_images
-
-if (!d.name NE state.graphicsdevice) then return
-
-if (event.type EQ 0) then begin
-    case event.press of
-        1: begin
-	      kctv_apphot
-	      if state.kcwicube then kctvdrill,/newcoord,/drill
-	   end
-        2: kctv_zoom, 'none', /recenter
-        4: kctv_showstats
-        else: 
-    endcase
-endif
-
-if (event.type EQ 2) then kctv_draw_motion_event, event
-
-widget_control, state.draw_widget_id, /sensitive, /input_focus
-
-
-end
-
-;--------------------------------------------------------------------
 
 pro kctv_draw_phot_event, event
 
@@ -1776,7 +1742,6 @@ case uvalue of
         2: state.mousemode = 'blink'
         3: state.mousemode = 'imexam'
         4: state.mousemode = 'vector'
-        5: state.mousemode = 'drill'
         else: print, 'Unknown mouse mode!'
     endcase
 
@@ -6721,6 +6686,7 @@ end
 
 pro kctverase, nerase, norefresh = norefresh
 common kctv_pdata
+common kctv_state
 
 ; Routine to erase line plots from KCTVPLOT, text from KCTVXYOUTS, and
 ; contours from KCTVCONTOUR.
@@ -6728,11 +6694,15 @@ common kctv_pdata
 nplot = n_elements(kctvplotlist)
 
 if (n_params() LT 1) then begin
-   if (nplot GE 1) then kctvplotlist.remove, /all
+   if (nplot GE 1) then begin
+   	kctvplotlist.remove, /all
+	state.nregions = 0L
+   endif
 endif else begin
    if (nerase GT nplot) then nerase = nplot
    for i = 1, nerase do begin
       kctvplotlist.remove
+      state.nregions -= 1
    endfor
 endelse
 
@@ -7029,6 +6999,8 @@ if (region_file EQ '') then return
 options = {color: 'green'}
 
 readfmt, region_file, 'a200', reg_array, /silent
+
+state.nregions += n_elements(reg_array)
 
 pstruct = {type:'region', $            ; type of plot
            reg_array: reg_array, $     ; array of regions to plot
@@ -9817,11 +9789,12 @@ cgtext, /data, state.innersky + (0.1*(state.outersky-state.innersky)), $
   sky+0.07*(!y.crange[1] - sky), 'sky level', color='blue', charsize=1.5
 
 ; Create region for plot on main image
+state.nregions += 1
 reg_array = 'circle('+strtrim(string(x,form='(f13.2)'),2)+', ' + $
                       strtrim(string(y,form='(f13.2)'),2)+', ' + $
-		      strtrim(string(fwhm,form='(f13.2)'),2) +  $
+		      strtrim(string(fwhm>1,form='(f13.2)'),2) +  $
 		      ') # color=red text={'+ $
-		      strn(n_elements(kctvplotlist)+1)+'}'
+		      strn(state.nregions)+'}'
 options = {color: 'red'}
 pstruct = {type:'region', $		; type of plot
 	   reg_array: reg_array, $	; region to plot
@@ -10828,7 +10801,12 @@ if (not (keyword_set(ps))) then begin
     
 endif
 
-tlab = 'Extracted Spectrum ['+string(state.drill_coord[0],form='(i4)') + $
+ofname = sxpar(*state.head_ptr,'OFNAME',/silent,count=nof)
+if nof le 0 then $
+     ofname = 'Extracted Spectrum' $
+else ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '_' + $
+	string(state.nregions,form='(i02)') + '.txt'
+tlab = ofname + ' ['+string(state.drill_coord[0],form='(i4)') + $
 	',' + string(state.drill_coord[1],form='(i4)') + ']'
 
 cgplot, xspec, spectrum, $
@@ -11288,9 +11266,14 @@ pro kctv_writespecfits
 common kctv_state
 common kctv_spectrum
 
+ofname = sxpar(*state.head_ptr,'OFNAME',/silent,count=nof)
+if nof le 0 then $
+     ofname = 'kctvspectrum.fits' $
+else ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '_' + $
+	string(state.nregions,form='(i02)') + '.fits'
 filename = dialog_pickfile(group=state.base_id, $
                            filter = '*.fits', $
-                           file = 'kctvspectrum.fits', $
+                           file = ofname, $
                            default_extension = '.fits', $
                            /write, $
                            /overwrite_prompt, $
@@ -11372,7 +11355,7 @@ ofname = sxpar(*state.head_ptr,'OFNAME',/silent,count=nof)
 if nof le 0 then $
      ofname = 'kctvspectrum.txt' $
 else ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '_' + $
-	string(n_elements(kctvplotlist),form='(i02)') + '.txt'
+	string(state.nregions,form='(i02)') + '.txt'
 filename = dialog_pickfile(group=state.base_id, $
                            /write, $
                            file = ofname, $
