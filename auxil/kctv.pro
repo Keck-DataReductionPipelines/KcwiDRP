@@ -249,7 +249,7 @@ state = {                   $
         photerrors: 1, $        ; calculate photometric errors?
         ccdgain: 1.0, $         ; CCD gain
         ccdrn: 5.0, $           ; read noise
-        centerboxsize: 9L, $    ; centering box size
+        centerboxsize: 5L, $    ; centering box size
         aprad: 5.0, $           ; aperture photometry radius
         innersky: 10.0, $       ; inner sky radius
         outersky: 20.0, $       ; outer sky radius
@@ -6127,7 +6127,8 @@ for i=0, n_reg-1 do begin
            
 
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
-              alignment=0.5, _extra = kctvplotlist[iplot].options, /device
+              alignment=0.5, /device, charsize=state.plotcharsize, $
+	      color = cgcolor(kctvplotlist[iplot].options.color)
         end
         'box': begin
             angle = 0           ; initialize angle to 0
@@ -6153,7 +6154,8 @@ for i=0, n_reg-1 do begin
               _extra = kctvplotlist[iplot].options, /device
             
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
-              alignment=0.5, _extra = kctvplotlist[iplot].options, /device
+              alignment=0.5, /device, charsize=state.plotcharsize, $
+	      color = cgcolor(kctvplotlist[iplot].options.color)
         end
         
         'ellipse': begin
@@ -6182,7 +6184,8 @@ for i=0, n_reg-1 do begin
               _extra = kctvplotlist[iplot].options
             
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
-              alignment=0.5, _extra = kctvplotlist[iplot].options, /device
+              alignment=0.5, /device, charsize=state.plotcharsize, $
+	      color = cgcolor(kctvplotlist[iplot].options.color)
         end
         'polygon': begin
             n_vert = n_elements(coords_arr) / 2
@@ -6212,7 +6215,8 @@ for i=0, n_reg-1 do begin
               _extra = kctvplotlist[iplot].options         
             
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
-              alignment=0.5, _extra = kctvplotlist[iplot].options, /device
+              alignment=0.5, /device, charsize=state.plotcharsize, $
+	      color = cgcolor(kctvplotlist[iplot].options.color)
         end
         'line': begin
             x1 = (float(coords_arr[0]) - state.offset[0] + 0.5) * $
@@ -6238,7 +6242,8 @@ for i=0, n_reg-1 do begin
               _extra = kctvplotlist[iplot].options
             
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
-              alignment=0.5, _extra = kctvplotlist[iplot].options, /device
+              alignment=0.5, /device, charsize=state.plotcharsize, $
+	      color = cgcolor(kctvplotlist[iplot].options.color)
         end
 
         ; these are all the region types we have defined so far.  
@@ -9672,6 +9677,7 @@ pro kctv_apphot_refresh
 
 common kctv_state
 common kctv_images
+common kctv_pdata
 
 state.photwarning = 'Warnings: None.'
 
@@ -9809,6 +9815,23 @@ endif
 cgplots, !x.crange, [sky, sky], color='blue', thick=2, psym=0, line = 2
 cgtext, /data, state.innersky + (0.1*(state.outersky-state.innersky)), $
   sky+0.07*(!y.crange[1] - sky), 'sky level', color='blue', charsize=1.5
+
+; Create region for plot on main image
+reg_array = 'circle('+strtrim(string(x,form='(f13.2)'),2)+', ' + $
+                      strtrim(string(y,form='(f13.2)'),2)+', ' + $
+		      strtrim(string(fwhm,form='(f13.2)'),2) +  $
+		      ') # color=red text={'+ $
+		      strn(n_elements(kctvplotlist)+1)+'}'
+options = {color: 'red'}
+pstruct = {type:'region', $		; type of plot
+	   reg_array: reg_array, $	; region to plot
+	   options: options $		; plot keyword options
+	   }
+kctvplotlist.add, pstruct
+
+kctv_plotwindow
+iplot = n_elements(kctvplotlist) - 1
+kctv_plot1region, iplot
 
 kctv_resetwindow
 
@@ -11343,10 +11366,16 @@ pro kctv_writespectext
 
 common kctv_state
 common kctv_spectrum
+common kctv_pdata
 
+ofname = sxpar(*state.head_ptr,'OFNAME',/silent,count=nof)
+if nof le 0 then $
+     ofname = 'kctvspectrum.txt' $
+else ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '_' + $
+	string(n_elements(kctvplotlist),form='(i02)') + '.txt'
 filename = dialog_pickfile(group=state.base_id, $
                            /write, $
-                           file = 'kctvspectrum.txt', $
+                           file = ofname, $
                            /overwrite_prompt, $
                            path = state.current_dir, $
                            get_path = tmp_dir, $
