@@ -9792,7 +9792,7 @@ cgtext, /data, state.innersky + (0.1*(state.outersky-state.innersky)), $
 state.nregions += 1
 reg_array = 'circle('+strtrim(string(x,form='(f13.2)'),2)+', ' + $
                       strtrim(string(y,form='(f13.2)'),2)+', ' + $
-		      strtrim(string(fwhm>1,form='(f13.2)'),2) +  $
+		      strtrim(string(state.aprad>1,form='(f13.2)'),2) +  $
 		      ') # color=red text={'+ $
 		      strn(state.nregions)+'}'
 options = {color: 'red'}
@@ -10395,7 +10395,7 @@ pro kctv_trace, newcoord
 common kctv_state
 common kctv_images
 common kctv_spectrum, traceinit, tracecenters, tracepoints, $
-   xspec, fulltrace, spectrum
+   xspec, fulltrace, spectrum, specsky, specerr
 
 if (keyword_set(newcoord) AND state.x_fixed EQ 0) then begin
 ; get new starting position from cursor
@@ -10534,20 +10534,36 @@ if (not (xregistered('kctv_drill', /noshow))) then kctvdrill_init
 zsize = state.drill_zregion[1] - state.drill_zregion[0] + 1
 
 spectrum = dblarr(zsize)
+specsky = dblarr(zsize)
+specerr = dblarr(zsize)
 xspec = dblarr(zsize)
+
+x = state.centerpos[0]
+y = state.centerpos[1]
+phpadu = state.ccdgain
+apr = [state.aprad]
+skyrad = [state.innersky, state.outersky]
+; Assume that all pixel values are good data
+badpix = [state.image_min-1, state.image_max+1]  
 
 for i = 0, zsize-1 do begin
 
    j = state.drill_zregion[0] + i
-   x0 = 0 > fix(state.drill_coord[0] - state.aprad) < $
-   		(state.image_size[0] - 1)
-   x1 = 0 > fix(state.drill_coord[0] + state.aprad) < $
-   		(state.image_size[0] - 1)
-   y0 = 0 > fix(state.drill_coord[1] - state.aprad) < $
-   		(state.image_size[1] - 1)
-   y1 = 0 > fix(state.drill_coord[1] + state.aprad) < $
-   		(state.image_size[1] - 1)
-   spectrum[i] = mean(main_image_cube[x0:x1,y0:y1,j])
+   case state.skytype of
+       0: aper, main_image_cube[*,*,j], [x], [y], flux, errap, sky, skyerr, $
+       	     phpadu, apr, skyrad, badpix, /flux, /silent, $
+             readnoise = state.ccdrn
+       1: aper, main_image_cube[*,*,j], [x], [y], flux, errap, sky, skyerr, $
+       	     phpadu, apr, skyrad, badpix, /flux, /silent, $
+             setskyval = skyval, readnoise = state.ccdrn
+       2: aper, main_image_cube[*,*,j], [x], [y], flux, errap, sky, skyerr, $
+       	     phpadu, apr, skyrad, badpix, /flux, /silent, $
+             setskyval = 0, readnoise = state.ccdrn
+   endcase
+
+   spectrum[i] = flux
+   specsky[i] = sky
+   specerr[i] = errap
    xspec[i] = state.wave0 + (j - state.crslice) * state.dwave
       
 endfor
@@ -10820,6 +10836,8 @@ cgplot, xspec, spectrum, $
         yran = [state.lineplot_ymin, state.lineplot_ymax], $
         thick = thick, xthick = thick, ythick = thick, charthick = thick, $
         charsize = state.plotcharsize
+cgoplot, xspec, specsky, psym=10, color=cgcolor('blue')
+cgoplot, xspec, specerr, psym=10, color=cgcolor('red')
 
 
 if (not (keyword_set(ps))) then begin 
