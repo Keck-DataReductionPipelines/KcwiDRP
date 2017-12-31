@@ -180,6 +180,10 @@ state = {                   $
         dwave: 0., $            ; wavelengths/slice
         wave0: 0., $            ; min wavelength
         wave1: 0., $            ; max wavelength
+	waveg0: 0., $           ; min good wavelength
+	waveg1: 0., $           ; max good wavelength
+	wavea0: 0., $           ; min all wavelength
+	wavea1: 0., $           ; max all wavelength
         frame: 1L, $            ; put frame around ps output?
         framethick: 6, $        ; thickness of frame
         plot_coord: [0L, 0L], $ ; cursor position for a plot
@@ -303,11 +307,10 @@ state = {                   $
         x_fixed: 0, $           ; hold extraction parameters fixed?
         drill_coord: [0L, 0L], $ ; cursor position for a cube drilling
         drill_zregion: [0L, 0L], $ ; drill z region
-        drill_fixed: 0, $	       ; hold drill parameters fixed?
-        drill_zstart_id: 0L, $	  ; widget id for drill z start
-        drill_zend_id: 0L, $	    ; widget id for drill z end
+        drill_zstart_id: 0L, $  ; widget id for drill z start
+        drill_zend_id: 0L, $    ; widget id for drill z end
         drill_wavestart_id: 0L, $ ; widget id for drill wave start
-        drill_waveend_id: 0L, $	; widget id for drill wave end
+        drill_waveend_id: 0L, $ ; widget id for drill wave end
         activator: 0, $         ; is "activator" mode on?
         delimiter: '/', $       ; filesystem level delimiter 
         default_align: 1, $     ; align next image by default?
@@ -1459,15 +1462,15 @@ common kctv_images
 if (!d.name NE state.graphicsdevice) then return
 
 if (event.type EQ 0) then begin
-    case event.press of
-        1: begin
-	      kctv_apphot
-	      if state.kcwicube then kctvdrill,/newcoord
-	   end
-        2: kctv_zoom, 'none', /recenter
-        4: kctv_showstats
-        else: 
-    endcase
+   case event.press of
+      1: begin
+         kctv_apphot
+         if state.kcwicube then kctvdrill,/newcoord
+         end
+      2: kctv_zoom, 'none', /recenter
+      4: kctv_showstats
+      else: 
+   endcase
 endif
 
 if (event.type EQ 2) then kctv_draw_motion_event, event
@@ -3900,7 +3903,7 @@ endif
 
 if (event_name EQ 'waveselect') then begin
    state.slice = 0 > ( fix( (event.value - state.wave0) / state.dwave ) + $
-   			    state.crslice ) < (state.nslices-1)
+                             state.crslice ) < (state.nslices-1)
    widget_control, state.sliceselect_id, set_value = state.slice
    widget_control, state.slicer_id, set_value = state.slice
 endif
@@ -4024,7 +4027,11 @@ pro kctv_writeimage, imgtype
 common kctv_state
 common kctv_images
 
-tmpfilename = strcompress('kctv.' + strlowcase(imgtype), /remove_all)
+ofname = sxpar(*state.head_ptr,'OFNAME',/silent,count=nof)
+if nof le 0 then $
+     ofname = 'kctv.' $
+else ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '.'
+tmpfilename = strcompress(ofname + strlowcase(imgtype), /remove_all)
 filename = dialog_pickfile(file = tmpfilename, $
                            dialog_parent = state.base_id, $
                            path = state.current_dir, $
@@ -5270,7 +5277,7 @@ state.head_ptr = ptr_new(head)
 ; get exposure time for photometry, if present, otherwise set to 1s
 state.exptime = float(sxpar(head, 'EXPTIME'))
 if strcompress(string(sxpar(head, 'CURRINST')), /remove_all) eq 'KCWI' then $
-	state.exptime = float(sxpar(head, 'XPOSURE'))
+   state.exptime = float(sxpar(head, 'XPOSURE'))
 if (state.exptime LE 0.0) then state.exptime = 1.0
 
 ; try to get gain and readnoise from header?
@@ -5454,8 +5461,19 @@ state.display_coord_sys = strmid(astr.ctype[0], 0, 4)
 ; Check if sky corrected
 skycor = sxpar(head, 'SKYCOR')
 if skycor then $
-	state.skytype = 2 $
-else	state.skytype = 0
+     state.skytype = 2 $
+else state.skytype = 0
+
+; Check for OFNAME
+ofname = sxpar(head,'OFNAME',/silent,count=nof)
+if nof eq 1 then $
+   state.photfilename = strmid(ofname,0,strpos(ofname,'.fits')) + '_phot.dat'
+
+; Check for wavelength regions
+state.waveg0 = sxpar(head,'WAVGOOD0',/silent)
+state.waveg1 = sxpar(head,'WAVGOOD1',/silent)
+state.wavea0 = sxpar(head,'WAVALL0',/silent)
+state.wavea1 = sxpar(head,'WAVALL1',/silent)
 
 end
 
@@ -6027,7 +6045,7 @@ for i=0, n_reg-1 do begin
 
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
               alignment=0.5, /device, charsize=state.plotcharsize, $
-	      color = cgcolor(kctvplotlist[iplot].options.color)
+              color = cgcolor(kctvplotlist[iplot].options.color)
         end
         'box': begin
             angle = 0           ; initialize angle to 0
@@ -6054,7 +6072,7 @@ for i=0, n_reg-1 do begin
             
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
               alignment=0.5, /device, charsize=state.plotcharsize, $
-	      color = cgcolor(kctvplotlist[iplot].options.color)
+              color = cgcolor(kctvplotlist[iplot].options.color)
         end
         
         'ellipse': begin
@@ -6084,7 +6102,7 @@ for i=0, n_reg-1 do begin
             
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
               alignment=0.5, /device, charsize=state.plotcharsize, $
-	      color = cgcolor(kctvplotlist[iplot].options.color)
+              color = cgcolor(kctvplotlist[iplot].options.color)
         end
         'polygon': begin
             n_vert = n_elements(coords_arr) / 2
@@ -6115,7 +6133,7 @@ for i=0, n_reg-1 do begin
             
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
               alignment=0.5, /device, charsize=state.plotcharsize, $
-	      color = cgcolor(kctvplotlist[iplot].options.color)
+              color = cgcolor(kctvplotlist[iplot].options.color)
         end
         'line': begin
             x1 = (float(coords_arr[0]) - state.offset[0] + 0.5) * $
@@ -6142,7 +6160,7 @@ for i=0, n_reg-1 do begin
             
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
               alignment=0.5, /device, charsize=state.plotcharsize, $
-	      color = cgcolor(kctvplotlist[iplot].options.color)
+              color = cgcolor(kctvplotlist[iplot].options.color)
         end
 
         ; these are all the region types we have defined so far.  
@@ -6625,8 +6643,8 @@ nplot = n_elements(kctvplotlist)
 
 if (n_params() LT 1) then begin
    if (nplot GE 1) then begin
-   	kctvplotlist.remove, /all
-	state.nregions = 0L
+      kctvplotlist.remove, /all
+      state.nregions = 0L
    endif
 endif else begin
    if (nerase GT nplot) then nerase = nplot
@@ -6948,7 +6966,11 @@ pro kctv_saveregion
 common kctv_state
 common kctv_pdata
 
-reg_savefile = dialog_pickfile(file='kctv.reg', filter='*.reg', /write) 
+ofname = sxpar(*state.head_ptr,'OFNAME',/silent,count=nof)
+if nof le 0 then $
+     ofname = 'kctv.reg' $
+else ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '.reg'
+reg_savefile = dialog_pickfile(file=ofname, filter='*.reg', /write) 
 
 if (reg_savefile ne '') then begin 
   openw, lun, reg_savefile, /get_lun
@@ -8422,8 +8444,17 @@ case uvalue of
 
     'lineplot_ps': begin
 
-       if (state.ispsformon EQ 1) then return
-        fname = strcompress(state.current_dir + 'kctv_plot.ps', /remove_all)
+        if (state.ispsformon EQ 1) then return
+        ofname = sxpar(*state.head_ptr,'OFNAME',/silent,count=nof)
+        if nof le 0 then $
+             ofname = 'kctv_plot.ps' $
+        else begin
+	    if state.nregions le 0 then $
+	         ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '.ps' $
+	    else ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '_' + $
+	                  string(state.nregions,form='(i02)') + '.ps'
+	endelse
+        fname = strcompress(state.current_dir + ofname, /remove_all)
         state.ispsformon = 1
         lpforminfo = cmps_form(cancel = canceled, create = create, $
                              parent = state.lineplot_base_id, $
@@ -9180,7 +9211,7 @@ pro kctv_imcenterf, xcen, ycen
 ;
 ; ALGORITHM:
 ;   1. first finds max pixel value in
-;	   a 'bigbox' box around the cursor
+;         a 'bigbox' box around the cursor
 ;   2. then calculates centroid around the object 
 ;   3. iterates, recalculating the center of mass 
 ;      around centroid until the shifts become smaller 
@@ -9249,9 +9280,9 @@ endif
 done = 0
 niter = 1
     
-;	cut out relevant portion
+; cut out relevant portion
 sz = size(main_image)
-x0 = round((xx-dc) > 0)		; need the ()'s
+x0 = round((xx-dc) > 0)         ; need the ()'s
 x1 = round((xx+dc) < (sz[1]-1))
 y0 = round((yy-dc) > 0)
 y1 = round((yy+dc) < (sz[2]-1))
@@ -9326,10 +9357,10 @@ splprof = spline(rad,prof,splrad)
 found = 0
 i = 0
 repeat begin
-  if splprof(i) lt 0.5*max(splprof) then $
-	found = 1 $
+   if splprof(i) lt 0.5*max(splprof) then $
+      found = 1 $
   else $
-	i = i+1
+      i = i+1
 endrep until ((found) or (i eq nspl))
 
 if (i lt 2) or (i eq nspl) then begin
@@ -9392,8 +9423,8 @@ xcen = x - x0
 ycen = y - y0
 
 ; for debugging, can make some masks showing different regions
-skyimg = fltarr(nx,ny)			; don't use /nozero!!
-photimg = fltarr(nx,ny)			; don't use /nozero!!
+skyimg = fltarr(nx,ny)    ; don't use /nozero!!
+photimg = fltarr(nx,ny)   ; don't use /nozero!!
 
 ; makes an array of (distance)^2 from center of aperture
 ;   where distance is the radial or the semi-major axis distance.
@@ -9437,8 +9468,8 @@ out[*,9] = ns
 out[*,10]= errsky
 
 ; now loop through photometry radii, finding the total flux, differential
-;	flux, and differential average pixel value along with 1 sigma scatter
-; 	relies on the fact the output array is full of zeroes
+; flux, and differential average pixel value along with 1 sigma scatter
+; relies on the fact the output array is full of zeroes
 for i = 0,nrad-1 do begin
     
     dr = drad
@@ -9447,14 +9478,14 @@ for i = 0,nrad-1 do begin
         rout = inrad
         rin2 = -0.01
     endif else begin
-        rin = inrad + drad *(i-1)	
+        rin = inrad + drad *(i-1)
         rout = (rin + drad) < outrad
         rin2 = rin*rin
     endelse
     rout2 = rout*rout
     
-; 	get flux and pixel stats in annulus, wary of counting pixels twice
-;	 checking if necessary if there are pixels in the sector
+; get flux and pixel stats in annulus, wary of counting pixels twice
+; checking if necessary if there are pixels in the sector
     w = where(distsq gt rin2 and distsq le rout2,np)
     
     pfrac = 1.0                 ; fraction of pixels in each annulus used
@@ -9467,7 +9498,7 @@ for i = 0,nrad-1 do begin
         davg = dnet / (dnpix * 1./pfrac)
         if np gt 1 then dsig = stddev(ann) else dsig = 0.00
         
-;		std dev in each annulus including sky sub error
+;       std dev in each annulus including sky sub error
         derr = sqrt(dsig*dsig + errsky2)
         
         photimg[w] = rout2
@@ -9675,14 +9706,13 @@ cgtext, /data, state.innersky + (0.1*(state.outersky-state.innersky)), $
 state.nregions += 1
 reg_array = 'circle('+strtrim(string(x,form='(f13.2)'),2)+', ' + $
                       strtrim(string(y,form='(f13.2)'),2)+', ' + $
-		      strtrim(string(state.aprad>1,form='(f13.2)'),2) +  $
-		      ') # color=red text={'+ $
-		      strn(state.nregions)+'}'
+                      strtrim(string(state.aprad>1,form='(f13.2)'),2) +  $
+                      ') # color=red text={'+ strn(state.nregions)+'}'
 options = {color: 'red'}
-pstruct = {type:'region', $		; type of plot
-	   reg_array: reg_array, $	; region to plot
-	   options: options $		; plot keyword options
-	   }
+pstruct = {type:'region', $        ; type of plot
+          reg_array: reg_array, $  ; region to plot
+          options: options $       ; plot keyword options
+          }
 kctvplotlist.add, pstruct
 
 kctv_plotwindow
@@ -9753,7 +9783,7 @@ if (state.wcstype EQ 'angle') then begin
       clon, clat
     wcsstring = kctv_wcsstring(clon, clat, (*state.astr_ptr).ctype,  $
                 state.equinox, state.display_coord_sys, state.display_equinox, $
-		state.display_base60)
+                state.display_base60)
     print, 'Centroid WCS coords: ', wcsstring
 endif
 
@@ -10392,7 +10422,7 @@ end
 
 ;------------------------------------------------------------------
 
-pro kctvdrill, newcoord=newcoord, drill=drill
+pro kctvdrill, newcoord=newcoord
 
 common kctv_state
 common kctv_images
@@ -10400,16 +10430,14 @@ common kctv_spectrum
 
 if (state.cube EQ 0) then return
 
-if keyword_set(newcoord) then begin
-   if keyword_set(drill) then $
-   	state.drill_coord = state.cursorpos $
-   else state.drill_coord = fix( state.centerpos + 0.5 )
-endif
+if keyword_set(newcoord) then $
+   state.drill_coord = fix( state.centerpos + 0.5 )
 
 if (not (xregistered('kctv_drill', /noshow))) then kctvdrill_init
 
 zsize = state.drill_zregion[1] - state.drill_zregion[0] + 1
 
+print,'z0, z1: ',state.drill_zregion
 spectrum = dblarr(zsize)
 specsky = dblarr(zsize)
 specerr = dblarr(zsize)
@@ -10428,13 +10456,13 @@ for i = 0, zsize-1 do begin
    j = state.drill_zregion[0] + i
    case state.skytype of
        0: aper, main_image_cube[*,*,j], [x], [y], flux, errap, sky, skyerr, $
-       	     phpadu, apr, skyrad, badpix, /flux, /silent, $
+             phpadu, apr, skyrad, badpix, /flux, /silent, $
              readnoise = state.ccdrn
        1: aper, main_image_cube[*,*,j], [x], [y], flux, errap, sky, skyerr, $
-       	     phpadu, apr, skyrad, badpix, /flux, /silent, $
+             phpadu, apr, skyrad, badpix, /flux, /silent, $
              setskyval = skyval, readnoise = state.ccdrn
        2: aper, main_image_cube[*,*,j], [x], [y], flux, errap, sky, skyerr, $
-       	     phpadu, apr, skyrad, badpix, /flux, /silent, $
+             phpadu, apr, skyrad, badpix, /flux, /silent, $
              setskyval = 0, readnoise = state.ccdrn
    endcase
 
@@ -10447,7 +10475,7 @@ endfor
 
 kctv_drillplot, /newcoord
 
-end	; kcwidrill
+end   ; kcwidrill
 
 ;-----------------------------------------------------------------
 
@@ -10693,9 +10721,9 @@ ofname = sxpar(*state.head_ptr,'OFNAME',/silent,count=nof)
 if nof le 0 then $
      ofname = 'Extracted Spectrum' $
 else ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '_' + $
-	string(state.nregions,form='(i02)') + '.txt'
+              string(state.nregions,form='(i02)') + '.txt'
 tlab = ofname + ' ['+string(state.drill_coord[0],form='(i4)') + $
-	',' + string(state.drill_coord[1],form='(i4)') + ']'
+                ',' + string(state.drill_coord[1],form='(i4)') + ']'
 
 cgplot, xspec, spectrum, $
         xst = 3, yst = 3, psym = 10, $
@@ -10728,8 +10756,16 @@ pro kctvdrill_init
 common kctv_state
 
 ; reset the drilling region when starting up
-state.drill_zregion = [0, state.nslices-1]
-state.drill_fixed = 0
+z0 = fix((state.waveg0 - state.wave0)/state.dwave + state.crslice) > 0
+z1 = fix((state.waveg1 - state.wave0)/state.dwave + state.crslice) < $
+             (state.nslices-1)
+
+if z0 ge z1 then begin
+   z0 = 0
+   z1 = state.nslices - 1
+endif
+
+state.drill_zregion = [z0, z1]
 
 drill_base = widget_base(/base_align_left, $
                   group_leader = state.base_id, $
@@ -10740,8 +10776,6 @@ drill_base = widget_base(/base_align_left, $
 drill_id = widget_base(drill_base, /row, /base_align_left)
 
 zregion_base = widget_base(drill_base, /row, /base_align_left)
-
-state.drill_zregion = [0, state.nslices-1]
 
 state.drill_zstart_id = cw_field(zregion_base, /long, /return_events, $
                     title = 'Slice start:', $
@@ -10761,20 +10795,15 @@ state.drill_wavestart_id = cw_field(waveregion_base, /floating, /return_events, 
                     title = 'Wave start (A):', $
                     uvalue = 'wavestart', $
                     value = state.wave0 + (state.drill_zregion[0] - $
-		    	state.crslice) * state.dwave, $
+                            state.crslice) * state.dwave, $
                     xsize = 7)
 
 state.drill_waveend_id = cw_field(waveregion_base, /floating, /return_events, $
                     title = 'end:', $
                     uvalue = 'waveend', $
                     value = state.wave0 + (state.drill_zregion[1] - $
-		    	state.crslice) * state.dwave, $
+                            state.crslice) * state.dwave, $
                     xsize = 7)
-
-drill_fixbutton = cw_bgroup(drill_base, ['Toggle parameter hold'], $\
-                      uvalue = 'drill_fixed', $
-                      /no_release, $
-                      /row)
 
 drill_writespectbutton = cw_bgroup(drill_base, $
                                ['Write spectrum as FITS', $
@@ -10940,7 +10969,7 @@ case uvalue of
                       set_value = state.drill_zregion[0]
       widget_control, state.drill_wavestart_id, $
                       set_value = state.wave0 + (state.drill_zregion[0] - $
-				      state.crslice) * state.dwave
+                                                 state.crslice) * state.dwave
       kctvdrill
    end
 
@@ -10951,43 +10980,27 @@ case uvalue of
                       set_value = state.drill_zregion[1]
       widget_control, state.drill_waveend_id, $
                       set_value = state.wave0 + (state.drill_zregion[1] - $
-				      state.crslice) * state.dwave
+                                                 state.crslice) * state.dwave
       kctvdrill
    end
 
    'wavestart': begin
       state.drill_zregion[0] = 0 > ( (event.value - state.wave0) / $
-      		state.dwave + state.crslice ) < (state.drill_zregion[1] - 50)
+                 state.dwave + state.crslice ) < (state.drill_zregion[1] - 50)
       widget_control, state.drill_zstart_id, $
                       set_value = state.drill_zregion[0]
       kctvdrill
    end
 
    'waveend': begin
-      state.drill_zregion[1] = (state.drill_zregion[0] + 50) > ( (event.value - $
-      		state.wave0) / state.dwave + state.crslice ) < $ 
-                        (state.nslices - 1)
+      state.drill_zregion[1] = (state.drill_zregion[0] + 50) > $
+             ( (event.value - state.wave0) / state.dwave + state.crslice ) < $ 
+               (state.nslices - 1)
       widget_control, state.drill_zend_id, $
                       set_value = state.drill_zregion[1]
       kctvdrill
    end
    
-   'drill_fixed': begin
-      if (state.drill_fixed EQ 1) then begin
-         widget_control, state.drill_zstart_id, sensitive=1
-         widget_control, state.drill_zend_id, sensitive=1
-         widget_control, state.drill_wavestart_id, sensitive=1
-         widget_control, state.drill_waveend_id, sensitive=1
-         state.drill_fixed = 0
-      endif else begin
-         widget_control, state.drill_zstart_id, sensitive=0
-         widget_control, state.drill_zend_id, sensitive=0
-         widget_control, state.drill_wavestart_id, sensitive=0
-         widget_control, state.drill_waveend_id, sensitive=0
-         state.drill_fixed = 1
-      endelse
-   end
-
    'writespect': begin
       if (event.value EQ 'fits') then begin
          kctv_writespecfits
@@ -11160,7 +11173,7 @@ ofname = sxpar(*state.head_ptr,'OFNAME',/silent,count=nof)
 if nof le 0 then $
      ofname = 'kctvspectrum.fits' $
 else ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '_' + $
-	string(state.nregions,form='(i02)') + '.fits'
+              string(state.nregions,form='(i02)') + '.fits'
 filename = dialog_pickfile(group=state.base_id, $
                            filter = '*.fits', $
                            file = ofname, $
@@ -11243,7 +11256,7 @@ ofname = sxpar(*state.head_ptr,'OFNAME',/silent,count=nof)
 if nof le 0 then $
      ofname = 'kctvspectrum.txt' $
 else ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '_' + $
-	string(state.nregions,form='(i02)') + '.txt'
+              string(state.nregions,form='(i02)') + '.txt'
 filename = dialog_pickfile(group=state.base_id, $
                            /write, $
                            file = ofname, $
