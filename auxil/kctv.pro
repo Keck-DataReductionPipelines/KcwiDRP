@@ -5516,6 +5516,12 @@ endelse
 state.display_equinox = state.equinox
 state.display_coord_sys = strmid(astr.ctype[0], 0, 4)
 
+; Check if sky corrected
+skycor = sxpar(head, 'SKYCOR')
+if skycor then $
+	state.skytype = 2 $
+else	state.skytype = 0
+
 end
 
 ;---------------------------------------------------------------------
