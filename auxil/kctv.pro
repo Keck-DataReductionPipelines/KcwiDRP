@@ -10828,7 +10828,6 @@ tlab = ofname + ' ['+string(state.drill_coord[0],form='(i4)') + $
 cgplot, xspec, spectrum, $
         xst = 3, yst = 3, psym = 10, $
         title = tlab, $
-        
         xtitle = 'Wavelength (A)', $
         ytitle = 'Counts', $
         xmargin=[10,3], $
@@ -10836,6 +10835,7 @@ cgplot, xspec, spectrum, $
         yran = [state.lineplot_ymin, state.lineplot_ymax], $
         thick = thick, xthick = thick, ythick = thick, charthick = thick, $
         charsize = state.plotcharsize
+
 cgoplot, xspec, specsky, psym=10, color=cgcolor('blue')
 cgoplot, xspec, specerr, psym=10, color=cgcolor('red')
 

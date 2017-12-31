@@ -359,7 +359,7 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 						;
 						; write out dar corrected sky panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_scubed',/nodir)
-						kcwi_write_image,sky_out,hdr,ofil,kpars[i]
+						kcwi_write_image,sky_out,skyhdr,ofil,kpars[i]
 					endif
 					;
 					; check for nod-and-shuffle obj image
@@ -393,7 +393,7 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 						;
 						; write out dar corrected obj panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocubed',/nodir)
-						kcwi_write_image,obj_out,hdr,ofil,kpars[i]
+						kcwi_write_image,obj_out,objhdr,ofil,kpars[i]
 					endif
 				;
 				; end check if output file exists already
