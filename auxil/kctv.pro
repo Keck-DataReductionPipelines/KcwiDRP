@@ -176,7 +176,7 @@ state = {                   $
         wavecombine: 0., $      ; # waves to combine
         slicecombine_method: 1, $ ; 0 for average, 1 for median
         nslices: 0, $           ; number of slices
-	crslice: 0, $           ; wavelength reference slice
+        crslice: 0, $           ; wavelength reference slice
         dwave: 0., $            ; wavelengths/slice
         wave0: 0., $            ; min wavelength
         wave1: 0., $            ; max wavelength
@@ -219,7 +219,7 @@ state = {                   $
         binsize: 0.0, $         ; binsize for histogram plots
         regionform_id: 0L, $    ; id of region form widget
         reg_ids_ptr: ptr_new(), $ ; ids for region form widget
-	nregions: 0L, $         ; number of regions currently plotted
+        nregions: 0L, $         ; number of regions currently plotted
         cursorpos: lonarr(2), $ ; cursor x,y for photometry & stats
         centerpos: fltarr(2), $ ; centered x,y for photometry
         cursorpos_id: 0L, $     ; id of cursorpos widget
@@ -302,12 +302,12 @@ state = {                   $
         x_back4_id: 0, $        ; widget id for upper background 2
         x_fixed: 0, $           ; hold extraction parameters fixed?
         drill_coord: [0L, 0L], $ ; cursor position for a cube drilling
-	drill_zregion: [0L, 0L], $ ; drill z region
-	drill_fixed: 0, $	; hold drill parameters fixed?
-	drill_zstart_id: 0L, $	; widget id for drill z start
-	drill_zend_id: 0L, $	; widget id for drill z end
-	drill_wavestart_id: 0L, $ ; widget id for drill wave start
-	drill_waveend_id: 0L, $	; widget id for drill wave end
+        drill_zregion: [0L, 0L], $ ; drill z region
+        drill_fixed: 0, $	       ; hold drill parameters fixed?
+        drill_zstart_id: 0L, $	  ; widget id for drill z start
+        drill_zend_id: 0L, $	    ; widget id for drill z end
+        drill_wavestart_id: 0L, $ ; widget id for drill wave start
+        drill_waveend_id: 0L, $	; widget id for drill wave end
         activator: 0, $         ; is "activator" mode on?
         delimiter: '/', $       ; filesystem level delimiter 
         default_align: 1, $     ; align next image by default?
@@ -1214,7 +1214,7 @@ if (event.type EQ 5) then begin
         'm': kctv_changemode
         'w': print, state.coord
         'x': kctvextract, /newcoord
-	'd': kctvdrill, /newcoord
+        'd': kctvdrill, /newcoord
         'e': kctverase
         '-': kctv_zoom, 'out'
         '=': kctv_zoom, 'in'
@@ -1577,8 +1577,6 @@ case event.type of
       if (state.vectorpress EQ 2) then kctv_drawvector, event
       if (state.vectorpress EQ 4) then kctv_drawdepth, event
    end
-   
-   
 
    else:
 endcase
@@ -1626,7 +1624,6 @@ if (event.type EQ 2) then begin
     kctv_resetwindow
 endif
 
-
 end
 
 ;----------------------------------------------------------------------
@@ -1636,7 +1633,6 @@ pro kctv_drawdepth, event
 ; draw the box showing the region selected for a depth plot
 
 common kctv_state
-
 
 ; button press: create initial pixmap and start drawing vector
 if (event.type EQ 0) then begin
@@ -1673,7 +1669,6 @@ if (event.type EQ 2) then begin
 
     kctv_resetwindow
 endif
-
 
 end
 
@@ -1717,7 +1712,6 @@ common kctv_state
 common kctv_images
 common kctv_color
 common kctv_pdata
-
 
 widget_control, event.id, get_uvalue = uvalue
 
@@ -1907,7 +1901,6 @@ cgimage, pan_image, state.pan_offset[0], state.pan_offset[1], /tv, $
 kctv_panoplot
 kctv_resetwindow
 
-
 ; redisplay the pan image 
 
 kctv_setwindow, state.pan_window_id
@@ -1936,7 +1929,6 @@ if (not(keyword_set(fast))) then kctv_gettrack
 kctv_resetwindow
 
 state.newrefresh = 1
-
 
 end
 
@@ -1977,7 +1969,6 @@ endif else begin
                         newsize[0], newsize[1])
 endelse
 
-
 xmax = newsize[0] < (state.draw_window_size[0] - startpos[0])
 ymax = newsize[1] < (state.draw_window_size[1] - startpos[1])
 
@@ -2017,7 +2008,6 @@ end
 
 ;----------------------------------------------------------------------
 
-
 pro kctv_makepan
 
 ; Make the 'pan' image that shows a miniature version of the full image.
@@ -2047,11 +2037,9 @@ pan_image = $
 state.pan_offset[0] = round((state.pan_window_size - (size(pan_image))[1]) / 2)
 state.pan_offset[1] = round((state.pan_window_size - (size(pan_image))[2]) / 2)
 
-
 end
 
 ;----------------------------------------------------------------------
-
 
 pro kctv_move_cursor, direction
 
@@ -2096,7 +2084,6 @@ kctv_gettrack
 
 ; If pixel table widget is open, update pixel values and cursor position
 if (xregistered('kctv_pixtable', /noshow)) then kctv_pixtable_update
-
 
 ; Prevent the cursor move from causing a mouse event in the draw window
 widget_control, state.draw_widget_id, /clear_events
@@ -2183,7 +2170,6 @@ if (n_elements(recenter) GT 0) then begin
 endif
 
 kctv_refresh, /panfast
-
 
 if (n_elements(recenter) GT 0) then begin
     newpos = (state.coord - state.offset + 0.5) * state.zoom_factor
@@ -2439,7 +2425,6 @@ if (state.scaling EQ 1) then begin
     
 endif
 
-
 ; Try different behavior in asinh mode: usually want to keep the min
 ; value the same and just adjust the max value.  Seems to work ok.
 if (state.scaling EQ 3) then begin
@@ -2548,7 +2533,6 @@ IF (disp_type[0] EQ 'RA--' or disp_type[0] EQ 'DEC-') THEN BEGIN
                          format='("Deg ",F9.5,",",F9.5,a6)')
    ENDELSE 
 ENDIF 
-     
 
 IF disp_type[0] EQ 'GLON' THEN BEGIN ; generate (l,b) string
     euler, ra, dec, l, b, 1
@@ -2608,7 +2592,6 @@ return, wavestring
 end
 
 ;--------------------------------------------------------------------
-
 
 pro kctv_gettrack
 
@@ -2679,7 +2662,6 @@ kctv_resetwindow
 
 end
 
-
 ;----------------------------------------------------------------------
 
 pro kctv_panoplot, nobox = nobox
@@ -2748,7 +2730,6 @@ newpos = state.pan_offset > tmp_event < $
 
 state.centerpix = round( (newpos - state.pan_offset ) / state.pan_scale)
 
-
 kctv_setwindow, state.pan_window_id
 kctv_panoplot
 kctv_resetwindow
@@ -2779,14 +2760,12 @@ newysize = (tmp_event[1] - state.base_pad[1]) > $
 widget_control, state.draw_widget_id, $
   scr_xsize = newxsize, scr_ysize = newysize
 
-
 state.draw_window_size = [newxsize, newysize]
 
 kctv_colorbar
 
 widget_control, state.base_id, /clear_events
 widget_control, state.draw_base_id, /sensitive, /input_focus
-
 
 end
 
@@ -2824,7 +2803,6 @@ case state.scaling of
                   max=alog10(state.max_value - offset),  $
                   top=state.ncolors - 1)   
     end
-    
 
     2: scaled_image = $                 ; histogram equalization
       bytscl(hist_equal(main_image, $
@@ -2895,7 +2873,6 @@ state.image_size = [ (size(main_image))[1], (size(main_image))[2] ]
 if ((oldimagesize[0] NE state.image_size[0]) OR $
     (oldimagesize[1] NE state.image_size[1])) then align = 0
 
-
 if (state.cube EQ 0) then begin
    statimage = main_image
 endif else begin
@@ -2904,7 +2881,6 @@ endelse
 
 state.image_min = min(statimage, max=maxx, /nan)
 state.image_max = maxx
-
 
 ; Get sky value for autoscaling and asinh stretch.  Eliminate
 ; zero-valued and NaN pixels from sky calculation, i.e. for HST ACS
@@ -2919,7 +2895,6 @@ endif else if (goodcount LE 5) then begin ; really pathological images
     skysig = 1.
     skymode = 0.
 endif
-
 
 ; error checking- in case sky.pro returns a zero or negative sigma
 if (skysig LE 0.0) then skysig = stddev(statimage)
@@ -2963,7 +2938,6 @@ pro kctv_setwindow, windowid
 common kctv_state
 common kctv_color
 
-
 state.active_window_pmulti = !p.multi
 !p.multi = 0
 
@@ -2977,7 +2951,6 @@ if (!d.name NE 'PS') then begin
     wset, windowid
 endif
 
-
 end
 
 ;---------------------------------------------------------------------
@@ -2988,7 +2961,6 @@ pro kctv_resetwindow
 
 common kctv_state
 common kctv_color
-
 
 ; The empty command used below is put there to make sure that all
 ; graphics to the previous kctv window actually get displayed to screen
@@ -3003,8 +2975,6 @@ if (!d.name NE 'PS') then begin
 endif
 
 !p.multi = state.active_window_pmulti
-
-
 
 end
 
@@ -3027,7 +2997,6 @@ tvlct, user_r, user_g, user_b, /get
 end
 
 ;-------------------------------------------------------------------
-
 
 pro kctv_pixtable
 
@@ -3131,8 +3100,6 @@ wy = where(long(row_labels) EQ state.coord[1], count)
 widget_control, state.pixtable_tbl_id, set_table_select = [wx,wy,wx,wy]
 
 end
-
-
 
 ;--------------------------------------------------------------------
 ;    Fits file reading routines
@@ -3279,7 +3246,6 @@ case s of
    end
 endcase
 
-
 ; Make sure it's a 2-d image
 ;if ( (size(main_image))[0] NE 2 ) then begin
 ;    kctv_message, 'Selected file is not a 2-D fits image!', $
@@ -3289,12 +3255,10 @@ endcase
 ;    return
 ;endif
 
-
 widget_control, /hourglass
 
 state.imagename = fitsfile
 newimage = 1
-
 
 end
 
@@ -3355,14 +3319,12 @@ endif else begin
     state.title_extras = 'Primary Image'
 endelse
 
-
 ; Read in the image
 main_image=0
 
 ; use fits_read so that extension headers will inherit primary header
 ; keywords.   Set /pdu to always inherit the primary header.
 fits_read, fitsfile, main_image, head, exten_no = extension, /pdu
-
 
 end
 
@@ -3731,7 +3693,6 @@ pro kctv_getradec, rastring, decstring, ra, dec
 ra = 15.0 * ten(rastring)
 dec = ten(decstring)
 
-
 end
 
 ;---------------------------------------------------------------
@@ -3742,7 +3703,6 @@ pro kctv_initcube
 
 common kctv_state
 common kctv_images
-
 
 ; First: if data cube is in OSIRIS IFU (lambda,x,y) format, re-form it
 ; into (x,y,lambda).  If it's a normal image stack (x,y,n), don't
@@ -3920,7 +3880,6 @@ endif else begin
       state.slice = event.value
 endelse
 
-
 if (event_name EQ 'sliceslider') then begin
    widget_control, state.sliceselect_id, set_value = state.slice
    if state.kcwicube then begin
@@ -3928,7 +3887,6 @@ if (event_name EQ 'sliceslider') then begin
       widget_control, state.waveselect_id, set_value = state.wave
    endif
 endif
-
 
 if (event_name EQ 'sliceselect') then begin
    state.slice = 0 > event.value < (state.nslices-1)
@@ -3964,7 +3922,6 @@ if (event_name EQ 'noslice') then begin
    endif
    widget_control, state.slicecombine_id, set_value = state.slicecombine
 endif
-   
 
 if (event_name EQ 'average') then begin
    case event.value of
@@ -4014,20 +3971,17 @@ endif else begin
    
 endelse
 
-
 ; if new slice selected from slider, display it
 if (n_elements(event) NE 0) then begin
    kctv_settitle
    kctv_displayall, /newslice
 endif
 
-
 end
 
 ;-----------------------------------------------------------------------
 ;     Routines for creating output graphics
 ;----------------------------------------------------------------------
-
 
 pro kctv_writefits
 
@@ -4061,9 +4015,7 @@ endif else begin
   writefits, filename, main_image
 endelse
 
-
 end
-
 
 ;-----------------------------------------------------------------------
 
@@ -4071,7 +4023,6 @@ pro kctv_writeimage, imgtype
 
 common kctv_state
 common kctv_images
-
 
 tmpfilename = strcompress('kctv.' + strlowcase(imgtype), /remove_all)
 filename = dialog_pickfile(file = tmpfilename, $
@@ -4177,14 +4128,12 @@ if (imgtype eq 'jpg') or (imgtype eq 'tiff') then begin
       else  :
    endcase
 endif
-   
 
 kctv_resetwindow
 
 end
 
 ;----------------------------------------------------------------------
-
 
 pro kctv_makergb
 
@@ -4230,7 +4179,6 @@ wdelete, tempwindow
 kctv_setwindow, state.draw_window_id
 tv, image, /true
 kctv_resetwindow
-
 
 end
 
@@ -4333,7 +4281,6 @@ device, _extra = psforminfo
 
 tvlct, rr, gg, bb, /get
 
-
 ; Make a full-resolution version of the display image, accounting for
 ; scalable pixels in the postscript output
 
@@ -4348,14 +4295,12 @@ dimage = bytscl(scaled_image[view_min[0]:view_max[0], $
                                  view_min[1]:view_max[1]], $
                     top = 247, min=8, max=(!d.table_size-1)) + 8
 
-
 newdisplay[startpos[0], startpos[1]] = temporary(dimage)
 
 ; if there's blank space around the image border, keep it black
 
 tv, newdisplay
 kctv_plotall
-
 
 if (state.frame EQ 1) then begin    ; put frame around image
     cgplot, [0], [0], /nodata, position=[0,0,1,1], $
@@ -4367,10 +4312,8 @@ endif
 
 tvlct, temporary(rr), temporary(gg), temporary(bb)
 
-
 device, /close
 set_plot, screen_device
-
 
 end
 
@@ -4437,7 +4380,6 @@ common kctv_color
 common kctv_state
 common kctv_images
 
-
 kctv_setwindow, state.draw_window_id
 loadct, tablenum, /silent
 tvlct, r, g, b, /get
@@ -4459,7 +4401,6 @@ kctv_resetwindow
 
 if (state.bitdepth EQ 24 AND (n_elements(pan_image) GT 10) ) then $
   kctv_refresh
-
 
 end
 
@@ -5285,7 +5226,6 @@ endif else begin
    widget_control, state.base_id, tlb_set_title = title
 endelse
 
-
 end
 
 ;----------------------------------------------------------------------
@@ -5357,7 +5297,6 @@ if (strcompress(sxpar(head, 'CTYPE1'), /remove_all) EQ 'PANE_X') then begin
     return
  endif
 
-
 ; Keck OSIRIS data cube headers have CRVAL2 and CRVAL3 as strings
 ; rather than floats.  This causes extast.pro to return an error.  To
 ; fix, change these keywords to floats.  Do this before running
@@ -5393,8 +5332,6 @@ if strcompress(sxpar(*state.head_ptr, 'CTYPE1'), /remove_all) EQ 'LAMBDA' then b
     endelse   
     return
 endif
-
-
 
 ; Now get the astrometry information
 extast, head, astr, noparams
@@ -5457,7 +5394,6 @@ if (string(sxpar(head, 'WAT1_001')) EQ $
     return
 endif
 
-
 ; final error check on WCS, in case it's in a format that can't be
 ; understood by the idlastro routines.
 catch, error_status
@@ -5474,7 +5410,6 @@ endif
 xy2ad, 0, 0, astr, lon, lat
 
 catch, /cancel
-
 
 ; Good astrometry info in header:
 state.wcstype = 'angle'
@@ -5526,7 +5461,6 @@ end
 
 ;---------------------------------------------------------------------
 
-
 pro kctv_headinfo
 
 common kctv_state
@@ -5542,7 +5476,6 @@ if (not(ptr_valid(state.head_ptr))) then begin
       msgtype = 'error', /window
     return
 endif
-
 
 ; If there is header information but not headinfo window,
 ; create the headinfo window.
@@ -5572,7 +5505,6 @@ if (not(xregistered('kctv_headinfo', /noshow))) then begin
     xmanager, 'kctv_headinfo', headinfo_base, /no_block
 
 endif
-
 
 end
 
@@ -5611,7 +5543,6 @@ cgplot, x, y, _extra = kctvplotlist[iplot].options, /overplot
 
 kctv_resetwindow
 state.newrefresh=1
-
 
 end
 
@@ -5669,7 +5600,6 @@ one_arrow, x1, y1, theta, '', arrowsize=arrowsize, $
 kctv_resetwindow
 state.newrefresh=1
 end
-
 
 ;----------------------------------------------------------------------
 
@@ -5911,7 +5841,6 @@ end
 
 ;----------------------------------------------------------------------
 
-
 pro kctv_plot1region, iplot
 common kctv_pdata
 common kctv_state
@@ -6067,7 +5996,6 @@ for i=0, n_reg-1 do begin
         endelse
         
     endelse
-    
 
 ; use cgplot colors by name
     tstruct = kctvplotlist[iplot]
@@ -6232,7 +6160,6 @@ end
 
 ;----------------------------------------------------------------------
 
-
 pro kctv_plot1contour, iplot
 common kctv_pdata
 common kctv_state
@@ -6396,7 +6323,6 @@ endif else if keyword_set(DATA) then begin
 endif else begin
     xi = position[0]   & yi = position[1]
 endelse         
-
 
 xf = xi + dmini2
 dmini3 = dmini2/10       ;Height of vertical end bars = total length/10.
@@ -6617,7 +6543,6 @@ endif
 
 if (n_elements(options) EQ 0) then options = {color: 'red'}
 
-
 ;  convert color names to index numbers, and set default=red
 c = where(tag_names(options) EQ 'COLOR', count)
 if (count EQ 0) then options = create_struct(options, 'color', 'red')
@@ -6637,7 +6562,6 @@ nplot = n_elements(kctvplotlist)
 kctv_plot1arrow, nplot-1
 
 end
-
 
 ;---------------------------------------------------------------------
 
@@ -6758,7 +6682,6 @@ formdesc = ['0, text, , label_left=Text: , width=15', $
 textform = cw_form(formdesc, /column, $
                    title = 'kctv text label')
 
-
 if (textform.tag9 EQ 1) then begin
 
    kctv_labelcolor, textform.tag3, labelcolor
@@ -6803,7 +6726,6 @@ endif
 
 end
 
-
 ;--------------------------------------------------------------------
 
 pro kctv_oplotcontour
@@ -6830,7 +6752,6 @@ formdesc = ['0, droplist, red|black|green|blue|cyan|magenta|yellow|white,label_l
             
 cform = cw_form(formdesc, /column, $
                    title = 'kctv text label')
-
 
 if (cform.tag8 EQ 1) then begin
 
@@ -6894,7 +6815,6 @@ cform.tag1 = 0 > cform.tag1 < (state.image_size[1] - 1)
 
 kctv_labelcolor, cform.tag3, labelcolor
 
-
 pstruct = {type: 'compass',  $  ; type of plot
            x: cform.tag0,         $ 
            y: cform.tag1,         $
@@ -6922,7 +6842,6 @@ pro kctv_setscalebar
 common kctv_state
 common kctv_images
 common kctv_pdata
-
 
 if (state.wcstype NE 'angle') then begin 
     kctv_message, 'Cannot get coordinate info for this image!', $
@@ -6984,7 +6903,6 @@ kctv_plot1scalebar, nplot-1
 end
 
 ;------------------------------------------------------------------
-
 
 pro kctv_loadregion
 
@@ -7053,8 +6971,6 @@ endif else begin
 endelse
 
 end
-
-
 
 ;--------------------------------------------------------------------
 
@@ -7201,7 +7117,6 @@ CASE event.tag OF
        if (text_str ne '') then region_str = region_str + $
                                              ' text={' + text_str + '}'
        
-
        options = {color: reg_color[color_index], $
                   thick:thick}
        
@@ -7215,8 +7130,7 @@ CASE event.tag OF
        kctv_plotwindow
        nplot = n_elements(kctvplotlist)
        kctv_plot1region, nplot-1
-            
-        
+
 ;       if ptr_valid(state.reg_ids_ptr) then ptr_free, state.reg_ids_ptr
 ;       widget_control, event.top, /destroy
         
@@ -7390,8 +7304,6 @@ endelse
 endelse
 
 end
-
-
 
 ;---------------------------------------------------------------------
 ;          routines for drawing in the lineplot window
@@ -7634,7 +7546,6 @@ endif
 
 end
 
-
 ;--------------------------------------------------------------------
 
 pro kctv_colplot, ps=ps, fullrange=fullrange, newcoord=newcoord
@@ -7694,7 +7605,6 @@ if (not (keyword_set(ps))) then begin
     
 endif
 
-
 cgplot, main_image[state.plot_coord[0], *], $
         xst = 3, yst = 3, psym = 10, $
         title = strcompress('Plot of column ' + $
@@ -7707,14 +7617,12 @@ cgplot, main_image[state.plot_coord[0], *], $
         thick = thick, xthick = thick, ythick = thick, charthick = thick, $
         charsize = state.plotcharsize
 
-
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
   kctv_resetwindow
 endif
 
 end
-
 
 ;----------------------------------------------------------------------
 
@@ -7732,7 +7640,6 @@ endif else begin
    color = 'white'
    background = 'black'
 endelse
-
 
 d = sqrt((state.vector_coord1[0]-state.vector_coord2[0])^2 + $
          (state.vector_coord1[1]-state.vector_coord2[1])^2)
@@ -7752,8 +7659,6 @@ for i = 1, n_elements(x) - 1 do begin
     x[i] = state.vector_coord1[0] + dx * i
     y[i] = state.vector_coord1[1] + dy * i
 endfor
-
-
 
 for j = 0, n_elements(x) - 1 do begin
     col = x[j]
@@ -7864,7 +7769,6 @@ endif else begin
    background = 'black'
 endelse
 
-
 d = sqrt((state.vector_coord1[0]-state.vector_coord2[0])^2 + $
          (state.vector_coord1[1]-state.vector_coord2[1])^2)
 
@@ -7883,8 +7787,6 @@ for i = 1, n_elements(x) - 1 do begin
     x[i] = state.vector_coord1[0] + dx * i
     y[i] = state.vector_coord1[1] + dy * i
 endfor
-
-
 
 for j = 0, n_elements(x) - 1 do begin
     col = x[j]
@@ -7942,7 +7844,6 @@ if (not (keyword_set(ps))) then begin
     erase
 
 endif
-  
 
 plottitle = strcompress('Gaussfit: vector [' + $
                         strcompress(string(state.vector_coord1[0]) + ',' + $
@@ -7989,7 +7890,6 @@ endif
 
 end
 
-
 ;--------------------------------------------------------------------
 
 pro kctv_depthplot, ps=ps, fullrange=fullrange, newcoord=newcoord
@@ -8023,7 +7923,6 @@ wave = (findgen(state.nslices) * cd) + crval
 if (max(wave) EQ min(wave)) then begin
    wave = findgen(state.nslices)
 endif
-
 
 x1 = min([state.vector_coord1[0],state.vector_coord2[0]])
 x2 = max([state.vector_coord1[0],state.vector_coord2[0]])
@@ -8076,7 +7975,6 @@ if (not (keyword_set(ps))) then begin
     erase
 
 endif
-  
 
 plottitle = strcompress('Depth plot [' + $
                        string(x1) + ':' + string(x2) + ',' + $
@@ -8090,7 +7988,6 @@ endif else begin
    xunittype = 'Slice'
 endelse
 
-
 cgplot, wave, pixval, $
         xst = 3, yst = 3, psym = 10, $
         title = plottitle, $
@@ -8101,8 +7998,6 @@ cgplot, wave, pixval, $
         yran = [state.lineplot_ymin, state.lineplot_ymax], $
         thick = thick, xthick = thick, ythick = thick, charthick = thick, $
         charsize = state.plotcharsize
-
-
 
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
@@ -8127,7 +8022,6 @@ endif else begin
    color = 'white'
    background = 'black'
 endelse
-
 
 if (not (keyword_set(ps))) then begin
 
@@ -8191,7 +8085,6 @@ if (not (keyword_set(ps))) then begin
     state.lineplot_ymax = ymax
 endif
 
-
 shade_image =  main_image[state.lineplot_xmin:state.lineplot_xmax, $
                           state.lineplot_ymin:state.lineplot_ymax]
 
@@ -8218,14 +8111,12 @@ cgsurf, shade_image, shades=bytscl(shade_image), $
         title = plottitle, xtitle = 'X', ytitle = 'Y', $
         ztitle = 'Pixel Value', charsize = state.plotcharsize
 
-
 if (not (keyword_set(ps))) then begin 
     widget_control, state.lineplot_base_id, /clear_events
     kctv_resetwindow
 endif
 
 end
-
 
 ;--------------------------------------------------------------------
 
@@ -8309,7 +8200,6 @@ endif
 contour_image =  main_image[state.lineplot_xmin:state.lineplot_xmax, $
                             state.lineplot_ymin:state.lineplot_ymax]
 
-
 if (state.scaling EQ 1) then begin
     contour_image = alog10(contour_image)
     logflag = 'Log'
@@ -8325,7 +8215,6 @@ plottitle =  $
                           ','+string(round(state.lineplot_ymin))+ $
                           ':'+string(round(state.lineplot_ymax))+ $
                           ']', /remove_all))
-
 
 xdim = state.lineplot_xmax - state.lineplot_xmin + 1
 ydim = state.lineplot_ymax - state.lineplot_ymin + 1
@@ -8343,7 +8232,6 @@ cgcontour, temporary(contour_image), $
            thick = thick, xthick = thick, ythick = thick, charthick = thick, $
            charsize = state.plotcharsize
 
-
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
   kctv_resetwindow
@@ -8357,7 +8245,6 @@ pro kctv_histplot, ps=ps, fullrange=fullrange, newcoord=newcoord
 
 common kctv_state
 common kctv_images
-
 
 if (keyword_set(ps)) then begin
    thick = 3
@@ -8404,7 +8291,6 @@ if (not (keyword_set(ps))) then begin
     kctv_setwindow, state.lineplot_window_id
     erase
 endif
-
 
 ; get histogram region 
 widget_control, state.x1_pix_id, get_value=x1
@@ -8478,7 +8364,6 @@ endif
 
 end
 
-
 ;----------------------------------------------------------------------
 
 pro kctv_lineplot_event, event
@@ -8534,7 +8419,6 @@ case uvalue of
             else:
         endcase
     end
-
 
     'lineplot_ps': begin
 
@@ -8723,7 +8607,6 @@ else:
 endcase
 
 end
-
 
 ;----------------------------------------------------------------------
 ;                         help window
@@ -8955,7 +8838,6 @@ h[i] = 'For full instructions, or to download the most recent version, go to:'
 i = i + 1
 h[i] = 'http://www.physics.uci.edu/~barth/atv'
 
-
 if (not (xregistered('kctv_help', /noshow))) then begin
 
 helptitle = strcompress('kctv v' + state.version + ' help')
@@ -9028,7 +8910,6 @@ cutmean = mean(cut, /nan)
 cutmedian = median(cut)
 cutstddev = stddev(cut)
 
-
 widget_control, state.statbox_id, set_value=state.statboxsize
 widget_control, state.statxcenter_id, set_value = state.cursorpos[0]
 widget_control, state.statycenter_id, set_value = state.cursorpos[1]
@@ -9100,7 +8981,6 @@ case uvalue of
     'stats_done': widget_control, event.top, /destroy
     else:
 endcase
-
 
 end
 
@@ -9212,7 +9092,6 @@ kctv_stats_refresh
 end
 
 ;---------------------------------------------------------------------
-
 
 pro kctv_tvstats
 
@@ -9575,7 +9454,7 @@ for i = 0,nrad-1 do begin
     rout2 = rout*rout
     
 ; 	get flux and pixel stats in annulus, wary of counting pixels twice
-;	checking if necessary if there are pixels in the sector
+;	 checking if necessary if there are pixels in the sector
     w = where(distsq gt rin2 and distsq le rout2,np)
     
     pfrac = 1.0                 ; fraction of pixels in each annulus used
@@ -9700,7 +9579,6 @@ if (finite(mean(subimg)) EQ 0) then begin
     return
 endif
 
-    
 phpadu = state.ccdgain
 apr = [state.aprad]
 skyrad = [state.innersky, state.outersky]
@@ -9763,7 +9641,6 @@ endif
 if (state.magunits EQ 1) then begin    ; apply zeropoint
     flux = flux + state.photzpt - 25.0 + (2.5 * alog10(state.exptime))
 endif
-
 
 ; Run kctv_radplotf and plot the results
 kctv_setwindow, state.radplot_window_id
@@ -9833,7 +9710,6 @@ case state.magunits of
 endcase
 
 state.centerpos = [x, y]
-
 
 tmp_string = string(state.cursorpos[0], state.cursorpos[1], $
                     format = '("Cursor position: x=",i5," y=",i5)' )
@@ -9965,7 +9841,6 @@ cgplot, [0, 1], /noerase, /nodata, xstyle = 1, ystyle = 1, $
   /device, position = dev_pos, axescolor='white', charsize=1, $
   xrange = x_ran, yrange = y_ran
 
-
 tvcircle, /data, state.aprad, state.centerpos[0], state.centerpos[1], $
   color='green', thick=2, psym=0
 if (state.skytype NE 2) then begin
@@ -9986,7 +9861,6 @@ common kctv_state
 common kctv_images
 
 widget_control, event.id, get_uvalue = uvalue
-
 
 case uvalue of
 
@@ -10476,7 +10350,6 @@ for i = midtracepoint, ntracepoints-1 do begin
    endelse
    if (finite(traceguess) EQ 0) then traceguess = tracepoints[i-1]
 
-
 endfor
 
 traceguess = tracepoints[midtracepoint]
@@ -10515,7 +10388,6 @@ for i = 0, state.x_traceorder do begin
     fulltrace = fulltrace + (result[i] * (double(xspec))^i)
 endfor
 
-
 end
 
 ;------------------------------------------------------------------
@@ -10535,7 +10407,6 @@ if keyword_set(newcoord) then begin
 endif
 
 if (not (xregistered('kctv_drill', /noshow))) then kctvdrill_init
-
 
 zsize = state.drill_zregion[1] - state.drill_zregion[0] + 1
 
@@ -10576,7 +10447,6 @@ endfor
 
 kctv_drillplot, /newcoord
 
-
 end	; kcwidrill
 
 ;-----------------------------------------------------------------
@@ -10586,7 +10456,6 @@ pro kctvextract, newcoord=newcoord
 common kctv_state
 common kctv_images
 common kctv_spectrum
-
 
 if (state.image_size[0] LT 50) OR (state.image_size[1]) LT 20 $
    then return
@@ -10673,9 +10542,7 @@ if (state.x_backsub EQ 1) then begin
    kctvplot, fulltrace + state.x_back4, xspec, color='magenta'
 endif
 
-
 kctv_specplot, /newcoord
-
 
 end
 
@@ -10752,7 +10619,6 @@ cgplot, xspec, spectrum, $
         yran = [state.lineplot_ymin, state.lineplot_ymax], $
         thick = thick, xthick = thick, ythick = thick, charthick = thick, $
         charsize = state.plotcharsize
-
 
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
@@ -11307,7 +11173,6 @@ filename = dialog_pickfile(group=state.base_id, $
 if (tmp_dir NE '') then state.current_dir = tmp_dir
 if (filename EQ '') then return
 
-
 if (ptr_valid(state.head_ptr)) then begin
    outheader = *(state.head_ptr)
 ; keep wavelength scale from STIS if available
@@ -11326,7 +11191,6 @@ endif else begin
    crval = 0
    shifta = 0
 endelse
-
 
 if state.kcwicube then begin
    cd = state.dwave
@@ -11435,7 +11299,6 @@ free_lun, unit0
 
 end
 
-
 ;--------------------------------------------------------------------
 ;    shutdown routine
 ;--------------------------------------------------------------------
@@ -11502,7 +11365,6 @@ spectrum=0
 
 return    
 end
-
 
 ;--------------------------------------------------------------------
 ;    kctv main program.  needs to be last in order to compile.
@@ -11574,7 +11436,6 @@ if (not (xregistered('kctv', /noshow))) then begin
    print
 
 endif
-
 
 if (n_elements(align) EQ 0) then align = state.default_align
 if (n_elements(stretch) EQ 0) then stretch = state.default_stretch
@@ -11650,7 +11511,6 @@ if (n_elements(main_image) LE 1) then begin
     state.title_extras = 'firstimage'
 endif
 
-
 if (newimage GE 1) then begin  
 ; skip this part if new image is invalid or if user selected 'cancel'
 ; in dialog box
@@ -11717,4 +11577,3 @@ if (not(xregistered('kctv', /noshow))) then begin
 endif
 
 end
-
