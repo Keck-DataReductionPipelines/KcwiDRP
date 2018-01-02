@@ -18,7 +18,6 @@
 ;	DirList	- list of run directories (string array)
 ;
 ; KEYWORDS:
-;	DARK		- set to run KCWI_STAGE2DARK (def: NO)
 ;	MINOSCANPIX	- set to minimum pixels required for overscan subtraction
 ;	LASTSTAGE	- set to the last stage you want run
 ;	STAGES		- set to a vector of stage numbers to perform
@@ -42,7 +41,7 @@
 ;	2017-NOV-18	Accounting for re-structure
 ;	2017-NOV-26	Added STAGES keyword
 ;-
-pro kcwi_drp_batch,dirlist,dark=dark, $
+pro kcwi_drp_batch,dirlist, $
 	minoscanpix=minoscanpix, $
 	laststage=laststage, $
 	stages=stages, $
@@ -121,11 +120,8 @@ for i=0,ndir-1 do begin
 			do_it = (1 eq 0)
 			t = where(stages eq 2, nt)
 			if nt gt 0 then do_it = (1 eq 1)
-		endif else begin
-			if keyword_set(dark) then $
-				do_it = (1 eq 1) $
-			else	do_it = (1 eq 0)
-		endelse
+		endif else $
+			do_it = (1 eq 1)
 		if do_it then $
 			kcwi_stage2dark
 		if last le 2 then goto,done
