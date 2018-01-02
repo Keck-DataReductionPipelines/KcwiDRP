@@ -224,10 +224,80 @@ pro kcwi_make_flat,ppar,gfile
 	avrn = avrn / float(nba)
 	avrn = avrn / sqrt(nf)
 	;
-	; parameters for fitting
-	;
-	; binning in x (slice position)
+	; binning
 	xbin = kgeom.xbinsize
+	ybin = kgeom.ybinsize
+	;
+	; setup queries
+	ask=''
+	;
+	; set up plots
+	do_plots = (ppar.display ge 1)
+	if do_plots then begin
+		deepcolor
+		!p.background=colordex('white')
+		!p.color=colordex('black')
+		th = 3
+		si = 1.75
+	endif
+	;
+	; check for amp configuration that requires gainfloat correction
+	; NB: this is currently disabled.  Overscan subtraction may be
+	; doing this work.
+	if nba eq 5 then begin
+		;
+		; get some keyword values
+		gain1 = sxpar(hdr,'GAIN1')
+		gain2 = sxpar(hdr,'GAIN2')
+		oscor = sxpar(hdr,'OSCANSUB')
+		;
+		; subtract residual bias
+		if not oscor then begin
+			leftbias = mflat[2000/xbin+1:2048/xbin-1,0:4112/ybin-1]
+			ritebias = mflat[2048/xbin+1:2096/xbin-1,0:4112/ybin-1]
+			plothist,leftbias,xlh,ylh,xrange=[-5,5]
+			resl = mpfitpeak(xlh,ylh,al)
+			oplot,[al[1],al[1]],!y.crange,color=colordex('B')
+			print,al[1]
+			if ppar.display ge 2 then read,'next: ',ask
+			plothist,ritebias,xrh,yrh
+			resr = mpfitpeak(xrh,yrh,ar)
+			oplot,[ar[1],ar[1]],!y.crange,color=colordex('R')
+			print,ar[1]
+			if ppar.display ge 2 then read,'next: ',ask
+			diff = mflat - mflat
+			diff[0:nx/2-1,*] = mflat[0:nx/2-1,*] - al[1]
+			diff[nx/2:*  ,*] = mflat[nx/2:*  ,*] - ar[1]
+		endif else diff = mflat
+		;
+		; pick up a trace to the left and to the right of the
+		; physical amplifier seam
+		buffer = 12
+		left = diff[2046/xbin-buffer:2046/xbin-1,0:4112/ybin-1]
+		rite = diff[2050/xbin:2050/xbin+buffer-1,0:4112/ybin-1]
+		left = total(left,1)/(buffer*1.)
+		rite = total(rite,1)/(buffer*1.)
+		plot,left,thick=0.5,color=colordex('B')
+		oplot,rite,thick=0.5,color=colordex('R')
+		if ppar.display ge 2 then read,'next: ',ask
+		grat = rite/left
+		plothist,grat,xh,yh,bin=0.01
+		res = mpfitpeak(xh,yh,ah)
+		oplot,xh,res,color=colordex('O')
+		meanrat = ah[1]
+		kcwi_print_info,ppar,pre,'right/left amplifier ratio',meanrat, $
+			format='(a,f9.3)'
+		if ppar.display ge 2 then read,'next: ',ask
+		plot,smooth(grat,15),thick=0.1
+		oplot,!x.crange,[meanrat,meanrat],linestyle=2, $
+			color=colordex('R')
+		print,gain1,gain2,gain2*meanrat, (gain2-gain1)*1000
+		mflat[nx/2:*,*] = mflat[nx/2:*,*] * meanrat
+		sxaddpar,hdr,'GNTWK',meanrat,' / GAIN2 tweak factor'
+		if ppar.display ge 2 then read,'next: ',ask
+	endif
+	;
+	; parameters for fitting
 	;
 	; vignetted slice position range
 	fitl = 4/xbin
@@ -250,17 +320,6 @@ pro kcwi_make_flat,ppar,gfile
 	sm = 25
 	allidx = findgen(140/xbin)
 	str = string(fnums[0],"(i05)")
-	ask=''
-	;
-	; set up plots
-	do_plots = (ppar.display ge 1)
-	if do_plots then begin
-		deepcolor
-		!p.background=colordex('white')
-		!p.color=colordex('black')
-		th = 3
-		si = 1.75
-	endif
 	;
 	; correct vignetting if we are using internal flats
 	if internal then begin
