@@ -3716,7 +3716,10 @@ if (ptr_valid(state.head_ptr)) then head = *(state.head_ptr) $
    else head = strarr(1)
 
 ; Test for whether this is an OSIRIS cube.  
-currinst = strcompress(string(sxpar(head, 'CURRINST')), /remove_all)
+currinst = strcompress(string(sxpar(head, 'CURRINST',count=nhk)), /remove_all)
+if nhk le 0 then $
+	currinst = strcompress(string(sxpar(head, 'INSTRUME',count=nhk)), $
+				/remove_all)
 instr = strcompress(string(sxpar(head, 'INSTR')), /remove_all)
 
 if ((currinst EQ 'OSIRIS') AND (instr EQ 'spec')) then begin
@@ -3741,7 +3744,7 @@ endelse
 state.nslices = (size(main_image_cube))[3]
 
 ;  test for KCWI cube
-if currinst EQ 'KCWI' then begin
+if strpos(currinst,'CWI') ge 0 then begin
    state.kcwicube = 1
    state.crslice = sxpar(head, 'CRPIX3') - 1
    state.wave0 = sxpar(head,'CRVAL3')
