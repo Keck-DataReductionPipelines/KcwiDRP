@@ -1,3 +1,5 @@
+fix gain float in dual amp modes
+fix horizontal stripes in biases
 hardcopy output of standard star results
 compression of all files?
 use arcbars for direct geometry solution
