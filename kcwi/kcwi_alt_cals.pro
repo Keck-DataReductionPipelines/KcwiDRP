@@ -35,12 +35,13 @@
 ;	2018-JUN-27	Initial version
 ;-
 function kcwi_alt_cals, kcfg, adir, ppar, $
-	bias=bias, dark=dark, flat=flat, geom=geom, dgeom=dgeom, $
-	prof=prof, rr=rr, drr=drr, std=std
+	bias=bias, dark=dark, flat=flat, geom=geom, dgeom=dgeom, afile=afile, $
+	drr=drr, std=std
 	;
 	; setup
 	pre = 'KCWI_ALT_CALS'
 	cfile = ''
+	afile = ''
 	;
 	; verify inputs
 	if kcwi_verify_cfg(kcfg,/init) ne 0 then return,cfile
@@ -188,6 +189,11 @@ function kcwi_alt_cals, kcfg, adir, ppar, $
 					t = (where(tdel eq min(tdel)))[0]
 					cfile = mcfg[t].obsdir + mcfg[t].obsfname
 				endelse
+				;
+				; extract cbars, arcs filenames
+				geom = mrdfits(cfile,1,chdr)
+				cfile = geom.cbarsfname
+				afile = geom.arcfname
 			endif else $
 				kcwi_print_info,ppar,pre, $
 					'No matching geom files found'
@@ -224,72 +230,6 @@ function kcwi_alt_cals, kcfg, adir, ppar, $
 					'No matching dgeom files found'
 		endif else $
 			kcwi_print_info,ppar,pre,'No alternate dgeom files found'
-	;
-	; slice profiles
-	endif else if keyword_set(prof) then begin
-		kcwi_print_info,ppar,pre,'Searching for profs in '+adir
-		cfgs = kcwi_read_cfgs(adir, filespec='*_prof.fit*', count=nf)
-		;
-		; found some profs
-		if nf gt 0 then begin
-			;
-			; matching criteria
-			tlist = ['CCDMODE','AMPMODE','XBINSIZE','YBINSIZE', $
-				 'GAINMUL','GRATID','GRANGLE', 'FILTNUM', $
-				 'CAMANG','IFUNUM']
-			mcfg = kcwi_match_cfg(cfgs,kcfg,ppar,tlist,count=nm)
-			;
-			; found some matches
-			if nm gt 0 then begin
-				;
-				; only one?
-				if nm eq 1 then begin
-					cfile = mcfg.obsdir + mcfg.obsfname
-				;
-				; more than one, use closest bench temperature to match
-				endif else begin
-					tdel = abs(mcfg.tmpa8 - kcfg.tmpa8)
-					t = (where(tdel eq min(tdel)))[0]
-					cfile = mcfg[t].obsdir + mcfg[t].obsfname
-				endelse
-			endif else $
-				kcwi_print_info,ppar,pre, $
-					'No matching profs found'
-		endif else $
-			kcwi_print_info,ppar,pre,'No alternate profs found'
-	;
-	; relative response files
-	endif else if keyword_set(rr) then begin
-		kcwi_print_info,ppar,pre,'Searching for rrs in '+adir
-		cfgs = kcwi_read_cfgs(adir, filespec='*_rr.fit*', count=nf)
-		;
-		; found some relative response files
-		if nf gt 0 then begin
-			;
-			; matching criteria
-			tlist = ['CCDMODE','AMPMODE','XBINSIZE','YBINSIZE', $
-				 'GAINMUL','GRATID','GRANGLE', 'FILTNUM', $
-				 'CAMANG','IFUNUM']
-			mcfg = kcwi_match_cfg(cfgs,kcfg,ppar,tlist,count=nm)
-			;
-			; found some matches
-			if nm gt 0 then begin
-				;
-				; only one?
-				if nm eq 1 then begin
-					cfile = mcfg.obsdir + mcfg.obsfname
-				;
-				; more than one, use closest bench temperature to match
-				endif else begin
-					tdel = abs(mcfg.tmpa8 - kcfg.tmpa8)
-					t = (where(tdel eq min(tdel)))[0]
-					cfile = mcfg[t].obsdir + mcfg[t].obsfname
-				endelse
-			endif else $
-				kcwi_print_info,ppar,pre, $
-					'No matching rrs found'
-		endif else $
-			kcwi_print_info,ppar,pre,'No alternate rrs found'
 	;
 	; direct relative response files
 	endif else if keyword_set(drr) then begin

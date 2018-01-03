@@ -857,15 +857,19 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				;
 				; did we specify an alternative?
 				if keyword_set(altcaldir) then begin
-					mgfile = kcwi_alt_cals(kcfg[p],adir,ppar,/geom)
+					mgfile = kcwi_alt_cals(kcfg[p],adir,ppar,/geom,afile=afile)
 					;
 					; log if matched
 					if mgfile ne '' then begin
-						kcwi_print_info,ppar,pre, $
-							'master geom file = '+mgfile
-						if kcfg[p].imgnum ge first_imgnum then $
-							printf,kp,'geom='+mgfile $
-						else	printf,kp,'#geom='+mgfile
+						kcwi_print_info,ppar,pre,'alt cbars file = '+mgfile
+						kcwi_print_info,ppar,pre,'alt arc   file = '+afile
+						if kcfg[p].imgnum ge first_imgnum then begin
+							printf,kp,'geomcbar='+mgfile
+							printf,kp,'geomarc='+afile
+						endif else begin
+							printf,kp,'#geomcbar='+mgfile
+							printf,kp,'#geomarc='+afile
+						endelse
 					endif
 				endif
 				;
