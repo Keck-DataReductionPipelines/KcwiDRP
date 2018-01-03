@@ -10440,7 +10440,6 @@ if (not (xregistered('kctv_drill', /noshow))) then kctvdrill_init
 
 zsize = state.drill_zregion[1] - state.drill_zregion[0] + 1
 
-print,'z0, z1: ',state.drill_zregion
 spectrum = dblarr(zsize)
 specsky = dblarr(zsize)
 specerr = dblarr(zsize)
