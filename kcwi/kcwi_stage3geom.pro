@@ -148,13 +148,7 @@ pro kcwi_stage3geom,procfname,ppfname,help=help,verbose=verbose, display=display
 			;
 			; do we have the geom files?
 			if (strtrim(kpars[i].geomcbar,2) ne '' and $
-			    strtrim(kpars[i].geomarc,2) ne '') or $
-			    strtrim(kpars[i].geom,2) ne '' then begin
-				;
-				; do we have a specified geom file?
-			    	if strtrim(kpars[i].geom,2) ne '' then begin
-					gfile = strtrim(kpars[i].geom,2)
-				endif 
+			    strtrim(kpars[i].geomarc,2) ne '') then begin
 				;
 				; do we have specified cbar and arc files (these take precedence)
 				if strtrim(kpars[i].geomcbar,2) ne '' and $
