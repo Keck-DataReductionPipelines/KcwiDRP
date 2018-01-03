@@ -52,6 +52,7 @@
 ;	2014-SEP-23	Added extinction correction
 ;	2014-SEP-29	Added infrastructure to handle selected processing
 ;	2017-MAY-24	Changed to proc control file and removed link file
+;	2018-JAN-03	Made more interactive to improve fitting
 ;-
 pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 	;
@@ -86,7 +87,8 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 	if n_elements(verbose) eq 1 then $
 		ppar.verbose = verbose
 	if n_elements(display) eq 1 then $
-		ppar.display = display
+		ppar.display = display $
+	else	ppar.display = 2	; defaults to interactive
 	;
 	; log file
 	lgfil = reddir + 'kcwi_stage8std.log'
