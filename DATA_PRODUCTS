@@ -13,7 +13,7 @@ With:
 
 <froot>		defaults to kbYYMMDD_, with YYMMDD being the current date,
 		but can be modified.
-<imgnum>	a zero-filled integer of consistent width.
+<imgnum>	a zero-filled integer of consistent width, usually 5 characters.
 <ext>		specifies the specific product and is tabulated below.
 
 ext		data units		Stage	notes
@@ -21,31 +21,41 @@ ext		data units		Stage	notes
 int		e-/px			1	reduced output intensity
 var		e-^2/px			1	variance
 msk		flag			1	cosmic ray pixels flagged with 1
+obj		e-/px			1 (N&S) nod-and-shuffle object panel
+sky		e-/px			1 (N&S) nod-and-shuffle sky panel
 
-intd		e-/px			2	dark current removed
-vard		e-^2/px			2	variance + dark image variance
+intd		e-/px			2	dark current/scattered light removed
+vard		e-^2/px			2	variance + dark/scat image variance
 mskd		flag			2	same
 
 wavemap		Ang			3	wavelength value at pixel
 slicemap	0-23			3	slice number at pixel
 posmap		0-140			3	slice position (px) at pixel
 
-intf		e-/px			4	pixel-to-pixel/illumination variation removed
+intf		e-/px			4	instrumental variations removed
 varf		e-^2/px			4	variance + flat image variance
 mskf		flag			4	same
 
 intk		e-/px			5	sky subtracted
 vark		e-^2/px			5	variance + sky variance
 mskk		flag			5	same
+obj		e-/px			5	un-sky subtracted image
+sky		e-/px			5	sky model image
 
 icube		e-/px			6	geom corrected data cube
-vcube		e-^2/px			6	variance data cube
-mcube		flag			6	mask data cube
+vcube		e-^2/px			6	variance cube
+mcube		flag			6	mask cube
+ocube		e-/px			6	un-sky subtracted data cube
+scube		e-/px			6	sky model cube
 
 icubed		e-/px			7	DAR corrected data cube
 vcubed		e-^2/px			7	DAR corrected variance cube
 mcubed		flag			7	DAR corrected flag cube
+ocubed		e-/px			7	DAR corrected un-sky subtracted cube
+scubed		e-/px			7	DAR corrected sky model cube
 
 icubes		flux/px			8	std star calibrated data cube
 vcubes		flux^2/px		8	variance in flux units
 mcubes		flag			8	same
+ocubes		flux/px			8	std star calibrated un-sky sub cube
+scubes		slux/px			8	std star calibrated sky model cube

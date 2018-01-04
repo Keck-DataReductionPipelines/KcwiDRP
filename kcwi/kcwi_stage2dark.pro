@@ -204,58 +204,87 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 				; let's read in or create master dark
 				if do_dark and (1 eq 0) then begin 	; skip for now
 					;
-					; master dark filename
-					mdfile = strmid(obfil,0,strpos(obfil,'.fit')) + '_mdark.fits'
-					;
-					; create master dark
-					kcwi_make_dark,obfil,mdfile,kpars[i]
-					;
-					; read in master dark
-					mdark = mrdfits(mdfile,0,mdhdr,/fscale,/silent)
-					;
-					; get exposure time
-					dexptime = sxpar(mdhdr,'TELAPSE')
-					;
-					; read in master dark variance
-					mdvarfile = strmid(mdfile,0,strpos(mdfile,'.fit')) + '_var.fits'
-					mdvar = mrdfits(mdvarfile,0,mvhdr,/fscale,/silent)
-					;
-					; read in master dark mask
-					mdmskfile = strmid(mdfile,0,strpos(mdfile,'.fit')) + '_msk.fits'
-					mdmsk = mrdfits(mdmskfile,0,mmhdr,/fscale,/silent)
-					;
-					; scale by exposure time
-					fac = 1.0
-					if exptime gt 0. and dexptime gt 0. then $
-						fac = exptime/dexptime $
-					else	kcwi_print_info,ppar,pre,'unable to scale dark by exposure time',/warning
-					kcwi_print_info,ppar,pre,'dark scale factor',fac,form='(a,f9.3)'
-					;
-					; do subtraction
-					img = img - mdark*fac
-					;
-					; handle variance
-					var = var + mdvar
-					;
-					; handle mask
-					msk = msk + mdmsk
-					;
-					; update header
-					sxaddpar,mskhdr,'DARKSUB','T',' dark subtracted?'
-					sxaddpar,mskhdr,'MDFILE',mdfile,' master dark file applied'
-					sxaddpar,mskhdr,'DARKSCL',fac,' dark scale factor'
-					;
-					; update header
-					sxaddpar,varhdr,'DARKSUB','T',' dark subtracted?'
-					sxaddpar,varhdr,'MDFILE',mdfile,' master dark file applied'
-					sxaddpar,varhdr,'DARKSCL',fac,' dark scale factor'
-					;
-					; update header
-					sxaddpar,hdr,'DARKSUB','T',' dark subtracted?'
-					sxaddpar,hdr,'MDFILE',mdfile,' master dark file applied'
-					sxaddpar,hdr,'DARKSCL',fac,' dark scale factor'
-					;
-					; handle the case when no dark frames were taken
+					; do we have a master dark file name?
+					if strtrim(kpars[i].masterdark,2) ne '' then begin
+						;
+						; master dark filename
+						mdfile = kpars[i].masterdark
+						;
+						; build master dark if needed
+						if not file_test(mdfile) then begin
+							;
+							; master dark ppar filename
+							mdppfn = repstr(mdfile,'.fits','.ppar')
+							;
+							; read in params
+							dpar = kcwi_read_ppar(mdppfn)
+							dpar.loglun  = kpars[i].loglun
+							dpar.verbose = kpars[i].verbose
+							kpar.display = kpars[i].display
+							;
+							; create master dark
+							kcwi_make_dark,dpar
+						endif
+						;
+						; read in master dark
+						mdark = mrdfits(mdfile,0,mdhdr,/fscale,/silent)
+						;
+						; get exposure time
+						dexptime = sxpar(mdhdr,'TELAPSE')
+						;
+						; read in master dark variance
+						mdvarfile = strmid(mdfile,0,strpos(mdfile,'.fit')) + '_var.fits'
+						mdvar = mrdfits(mdvarfile,0,mvhdr,/fscale,/silent)
+						;
+						; read in master dark mask
+						mdmskfile = strmid(mdfile,0,strpos(mdfile,'.fit')) + '_msk.fits'
+						mdmsk = mrdfits(mdmskfile,0,mmhdr,/fscale,/silent)
+						;
+						; scale by exposure time
+						fac = 1.0
+						if exptime gt 0. and dexptime gt 0. then $
+							fac = exptime/dexptime $
+						else	kcwi_print_info,ppar,pre,'unable to scale dark by exposure time',/warning
+						kcwi_print_info,ppar,pre,'dark scale factor',fac,form='(a,f9.3)'
+						;
+						; do subtraction
+						img = img - mdark*fac
+						;
+						; handle variance
+						var = var + mdvar
+						;
+						; handle mask
+						msk = msk + mdmsk
+						;
+						; update header
+						sxaddpar,mskhdr,'DARKSUB','T',' dark subtracted?'
+						sxaddpar,mskhdr,'MDFILE',mdfile,' master dark file applied'
+						sxaddpar,mskhdr,'DARKSCL',fac,' dark scale factor'
+						;
+						; update header
+						sxaddpar,varhdr,'DARKSUB','T',' dark subtracted?'
+						sxaddpar,varhdr,'MDFILE',mdfile,' master dark file applied'
+						sxaddpar,varhdr,'DARKSCL',fac,' dark scale factor'
+						;
+						; update header
+						sxaddpar,hdr,'DARKSUB','T',' dark subtracted?'
+						sxaddpar,hdr,'MDFILE',mdfile,' master dark file applied'
+						sxaddpar,hdr,'DARKSCL',fac,' dark scale factor'
+						;
+						; handle the case when no dark frames were taken
+					endif else begin
+						;
+						; in case we do scattered light
+						sxaddpar,mskhdr,'DARKSUB','F',' dark subtracted?'
+						sxaddpar,varhdr,'DARKSUB','F',' dark subtracted?'
+						sxaddpar,hdr,'DARKSUB','F',' dark subtracted?'
+						;
+						if strpos(kcfg.obstype,'cal') ge 0 then $
+							kcwi_print_info,ppar,pre,'cals do not get dark subtracted: '+ $
+								kcfg.obsfname,/info $
+						else	kcwi_print_info,ppar,pre,'cannot associate with any master dark: '+ $
+								kcfg.obsfname,/warning
+					endelse
 				endif else begin
 					;
 					; in case we do scattered light
