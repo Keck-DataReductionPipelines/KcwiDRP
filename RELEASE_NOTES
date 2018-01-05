@@ -6,12 +6,16 @@
 
 - added coyote graphics library to support kctv.pro.
 
+- now fix bad columns before CR cleaning, re-ordered mask values.
+
+- now flag un-corrected pixels in master flat and flat corrected object images.
+
 - major restructuring to implement the usage of bsplines to fit both the
 	pixel-to-pixel and the illumination corrections and to fit and 
 	subtract the sky (see AAAREADME for more details).
 
 - added differential atmospheric refraction correction stage as stage 7 and
-	renamed flux standard stage to stage 8.
+	renamed flux standard star correction stage to stage 8.
 
 - fixed a bug in the coordinates for nod-and-shuffle images that was using
 	the background coords instead of the object coords.

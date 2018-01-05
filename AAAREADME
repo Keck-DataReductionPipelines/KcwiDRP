@@ -128,8 +128,9 @@ The major output is an 'intensity' image in units of electrons.  For object
 images, a variance image and a mask image are also produced.
 
 Stage 2 is a dark and scattered light subtraction step.  Even if you have
-no dark frames, this step should be run to remove scattered light.  If you
-are doing nod-and-shuffle, this step will automatically be skipped.
+no dark frames, this step should be run to remove scattered light.  For
+nod-and-shuffle images scattered light has already been subtracted so this
+step will automatically be skipped.
 
 Stage 3 uses a corresponding 'cbars' and an 'arc' image to define the
 geometric transformations required to map each pixel in the 2d image into
@@ -307,8 +308,8 @@ IDL> kcwi_stage1,verbose=2,display=3
 This will take longer to run, especially if you kept cosmic ray removal
 'on'.  On a macbook pro with a 2.2 GHz Intel Core i7 processor and 8 GB of
 RAM, it takes roughly 30s just to do the cosmic ray removal on one 2x2
-binned image.  Typical total run times for a night's worth of images can
-vary from 20 to 60 minutes.
+binned image.  Typical total pipeline batch run times for a night's worth
+of images can vary from 20 to 60 minutes.
 
 Exit IDL again and examine the log file in the output directory.
 
