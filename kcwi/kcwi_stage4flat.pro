@@ -236,8 +236,12 @@ pro kcwi_stage4flat,procfname,ppfname,help=help,verbose=verbose, display=display
 							kcwi_make_flat,fpar,gfile
 						endif
 						;
-						; read in master flat
+						; read in master flat image
 						mflat = mrdfits(mffile,0,mfhdr,/fscale,/silent)
+						;
+						; read in master mask image
+						mmfile = repstr(mffile,'_mflat','_mfmsk')
+						mfmsk = mrdfits(mmfile,0,mmhdr,/silent)
 						;
 						; do correction
 						img = img * mflat
@@ -245,7 +249,8 @@ pro kcwi_stage4flat,procfname,ppfname,help=help,verbose=verbose, display=display
 						; variance is multiplied by flat squared
 						var = var * mflat^2
 						;
-						; mask is not changed by flat
+						; mask combined with master flat
+						msk += mfmsk
 						;
 						; update header
 						sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)

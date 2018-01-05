@@ -698,38 +698,65 @@ pro kcwi_make_flat,ppar,gfile
 	qzer = where(newflat ne 0)
 	ratio[qzer]=comflat[qzer]/newflat[qzer]
 	;
+	; set up mask image
+	mask = byte(ratio-ratio)
+	;
 	; trim negative points
-	qq=where(ratio lt 0)
-	ratio[qq]=0.0
+	qq=where(ratio lt 0, nfix)
+	if nfix gt 0 then begin
+		ratio[qq] = 0.0
+		mask[qq] = 4b
+	endif
 	;
 	; trim high points near edges of slice
 	qq=where(ratio ge 3 and (pos le 4/xbin or pos ge 136/xbin), nfix)
-	if nfix gt 0 then $
-		ratio[qq]=0.0
+	if nfix gt 0 then begin
+		ratio[qq] = 0.0
+		mask[qq] = 4b
+	endif
+	;
+	; don't correct low signal points
+	qq = where(newflat lt 30., nfix)
+	if nfix gt 0 then begin
+		ratio[qq] = 1.0
+		mask[qq] = 4b
+	endif
 	;
 	; update master flat header
 	sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 	sxaddpar,hdr,'NMEAN',nf, $
 		' number of images used for stack'
-	sxaddpar,hdr,'MASTFLAT','T',' master flat image?'
 	sxaddpar,hdr,'FLATLST',ppar.cflats, $
 		' range list of image numbers for stack'
-	;
-	; write out image file
-	kcwi_write_image,ratio,hdr,ppar.masterflat,ppar
-	;
-	; write out master image
-	sxdelpar,hdr,'MASTFLAT'
 	sxaddpar,hdr,'AVRDN',avrn,' Stack RN accounting for root n'
 	varhdr = hdr
-	sxaddpar,hdr,'HISTORY','  Master cflat image stack'
+	imghdr = hdr
+	mskhdr = hdr
+	;
+	; write out master image
+	sxaddpar,imghdr,'BUNIT','electrons',' brightness units'
+	sxaddpar,imghdr,'HISTORY','  Master flat stack image'
 	isf = repstr(ppar.masterflat,'_mflat','_mfimg')
-	kcwi_write_image,mflat,hdr,isf,ppar
+	kcwi_write_image,mflat,imghdr,isf,ppar
+	;
+	; write out master flat
+	sxaddpar,hdr,'MASTFLAT','T',' master flat image?'
+	sxdelpar,hdr,'BUNIT'
+	kcwi_write_image,ratio,hdr,ppar.masterflat,ppar
 	;
 	; write out master variance
+	sxaddpar,varhdr,'BUNIT','electrons^2',' brightness units (variance)'
 	sxaddpar,varhdr,'HISTORY','  Master cflat stack variance'
 	vaf = repstr(ppar.masterflat,'_mflat','_mfvar')
 	kcwi_write_image,mfvar,varhdr,vaf,ppar
+	;
+	; write out master mask
+	sxdelpar,mskhdr,'BUNIT'
+	sxaddpar,mskhdr,'BSCALE',1.
+	sxaddpar,mskhdr,'BZERO',0
+	sxaddpar,mskhdr,'MASKIMG','T',' mask image?'
+	msf = repstr(ppar.masterflat,'_mflat','_mfmsk')
+	kcwi_write_image,mask,mskhdr,msf,ppar
 	;
 	return
 end

@@ -546,7 +546,94 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; BEGIN STAGE 1-E: COSMIC RAY REJECTION AND MASKING
+			; BEGIN STAGE 1-E: IMAGE DEFECT CORRECTION AND MASKING
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			;
+			; create mask
+			msk = bytarr(sz)
+			;
+			; be sure that output image scaling will work
+			msk[0] = 1b
+			;
+			; start with no bad pixels
+			nbpix = 0
+			bpx = [0]
+			bpy = [0]
+			;
+			; get defect list
+			bcfil = !KCWI_DATA + 'badcol_' + strtrim(kcfg.ampmode,2) + '_' + $
+				strn(kcfg.xbinsize) + 'x' + strn(kcfg.ybinsize) + '.dat'
+			if file_test(bcfil) then begin
+				;
+				; report the bad col file
+				kcwi_print_info,ppar,pre,'using bad column file: '+bcfil
+				;
+				; read it
+				readcol,bcfil,bcx0,bcx1,bcy0,bcy1,form='i,i,i,i',comment='#',/silent
+				;
+				; correct to IDL zero bias
+				bcx0 -= 1
+				bcx1 -= 1
+				bcy0 -= 1
+				bcy1 -= 1
+				;
+				; x range for bad columns
+				bcdel = 5
+				;
+				; number of bad column entries
+				nbc = n_elements(bcx0)
+				for j = 0,nbc-1 do begin
+					if bcx0[j] ge bcdel and bcx0[j] lt sz[0]-bcdel and $
+					   bcx1[j] ge bcdel and bcx1[j] lt sz[0]-bcdel and $
+				   	   bcy0[j] ge 0 and bcy0[j] lt sz[1] and $
+					   bcy1[j] ge 0 and bcy1[j] lt sz[1] then begin
+					   	;
+					   	; number of x pixels we are fixin'
+						nx = (bcx1[j] - bcx0[j]) + 1
+						;
+						; now do the job!
+						for by = bcy0[j],bcy1[j] do begin
+							;
+							; get median of the +- del pixels straddling baddies
+							vals = [img[bcx0[j]-bcdel:bcx0[j]-1,by], $
+								img[bcx0[j]+1:bcx0[j]+bcdel,by]]
+							gval = median(vals)
+							;
+							; substitute good value in and set mask
+							for bx = bcx0[j],bcx1[j] do begin
+								img[bx,by] = gval
+								msk[bx,by] = 1b
+								nbpix += nx
+							endfor
+						endfor
+						;
+						; log
+
+			   		endif else begin
+						kcwi_print_info,ppar,pre,'bad range for bad column!',/warning
+					endelse
+				endfor
+				sxaddpar,hdr,'BPCLEAN','T',' cleaned bad pixels?'
+				sxaddpar,hdr,'BPFILE',bcfil,' bad pixel map filename'
+			endif else begin
+				sxaddpar,hdr,'BPCLEAN','F',' cleaned bad pixels?'
+				kcwi_print_info,ppar,pre, 'no bad column file for ' + $
+					strtrim(kcfg.ampmode,2) + ' ' + $
+					strn(kcfg.xbinsize) + 'x' + strn(kcfg.ybinsize)
+			endelse
+			;
+			; update header
+			sxaddpar,hdr,'NBPCLEAN',nbpix,' number of bad pixels cleaned'
+			;
+			; log
+			kcwi_print_info,ppar,pre,'number of bad pixels = '+strtrim(string(nbpix),2)
+			;
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			; END   STAGE 1-E: IMAGE DEFECT CORRECTION AND MASKING
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			;
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			; BEGIN STAGE 1-F: COSMIC RAY REJECTION AND MASKING
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
 			; ONLY perform next step on OBJECT, DARK, and DFLAT images (and if requested)
@@ -604,19 +691,21 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						kcwi_write_image,img,hdr,ofil,kpars[i]
 					endif
 					;
+					; update mask image
+					cpix = where(crmsk eq 1, ncpix)
+					if ncpix gt 0 then msk[cpix] = msk[cpix] + 2b
+					;
 					; update CR mask header
 					mskhdr = hdr
 					sxdelpar,mskhdr,'BUNIT'
 					sxaddpar,mskhdr,'BSCALE',1.
 					sxaddpar,mskhdr,'BZERO',0
 					sxaddpar,mskhdr,'MASKIMG','T',' mask image?'
-					sxaddpar,mskhdr,'CRCLEAN','T',' cleaned cosmic rays?'
-					sxaddpar,mskhdr,'NCRCLEAN',ncrs,' number of cosmic rays cleaned'
 					;
 					; write out CR mask image
 					if kpars[i].saveintims eq 1 then begin
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_crmsk',/nodir)
-						kcwi_write_image,crmsk,mskhdr,ofil,kpars[i]
+						kcwi_write_image,msk,mskhdr,ofil,kpars[i]
 					endif
 				endif else begin
 					;
@@ -625,98 +714,20 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						'cosmic ray cleaning skipped, exposure time <= ', $
 						crexthresh,format='(a,f6.1)',/info
 					sxaddpar,hdr,'CRCLEAN','F',' cleaned cosmic rays?'
-					crmsk = 0.
+					;
+					; update CR mask header
+					mskhdr = hdr
+					sxdelpar,mskhdr,'BUNIT'
+					sxaddpar,mskhdr,'BSCALE',1.
+					sxaddpar,mskhdr,'BZERO',0
+					sxaddpar,mskhdr,'MASKIMG','T',' mask image?'
 				endelse
 			endif else begin
 				if kpars[i].crzap ne 1 then $
 					kcwi_print_info,ppar,pre,'cosmic ray cleaning skipped',/warning
 				sxaddpar,hdr,'CRCLEAN','F',' cleaned cosmic rays?'
-				crmsk = 0.
-			endelse
-			;
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; END   STAGE 1-E: COSMIC RAY REJECTION AND MASKING
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; BEGIN STAGE 1-F: IMAGE DEFECT CORRECTION AND MASKING
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;
-			; create mask
-			msk = bytarr(sz)
-			;
-			; be sure that output image scaling will work
-			msk[0] = 1b
-			;
-			; start with no bad pixels
-			nbpix = 0
-			bpx = [0]
-			bpy = [0]
-			;
-			; get defect list
-			bcfil = !KCWI_DATA + 'badcol_' + strtrim(kcfg.ampmode,2) + '_' + $
-				strn(kcfg.xbinsize) + 'x' + strn(kcfg.ybinsize) + '.dat'
-			if file_test(bcfil) then begin
 				;
-				; report the bad col file
-				kcwi_print_info,ppar,pre,'using bad column file: '+bcfil
-				;
-				; read it
-				readcol,bcfil,bcx0,bcx1,bcy0,bcy1,form='i,i,i,i',comment='#',/silent
-				;
-				; correct to IDL zero bias
-				bcx0 -= 1
-				bcx1 -= 1
-				bcy0 -= 1
-				bcy1 -= 1
-				;
-				; x range for bad columns
-				bcdel = 5
-				;
-				; number of bad column entries
-				nbc = n_elements(bcx0)
-				for j = 0,nbc-1 do begin
-					if bcx0[j] ge bcdel and bcx0[j] lt sz[0]-bcdel and $
-					   bcx1[j] ge bcdel and bcx1[j] lt sz[0]-bcdel and $
-				   	   bcy0[j] ge 0 and bcy0[j] lt sz[1] and $
-					   bcy1[j] ge 0 and bcy1[j] lt sz[1] then begin
-					   	;
-					   	; number of x pixels we are fixin'
-						nx = (bcx1[j] - bcx0[j]) + 1
-						;
-						; now do the job!
-						for by = bcy0[j],bcy1[j] do begin
-							;
-							; get median of the +- del pixels straddling baddies
-							vals = [img[bcx0[j]-bcdel:bcx0[j]-1,by], $
-								img[bcx0[j]+1:bcx0[j]+bcdel,by]]
-							gval = median(vals)
-							;
-							; substitute good value in and set mask
-							for bx = bcx0[j],bcx1[j] do begin
-								img[bx,by] = gval
-								msk[bx,by] = 2b
-								nbpix += nx
-							endfor
-						endfor
-			   		endif else begin
-						kcwi_print_info,ppar,pre,'bad range for bad column!',/warning
-					endelse
-				endfor
-			endif else begin
-				bcfil = ''
-				kcwi_print_info,ppar,pre, 'no bad column file for ' + $
-					strtrim(kcfg.ampmode,2) + ' ' + $
-					strn(kcfg.xbinsize) + 'x' + strn(kcfg.ybinsize)
-			endelse
-			;
-			; does cosmic ray mask image and header already exist?
-			if n_elements(crmsk) gt 1 then begin
-				cpix = where(crmsk eq 1, ncpix)
-				if ncpix gt 0 then msk[cpix] = msk[cpix] + 1b
-			;
-			; if not, create header
-			endif else begin
+				; update CR mask header
 				mskhdr = hdr
 				sxdelpar,mskhdr,'BUNIT'
 				sxaddpar,mskhdr,'BSCALE',1.
@@ -724,27 +735,8 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				sxaddpar,mskhdr,'MASKIMG','T',' mask image?'
 			endelse
 			;
-			; update headers
-			; image
-			if strlen(bcfil) gt 0 then begin
-				sxaddpar,hdr,'BPCLEAN','T',' cleaned bad pixels?'
-				sxaddpar,hdr,'BPFILE',bcfil,' bad pixel map filename'
-			endif else $
-				sxaddpar,hdr,'BPCLEAN','F',' cleaned bad pixels?'
-			sxaddpar,hdr,'NBPCLEAN',nbpix,' number of bad pixels cleaned'
-			; mask
-			if strlen(bcfil) gt 0 then begin
-				sxaddpar,mskhdr,'BPCLEAN','T',' cleaned bad pixels?'
-				sxaddpar,mskhdr,'BPFILE',bcfil,' bad pixel map filename'
-			endif else $
-				sxaddpar,mskhdr,'BPCLEAN','F',' cleaned bad pixels?'
-			sxaddpar,mskhdr,'NBPCLEAN',nbpix,' number of bad pixels cleaned'
-			;
-			; log
-			kcwi_print_info,ppar,pre,'number of bad pixels = '+strtrim(string(nbpix),2)
-			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; END   STAGE 1-F: IMAGE DEFECT CORRECTION AND MASKING
+			; END   STAGE 1-F: COSMIC RAY REJECTION AND MASKING
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
