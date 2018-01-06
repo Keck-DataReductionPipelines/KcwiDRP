@@ -257,9 +257,10 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					; mask is not changed by flat
 					;
 					; update header
+					fdecomp,msfile,disk,dir,root,ext
 					sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,mskhdr,'SKYCOR','T',' sky corrected?'
-					sxaddpar,mskhdr,'SKYMAST',msfile,' master sky file'
+					sxaddpar,mskhdr,'SKYMAST',root+'.'+ext,' master sky file'
 					;
 					; write out sky corrected mask image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mskk',/nodir)
@@ -268,7 +269,7 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					; update header
 					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,varhdr,'SKYCOR','T',' sky corrected?'
-					sxaddpar,varhdr,'SKYMAST',msfile,' master sky file'
+					sxaddpar,varhdr,'SKYMAST',root+'.'+ext,' master sky file'
 					;
 					; write out sky corrected variance image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vark',/nodir)
@@ -277,7 +278,7 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					; update header
 					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,hdr,'SKYCOR','T',' sky corrected?'
-					sxaddpar,hdr,'SKYMAST',msfile,' master sky file'
+					sxaddpar,hdr,'SKYMAST',root+'.'+ext,' master sky file'
 					;
 					; write out sky corrected intensity image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_intk',/nodir)

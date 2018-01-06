@@ -6,7 +6,7 @@
 
 - added coyote graphics library to support kctv.pro.
 
-- now fix bad columns before CR cleaning, re-ordered mask values.
+- now fix bad columns before CR cleaning, re-ordered, expanded mask values.
 
 - now flag un-corrected pixels in master flat and flat corrected object images.
 

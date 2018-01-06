@@ -75,6 +75,8 @@ pro kcwi_make_flat,ppar,gfile
 	wmf = repstr(gfile,'_geom', '_wavemap')
 	if file_test(wmf) then begin
 		wavemap = mrdfits(wmf,0,wmfh,/fscale,/silent)
+		fdecomp,wmf,disk,dir,root,ext
+		wmf = root+'.'+ext
 	endif else begin
 		kcwi_print_info,ppar,pre,'no wavemap file',/error
 		return
@@ -84,6 +86,8 @@ pro kcwi_make_flat,ppar,gfile
 	slf = repstr(gfile,'_geom','_slicemap')
 	if file_test(slf) then begin
 		slice = mrdfits(slf,0,slfh,/fscale,/silent)
+		fdecomp,slf,disk,dir,root,ext
+		slf = root+'.'+ext
 	endif else begin
 		kcwi_print_info,ppar,pre,'no slicemap file',/error
 		return
@@ -93,6 +97,8 @@ pro kcwi_make_flat,ppar,gfile
 	pof = repstr(gfile,'_geom','_posmap')
 	if file_test(pof) then begin
 		pos = mrdfits(pof,0,pofh,/fscale,/silent)
+		fdecomp,pof,disk,dir,root,ext
+		pof = root+'.'+ext
 	endif else begin
 		kcwi_print_info,ppar,pre,'no posmap file',/error
 		return
@@ -220,7 +226,13 @@ pro kcwi_make_flat,ppar,gfile
 	; readnoise
 	nba = sxpar(hdr,'NVIDINP')
 	avrn = 0.
-	for ia = 0,nba-1 do avrn = avrn + sxpar(hdr,'BIASRN'+strn(ia+1))
+	;
+	; did we have a master bias?
+	if sxpar(hdr,'BIASRN1') then $	; yes, average the bias rn
+		for ia = 0,nba-1 do $
+			avrn = avrn + sxpar(hdr,'BIASRN'+strn(ia+1)) $
+	else	for ia = 0,nba-1 do $	; no, average the oscan rn
+			avrn = avrn + sxpar(hdr,'OSCNRN'+strn(ia+1))
 	avrn = avrn / float(nba)
 	avrn = avrn / sqrt(nf)
 	;
@@ -330,7 +342,6 @@ pro kcwi_make_flat,ppar,gfile
 		dw=(waves[1]-waves[0])/30.0
 		wavemin=(waves[0]+waves[1])/2.0-dw
 		wavemax=(waves[0]+waves[1])/2.0+dw
-		print,wavemin,wavemax
 		;
 		; get reference slice data
 		q = where(slice eq refslice and wavemap ge wavemin and $
@@ -705,21 +716,21 @@ pro kcwi_make_flat,ppar,gfile
 	qq=where(ratio lt 0, nfix)
 	if nfix gt 0 then begin
 		ratio[qq] = 0.0
-		mask[qq] = 4b
+		mask[qq] = 8b
 	endif
 	;
 	; trim high points near edges of slice
 	qq=where(ratio ge 3 and (pos le 4/xbin or pos ge 136/xbin), nfix)
 	if nfix gt 0 then begin
 		ratio[qq] = 0.0
-		mask[qq] = 4b
+		mask[qq] = 16b
 	endif
 	;
 	; don't correct low signal points
 	qq = where(newflat lt 30., nfix)
 	if nfix gt 0 then begin
 		ratio[qq] = 1.0
-		mask[qq] = 4b
+		mask[qq] = 32b
 	endif
 	;
 	; update master flat header
@@ -729,6 +740,9 @@ pro kcwi_make_flat,ppar,gfile
 	sxaddpar,hdr,'FLATLST',ppar.cflats, $
 		' range list of image numbers for stack'
 	sxaddpar,hdr,'AVRDN',avrn,' Stack RN accounting for root n'
+	sxaddpar,hdr,'WAVMAPF',wmf,' Wavemap file'
+	sxaddpar,hdr,'SLIMAPF',slf,' Slicemap file'
+	sxaddpar,hdr,'POSMAPF',pof,' Posmap file'
 	varhdr = hdr
 	imghdr = hdr
 	mskhdr = hdr

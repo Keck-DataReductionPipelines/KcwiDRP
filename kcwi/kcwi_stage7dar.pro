@@ -278,7 +278,7 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 						mskhdr = hdr
 						kcwi_print_info,ppar,pre,'mask image not found for: '+obfil,/warning
 					endelse
-					msk_out = fltarr(sz[0]+2*pad_x, sz[1]+2*pad_y,sz[2]) + 16.
+					msk_out = fltarr(sz[0]+2*pad_x, sz[1]+2*pad_y,sz[2]) + 128.
 					msk_out[pad_x:pad_x+sz[0]-1, pad_y:pad_y+sz[1]-1,*] = float(msk)
 					;
 					; do correction

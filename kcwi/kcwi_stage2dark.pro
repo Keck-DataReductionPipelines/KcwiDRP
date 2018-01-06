@@ -257,18 +257,19 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 						msk = msk + mdmsk
 						;
 						; update header
+						fdecomp,mdfile,disk,dir,root,ext
 						sxaddpar,mskhdr,'DARKSUB','T',' dark subtracted?'
-						sxaddpar,mskhdr,'MDFILE',mdfile,' master dark file applied'
+						sxaddpar,mskhdr,'MDFILE',root+'.'+ext,' master dark file applied'
 						sxaddpar,mskhdr,'DARKSCL',fac,' dark scale factor'
 						;
 						; update header
 						sxaddpar,varhdr,'DARKSUB','T',' dark subtracted?'
-						sxaddpar,varhdr,'MDFILE',mdfile,' master dark file applied'
+						sxaddpar,varhdr,'MDFILE',root+'.'+ext,' master dark file applied'
 						sxaddpar,varhdr,'DARKSCL',fac,' dark scale factor'
 						;
 						; update header
 						sxaddpar,hdr,'DARKSUB','T',' dark subtracted?'
-						sxaddpar,hdr,'MDFILE',mdfile,' master dark file applied'
+						sxaddpar,hdr,'MDFILE',root+'.'+ext,' master dark file applied'
 						sxaddpar,hdr,'DARKSCL',fac,' dark scale factor'
 						;
 						; handle the case when no dark frames were taken

@@ -75,7 +75,7 @@ lastpix = long ( ( kgeom.wave1out - kgeom.wave0out ) / kgeom.dwout )
 ;
 ; mask regions outside of slices with 4
 if keyword_set(mask) then $
-	pimg = bytarr(sz[0],sz[1]+pad+pad) + 8b $
+	pimg = bytarr(sz[0],sz[1]+pad+pad) + 64b $
 else	pimg = fltarr(sz[0],sz[1]+pad+pad)
 ;
 ; insert original

@@ -190,6 +190,21 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			; get dimensions
 			sz = size(img,/dimension)
 			;
+			; create mask
+			msk = bytarr(sz)
+			;
+			; flag saturated pixels
+			sat = where(img ge 65535, nsat)
+			if nsat gt 0 then $
+				msk[sat] = 1b $
+			else	msk[0] = 1b	; to be sure scaling of output image works
+			;
+			; update header
+			sxaddpar,hdr,'NSATPIX',nsat,' Number of saturated pixels'
+			;
+			; log
+			kcwi_print_info,ppar,pre,'Number of saturated pixels flagged',nsat,format='(a,i9)'
+			;
 			; get ccd geometry
 			kcwi_map_ccd,hdr,asec,bsec,dsec,tsec,direc,namps=namps,trimmed_size=tsz,verbose=kpars[i].verbose
 			;
@@ -280,8 +295,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				endif
 				;
 				; update header
+				fdecomp,mbfile,disk,dir,root,ext
 				sxaddpar,hdr,'BIASSUB','T',' bias subtracted?'
-				sxaddpar,hdr,'MBFILE',mbfile,' master bias file subtracted'
+				sxaddpar,hdr,'MBFILE',root+'.'+ext,' master bias file subtracted'
 			;
 			; handle the case when no bias frames were taken
 			endif else begin
@@ -441,6 +457,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;
 			; create trimmed array
 			imgo = fltarr(tsz[0],tsz[1])
+			msko = bytarr(tsz[0],tsz[1])
 			;
 			; loop over amps
 			for ia = 0, namps-1 do begin
@@ -459,6 +476,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				;
 				; copy into trimmed image
 				imgo[xo0:xo1,yo0:yo1] = img[xi0:xi1,yi0:yi1]
+				msko[xo0:xo1,yo0:yo1] = msk[xi0:xi1,yi0:yi1]
 				;
 				; update header using 1-bias indices
 				sec = '['+strn(xo0+1)+':'+strn(xo1+1)+',' + $
@@ -476,6 +494,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;
 			; store trimmed image
 			img = imgo
+			msk = msko
 			sz = size(img,/dimension)
 			;
 			; update header
@@ -549,12 +568,6 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			; BEGIN STAGE 1-E: IMAGE DEFECT CORRECTION AND MASKING
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
-			; create mask
-			msk = bytarr(sz)
-			;
-			; be sure that output image scaling will work
-			msk[0] = 1b
-			;
 			; start with no bad pixels
 			nbpix = 0
 			bpx = [0]
@@ -602,7 +615,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 							; substitute good value in and set mask
 							for bx = bcx0[j],bcx1[j] do begin
 								img[bx,by] = gval
-								msk[bx,by] = 1b
+								msk[bx,by] += 2b
 								nbpix += nx
 							endfor
 						endfor
@@ -693,7 +706,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					;
 					; update mask image
 					cpix = where(crmsk eq 1, ncpix)
-					if ncpix gt 0 then msk[cpix] = msk[cpix] + 2b
+					if ncpix gt 0 then msk[cpix] += 4b
 					;
 					; update CR mask header
 					mskhdr = hdr
