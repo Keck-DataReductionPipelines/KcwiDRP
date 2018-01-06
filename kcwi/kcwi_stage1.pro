@@ -414,7 +414,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					endfor
 					;
 					; log
-					kcwi_print_info,ppar,pre,'overscan readnoise in e- for amp '+strn(ia+1), sdrs
+					kcwi_print_info,ppar,pre,'overscan readnoise in e- for amp '+strn(ia+1), sdrs,form='(a,f9.3)'
 					kcwi_print_info,ppar,pre,'overscan '+strtrim(string(ia+1),2)+'/'+ $
 						strtrim(string(namps),2)+' (x0,x1,y0,y1): '+ $
 						    strtrim(string(osx0),2)+','+strtrim(string(osx1),2)+ $
