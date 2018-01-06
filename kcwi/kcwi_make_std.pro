@@ -518,16 +518,18 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				endif else begin
 					;
 					; re-fit
-					if strupcase(strtrim(q,2)) eq 'F' then begin
+					if strupcase(strtrim(q,2)) eq 'F' or $
+					   strtrim(q,2) eq '+' or strtrim(q,2) eq '-' then begin
+						if strtrim(q,2) eq '+' then begin
+							ford += 1
+							print,'Fitting order: ',ford
+						endif else if strtrim(q,2) eq '-' then begin
+							ford -= 1
+							print,'Fitting order: ',ford
+						endif
 						res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me, $
 								status=fitstat)
 						finvsen = poly(w-wf0,res)
-					endif else if strtrim(q,2) eq '+' then begin
-						ford += 1
-						print,'Fitting order: ',ford
-					endif else if strtrim(q,2) eq '-' then begin
-						ford -= 1
-						print,'Fitting order: ',ford
 					;
 					; mark a region for resoration or deletion
 					endif else begin
