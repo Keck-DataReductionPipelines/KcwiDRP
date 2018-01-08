@@ -5,7 +5,7 @@ Copyright (c) 2018, California Institute of Technology.  All rights reserved.
         KCWI Data Extraction and Reduction Pipeline (KDERP) README
 
 
-Twentieth beta release; Version: 0.6.0 (DEV) Date: 2018/01/00
+Twentieth beta release; Version: 0.6.0 (REL) Date: 2018/01/08
 
 Caveat Emptor!  Use at your own risk!  In active development!
 
@@ -125,7 +125,8 @@ Stage 1 takes raw images and performs a basic CCD reduction to produce bias
 and overscan subtracted, gain-corrected, trimmed and cosmic ray removed
 images.  For nod-and-shuffle observations, the sky will also be subtracted.
 The major output is an 'intensity' image in units of electrons.  For object
-images, a variance image and a mask image are also produced.
+images, a variance image and a mask image are also produced.  NOTE: the
+mask values are their meanings are tabulated in the DATA_PRODUCTS file.
 
 Stage 2 is a dark and scattered light subtraction step.  Even if you have
 no dark frames, this step should be run to remove scattered light.  For
@@ -321,10 +322,10 @@ images.  It logs the number of cosmic rays removed, for example.
 The output images for this stage all have the same prefix as the input raw
 image, but different suffixes that indicate what kind of image they are:
 '_int.fits' for the intensity images, '_var.fits' for the variance images,
-and '_msk.fits' for the mask images.  If you had nod-and-shuffle
-observations, then there will also be '_obj.fits' and '_sky.fits' images
-containing just the object panel and just the sky panel respectively of
-the nod-and-shuffle segments.
+and '_msk.fits' for the mask images (see DATA_PRODUCTS file for mask values
+and their meanings).  If you had nod-and-shuffle observations, then there
+will also be '_obj.fits' and '_sky.fits' images containing just the object
+panel and just the sky panel respectively of the nod-and-shuffle segments.
 
 
 Stage 2 - dark/scattered light subtraction:

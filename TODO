@@ -1,15 +1,16 @@
 bad columns for N&S images
-bad columns for TUP 1x1 images
 fix gain float in dual amp modes
 fix horizontal stripes in biases
+implement handling of dark current decay
 hardcopy output of standard star results
 compression of all files?
 use arcbars for direct geometry solution
 implement saveplots option & date-stamping plots
 implement nod-and-shuffle scattered light fitting/removal
 add option to re-scale the sky for aborted nod-and-shuffel obs
+#08-JAN-2018 DONE bad columns for TUP 1x1 images
 #05-JAN-2018 DONE flag saturated pixels
-#01-DEC-2017 DOEN account for vignetting in bars images
+#01-DEC-2017 DONE account for vignetting in bars images
 #01-DEC-2017 DONE look into flat fitting algorithm: seeing striations in self-flatted cflats
 #10-AUG-2017 DONE add differential atmospheric refraction correction
 #29-JUN-2017 DONE alternate cal directory

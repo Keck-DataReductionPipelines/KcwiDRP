@@ -20,7 +20,7 @@ ext		data units		Stage	notes
 ---------------	-----------------------	-----	------------------------
 int		e-/px			1	reduced output intensity
 var		e-^2/px			1	variance
-msk		flag			1	cosmic ray pixels flagged with 1
+msk		flag			1	see below for flag values
 obj		e-/px			1 (N&S) nod-and-shuffle object panel
 sky		e-/px			1 (N&S) nod-and-shuffle sky panel
 
@@ -59,3 +59,19 @@ vcubes		flux^2/px		8	variance in flux units
 mcubes		flag			8	same
 ocubes		flux/px			8	std star calibrated un-sky sub cube
 scubes		slux/px			8	std star calibrated sky model cube
+
+Mask file flag values and their meaning:
+
+value	meaning		      stage	routine
+-----	-------		      -----	-------
+  1	Saturated pixel		1
+  2	Bad column fixed	1
+  4	CR fixed		1
+  8	Negative flat value	5	kcwi_make_flat.pro
+ 16	On slice edge		5	kcwi_make_flat.pro
+ 32	Low signal flat		5	kcwi_make_flat.pro
+ 64	Outside slices		6	kcwi_apply_geom.pro
+128	DAR padded pixel	7
+
+NB: When mask images are resampled, non-standard values will result.  Use
+caution when testing flag values after stage 5.
