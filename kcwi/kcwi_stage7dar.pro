@@ -123,6 +123,10 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 		if not file_test(obfil) then $
 			obfil = kcwi_get_imname(kpars[i],imgnum[i],'_icuber',/reduced)
 		;
+		; if not check for stage 6cube output
+		if not file_test(obfil) then $
+			obfil = kcwi_get_imname(kpars[i],imgnum[i],'_icube',/reduced)
+		;
 		; check if input file exists
 		if file_test(obfil) then begin
 			;
@@ -274,7 +278,7 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 						mskhdr = hdr
 						kcwi_print_info,ppar,pre,'mask image not found for: '+obfil,/warning
 					endelse
-					msk_out = fltarr(sz[0]+2*pad_x, sz[1]+2*pad_y,sz[2]) + 16.
+					msk_out = fltarr(sz[0]+2*pad_x, sz[1]+2*pad_y,sz[2]) + 128.
 					msk_out[pad_x:pad_x+sz[0]-1, pad_y:pad_y+sz[1]-1,*] = float(msk)
 					;
 					; do correction
@@ -355,7 +359,7 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 						;
 						; write out dar corrected sky panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_scubed',/nodir)
-						kcwi_write_image,sky_out,hdr,ofil,kpars[i]
+						kcwi_write_image,sky_out,skyhdr,ofil,kpars[i]
 					endif
 					;
 					; check for nod-and-shuffle obj image
@@ -389,7 +393,7 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 						;
 						; write out dar corrected obj panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocubed',/nodir)
-						kcwi_write_image,obj_out,hdr,ofil,kpars[i]
+						kcwi_write_image,obj_out,objhdr,ofil,kpars[i]
 					endif
 				;
 				; end check if output file exists already

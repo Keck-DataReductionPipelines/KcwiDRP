@@ -52,6 +52,7 @@
 ;	2014-SEP-23	Added extinction correction
 ;	2014-SEP-29	Added infrastructure to handle selected processing
 ;	2017-MAY-24	Changed to proc control file and removed link file
+;	2018-JAN-03	Made more interactive to improve fitting
 ;-
 pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 	;
@@ -86,7 +87,8 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 	if n_elements(verbose) eq 1 then $
 		ppar.verbose = verbose
 	if n_elements(display) eq 1 then $
-		ppar.display = display
+		ppar.display = display $
+	else	ppar.display = 2	; defaults to interactive
 	;
 	; log file
 	lgfil = reddir + 'kcwi_stage8std.log'
@@ -254,19 +256,19 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					; do calibration
 					for is=0,sz[0]-1 do begin
 						for ix = 0, sz[1]-1 do begin
-							img[is,ix,*] = (img[is,ix,*]/expt) * mscal
+							img[is,ix,*] = (img[is,ix,*]/expt) * mscal * 1.d16
 							;
 							; convert variance to flux units (squared)
-							var[is,ix,*] = (var[is,ix,*]/expt^2) * mscal^2
+							var[is,ix,*] = (var[is,ix,*]/expt^2) * (mscal * 1.d16)^2
 						endfor
 					endfor
 					;
 					; update header
+					fdecomp,msfile,disk,dir,root,ext
 					sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,mskhdr,'STDCOR','T',' std corrected?'
-					sxaddpar,mskhdr,'MSFILE',msfile,' master std file applied'
+					sxaddpar,mskhdr,'MSFILE',root+'.'+ext,' master std file applied'
 					sxaddpar,mskhdr,'MSIMNO',msimgno,' master std image number'
-					sxaddpar,mskhdr,'BUNIT','FLAM',' brightness units'
 					;
 					; write out flux calibrated mask image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mcubes',/nodir)
@@ -275,9 +277,9 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					; update header
 					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,varhdr,'STDCOR','T',' std corrected?'
-					sxaddpar,varhdr,'MSFILE',msfile,' master std file applied'
+					sxaddpar,varhdr,'MSFILE',root+'.'+ext,' master std file applied'
 					sxaddpar,varhdr,'MSIMNO',msimgno,' master std image number'
-					sxaddpar,varhdr,'BUNIT','FLAM',' brightness units'
+					sxaddpar,varhdr,'BUNIT','FLAM16**2',' brightness units (Flam*10^16)^2'
 					;
 					; write out flux calibrated variance image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vcubes',/nodir)
@@ -286,9 +288,9 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					; update header
 					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,hdr,'STDCOR','T',' std corrected?'
-					sxaddpar,hdr,'MSFILE',msfile,' master std file applied'
+					sxaddpar,hdr,'MSFILE',root+'.'+ext,' master std file applied'
 					sxaddpar,hdr,'MSIMNO',msimgno,' master std image number'
-					sxaddpar,hdr,'BUNIT','FLAM',' brightness units'
+					sxaddpar,hdr,'BUNIT','FLAM16',' brightness units (Flam*10^16)'
 					;
 					; write out flux calibrated intensity image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_icubes',/nodir)
@@ -309,9 +311,9 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						; update header
 						sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,skyhdr,'STDCOR','T',' std corrected?'
-						sxaddpar,skyhdr,'MSFILE',msfile,' master std file applied'
+						sxaddpar,skyhdr,'MSFILE',root+'.'+ext,' master std file applied'
 						sxaddpar,skyhdr,'MSIMNO',msimgno,' master std image number'
-						sxaddpar,skyhdr,'BUNIT','FLAM',' brightness units'
+						sxaddpar,skyhdr,'BUNIT','FLAM16',' brightness units (Flam*10^16)'
 						;
 						; write out flux calibrated sky panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_scubes',/nodir)
@@ -333,9 +335,9 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						; update header
 						sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,objhdr,'STDCOR','T',' std corrected?'
-						sxaddpar,objhdr,'MSFILE',msfile,' master std file applied'
+						sxaddpar,objhdr,'MSFILE',root+'.'+ext,' master std file applied'
 						sxaddpar,objhdr,'MSIMNO',msimgno,' master std image number'
-						sxaddpar,objhdr,'BUNIT','FLAM',' brightness units'
+						sxaddpar,objhdr,'BUNIT','FLAM16',' brightness units (Flam*10^16)'
 						;
 						; write out flux calibrated obj panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocubes',/nodir)
@@ -357,7 +359,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 		;
 		; end check if input file exists
 		endif else $
-			kcwi_print_info,ppar,pre,'input file not found: '+obfil,/warning
+			kcwi_print_info,ppar,pre,'input file not found: '+obfil,/info
 	endfor	; loop over images
 	;
 	; report

@@ -140,8 +140,8 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	kgeom.nx = kcfg.naxis1
 	kgeom.ny = kcfg.naxis2
 	kgeom.x0out = 30 / kgeom.xbinsize	; re-set in kcwi_trace_cbars
-	kgeom.goody0 = 10
-	kgeom.goody1 = kgeom.ny - 10
+	kgeom.goody0 = 0
+	kgeom.goody1 = kgeom.ny
 	kgeom.trimy0 = 0
 	kgeom.trimy1 = kgeom.ny
 	kgeom.ypad = 1400 / kgeom.ybinsize
@@ -281,18 +281,23 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	endif
 	;
 	; now check ppar values which override defaults
-	if ppar.dw gt 0. then $
+	if ppar.dw gt 0. then begin
 		kgeom.dwout = ppar.dw
-	if ppar.wave0 gt 0. then $
+		kcwi_print_info,ppar,pre,'Data cube output Disp (A/px)', $
+				kgeom.dwout,format='(a,f6.3)'
+	endif
+	if ppar.wave0 gt 0. then begin
 		kgeom.wave0out = ppar.wave0
-	if ppar.wave1 gt 0. then $
+		kcwi_print_info,ppar,pre,'Data cube output Wave0 (A)', $
+				kgeom.wave0out,format='(a,f9.2)'
+	endif
+	if ppar.wave1 gt 0. then begin
 		kgeom.wave1out = ppar.wave1
+		kcwi_print_info,ppar,pre,'Data cube output Wave1 (A)', $
+				kgeom.wave1out,format='(a,f9.2)'
+	endif
 	if ppar.cleancoeffs gt -1. then $
 		kgeom.bclean = ppar.cleancoeffs
-	;
-	; print log of values
-	kcwi_print_info,ppar,pre,'Data cube output Disp (A/px), Wave0 (A): ', $
-		kgeom.dwout,kgeom.wave0out,format='(a,f8.3,f9.2)'
 	;
 	; log our change of the kgeom struct
 	kgeom.progid = pre

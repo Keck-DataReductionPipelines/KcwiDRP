@@ -30,7 +30,8 @@ pro one_arrow,xcen,ycen,angle,label, linestyle = linestyle, $
 ;               data coordinates the default is multiplied by 
 ;               (!X.crange[1] - !X.crange[0])/512..
 ;       CHARSIZE   = usual IDL meaning, default = 2.0
-;       COLOR      = usual IDL meaning, default = !P.COLOR
+;       COLOR      = name or number give the color to draw the arrow.  See
+;             cgCOLOR for a list of color names.
 ;       /DATA - If set, then the input position (xcen, ycen) and the ARROWSIZE
 ;                lengths are interpreted as being in data coordinates
 ;       FONT - IDL vector font number to use (1-20).   For example, to write
@@ -50,8 +51,10 @@ pro one_arrow,xcen,ycen,angle,label, linestyle = linestyle, $
 ;       Added font keyword, W.B. Landsman Hughes STX Corp. April 1995
 ;       Modified to work correctly for COLOR=0  J.Wm.Parker, HITC   1995 May 25
 ;       Add /NORMAL and /DATA keywords  W.Landsman    November 2006
+;       Work with Coyote graphics W. Landsman  February 2011
 ;-
  On_error,2
+ compile_opt idl2
 
  if N_params() LT 4 then begin
       print,'Syntax - one_arrow, xcen, ycen, angle, label, CHARSIZE = , FONT=' 
@@ -59,23 +62,22 @@ pro one_arrow,xcen,ycen,angle,label, linestyle = linestyle, $
       return
  endif 
 
- if not keyword_set(charsize)  then charsize  = 2.0
- if not keyword_set(thick)     then thick     = 2.0
- if (n_elements(color) eq 0)   then color     = !P.COLOR
- if (n_elements(arrowsize) ge 1) and (n_elements(arrowsize) ne 3) then begin
+  if (n_elements(arrowsize) ge 1) and (n_elements(arrowsize) ne 3) then begin
    print,'Error in ONE_ARROW:  returning to main level.'
    print,'Arrowsize is [length, head_length, head_angle]'
    print,'Defaults are [30.0,9.0,35.0]'
    return
  endif
 
+ setdefaultvalue, charsize, 2.0
+ setdefaultvalue, thick, 2.0
    if keyword_set(data) then scale = (!X.CRANGE[1] - !X.CRANGE[0])/512. $
     else if keyword_set(normal) then scale = 1/512. else scale = 1.
  if N_elements(arrowsize) eq 0 then $
     arrowsize=[30.0*scale,9.0*scale,35.0] else $
     arrowsize = [arrowsize[0]*scale, arrowsize[1]*scale, arrowsize[2] ]
 
- device = 1 -  ( keyword_set(data) or keyword_set(normal) )
+ device = ~keyword_set(data) && ~keyword_set(normal)
  label = strmid(strtrim(label,2),0,1)
  if keyword_set(font) then label = '!' + strtrim(font,2) + label + '!X '
  len       = arrowsize[0]
@@ -105,8 +107,9 @@ one_ray,terminus[0],terminus[1],headlen,(angle+180.0-headangle),t2, $
 ;  Draw label
 one_ray,xcen,ycen,len+char_cen_offset,angle,terminus,/nodraw
 one_ray,terminus[0],terminus[1],char_orig_len,char_orig_angle,char_orig,/nodraw
-xyouts, char_orig[0], char_orig[1], label, $
-   charthick=thick, color=color, charsize=charsize, device=device, normal =normal
+cgtext, char_orig[0], char_orig[1], label, charthick=thick, color=color, $
+ charsize=charsize, device=device, normal=normal
+
 
  return
  end

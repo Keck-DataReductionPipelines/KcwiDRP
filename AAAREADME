@@ -1,11 +1,11 @@
 
-Copyright (c) 2017, California Institute of Technology.  All rights reserved.
+Copyright (c) 2018, California Institute of Technology.  All rights reserved.
 
 
         KCWI Data Extraction and Reduction Pipeline (KDERP) README
 
 
-Twentieth beta release; Version: 0.5.1 (DEV) Date: 2017/08/00
+Twentieth beta release; Version: 0.6.0 (DEV) Date: 2018/01/00
 
 Caveat Emptor!  Use at your own risk!  In active development!
 
@@ -127,33 +127,32 @@ images.  For nod-and-shuffle observations, the sky will also be subtracted.
 The major output is an 'intensity' image in units of electrons.  For object
 images, a variance image and a mask image are also produced.
 
-Stage 2 is an optional dark subtraction step.  If you are doing nod-and-
-shuffle, this is not needed.  Check the file 'kcwi.proc' in the output
-directory for the list of what images will have the dark frame subtracted.
+Stage 2 is a dark and scattered light subtraction step.  Even if you have
+no dark frames, this step should be run to remove scattered light.  For
+nod-and-shuffle images scattered light has already been subtracted so this
+step will automatically be skipped.
 
-Stage 3 is an optional flat field correction step.  This will use the
-continuum flat images to determine the pixel-to-pixel variation in the ccd
-response and correct for it.
+Stage 3 uses a corresponding 'cbars' and an 'arc' image to define the
+geometric transformations required to map each pixel in the 2d image into
+slice, postion, and wavelength.  These maps are used in subsequent stages.
 
-Stage 4 uses a corresponding 'cbars' and an 'arc' image to define the
-geometric transformations required to generate a rectified object data
-cube.  It applies this transformation to the object intensity, variance and
-mask images output from any of the previous stages.
+Stage 4 is a flat field and illumination correction step.  This will use
+the continuum flat images to determine the pixel-to-pixel variation in the
+ccd response along with the slice response function and the relative slice
+response function.
 
-Stage 5 uses sky images or the sky panels from the nod-and-shuffle
-observations to calculate the slice profile response function and writes
-out a corresponding '*_prof.fits' image.  This is then divided out of each
-slice to produce a '*_icubep.fits', profile-corrected data cube.  The
-variance and mask cubes '*_vcubep.fits' and '*_mcubep.fits' are written out
-as well.
+Stage 5 is an optional sky subtraction step.  This uses the maps generated
+in stage 3 to collect all the spectra in a given frame and reject object
+flux to determine the best sky spectrum.  This is then fit with a bspline
+algorithm to generate a model of the sky for each pixel in the 2d image.
+This 'noise-free' sky is then subtracted from the 2d object frame.  This
+step should be skipped if the sky is not well sampled in the frame or is
+mixed with a large fraction of object light (e.g., objects that fill the
+slicer).
 
-Stage 6 uses dome or twilight flats to derive a slice-to-slice correction
-relative to a reference slice (defaults to slice 11, or the twelfth slice
-from the left).  It writes out the relative response functions for each
-slice in a '*_rr.fits' image.  This is then divided out of each spatial
-column of each slice to produce '*_icuber.fits', a response-corrected data
-cube along with the corresponding '*_vcuber.fits' and '*_mcuber.fits'
-variance and mask cubes.
+Stage 6 is the cube generation step.  It applies the transformations solved
+in stage 3 to the object intensity, variance and mask images output from
+any of the previous stages.
 
 Stage 7 performs a differential atmospheric refraction correction based on
 the airmass of the observation, the orientation of the slicer during the
@@ -163,7 +162,8 @@ shifting process.
 
 Stage 8 uses a standard star observation to generate an inverse sensitivity
 curve which is applied to the corresponding observations to flux calibrate
-them.
+them.  This defaults to be run interactively (display=2), so be aware of
+this if you are running the pipeline in batch mode.
 
 Each step is controlled by the master 'proc' file which defaults to
 kcwi.proc, and a corresponding 'ppar' file which defaults to kcwi.ppar.
@@ -194,11 +194,11 @@ These are the keywords:
 /NONASSUB	- turn off nod-and-shuffle subtraction (why?)
 /SAVEINTIMS	- save intermediate images (takes a lot of disk space)
 /INCLUDETEST	- includes images of type 'test' (focus images, etc.)
-/DOMEPRIORITY	- set to give priority to dome flats over twilight flats
-/CLOBBER	- set to overwrite output files (otherwise it won't)
+/EXTERNAL_FLAT	- set to give priority to external (dome/twilight) flats (why?)
+/CLOBBER	- set to overwrite output files (default: it won't)
 /CLEANCOEFFS	- turn on cleaning the wavelength coefficients of errant bars
 /WAVEITER	- use a wave solution method that starts with a central fit 
-			and iteratively expands the wavelength range 
+			and iteratively expands the wavelength range (why?)
 /HELP		- print the command usage info
 
 ALTCALDIR	- set to an alternate source directory for calibrations
@@ -220,6 +220,7 @@ MINOSCANPIX	- minimum number of overscan pixels in a given row
 			this defaults to 70
 FROOT		- string overriding default file root ('kcwi')
 FDIGITS		- integer overriding the default image number digits (5)
+FIRST		- imgnum of first image to process (1)
 
 TAPERFRAC	- taper fraction for cross-correlation (0.2)
 PKDEL		- arc line matching threshold in fraction of resolution (0.75)
@@ -235,17 +236,17 @@ exist.  Exit IDL and look in the output directory (redux is the default):
 > cd redux
 > ls
 
-You'll see all the files that specify Master calibration file generation
+You'll see all the files that specify master calibration file generation
 (specific ppar files), as well as a log file.
 
-Let's look at the kcwi.proc file.  This shows the automatically generated
+Take a look at the kcwi.proc file.  This shows the automatically generated
 linking between the master calibrations and the other images.  Header lines
 are designated by starting with a hash ('#') character.  After the header
 there is one record per processed image followed by a set of keyword value
 pairs (separated by an equals sign) that control the association of each
 object image with the corresponding calibration object.  The header gives
 the legend for the columns in the image record.  This image record
-specifically give the image number and all the configuration data relevant
+specifically gives the image number and all the configuration data relevant
 to the calibration process.  The processing keywords that follow are
 derived from the master ppar file which defaults to 'kcwi.ppar' in the
 output directory.  If one wants to change these associations, one simply
@@ -284,6 +285,16 @@ IDL again:
 > cd ..
 > idl
 
+By default each stage looks for the kcwi.proc and kcwi.ppar files in
+'./redux/', but you can specify them on the command line.
+
+IDL> kcwi_stage1, './kcwi.proc', './kcwi.ppar'
+
+NB: Unless there is a good reason, it is not recommended that you specify
+these filenames on the command line.  In general, you will want to edit the
+files in the redux directory and just issue the stage commands with no
+parameters.
+
 Now you just run stage1:
 
 IDL> kcwi_stage1
@@ -297,8 +308,8 @@ IDL> kcwi_stage1,verbose=2,display=3
 This will take longer to run, especially if you kept cosmic ray removal
 'on'.  On a macbook pro with a 2.2 GHz Intel Core i7 processor and 8 GB of
 RAM, it takes roughly 30s just to do the cosmic ray removal on one 2x2
-binned image.  Typical total run times for a night's worth of images can
-vary from 10 to 30 minutes.
+binned image.  Typical total pipeline batch run times for a night's worth
+of images can vary from 20 to 60 minutes.
 
 Exit IDL again and examine the log file in the output directory.
 
@@ -316,7 +327,7 @@ containing just the object panel and just the sky panel respectively of
 the nod-and-shuffle segments.
 
 
-Stage 2 - dark subtraction:
+Stage 2 - dark/scattered light subtraction:
 
 The input and output directories default to './redux'.  You can run the
 command from the raw directory and it will find the files you already
@@ -324,7 +335,7 @@ processed in stage1.  You can control which master dark is used and which
 observations are dark subtracted using the 'kcwi.proc' file in the output
 directory specified when you ran KCWI_PREP.
 
-This step is run as follows:
+This stage is run as follows:
 
 IDL> kcwi_stage2dark
 
@@ -333,40 +344,17 @@ kcwi_stag2dark.log.  Here the outputs will be the same as for the stage1
 outputs, but will have a 'd' appended as such: '_intd.fits', '_vard.fits',
 and '_mskd.fits'.
 
-NB: this stage is optional and no harm will come from skipping it, if your
-science does not require it.
+NB: This step was previously skipped if dark frames were not taken.  Now,
+we subtract scattered light in this stage, so it should always be run
+unless there is some compelling scientific reason not to subtract the
+scattered light.
 
 
-Stage 3 - flat field correction:
+Stage 3 - geometric solution and data cube generation:
 
-You can control which master flat is used and which observations are flat
-corrected using the 'kcwi.proc' file in the output directory specified when
-you ran KCWI_PREP.
+This stage is run as follows:
 
-This step is run as follows:
-
-IDL> kcwi_stage3flat
-
-The log for this stage is in the output directory and is called
-kcwi_stag3flat.log.  Here the outputs will be the same as for the stage2
-outputs, but will have an 'f' appended as such: '_intf.fits', '_varf.fits',
-and '_mskf.fits'.
-
-
-Stage 4 - geometric solution and data cube generation:
-
-Once you are happy with the kcwi.proc and kcwi.ppar files, just execute
-stage4.  By default it looks for the kcwi.proc and kcwi.ppar files in 
-'./redux/', but you can specify them on the command line.
-
-IDL> kcwi_stage4geom, './kcwi.proc', './kcwi.ppar'
-
-
-NB: Unless there is a good reason, it is not recommended that you specify
-these filenames on the command line.  In general, you will want to edit the
-files in the redux directory and just issue the command with no parameters.
-
-IDL> kcwi_stage4geom
+IDL> kcwi_stage3geom
 
 The first step will be to trace the bars in the 'cbars' image.  If you set
 DISPLAY=2, you will see a plot for the middle row of each bar.  You can
@@ -422,7 +410,7 @@ discrepancy between the atlas spectrum and the bar arc spectrum.
 
 If you have trouble finding a good solution for a particular bar or set of
 bars, you can tweak some of the wavelength solution parameters in the
-kcwi.ppar file and re-run stage 4.  You can also edit the kcwi.proc file
+kcwi.ppar file and re-run stage3.  You can also edit the kcwi.proc file
 and add a specific adjustment using a keyword/value pair that relates to
 the wavelength solution for a specific data set.  Increasing the taper
 fraction (TAPERFRAC) parameter helps with edge effects produced by strong
@@ -430,78 +418,103 @@ arc lines near the edges of the wavelength window.  The line-matching
 parameter (PKDEL) will automatically be adjusted upwards from its default
 of 0.75 in 0.25 increments until at least five peaks are matched.  You may
 want to start out with a larger fraction of the resolution.  You must
-delete the the old geometry files from stage 4 or they will just be
+delete the the old geometry files from stage3 or they will just be
 re-used.  You can delete the old data-cube files or just set the CLOBBER
 parameter to 1 to allow new data-cubes to be generated.  You may want to
 move or rename the diagnostic 'wave_*.ps' files to compare with the newest
 run to see if your tweaking has improved things or not.  If they are not
 moved or renamed, they will just be overwritten.
 
-The outputs from stage4 are the wave plot files, geometry save files, the
-data cubes and the kcwi_stage4geom.log file.  The geometry save files are
-named after the 'cbars' image that was used to trace the bars and will end
-in '_geom.fits'.  If you re-run the stage4 pipeline without deleting these,
-they are just re-used.  The data cubes are an intensity cube '_icube.fits',
-a variance cube '_vcube.fits' and a mask cube '_mcube.fits'.  If you had
-nod-and-shuffle observations, there will also be an object cube
-'_ocube.fits' and a sky cube '_scube.fits'.  These are useful to verify
-that spectral features are not the results of sky residuals.
+The outputs from stage3 are the wave plot files, geometry fits files, the
+kcwi_stage3geom.log file and three map image files: a slice number map, a
+position (along the slice) map, and a wavelength map.  The maps and
+geometry fits files are named after the 'cbars' image that was used to
+trace the bars and will end in '_slicemap.fits', '_posmap.fits',
+'_wavemap.fits', and '_geom.fits'.  If you re-run the stage3 pipeline
+without deleting these, they are just re-used.
+
+
+Stage 4 - flat field and illumination correction:
+
+You can control which master flat is used and which observations are flat
+corrected using the 'kcwi.proc' file in the output directory specified when
+you ran KCWI_PREP.
+
+This step is run as follows:
+
+IDL> kcwi_stage4flat
+
+The log for this stage is in the output directory and is called
+kcwi_stag4flat.log.  Here the outputs will be the same as for the stage2
+outputs, but will have an 'f' appended as such: '_intf.fits', '_varf.fits',
+and '_mskf.fits'.
+
+As a diagnostic, you can display the master flat images with ds9 to see how
+well the CCD pixel-to-pixel variations and the illumination variations were
+fit.  If you find a problem, you can edit the kcwi.proc file and use a
+different master flat.  Just be careful to use a flat image with the same
+calibration setting as your object image.
+
+
+Stage 5 - sky modeling and subtraction:
+
+This stage uses the geometry maps output from stage3 to assemble all of the
+image spectra in order to derive an accurate estimate of the sky spectrum.
+For each wavelength, it collects all image pixels at that wavelength and
+then does a 1-sigma clip to remove light from non-sky photons.  The
+resulting sky observation is fit with bsplines to generate the best
+estimate of the sky spectrum with as little noise as possible.  Here, the
+outputs will have a 'k' appended: '_intk.fits, '_vark.fits', '_mskk.fits'.
+The model sky image is also output with the suffix '_sky.fits'.
+
+The sky model relies on having enough sky pixels to allow the 1-sigma
+rejection to remove object pixels.  If there are object features that skew
+the sky estimate (as evidenced by over-subtraction in the output
+'_intk.fits' image), then you will have to use a sky mask to avoid those
+regions.  This stage automatically searches for a sky mask file, which is
+named with the suffix '_smsk.txt' and uses it, if it is found, to exclude
+regions specified in the sky mask file from the sky fit.  The sky mask file
+is a simple text file that specifies regions to exclude, one per line, with
+the following format:
+
+column 1 - starting slice number,
+column 2 - ending slice number,
+column 3 - starting position,
+column 4 - ending position,
+column 5 - starting wavelength,
+column 6 - ending wavelength.
+
+These values can be derived by loading the object image along with the
+corresponding map images into ds9.  Keep adjusting this sky mask file until
+you no longer see oversubtraction near object spectral features in the
+output image.  If an object fills the IFU with object light and there are
+no sky pixels, then a separate sky image must be taken and used as the
+input sky master as specified in the kcwi.proc file.
+
+
+Stage 6 - cube generation:
+
+This step is run as follows:
+
+IDL> kcwi_stage6cube
+
+The outputs from stage6 are the data cubes and the kcwi_stage6cube.log
+file.  The data cubes are an intensity cube '_icube.fits', a variance cube
+'_vcube.fits' and a mask cube '_mcube.fits'.  If you had nod-and-shuffle
+observations, there will also be an object cube '_ocube.fits' and a sky
+cube '_scube.fits'.  If you performed sky subtraction, this will also
+result in a sky cube.  Images that were not taken with nod-and-shuffle mode
+will also have a '_ocube.fits' image cube output derived from the
+non-sky-subtracted, but flat-fielded '_intf.fits' image.  These images are
+useful to verify that spectral features are not the results of sky
+residuals or in the case when sky subtraction is not wanted.
 
 Some new outputs have been added for more detailed diagnosing of the
 wavelength solutions.  Most important for this is the generation of a 2D
 version of the data cube of arc observations.  These can be displayed in
 ds9 and the arc lines examined across the slices to see if there are any
 deviations from straightness across the image.  These are written into the
-output directory and have names like *_icube_2d.fits.  Another new output
-is a wavemap image that shows the mapping of wavelength onto the stage1
-processed images.  These are also in the output directory and are named
-*_wavemap.fits.
-
-
-Stage 5 - profile correction:
-
-You can control which profile image is used and which observations are
-profile corrected using the 'kcwi.proc' file in the output directory
-specified when you ran KCWI_PREP.
-
-This step is run as follows:
-
-IDL> kcwi_stage5prof
-
-The log for this stage is in the output directory and is called
-kcwi_stag5prof.log.  Here the outputs will be the profile images,
-'_prof.fits', and the profile corrected data cubes, '_icubep.fits',
-'_vcubep.fits', and '_mcubep.fits'.
-
-As a diagnostic, you can display the profile images with ds9 to see if any
-contaminating source was in the sky observation.  If you find some
-contamination, you can edit the kcwi.proc file and use a different profile
-image number.  Just be careful to use a profile image source with the same
-calibration setting as your object image.
-
-NB: this stage is optional and no harm will come from skipping it, if your
-science does not require it.
-
-
-Stage 6 - slice to slice, or relative response correction:
-
-You can control which relative response (dflat) image is used and which
-observations are rr corrected using the 'kcwi.proc' file in the output
-directory specified when you ran KCWI_PREP.
-
-This step is run as follows:
-
-IDL> kcwi_stage6rr
-
-The log for this stage is in the output directory and is called
-kcwi_stag6rr.log.  Here the outputs will be the relative response images,
-'_rr.fits', and the response corrected data cubes, '_icuber.fits',
-'_vcuber.fits', and '_mcuber.fits'.
-
-As a diagnostic, you can display the response images with ds9 to see if any
-of the response fits have gone drastically wrong.  You can modify the
-kcwi.proc file, but be careful to account for the configuration when
-re-assigning relative response images.
+output directory and have names like *_icube_2d.fits.
 
 
 Stage 7 - differential atmospheric refraction correction:
@@ -519,11 +532,12 @@ IDL> kcwi_stage7dar
 
 The log for this stage is in the output directory and is called
 kcwi_stage7dar.log.  Here the outputs will be the DAR corrected data cubes,
-'_icubed.fits', '_vcubed.fits', and '_mcubed.fits'.  As a diagnostic, you
-can display the uncorrected '_icuber.fits' file in DS9 and scan in
-wavelength and observe the motion of a stellar continuum source due to the
-effects of DAR.  Displaying the '_icubed.fits' version and performing the
-same scan should exhibit no motion.
+'_icubed.fits', '_vcubed.fits', and '_mcubed.fits' (and '_scubed.fits' and
+'_ocubed.fits').  As a diagnostic, you can display the uncorrected
+'_icuber.fits' file in DS9 and scan in wavelength and observe the motion of
+a stellar continuum source due to the effects of DAR.  Displaying the
+'_icubed.fits' version and performing the same scan should exhibit no
+motion.
 
 
 Stage 8 - standard star calibration:
@@ -531,29 +545,65 @@ Stage 8 - standard star calibration:
 The kcwi_prep.pro run will attempt to associate any standard observations
 you have with the appropriate object observations by comparing the object
 name with the list of standard star files in the directory pointed to by
-!KCWI_DATA+'stds/'.  This comparision is case-insensitive.
+!KCWI_DATA+'stds/'.  This comparision is NOT case-sensitive.
 
-You can control which standard star image numbers are used and which
+You can control which standard star images are used and which
 observations are standard star corrected using the 'kcwi.proc' file in the
 output directory specified when you ran KCWI_PREP.  Currently the standard
 star library is extremely limited.  A Keck standard star list that includes
 all the standard stars can be found in the data/stds directory.  It is
 called 'kderp_stds_starlist.txt' and should be given to the observatory
-assistant prior to your run.
+assistant prior to your run.  It is recommended that you use standards that
+have HST observations (STIS, NICMOS, etc.) since these have wavelength
+sampling closer to KCWI.
+
+This stage defaults to be run interactively to allow the user to
+specify the wavelength range for fitting the calibration and to tweak the
+spectral regions that are used for the fit (to avoid sharp absorption
+features, for example).  If you do not want to run it interactively, you
+should set display to 1 or 0 on the command line.
 
 This step is run as follows:
 
-IDL> kcwi_stage7std
+IDL> kcwi_stage8std
 
-If you have the DISPLAY parameter in kcwi.ppar set to 2 or greater, you
-will see plots of the sky spectra used to sky-subtract the standard star
-observations, as well as a final inverse sensitivity curve.  This curve
-will be applied to each observation you have associated the standard with.
-The inverse sensitivity curve will be output using the same image number
-as the standard star observation but with a '_std.fits' suffix.  The object
-files that have had the inverse sensitivity applied will also be output
-with the following suffixes: '_icubes.fits' for intensity, '_vcubes.fits'
-for variance, and '_mcubes.fits' for the mask data cube.
+This will display a plot of the observed standard star spectrum with the
+'good' spectral region bounded by green vertical lines.  You will be
+prompted to specify the wavelength range for the fitting.  If the shape
+looks good beyond the 'good' range, you might want to include these data
+in the fit to avoid edge problems within the good range.
+
+Next, you will be presented with a plot of the inverse sensitivity with
+some automatic masking of the Balmer lines indicated by vertical dashed
+blue lines and 'X' points plotted on the data.  Another plot in a window
+below will show the resulting calibrated standard spectrum and a residual
+plot, so you an gauge the quality of the fit.  You will be prompted to
+enter a single letter action code that have the following meanings:
+
+r - restore deleted points,
+d - delete points,
++ - increase polynomial fit order by one
+- - decrease polynomial fit order by one
+f - re-fit the data
+q - exit the fitting process and use the last fit.
+
+This allows you to tweak the fit until you get a residual of 2% or better.
+
+If you have run the observation through stage5sky and performed sky
+subtraction, there will be no further sky subtraction done here.  However,
+if you have not run stage5sky, a sky subtraction will be performed.  In
+that case, if you have the DISPLAY parameter in kcwi.ppar set to 3 or
+greater, you will see plots of the sky spectra used to sky-subtract the
+standard star observations.  
+
+The final fit inverse sensitivity curve will be applied to each observation
+associated with the standard.  The inverse sensitivity curve will
+be output using the same image number as the standard star observation but
+with a '_invsens.fits' suffix.  The object files that have had the inverse
+sensitivity applied will also be output with the following suffixes:
+'_icubes.fits' for intensity, '_vcubes.fits' for variance, and
+'_mcubes.fits' for the mask data cube (and also the '_ocubes.fits' and
+'_scubes.fits' files).
 
 There is a routine that will produce a diagnostic plot and an effective
 area and efficiency curve from the calibration.  This routine is called
@@ -596,6 +646,27 @@ IDL> kcwi_print_cfgs,kcfg,/header
 
 4. NEW FEATURES:
 
+New Flat Fielding and Sky Subtraction
+
+We have implemented the use of bspline fitting to determine the
+flat-fielding and illumination corrections using the internal continuum
+flats.  These flats are combined, corrected for internal vignetting,
+and then used to characterize the illumination variation across slices and
+from slice to slice.  The bspline method has also been found to do a very
+good job of characterizing the sky spectrum when combined with a suitable
+rejection threshold for object flux.  This method produces a sky model
+image that has much lower noise than a sky observation.  We are in the
+process of developing tools that allow regions where object flux dominates
+over sky flux to be masked out in the sky modeling.
+
+These corrections are done using the 2D images that are mapped to
+wavelength, slice position and slice number.  Since this process requires
+the cube geometry maps, but are applied to the 2D images, we now solve the
+geometry in stage 3, but don't generate cubes until stage 6.  Now, stage 4
+of the pipeline calculates and applies the flat-field and illumination
+correction, and stage 5 calculates and subtracts the sky model.  Stage 5 is
+optional.
+
 Alternate Calibration Directory
 
 In anticipation of having a library of calibrations, I have implemented the
@@ -626,24 +697,17 @@ Flatten Cube to 2-D image
 The new routine, kcwi_flatten_cube.pro, takes each slice and packs them
 into a 2-D image with a WCS that preserves the wavelength solution on the y
 axis as well as the slice coordinate (0-24) on the x axis.  This image is
-automatically generated by the wavelength solution segment of the pipeline
-(kcwi_stage4), but kcwi_flat_cube can be run on any cube.  This provides a
-great diagnostic for the geometry fit as problems will distort the arc
-lines away from appearing straight.
+automatically generated by the cube generation segment of the pipeline
+(kcwi_stage6cube), but kcwi_flat_cube can be run on any cube.  This
+provides a great diagnostic for the geometry fit as problems will distort
+the arc lines away from appearing straight.
 
 Direct Mode Reductions
 
 These are mostly transparent to the user with the exception of the relative
 response stage.  For direct mode observations, the user should use the
-routine kcwi_stage6drr.pro instead of kcwi_stage6rr.pro.  There is no
-profile or standard star step for direct mode observations as of now.
-
-Reverse Geometry Map Image
-
-Now stage 4 (geom) outputs a *_wavemap.fits file for each geometry
-solution.  This is an image with the same format as the *_int.fits image,
-but for each slice the pixel value is equal to the mapped wavelength at
-that position in the image.
+routine kcwi_stage6drr.pro.  There is no profile or standard star step for
+direct mode observations as of now.
 
 Quick Look Pipeline
 
@@ -668,13 +732,6 @@ of standard star calibration files in !KCWI_DATA+'stds/'.  The comparison
 is case-insensitive and the list of standard is fairly small.  The airmass
 correction is now included in the calibration using the Palomar Observatory
 coefficients.
-
-Profile Correction Optional
-
-The profile correction stage (kcwi_stage5prof) is now optional in the
-pipeline and can be skipped if you are concerned that this stage is adding
-noise to your data cubes.  The relative response corrction (kcwi_stage6rr)
-can now take a data cube or a profile corrected data cube as input.
 
 
 5. TROUBLESHOOTING:

@@ -124,7 +124,8 @@ pro kcwi_make_bias,ppar
 			;
 			; log
 			kcwi_print_info,ppar,pre,'Amp'+strn(ia+1)+ $
-				' Read noise in e-',mbias_rn[ia]
+				' Read noise in e-',mbias_rn[ia], $
+				format='(a,f9.3)'
 			;
 			; update header
 			sxaddpar,hdr,'BIASRN'+strn(ia+1),mbias_rn[ia], $

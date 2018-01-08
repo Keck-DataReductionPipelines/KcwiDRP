@@ -71,7 +71,6 @@
 ;	2014-SEP-29	Added infrastructure to handle selected processing
 ;	2017-APR-15	Added cosmic ray exposure time threshhold (60s)
 ;	2017-MAY-24	Changed to proc control file and removed link file
-;	2017-JUL-21	Added scattered light subtraction step
 ;-
 pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 	;
@@ -146,7 +145,6 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 	;
 	; plot status
 	doplots = (ppar.display ge 1)
-	plotscat = (ppar.display ge 1)
 	;
 	; gather configuration data on each observation in rawdir
 	kcwi_print_info,ppar,pre,'Number of input images',nproc
@@ -191,6 +189,21 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;
 			; get dimensions
 			sz = size(img,/dimension)
+			;
+			; create mask
+			msk = bytarr(sz)
+			;
+			; flag saturated pixels
+			sat = where(img ge 65535, nsat)
+			if nsat gt 0 then $
+				msk[sat] = 1b $
+			else	msk[0] = 1b	; to be sure scaling of output image works
+			;
+			; update header
+			sxaddpar,hdr,'NSATPIX',nsat,' Number of saturated pixels'
+			;
+			; log
+			kcwi_print_info,ppar,pre,'Number of saturated pixels flagged',nsat,format='(a,i9)'
 			;
 			; get ccd geometry
 			kcwi_map_ccd,hdr,asec,bsec,dsec,tsec,direc,namps=namps,trimmed_size=tsz,verbose=kpars[i].verbose
@@ -282,8 +295,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				endif
 				;
 				; update header
+				fdecomp,mbfile,disk,dir,root,ext
 				sxaddpar,hdr,'BIASSUB','T',' bias subtracted?'
-				sxaddpar,hdr,'MBFILE',mbfile,' master bias file subtracted'
+				sxaddpar,hdr,'MBFILE',root+'.'+ext,' master bias file subtracted'
 			;
 			; handle the case when no bias frames were taken
 			endif else begin
@@ -308,17 +322,13 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			; BEGIN STAGE 1-B: OVERSCAN SUBTRACTION
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
-			; only do overscan subtraction if no bias is available
-			do_oscan = (sxpar(hdr,'BIASSUB') eq 0)
-			;
 			; number of overscan pixels in each row
 			oscan_pix = bsec[0,0,1] - bsec[0,0,0]
 			;
 			; do we have enough overscan to get good statistics?
-			if do_oscan and oscan_pix ge kpars[i].minoscanpix then begin
+			if oscan_pix ge kpars[i].minoscanpix then begin
 				;
 				; loop over amps
-				avrn = 0.
 				for ia = 0, namps-1 do begin
 					;
 					; overscan x range - buffer avoids edge effects
@@ -332,16 +342,6 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					; row range (y)
 					osy0	= bsec[ia,1,0]
 					osy1	= bsec[ia,1,1]
-					;
-					; get gain
-					gain = sxpar(hdr,'GAIN'+strn(ia+1),count=ngain)
-					if ngain eq 0 then gain = sxpar(hdr,'CCDGAIN')
-					;
-					; get readnoise
-					mo = moment(reform(img[osx0:osx1,osy0:osy1]))
-					mbias_rn[ia] = gain * sqrt(mo[1])
-					sxaddpar,hdr,'OSCNRN'+strn(ia+1),mbias_rn[ia],' amp'+strn(ia+1)+' RN in e- from oscan'
-					avrn = avrn + mbias_rn[ia]
 					;
 					; collapse each row
 					osvec = median(img[osx0:osx1,osy0:osy1],dim=1)
@@ -373,6 +373,13 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					mo = moment(resid)
 					mnrs = mo[0]
 					sdrs = sqrt(mo[1])
+					;
+					; get readnoise
+					if not sxpar(hdr,'BIASSUB') then begin
+						kcwi_print_info,ppar,pre,'Using overscan for computing readnoise'
+						mbias_rn[ia] = sdrs
+					endif
+					sxaddpar,hdr,'OSCNRN'+strn(ia+1),sdrs,' amp'+strn(ia+1)+' RN in e- from oscan'
 					;
 					; plot if display set
 					if doplots then begin
@@ -407,7 +414,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					endfor
 					;
 					; log
-					kcwi_print_info,ppar,pre,'overscan readnoise in e- for amp '+strn(ia+1), mbias_rn[ia]
+					kcwi_print_info,ppar,pre,'overscan readnoise in e- for amp '+strn(ia+1), sdrs,form='(a,f9.3)'
 					kcwi_print_info,ppar,pre,'overscan '+strtrim(string(ia+1),2)+'/'+ $
 						strtrim(string(namps),2)+' (x0,x1,y0,y1): '+ $
 						    strtrim(string(osx0),2)+','+strtrim(string(osx1),2)+ $
@@ -424,7 +431,6 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						if strupcase(strmid(q,0,1)) eq 'Q' then doplots = 0
 					endif
 				endfor	; loop over amps
-				avrn = avrn / float(namps)
 				;
 				; update header
 				sxaddpar,hdr,'OSCANSUB','T',' overscan subtracted?'
@@ -435,12 +441,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					kcwi_write_image,img,hdr,ofil,kpars[i]
 				endif
 			endif else begin	; not doing oscan sub
-				if do_oscan then begin
-					kcwi_print_info,ppar,pre,'not enough overscan pixels to subtract', $
-						oscan_pix,/warning
-					kcwi_print_info,ppar,pre,'using default readnoise',kpars[i].readnoise,/warning
-				endif else $
-					kcwi_print_info,ppar,pre,'skipping oscan sub, already bias subtracted'
+				kcwi_print_info,ppar,pre,'not enough overscan pixels to subtract', $
+					oscan_pix,/warning
+				kcwi_print_info,ppar,pre,'using default readnoise',kpars[i].readnoise,/warning
 				sxaddpar,hdr,'OSCANSUB','F',' overscan subtracted?'
 			endelse
 			;
@@ -454,6 +457,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;
 			; create trimmed array
 			imgo = fltarr(tsz[0],tsz[1])
+			msko = bytarr(tsz[0],tsz[1])
 			;
 			; loop over amps
 			for ia = 0, namps-1 do begin
@@ -472,6 +476,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				;
 				; copy into trimmed image
 				imgo[xo0:xo1,yo0:yo1] = img[xi0:xi1,yi0:yi1]
+				msko[xo0:xo1,yo0:yo1] = msk[xi0:xi1,yi0:yi1]
 				;
 				; update header using 1-bias indices
 				sec = '['+strn(xo0+1)+':'+strn(xo1+1)+',' + $
@@ -489,6 +494,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;
 			; store trimmed image
 			img = imgo
+			msk = msko
 			sz = size(img,/dimension)
 			;
 			; update header
@@ -559,13 +565,93 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; BEGIN STAGE 1-E: COSMIC RAY REJECTION AND MASKING
+			; BEGIN STAGE 1-E: IMAGE DEFECT CORRECTION AND MASKING
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
-			; ONLY perform next step on OBJECT, DARK, CFLAT and DFLAT images (and if requested)
+			; start with no bad pixels
+			nbpix = 0
+			bpx = [0]
+			bpy = [0]
+			;
+			; get defect list
+			bcfil = !KCWI_DATA + 'badcol_' + strtrim(kcfg.ampmode,2) + '_' + $
+				strn(kcfg.xbinsize) + 'x' + strn(kcfg.ybinsize) + '.dat'
+			if file_test(bcfil) then begin
+				;
+				; report the bad col file
+				kcwi_print_info,ppar,pre,'using bad column file: '+bcfil
+				;
+				; read it
+				readcol,bcfil,bcx0,bcx1,bcy0,bcy1,form='i,i,i,i',comment='#',/silent
+				;
+				; correct to IDL zero bias
+				bcx0 -= 1
+				bcx1 -= 1
+				bcy0 -= 1
+				bcy1 -= 1
+				;
+				; x range for bad columns
+				bcdel = 5
+				;
+				; number of bad column entries
+				nbc = n_elements(bcx0)
+				for j = 0,nbc-1 do begin
+					if bcx0[j] ge bcdel and bcx0[j] lt sz[0]-bcdel and $
+					   bcx1[j] ge bcdel and bcx1[j] lt sz[0]-bcdel and $
+				   	   bcy0[j] ge 0 and bcy0[j] lt sz[1] and $
+					   bcy1[j] ge 0 and bcy1[j] lt sz[1] then begin
+					   	;
+					   	; number of x pixels we are fixin'
+						nx = (bcx1[j] - bcx0[j]) + 1
+						;
+						; now do the job!
+						for by = bcy0[j],bcy1[j] do begin
+							;
+							; get median of the +- del pixels straddling baddies
+							vals = [img[bcx0[j]-bcdel:bcx0[j]-1,by], $
+								img[bcx0[j]+1:bcx0[j]+bcdel,by]]
+							gval = median(vals)
+							;
+							; substitute good value in and set mask
+							for bx = bcx0[j],bcx1[j] do begin
+								img[bx,by] = gval
+								msk[bx,by] += 2b
+								nbpix += nx
+							endfor
+						endfor
+						;
+						; log
+
+			   		endif else begin
+						kcwi_print_info,ppar,pre,'bad range for bad column!',/warning
+					endelse
+				endfor
+				sxaddpar,hdr,'BPCLEAN','T',' cleaned bad pixels?'
+				sxaddpar,hdr,'BPFILE',bcfil,' bad pixel map filename'
+			endif else begin
+				sxaddpar,hdr,'BPCLEAN','F',' cleaned bad pixels?'
+				kcwi_print_info,ppar,pre, 'no bad column file for ' + $
+					strtrim(kcfg.ampmode,2) + ' ' + $
+					strn(kcfg.xbinsize) + 'x' + strn(kcfg.ybinsize)
+			endelse
+			;
+			; update header
+			sxaddpar,hdr,'NBPCLEAN',nbpix,' number of bad pixels cleaned'
+			;
+			; log
+			kcwi_print_info,ppar,pre,'number of bad pixels = '+strtrim(string(nbpix),2)
+			;
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			; END   STAGE 1-E: IMAGE DEFECT CORRECTION AND MASKING
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			;
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			; BEGIN STAGE 1-F: COSMIC RAY REJECTION AND MASKING
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			;
+			; ONLY perform next step on OBJECT, DARK, and DFLAT images (and if requested)
 			if (strmatch(kcfg.imgtype,'object') eq 1 or $
 			    strmatch(kcfg.imgtype,'dark') eq 1 or $
-			    strmatch(kcfg.imgtype,'cflat') eq 1 or $
 			    strmatch(kcfg.imgtype,'dflat') eq 1) and kpars[i].crzap eq 1 then begin
 			    	;
 			    	; default sigclip
@@ -618,19 +704,21 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						kcwi_write_image,img,hdr,ofil,kpars[i]
 					endif
 					;
+					; update mask image
+					cpix = where(crmsk eq 1, ncpix)
+					if ncpix gt 0 then msk[cpix] += 4b
+					;
 					; update CR mask header
 					mskhdr = hdr
 					sxdelpar,mskhdr,'BUNIT'
 					sxaddpar,mskhdr,'BSCALE',1.
 					sxaddpar,mskhdr,'BZERO',0
 					sxaddpar,mskhdr,'MASKIMG','T',' mask image?'
-					sxaddpar,mskhdr,'CRCLEAN','T',' cleaned cosmic rays?'
-					sxaddpar,mskhdr,'NCRCLEAN',ncrs,' number of cosmic rays cleaned'
 					;
 					; write out CR mask image
 					if kpars[i].saveintims eq 1 then begin
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_crmsk',/nodir)
-						kcwi_write_image,crmsk,mskhdr,ofil,kpars[i]
+						kcwi_write_image,msk,mskhdr,ofil,kpars[i]
 					endif
 				endif else begin
 					;
@@ -639,98 +727,20 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						'cosmic ray cleaning skipped, exposure time <= ', $
 						crexthresh,format='(a,f6.1)',/info
 					sxaddpar,hdr,'CRCLEAN','F',' cleaned cosmic rays?'
-					crmsk = 0.
+					;
+					; update CR mask header
+					mskhdr = hdr
+					sxdelpar,mskhdr,'BUNIT'
+					sxaddpar,mskhdr,'BSCALE',1.
+					sxaddpar,mskhdr,'BZERO',0
+					sxaddpar,mskhdr,'MASKIMG','T',' mask image?'
 				endelse
 			endif else begin
 				if kpars[i].crzap ne 1 then $
 					kcwi_print_info,ppar,pre,'cosmic ray cleaning skipped',/warning
 				sxaddpar,hdr,'CRCLEAN','F',' cleaned cosmic rays?'
-				crmsk = 0.
-			endelse
-			;
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; END   STAGE 1-E: COSMIC RAY REJECTION AND MASKING
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; BEGIN STAGE 1-F: IMAGE DEFECT CORRECTION AND MASKING
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;
-			; create mask
-			msk = bytarr(sz)
-			;
-			; be sure that output image scaling will work
-			msk[0] = 1b
-			;
-			; start with no bad pixels
-			nbpix = 0
-			bpx = [0]
-			bpy = [0]
-			;
-			; get defect list
-			bcfil = !KCWI_DATA + 'badcol_' + strtrim(kcfg.ampmode,2) + '_' + $
-				strn(kcfg.xbinsize) + 'x' + strn(kcfg.ybinsize) + '.dat'
-			if file_test(bcfil) then begin
 				;
-				; report the bad col file
-				kcwi_print_info,ppar,pre,'using bad column file: '+bcfil
-				;
-				; read it
-				readcol,bcfil,bcx0,bcx1,bcy0,bcy1,form='i,i,i,i',comment='#',/silent
-				;
-				; correct to IDL zero bias
-				bcx0 -= 1
-				bcx1 -= 1
-				bcy0 -= 1
-				bcy1 -= 1
-				;
-				; x range for bad columns
-				bcdel = 5
-				;
-				; number of bad column entries
-				nbc = n_elements(bcx0)
-				for j = 0,nbc-1 do begin
-					if bcx0[j] ge bcdel and bcx0[j] lt sz[0]-bcdel and $
-					   bcx1[j] ge bcdel and bcx1[j] lt sz[0]-bcdel and $
-				   	   bcy0[j] ge 0 and bcy0[j] lt sz[1] and $
-					   bcy1[j] ge 0 and bcy1[j] lt sz[1] then begin
-					   	;
-					   	; number of x pixels we are fixin'
-						nx = (bcx1[j] - bcx0[j]) + 1
-						;
-						; now do the job!
-						for by = bcy0[j],bcy1[j] do begin
-							;
-							; get median of the +- del pixels straddling baddies
-							vals = [img[bcx0[j]-bcdel:bcx0[j]-1,by], $
-								img[bcx0[j]+1:bcx0[j]+bcdel,by]]
-							gval = median(vals)
-							;
-							; substitute good value in and set mask
-							for bx = bcx0[j],bcx1[j] do begin
-								img[bx,by] = gval
-								msk[bx,by] = 2b
-								nbpix += nx
-							endfor
-						endfor
-			   		endif else begin
-						kcwi_print_info,ppar,pre,'bad range for bad column!',/warning
-					endelse
-				endfor
-			endif else begin
-				bcfil = ''
-				kcwi_print_info,ppar,pre, 'no bad column file for ' + $
-					strtrim(kcfg.ampmode,2) + ' ' + $
-					strn(kcfg.xbinsize) + 'x' + strn(kcfg.ybinsize)
-			endelse
-			;
-			; does cosmic ray mask image and header already exist?
-			if n_elements(crmsk) gt 1 then begin
-				cpix = where(crmsk eq 1, ncpix)
-				if ncpix gt 0 then msk[cpix] = msk[cpix] + 1b
-			;
-			; if not, create header
-			endif else begin
+				; update CR mask header
 				mskhdr = hdr
 				sxdelpar,mskhdr,'BUNIT'
 				sxaddpar,mskhdr,'BSCALE',1.
@@ -738,27 +748,8 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				sxaddpar,mskhdr,'MASKIMG','T',' mask image?'
 			endelse
 			;
-			; update headers
-			; image
-			if strlen(bcfil) gt 0 then begin
-				sxaddpar,hdr,'BPCLEAN','T',' cleaned bad pixels?'
-				sxaddpar,hdr,'BPFILE',bcfil,' bad pixel map filename'
-			endif else $
-				sxaddpar,hdr,'BPCLEAN','F',' cleaned bad pixels?'
-			sxaddpar,hdr,'NBPCLEAN',nbpix,' number of bad pixels cleaned'
-			; mask
-			if strlen(bcfil) gt 0 then begin
-				sxaddpar,mskhdr,'BPCLEAN','T',' cleaned bad pixels?'
-				sxaddpar,mskhdr,'BPFILE',bcfil,' bad pixel map filename'
-			endif else $
-				sxaddpar,mskhdr,'BPCLEAN','F',' cleaned bad pixels?'
-			sxaddpar,mskhdr,'NBPCLEAN',nbpix,' number of bad pixels cleaned'
-			;
-			; log
-			kcwi_print_info,ppar,pre,'number of bad pixels = '+strtrim(string(nbpix),2)
-			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; END   STAGE 1-F: IMAGE DEFECT CORRECTION AND MASKING
+			; END   STAGE 1-F: COSMIC RAY REJECTION AND MASKING
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -961,127 +952,6 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			; END   STAGE 1-I: IMAGE RECTIFICATION
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; BEGIN STAGE 1-J: SCATTERED LIGHT SUBTRACTION
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;
-			; only do scattered light subtraction only if N&S mask not in
-			do_scat = (kcfg.nasmask eq 0)
-			;
-			; should we subtract scattered light?
-			if do_scat then begin
-				;
-				; get x range of scattered light region
-				sz = size(img,/dim)
-				x0 = sz[0] / 2 - 180 / kcfg.xbinsize
-				x1 = sz[0] / 2 + 180 / kcfg.xbinsize
-				;
-				; get y ranges (fit in two pieces)
-				y0 = 0
-				y1 = (sz[1]/2) - 1
-				y2 = y1 + 1
-				y3 = sz[1] - 1
-				;
-				; fitted x values
-				fx = findgen(sz[1])
-				;
-				; scattered light and variance vectors
-				simg = img[x0:x1,y0:y3]
-				vimg = var[x0:x1,y0:y3]
-				;
-				; get scattered light profile
-				slp = median(simg,dimen=1)
-				elp = sqrt(median(vimg,dimen=1))
-				;
-				; fit in two pieces
-				;
-				; piece one
-				;
-				; fitting range
-				fx1 = fx[y0:y1]
-				res = poly_fit(fx1,slp[y0:y1],9,measure_err=elp[y0:y1],/double)
-				scat1 = poly(fx1,res)
-				;
-				; piece two
-				;
-				; fitting range
-				fx2 = fx[y2:y3] - min(fx[y2:y3])
-				res = poly_fit(fx2,slp[y2:y3],9,measure_err=elp[y2:y3],/double)
-				scat2 = poly(fx2,res)
-				;
-				; plot if display set
-				if plotscat then begin
-					deepcolor
-					!p.background=colordex('white')
-					!p.color=colordex('black')
-					plot,fx,slp,/xs,psym=1,xtitle='ROW',ytitle='Scattered Light (e-)', $
-						title='Image: '+strn(imgnum[i]), $
-						charth=2,charsi=1.5,xthi=2,ythi=2
-					oplot,fx,elp,color=colordex('blue')
-					oplot,fx[y0:y1],scat1,thick=3,color=colordex('red')
-					oplot,fx[y2:y3],scat2,thick=3,color=colordex('red')
-					kcwi_legend,['Data', 'Fit', 'Err'],thick=[1,3,1], $
-						charthi=2,charsi=1.5, $
-						color=[colordex('C'),colordex('R'),colordex('B')], $
-						linesty=[0,0,0]
-					;
-					; make interactive if display greater than 1
-					if plotscat and kpars[i].display ge 2 then begin
-						q = ''
-						read,'Next? (Q-quit plotting, <cr>-next): ',q
-						if strupcase(strmid(q,0,1)) eq 'Q' then plotscat = 0
-					endif
-					;
-					; plot scattered light
-					plfil = kcwi_get_imname(kpars[i],imgnum[i],'_scat',/reduced)
-					plfil = strmid(plfil,0,strpos(plfil,'.fit'))
-					psfile,plfil
-					kcwi_print_info,ppar,pre,'plotting scattered light to: '+plfil+'.ps'
-					deepcolor
-					!p.background=colordex('white')
-					!p.color=colordex('black')
-					plot,fx,slp,/xs,psym=1,xtitle='ROW',ytitle='Scattered Light (e-)', $
-						title='Image: '+strn(imgnum[i]), $
-						charth=2,charsi=1.5,xthi=2,ythi=2
-					oplot,fx,elp,color=colordex('blue')
-					oplot,fx[y0:y1],scat1,thick=3,color=colordex('red')
-					oplot,fx[y2:y3],scat2,thick=3,color=colordex('red')
-					kcwi_legend,['Data', 'Fit', 'Err'],thick=[1,3,1], $
-						charthi=2,charsi=1.5, $
-						color=[colordex('C'),colordex('R'),colordex('B')], $
-						linesty=[0,0,0]
-					psclose
-				endif
-				;
-				; subtract scat
-				for xi=0,sz[0]-1 do begin
-					img[xi,y0:y1] = img[xi,y0:y1] - scat1
-					img[xi,y2:y3] = img[xi,y2:y3] - scat2
-				endfor
-				;
-				; update header
-				sxaddpar,hdr,'SCATCOR','T',' scattered light subtracted?'
-				;
-				; log
-				kcwi_print_info,ppar,pre,'scattered light subtracted'
-				;
-				; output gain-corrected image
-				if kpars[i].saveintims eq 1 then begin
-					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_s',/nodir)
-					kcwi_write_image,img,hdr,ofil,kpars[i]
-				endif
-			endif else begin
-				sxaddpar,hdr,'SCATCOR','F',' scattered light subtracted?'
-				;
-				; log
-				kcwi_print_info,ppar,pre,'scattered light NOT subtracted'
-			endelse
-			;
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; END   STAGE 1-J: SCATTERED LIGHT SUBTRACTION
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;
 			;
 			; write out mask image
 			ofil = kcwi_get_imname(kpars[i],imgnum[i],'_msk',/nodir)

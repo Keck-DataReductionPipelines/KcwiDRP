@@ -115,6 +115,10 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 		return
 	endif
 	;
+	; check BUNIT
+	bunit = strtrim(sxpar(hdr,'BUNIT'),2)
+	if bunit eq 'FLAM16' then icub = icub / 1.d16
+	;
 	; check standard
 	sname = strcompress(strlowcase(strtrim(kcfg.targname,2)),/remove)
 	;
@@ -150,6 +154,9 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	; get DAR padding in y
 	pad_y = sxpar(hdr,'DARPADY')
 	;
+	; get sky subtraction status
+	skycor = sxpar(hdr,'SKYCOR')
+	;
 	; compute good y pixel ranges
 	if w0 gt 0. and dw gt 0. and wgoo0 gt 0. and wgoo1 gt 0. then begin
 		y0 = fix( (wgoo0 - w0) / dw ) + 10
@@ -182,35 +189,44 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	kcwi_print_info,ppar,pre,'Std slices; max, sl0, sl1, spatial cntrd', $
 		mxsl,sl0,sl1,cx,format='(a,3i4,f9.2)'
 	;
-	; do sky subtraction
+	; copy of input cube
 	scub = icub
+	;
+	; sky window width in pixels
+	skywin = ppar.psfwid/kcfg.xbinsize
+	;
+	; plotting prep
 	deepcolor
 	!p.background=colordex('white')
 	!p.color=colordex('black')
-	skywin = ppar.psfwid/kcfg.xbinsize
-	for i=sl0,sl1 do begin
-		skyspec = fltarr(sz[2])
-		for j = 0,sz[2]-1 do begin
-			skyv = reform(icub[i,gx0:gx1,j])
-			good = where(xx le (cx-skywin) or xx ge (cx+skywin))
-			sky = median(skyv[good])
-			skyspec[j] = sky
-			scub[i,*,j] = icub[i,*,j] - sky
-		endfor
-		if doplots then begin
-			yrng = get_plotlims(skyspec[gy])
-			plot,w,skyspec,title='Slice '+strn(i), $
-				xtitle='Wave (A)', xran=[wall0,wall1], /xs, $
-				ytitle='DN', yran=yrng, /ys
+	;
+	; do sky subtraction, if needed
+	if not skycor then begin
+		for i=sl0,sl1 do begin
+			skyspec = fltarr(sz[2])
+			for j = 0,sz[2]-1 do begin
+				skyv = reform(icub[i,gx0:gx1,j])
+				good = where(xx le (cx-skywin) or $
+					     xx ge (cx+skywin))
+				sky = median(skyv[good])
+				skyspec[j] = sky
+				scub[i,*,j] = icub[i,*,j] - sky
+			endfor
+			if doplots then begin
+				yrng = get_plotlims(skyspec[gy])
+				plot,w,skyspec,title='Slice '+strn(i), $
+				    xtitle='Wave (A)',xran=[wall0,wall1], /xs, $
+				    ytitle='DN',yran=yrng,/ys
 				oplot,[wgoo0,wgoo0],!y.crange, $
-					color=colordex('green'), thick=3
+				    color=colordex('green'),thick=3
 				oplot,[wgoo1,wgoo1],!y.crange, $
-					color=colordex('green'), thick=3
-			read,'Next? (Q-quit plotting, <cr> - next): ',q
-			if strupcase(strmid(strtrim(q,2),0,1)) eq 'Q' then $
-				doplots = 0
-		endif
-	endfor
+				    color=colordex('green'),thick=3
+				read,'Next? (Q-quit plotting, <cr> - next): ',q
+				if strupcase(strmid(strtrim(q,2),0,1)) eq 'Q' then $
+					doplots = 0
+			endif
+		endfor
+	endif	; do sky subtraction (not skycor)
 	;
 	; get slice spectra
 	sx0 = (cx-skywin) > 0

@@ -48,14 +48,16 @@ endif
   dwout = kgeom.dwout
   wave0out = kgeom.wave0out
   ldeg = kgeom.lastdegree
-  
-  xpad = 3
+  xbin = kgeom.xbinsize
+  xpad = 17/xbin
 
 ; process the degree, default to 3. 
   if n_elements(degree) eq 0 then degree = ldeg
   if degree lt 2 or degree gt 4 then degree = 3 
   
   outfile = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_wavemap",/reduced)
+  outfilepos = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_posmap",/reduced)
+  outfilesli = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_slicemap",/reduced)
 
   x = dindgen(nx)
   y = dindgen(ny); ypad
@@ -65,8 +67,11 @@ endif
   xx = x#oney
   yy = onex#y
   
-  reverse_image = xx-xx-10
-  
+  wavemap = xx-xx-10
+  slicemap=wavemap+100
+  posmap=wavemap-90.0
+  tmp_posmap=posmap
+  tmp_wavemap = wavemap - wavemap
   ; loop over slices
   for s=0, 23 do begin
      qs = where(slice eq s and xi gt 0 and finite(xw) and finite(yw), nqs)
@@ -81,12 +86,14 @@ endif
      y1 = yw[qs]
      x0min = min(x0)
      x0temp = x0-x0min+x0out
-;     stop
      ; generate a mapping
-     polywarp,x1,y1,x0temp,y0,3,kx,ky,/double
+     ;polywarp,x1,y1,x0temp,y0,3,kx,ky,/double
+     deg2d = [2,4]
+     mod_polywarp,x1,y1,x0temp,y0,deg2d,kx,ky,/double
      ; reset the "in" values
      xmm = minmax(x0)
-     qin = where(xx gt xmm[0]-xpad and xx lt xmm[1]+xpad and yy ge trimy0 and yy le trimy1, nqxin)
+     qin = where(xx gt xmm[0]-xpad and xx lt xmm[1]+xpad and $
+     		 yy ge trimy0 and yy le trimy1, nqxin)
      if nqxin eq 0 then begin
 	     kcwi_print_info,ppar,pre, $
 		"Sorry, no suitable points found. Confused. Exiting.",/error
@@ -94,11 +101,16 @@ endif
      endif
      xin = xx[qin]-x0min+x0out
      yin = yy[qin]+ypad
-     kcwi_poly_map,xin,yin,kx,ky,xout,yout
+     kcwi_poly_map,xin,yin,kx,ky,xout,yout,deg2d=deg2d
 
      ; set the pixel values to the wavelengths.
-     reverse_image[xin-x0out+x0min,yin-ypad] = yout*dwout+wave0out
-
+     tmp_wavemap[xin-x0out+x0min,yin-ypad] = yout*dwout+wave0out
+     tmp_posmap[xin-x0out+x0min,yin-ypad] = xout ;-x0min+x0out
+     qz = where(tmp_posmap ge -2/xbin and tmp_posmap le 140.0/xbin)
+     slicemap[qz]=s
+     posmap[qz]=tmp_posmap[qz]
+     wavemap[qz] = tmp_wavemap[qz]
+     tmp_posmap[*]=-100
   endfor
 
   ;
@@ -140,7 +152,11 @@ endif
   sxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file'
 
   ; write the file
+  kcwi_print_info,ppar,pre,"Writing",outfilepos,/info,format='(a,1x,a)'
+  mwrfits, float(posmap), outfilepos,hdr,/create
+  kcwi_print_info,ppar,pre,"Writing",outfilesli,/info,format='(a,1x,a)'
+  mwrfits, byte((slicemap)), outfilesli,hdr,/create
   kcwi_print_info,ppar,pre,"Writing",outfile,/info,format='(a,1x,a)'
-  mwrfits, reverse_image, outfile, hdr,/create,/iscale
-  kcwi_print_info,ppar,pre,"Generated reverse map.",/info
+  mwrfits, float(wavemap), outfile, hdr,/create
+  kcwi_print_info,ppar,pre,"Generated reverse maps.",/info
 end

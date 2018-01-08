@@ -119,7 +119,6 @@ tmp = { kcwi_ppar, $
 	nfgrps:0, $		; number of flat groups
 ;
 ; Geometry processing
-	geom:'', $		; master geometry filename
 	geomcbar:'', $		; master continuum bars filename
 	geomarc:'', $		; master arc filename
 	nggrps:0, $		; number of geom groups

@@ -139,6 +139,9 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; get DAR padding in y
 	pad_y = sxpar(hdr,'DARPADY')
 	;
+	; get sky subtraction status
+	skycor = sxpar(hdr,'SKYCOR')
+	;
 	; get telescope and atm. correction
 	tel = strtrim(sxpar(hdr,'telescop',count=ntel),2)
 	if ntel le 0 then tel = 'Keck II'
@@ -200,52 +203,59 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	kcwi_print_info,ppar,pre,'Std slices; max, sl0, sl1, spatial cntrd', $
 		mxsl,sl0,sl1,cy,format='(a,3i4,f9.2)'
 	;
-	; do sky subtraction
-	scub = icub				; copy of input cube
-	skywin = ppar.psfwid/kcfg.xbinsize	; sky window width in pixels
+	; copy of input cube
+	scub = icub
+	;
+	; sky window width in pixels
+	skywin = ppar.psfwid/kcfg.xbinsize
 	;
 	; plotting prep
 	deepcolor
 	!p.background=colordex('white')
 	!p.color=colordex('black')
 	;
-	; for each relevant slice
-	for i=sl0,sl1 do begin
-		skyspec = fltarr(sz[2])
+	; do sky subtraction, if needed
+	if not skycor then begin
 		;
-		; for each wavelength
-		for j = 0,sz[2]-1 do begin
+		; for each relevant slice
+		for i=sl0,sl1 do begin
+			skyspec = fltarr(sz[2])
 			;
-			; get y-spanning vector from input cube
-			skyv = reform(icub[i,gy0:gy1,j])
-			;
-			; avoid standard
-			gsky = where(yy le (cy-skywin) or yy ge (cy+skywin))
-			;
-			; median of what's left is sky value
-			sky = median(skyv[gsky])
-			;
-			; store the sky value at this wavelength,slice
-			skyspec[j] = sky
-			;
-			; perform subtraction
-			scub[i,*,j] = icub[i,*,j] - sky
+			; for each wavelength
+			for j = 0,sz[2]-1 do begin
+				;
+				; get y-spanning vector from input cube
+				skyv = reform(icub[i,gy0:gy1,j])
+				;
+				; avoid standard
+				gsky = where(yy le (cy-skywin) or $
+					     yy ge (cy+skywin))
+				;
+				; median of what's left is sky value
+				sky = median(skyv[gsky])
+				;
+				; store the sky value at this wavelength,slice
+				skyspec[j] = sky
+				;
+				; perform subtraction
+				scub[i,*,j] = icub[i,*,j] - sky
+			endfor
+			if plotsky then begin
+				yrng = get_plotlims(skyspec[gz])
+				plot,w,skyspec,title='Slice '+strn(i)+ $
+				    ' SKY, Img #: '+strn(kcfg.imgnum), $
+				    xtitle='Wave (A)',xran=[wall0,wall1],/xs,$
+				    ytitle='Sky e-',yran=yrng,/ys
+				oplot,[wgoo0,wgoo0],!y.crange, $
+				    color=colordex('green'),thick=3
+				oplot,[wgoo1,wgoo1],!y.crange, $
+				    color=colordex('green'),thick=3
+				read,'Next? (Q-quit plotting, <cr> - next): ',q
+				if strupcase(strmid(strtrim(q,2),0,1)) eq 'Q' then $
+					plotsky = 0
+			endif
 		endfor
-		if plotsky then begin
-			yrng = get_plotlims(skyspec[gz])
-			plot,w,skyspec,title='Slice '+strn(i)+ $
-				' SKY, Img #: '+strn(kcfg.imgnum), $
-				xtitle='Wave (A)', xran=[wall0,wall1], /xs, $
-				ytitle='Sky e-', yran=yrng, /ys
-			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
-				thick=3
-			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
-				thick=3
-			read,'Next? (Q-quit plotting, <cr> - next): ',q
-			if strupcase(strmid(strtrim(q,2),0,1)) eq 'Q' then $
-				plotsky = 0
-		endif
-	endfor
+	endif	; do sky subtraction (not skycor)
 	;
 	; apply extinction correction
 	ucub = scub	; uncorrected cube
@@ -344,7 +354,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			gd = where(obsspec gt 0.)
 			plot,w[gd],obsspec[gd],title=sname+' Img #: '+strn(kcfg.imgnum), $
 				xtitle='Wave (A)', $
-				ytitle='Observed flux',/ylog;,/ys
+				ytitle='Observed flux',/ylog
 			oplot,[wgoo0,wgoo0],10^!y.crange,color=colordex('green'), $
 				thick=3
 			oplot,[wgoo1,wgoo1],10^!y.crange,color=colordex('green'), $
@@ -365,7 +375,12 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			;
 			; final wavelength range
 			t = where(w ge wlm0 and w le wlm1, nt)
-		endif
+		;
+		; non-interactive, just use default wavelength limits
+		endif else begin
+			wlm0 = wgoo0
+			wlm1 = wgoo1
+		endelse
 		;
 		; set up fitting vectors, flux, waves, measure errors
 		sf = invsen[t]
@@ -399,140 +414,152 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			yfit=yfit,yband=yband,status=fitstat)
 		finvsen = poly(w-wf0,res)
 		;
-		; create a standard flux window
-		device,Window_State=wins
-		if wins[1] ne 1 then $
-			window,1,title='Standard Flux'
-		;
-		; plot fits
-		done = (1 eq 0)
-		while not done do begin
+		; Are we interactive?
+		if interact then begin
 			;
-			; good points
-			g = where(use ge 1, ng)
-			if ng le 0 then begin
-				g = lindgen(nt)
-				ng = nt
-			endif
+			; create a standard flux window
+			device,Window_State=wins
+			if wins[1] ne 1 then $
+				window,1,title='Standard Flux'
 			;
-			; new bad points, marked by large errors
-			me = sf * 1.e-3
-			mf = sf-sf
-			b = where(use le 0, nb)
-			if nb gt 0 then begin
-				me[b] = sf[b] * 1.e9
-				mf[b] = sf[b]
-			endif
-			;
-			; calculate calibrated spectrum
-			calspec = obsspec * finvsen
-			;
-			; now plot standard flux and calibrated spectrum
-			wset,1
-			yrng=get_plotlims(calspec[t])
-			if yrng[0] lt 0 then yrng[0] = 0.
-			plot,w,calspec,title=sname+' Img #: '+strn(kcfg.imgnum), $
-				xran=[wall0,wall1],/xs,xtickformat='(a1)', $
-				ytitle='!3Flam (erg s!U-1!N cm!U-2!N A!U-1!N',yran=yrng,/ys, $
-				pos=[0.07,0.30,0.98,0.95]
-			oplot,w,rsflx,thick=3,color=colordex('red')
-			oplot,[wlm0,wlm0],!y.crange,color=colordex('orange'),linesty=2
-			oplot,[wlm1,wlm1],!y.crange,color=colordex('orange'),linesty=2
-			for ib=0,n_elements(blines)-1 do $
-				oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('blue'), $
-					linesty=2
-			;
-			; calculate residuals
-			rsd = calspec - rsflx
-			frsd = 100.d0 * (rsd/rsflx)
-			mo = moment(rsd[t[g]],/nan)
-			fmo = moment(frsd[t[g]],/nan)
-			;
-			; annotate residuals
-			kcwi_legend,['<Resid> = '+strtrim(string(mo[0],format='(g13.3)'),2) + $
-				' +- '+strtrim(string(sqrt(mo[1]),format='(g13.3)'),2)+' Flam',$
-				'<Resid> = '+strtrim(string(fmo[0],format='(f8.2)'),2) + $
-				' +- '+strtrim(string(sqrt(fmo[1]),format='(f8.2)'),2)+' %'], $
-				/clear,clr_color=!p.background,/bottom
-			;
-			; plot residuals
-			yrng = get_plotlims(rsd[t[g]])
-			plot,w,rsd,xtitle='Wave (A)',xran=[wall0,wall1], /xs, $
-				ytitle='!3Obs-Cal',yran=yrng,/ys,pos=[0.07,0.05,0.98,0.30], $
-				/noerase
-			oplot,!x.crange,[0,0]
-			oplot,[wlm0,wlm0],!y.crange,color=colordex('orange'),linesty=2
-			oplot,[wlm1,wlm1],!y.crange,color=colordex('orange'),linesty=2
-			if nb gt 0 then $
-				oplot,w[t[b]],rsd[t[b]],psym=7
-			for ib=0,n_elements(blines)-1 do $
-				oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('blue'), $
-					linesty=2
-			;
-			; plot inverse sensitivity
-			wset,0
-			yrng = get_plotlims(sf,/log)
-			plot,w,invsen,title=sname+' Img #: '+strn(kcfg.imgnum), $
-				xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
-				ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
-				yran=yrng,/ylog,/ys,xmargin=[11,3]
-			oplot,w,finvsen,color=colordex('red')
-			if nb gt 0 then $
-				oplot,wf[b],mf[b],psym=7
-			oplot,[wgoo0,wgoo0],10.^!y.crange,color=colordex('green'),thick=3
-			oplot,[wgoo1,wgoo1],10.^!y.crange,color=colordex('green'),thick=3
-			oplot,[wlm0,wlm0],10.^!y.crange,color=colordex('orange'),linesty=2
-			oplot,[wlm1,wlm1],10.^!y.crange,color=colordex('orange'),linesty=2
-			for ib=0,n_elements(blines)-1 do $
-				oplot,[blines[ib],blines[ib]],10.^!y.crange,color=colordex('blue'), $
-					linesty=2
-			read,'r - restore pts, d - delete pts, + - increase fit order, - - decrease fit order, f - re-fit, q - quit fitting: ',q
-			;
-			; all done
-			if strupcase(strtrim(q,2)) eq 'Q' then begin
-				done = (1 eq 1)
-			endif else begin
+			; plot fits
+			done = (1 eq 0)
+			while not done do begin
 				;
-				; re-fit
-				if strupcase(strtrim(q,2)) eq 'F' then begin
-					res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me, $
-							status=fitstat)
-					finvsen = poly(w-wf0,res)
-				endif else if strtrim(q,2) eq '+' then begin
-					ford += 1
-					print,'Fitting order: ',ford
-				endif else if strtrim(q,2) eq '-' then begin
-					ford -= 1
-					print,'Fitting order: ',ford
+				; good points
+				g = where(use ge 1, ng)
+				if ng le 0 then begin
+					g = lindgen(nt)
+					ng = nt
+				endif
 				;
-				; mark a region for resoration or deletion
+				; new bad points, marked by large errors
+				me = sf * 1.e-3
+				mf = sf-sf
+				b = where(use le 0, nb)
+				if nb gt 0 then begin
+					me[b] = sf[b] * 1.e9
+					mf[b] = sf[b]
+				endif
+				;
+				; calculate calibrated spectrum
+				calspec = obsspec * finvsen
+				;
+				; now plot standard flux and calibrated spectrum
+				wset,1
+				yrng=get_plotlims(calspec[t])
+				if yrng[0] lt 0 then yrng[0] = 0.
+				plot,w,calspec,title=sname+' Img #: '+strn(kcfg.imgnum), $
+					xran=[wall0,wall1],/xs,xtickformat='(a1)', $
+					ytitle='!3Flam (erg s!U-1!N cm!U-2!N A!U-1!N',yran=yrng,/ys, $
+					pos=[0.07,0.30,0.98,0.95]
+				oplot,w,rsflx,thick=3,color=colordex('red')
+				oplot,[wlm0,wlm0],!y.crange,color=colordex('orange'),linesty=2
+				oplot,[wlm1,wlm1],!y.crange,color=colordex('orange'),linesty=2
+				oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
+				oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
+				for ib=0,n_elements(blines)-1 do $
+					oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('blue'), $
+						linesty=2
+				;
+				; calculate residuals
+				rsd = calspec - rsflx
+				frsd = 100.d0 * (rsd/rsflx)
+				mo = moment(rsd[t[g]],/nan)
+				fmo = moment(frsd[t[g]],/nan)
+				;
+				; annotate residuals
+				kcwi_legend,['<Resid> = '+strtrim(string(mo[0],format='(g13.3)'),2) + $
+					' +- '+strtrim(string(sqrt(mo[1]),format='(g13.3)'),2)+' Flam',$
+					'<Resid> = '+strtrim(string(fmo[0],format='(f8.2)'),2) + $
+					' +- '+strtrim(string(sqrt(fmo[1]),format='(f8.2)'),2)+' %'], $
+					/clear,clr_color=!p.background,/bottom
+				;
+				; plot residuals
+				yrng = get_plotlims(rsd[t[g]])
+				plot,w,rsd,xtitle='Wave (A)',xran=[wall0,wall1], /xs, $
+					ytitle='!3Obs-Cal',yran=yrng,/ys,pos=[0.07,0.05,0.98,0.30], $
+					/noerase
+				oplot,!x.crange,[0,0]
+				oplot,[wlm0,wlm0],!y.crange,color=colordex('orange'),linesty=2
+				oplot,[wlm1,wlm1],!y.crange,color=colordex('orange'),linesty=2
+				oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3
+				oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'),thick=3
+				if nb gt 0 then $
+					oplot,w[t[b]],rsd[t[b]],psym=7
+				for ib=0,n_elements(blines)-1 do $
+					oplot,[blines[ib],blines[ib]],!y.crange,color=colordex('blue'), $
+						linesty=2
+				;
+				; plot inverse sensitivity
+				wset,0
+				yrng = get_plotlims(sf,/log)
+				plot,w,invsen,title=sname+' Img #: '+strn(kcfg.imgnum), $
+					xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
+					ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
+					yran=yrng,/ylog,/ys,xmargin=[11,3]
+				oplot,w,finvsen,color=colordex('red')
+				if nb gt 0 then $
+					oplot,wf[b],mf[b],psym=7
+				oplot,[wgoo0,wgoo0],10.^!y.crange,color=colordex('green'),thick=3
+				oplot,[wgoo1,wgoo1],10.^!y.crange,color=colordex('green'),thick=3
+				oplot,[wlm0,wlm0],10.^!y.crange,color=colordex('orange'),linesty=2
+				oplot,[wlm1,wlm1],10.^!y.crange,color=colordex('orange'),linesty=2
+				for ib=0,n_elements(blines)-1 do $
+					oplot,[blines[ib],blines[ib]],10.^!y.crange,color=colordex('blue'), $
+						linesty=2
+				q = ''
+				while q eq '' do $
+					read,'r - restore pts, d - delete pts, + - increase fit order, - - decrease fit order, f - re-fit, q - quit fitting: ',q
+				;
+				; all done
+				if strupcase(strtrim(q,2)) eq 'Q' then begin
+					done = (1 eq 1)
 				endif else begin
-					wlma = -1.
-					wlmb = -1.
-					print,'Mark first wavelength limit'
-					cursor,wlma,yy,/data,/down
-					oplot,[wlma,wlma],10.^!y.crange,linesty=2
-					print,'Mark next wavelength limit'
-					cursor,wlmb,yy,/data,/down
-					oplot,[wlmb,wlmb],10.^!y.crange,linesty=2
-					wl0 = min([wlma,wlmb])
-					wl1 = max([wlma,wlmb])
-					roi = where(wf ge wl0 and wf le wl1, nroi)
 					;
-					if nroi gt 0 then begin
+					; re-fit
+					if strupcase(strtrim(q,2)) eq 'F' or $
+					   strtrim(q,2) eq '+' or strtrim(q,2) eq '-' then begin
+						if strtrim(q,2) eq '+' then begin
+							ford += 1
+							print,'Fitting order: ',ford
+						endif else if strtrim(q,2) eq '-' then begin
+							ford -= 1
+							print,'Fitting order: ',ford
+						endif
+						res = poly_fit(wf-wf0,sf,ford,/double,measure_error=me, $
+								status=fitstat)
+						finvsen = poly(w-wf0,res)
+					;
+					; mark a region for resoration or deletion
+					endif else begin
+						wlma = -1.
+						wlmb = -1.
+						print,'Mark first wavelength limit'
+						cursor,wlma,yy,/data,/down
+						oplot,[wlma,wlma],10.^!y.crange,linesty=2
+						print,'Mark next wavelength limit'
+						cursor,wlmb,yy,/data,/down
+						oplot,[wlmb,wlmb],10.^!y.crange,linesty=2
+						wl0 = min([wlma,wlmb])
+						wl1 = max([wlma,wlmb])
+						roi = where(wf ge wl0 and wf le wl1, nroi)
 						;
-						; restore points
-						if strupcase(strtrim(q,2)) eq 'R' then begin
-							use[roi] = 1
-						;
-						; delete points
-						endif else if strupcase(strtrim(q,2)) eq 'D' then begin
-							use[roi] = 0
-						endif else print,'I do not understand ',q
-					endif
-				endelse	; marking a region
-			endelse	; not quitting
-		endwhile	; still working on fits
+						if nroi gt 0 then begin
+							;
+							; restore points
+							if strupcase(strtrim(q,2)) eq 'R' then begin
+								use[roi] = 1
+							;
+							; delete points
+							endif else if strupcase(strtrim(q,2)) eq 'D' then begin
+								use[roi] = 0
+							endif else print,'I do not understand ',q
+						endif
+					endelse	; marking a region
+				endelse	; not quitting
+			endwhile	; still working on fits
+		endif	; are we interactive?
 		;
 		; now fit effective area
 		res = poly_fit(wf-wf0,earea[t],ford,/double,measure_error=me, $
@@ -543,55 +570,52 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		return
 	endelse
 	;
-	; plot inverse sensitivity
-	if interact then begin
-		;
-		; plot effective area (cm^2)
-		goo = where(w gt wgoo0 and w lt wgoo1, ngoo)
-		if ngoo gt 5 then begin
-			maxea = max(fearea[goo])
-			mo = moment(fearea[goo])
-			yrng = get_plotlims(fearea[goo])
-		endif else begin
-			maxea = max(fearea)
-			mo = moment(fearea)
-			yrng = get_plotlims(fearea)
-		endelse
-		if yrng[0] lt 0. then yrng[0] = 0.0
-		if area gt 0 then begin
-			plot,w,earea, $
-				title=sname+' Img #: '+strn(kcfg.imgnum)+' '+ $
-				strtrim(kcfg.bgratnam,2)+' '+tlab, $
-				xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
-				ytitle='Effective Area (cm^2/A)',ys=9, $
-				yran=yrng,xmargin=[11,8]
-			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
-				thick=3
-			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
-				thick=3
-			oplot,!x.crange,[maxea,maxea],linesty=2
-			oplot,!x.crange,[mo[0],mo[0]],linesty=3
-			axis,yaxis=1,yrange=100.*(!y.crange/area),ys=1, $
-				ytitle='Efficiency (%)'
-		endif else begin
-			plot,w,earea, $
-				title=sname+' Img #: '+strn(kcfg.imgnum)+' '+ $
-				strtrim(kcfg.bgratnam,2)+' '+tlab, $
-				xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
-				ytitle='Effective Area (cm^2/A)',yran=yrng,/ys
-			oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
-				thick=3
-			oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
-				thick=3
-			oplot,!x.crange,[maxea,maxea],linesty=2
-			oplot,!x.crange,[mo[0],mo[0]],linesty=3
-		endelse
-		;
-		; overplot fit
-		if ngoo gt 5 then $
-			oplot,w[goo],fearea[goo],thick=5,color=colordex('blue')
+	; plot effective area (cm^2)
+	goo = where(w gt wgoo0 and w lt wgoo1, ngoo)
+	if ngoo gt 5 then begin
+		maxea = max(fearea[goo])
+		mo = moment(fearea[goo])
+		yrng = get_plotlims(fearea[goo])
+	endif else begin
+		maxea = max(fearea)
+		mo = moment(fearea)
+		yrng = get_plotlims(fearea)
+	endelse
+	if yrng[0] lt 0. then yrng[0] = 0.0
+	if area gt 0 then begin
+		plot,w,earea, $
+			title=sname+' Img #: '+strn(kcfg.imgnum)+' '+ $
+			strtrim(kcfg.bgratnam,2)+' '+tlab, $
+			xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
+			ytitle='Effective Area (cm^2/A)',ys=9, $
+			yran=yrng,xmargin=[11,8]
+		oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
+			thick=3
+		oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
+			thick=3
+		oplot,!x.crange,[maxea,maxea],linesty=2
+		oplot,!x.crange,[mo[0],mo[0]],linesty=3
+		axis,yaxis=1,yrange=100.*(!y.crange/area),ys=1, $
+			ytitle='Efficiency (%)'
+	endif else begin
+		plot,w,earea, $
+			title=sname+' Img #: '+strn(kcfg.imgnum)+' '+ $
+			strtrim(kcfg.bgratnam,2)+' '+tlab, $
+			xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
+			ytitle='Effective Area (cm^2/A)',yran=yrng,/ys
+		oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'), $
+			thick=3
+		oplot,[wgoo1,wgoo1],!y.crange,color=colordex('green'), $
+			thick=3
+		oplot,!x.crange,[maxea,maxea],linesty=2
+		oplot,!x.crange,[mo[0],mo[0]],linesty=3
+	endelse
+	;
+	; overplot fit
+	if ngoo gt 5 then $
+		oplot,w[goo],fearea[goo],thick=5,color=colordex('blue')
+	if interact then $
 		read,'Next: ',q
-	endif
 	;
 	; write out effective inverse sensitivity
 	;
