@@ -241,7 +241,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf,fits=fits
 	;
 	; do bspline fit
 	sft0 = bspline_iterfit(waves,fluxes,fullbkpt=bkpt,yfit=yfit1, $
-				upper=1,lower=1)
+				upper=1,lower=1,outmask=gpts)
 	;
 	; check result
 	if max(yfit1) le 0. then begin
@@ -261,7 +261,8 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf,fits=fits
 			;
 			; do bspline fit
 			sft0 = bspline_iterfit(waves,fluxes,fullbkpt=bkpt, $
-						yfit=yfit1,upper=1,lower=1)
+						yfit=yfit1,upper=1,lower=1, $
+						outmask=gpts)
 		endif	; n gt 2000
 		;
 		; still not good
@@ -275,29 +276,38 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf,fits=fits
 	;
 	; plot, if requested
 	if do_plots then begin
-		fsmo = smooth(fluxes,250)
-		pg = where(waves ge kgeom.wavegood0 and $
-			   waves le kgeom.wavegood1, npg)
-		if npg gt 3 then begin
-			mo = moment(fsmo[pg])
-			yrng = [0, max([mo[0]+5.*sqrt(mo[1]), max(yfit1[pg])])]
+		gp = where(gpts eq 1)
+		if ppar.display ge 2 then begin
+			plot,waves,fluxes,psym=3,title=sxpar(hdr,'OFNAME'), $
+				charsi=si, charthi=th, $
+				xtitle='Wavelength (A)',xthick=th, /xs, $
+				ytitle='Flux (e-)', ythick=th, /ys
+			oplot,waves[gp],fluxes[gp],psym=3,color=colordex('B')
+			oplot,waves,yfit1,color=colordex('O')
+			oplot,[kgeom.wavegood0,kgeom.wavegood0],!y.crange, $
+				color=colordex('G')
+			oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
+				color=colordex('G')
+			kcwi_legend,['DATA','KEPT','FIT'],charsi=si,charthi=th,$
+				color=[colordex('C'), colordex('B'), $
+				       colordex('O')], $
+				linesty=[0,0,0],/clear,clr_color=!p.background
+			read,'next: ',ask
 		endif else begin
-			mo = moment(fsmo)
-			yrng = [0, max([mo[0]+5.*sqrt(mo[1]), max(yfit1)])]
+			plot,waves[gp],fluxes[gp],psym=3, $
+				title=sxpar(hdr,'OFNAME'), $
+				charsi=si, charthi=th, $
+				xtitle='Wavelength (A)',xthick=th, /xs, $
+				ytitle='Flux (e-)', ythick=th, /ys
+			oplot,waves,yfit1,color=colordex('O')
+			oplot,[kgeom.wavegood0,kgeom.wavegood0],!y.crange, $
+				color=colordex('G')
+			oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
+				color=colordex('G')
+			kcwi_legend,['KEPT','FIT'],charsi=si,charthi=th, $
+				color=[colordex('C'), colordex('O')], $
+				linesty=[0,0],/clear,clr_color=!p.background
 		endelse
-		plot,waves,fsmo,psym=3,title=sxpar(hdr,'OFNAME'), $
-			charsi=si, charthi=th, $
-			xtitle='Wavelength (A)',xthick=th, /xs, $
-			ytitle='Flux (e-)', ythick=th, yrange=yrng
-		oplot,waves,yfit1,color=colordex('orange')
-		oplot,[kgeom.wavegood0,kgeom.wavegood0],!y.crange, $
-			color=colordex('green')
-		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
-			color=colordex('green')
-		kcwi_legend,['DATA','FIT'],charsi=si,charthi=th, $
-			color=[colordex('black'), colordex('orange')], $
-			linesty=[0,0],/clear,clr_color=!p.background
-		if ppar.display ge 2 then read,'next: ',ask
 	endif
 	;
 	; create sky image
