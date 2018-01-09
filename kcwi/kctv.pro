@@ -1212,12 +1212,14 @@ if (event.type EQ 5) then begin
         's': kctv_surfplot, /newcoord
         't': kctv_contourplot, /newcoord
         'h': kctv_histplot, /newcoord
-        'p': kctv_apphot
+        'p': begin
+	     kctv_apphot
+	     if state.kcwicube then kctvdrill, /newcoord
+	end
         'i': kctv_showstats
         'm': kctv_changemode
         'w': print, state.coord
         'x': kctvextract, /newcoord
-        'd': kctvdrill, /newcoord
         'e': kctverase
         '-': kctv_zoom, 'out'
         '=': kctv_zoom, 'in'
@@ -8800,7 +8802,7 @@ i = i + 1
 h[i] = '    h: histogram of pixel values'
 i = i + 1
 i = i + 1
-h[i] = '    p: aperture photometry at current position'
+h[i] = '    p: aperture photometry at current position (+drill if cube)'
 i = i + 1
 h[i] = '    i: image statistics at current position'
 i = i + 1
