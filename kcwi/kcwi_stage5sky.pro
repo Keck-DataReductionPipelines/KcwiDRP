@@ -173,7 +173,7 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 							if file_test(gfile) then begin
 								;
 								; check status
-								kgeom = mrdfits(gfile,1)
+								kgeom = mrdfits(gfile,1,/silent)
 								if kgeom.status eq 0 then begin
 									do_sky = (1 eq 1)
 									;
