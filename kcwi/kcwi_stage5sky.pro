@@ -171,12 +171,20 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 							;
 							; check access
 							if file_test(gfile) then begin
-								do_sky = (1 eq 1)
 								;
-								; log that we got it
-								kcwi_print_info,ppar,pre,'building master sky file = '+msfile
-								kcwi_print_info,ppar,pre,'sky input file = '+sinfile
-								kcwi_print_info,ppar,pre,'geom file = '+gfile
+								; check status
+								kgeom = mrdfits(gfile,1)
+								if kgeom.status eq 0 then begin
+									do_sky = (1 eq 1)
+									;
+									; log that we got it
+									kcwi_print_info,ppar,pre,'building master sky file = '+msfile
+									kcwi_print_info,ppar,pre,'sky input file = '+sinfile
+									kcwi_print_info,ppar,pre,'geom file = '+gfile
+								endif else begin
+									kcwi_print_info,ppar,pre,'bad geometry solution in ',gfile, $
+										format='(a,a)',/error
+								endelse
 							endif else begin
 								;
 								; log that we haven't got it

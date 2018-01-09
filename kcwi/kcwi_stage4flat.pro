@@ -197,11 +197,19 @@ pro kcwi_stage4flat,procfname,ppfname,help=help,verbose=verbose, display=display
 					;
 					; check access
 					if file_test(mfppfn) and file_test(gfile) then begin
-						do_flat = (1 eq 1)
 						;
-						; log that we got it
-						kcwi_print_info,ppar,pre,'flat file = '+mffile
-						kcwi_print_info,ppar,pre,'geom file = '+gfile
+						; check status
+						kgeom = mrdfits(gfile,1)
+						if kgeom.status eq 0 then begin
+							do_flat = (1 eq 1)
+							;
+							; log that we got it
+							kcwi_print_info,ppar,pre,'flat file = '+mffile
+							kcwi_print_info,ppar,pre,'geom file = '+gfile
+						endif else begin
+							kcwi_print_info,ppar,pre,'bad geometry solution in ',gfile, $
+								format='(a,a)',/error
+						endelse
 					endif else begin
 						;
 						; log that we haven't got it
@@ -303,7 +311,7 @@ pro kcwi_stage4flat,procfname,ppfname,help=help,verbose=verbose, display=display
 					;
 					; handle the case when no flat frames were taken
 				endif else $
-					kcwi_print_info,ppar,pre,'cannot associate with any master flat: '+ $
+					kcwi_print_info,ppar,pre,'cannot associate with any viable master flat: '+ $
 							kcfg.obsfname,/warning
 				flush,ll
 			;
