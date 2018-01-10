@@ -5288,8 +5288,9 @@ if (state.exptime LE 0.0) then state.exptime = 1.0
 ; try to get gain and readnoise from header?
 ;state.ccdgain = float(sxpar(head, 'GAIN'))
 ;if (state.ccdgain LE 0.0) then state.ccdgain = 1.0
-;state.ccdrn = float(sxpar(head, 'RDNOISE'))
-;if (state.ccdrn LE 0.0) then state.ccdrn = 0.0
+state.ccdrn = float(sxpar(head, 'BIASRN1'))
+if (state.ccdrn LE 0.0) then state.ccdrn = float(sxpar(head,'OSCNRN1'))
+if (state.ccdrn LE 0.0) then state.ccdrn = 0.0
 
 ; Get astrometry information from header, if it exists
 ptr_free, state.astr_ptr        ; kill previous astrometry info
@@ -7353,6 +7354,7 @@ state.lineplot_base_id = $
 state.lineplot_widget_id = $
   widget_draw(state.lineplot_base_id, $
               frame = 0, $
+	      /motion_events, $
               scr_xsize = state.lineplot_size[0], $
               scr_ysize = state.lineplot_size[1], $
               uvalue = 'lineplot_window')
@@ -7482,6 +7484,8 @@ state.lineplot_window_id = tmp_value
 lbuttgeom = widget_info(lbutton_base, /geometry)
 state.lineplot_min_size[1] = lbuttgeom.ysize
 
+;widget_control, state.lineplot_widget_id, event_pro = 'kctv_lineplot_draw_event'
+
 basegeom = widget_info(state.lineplot_base_id, /geometry)
 drawgeom = widget_info(state.lineplot_widget_id, /geometry)
 
@@ -7495,6 +7499,17 @@ end
 
 ;--------------------------------------------------------------------
 
+pro kctv_lineplot_draw_event, event
+common kctv_state
+
+if (event.type EQ 2) then begin
+    kctv_setwindow, state.lineplot_window_id
+    print,event.x,event.y
+    stop
+endif
+
+end
+
 pro kctv_rowplot, ps=ps, fullrange=fullrange, newcoord=newcoord
 
 ; draws a new row plot in the plot window or to postscript output
@@ -7504,13 +7519,11 @@ common kctv_images
 
 if (keyword_set(ps)) then begin
     thick = 3
-    color = 'black'
-    background='white'
 endif else begin
     thick = 1
-    color = 'white'
-    background='black'
 endelse
+!p.background=cgcolor('white')
+!p.color=cgcolor('black')
 
 if (keyword_set(newcoord)) then state.plot_coord = state.coord
 
@@ -7582,13 +7595,11 @@ common kctv_images
 
 if (keyword_set(ps)) then begin
    thick = 3
-   color = 'black'
-   background = 'white'
 endif else begin
    thick = 1
-   color = 'white'
-   background = 'black'
 endelse
+!p.background=cgcolor('white')
+!p.color=cgcolor('black')
 
 if (keyword_set(newcoord)) then state.plot_coord = state.coord
 
@@ -7660,13 +7671,11 @@ common kctv_images
 
 if (keyword_set(ps)) then begin
    thick = 3
-   color = 'black'
-   background = 'white'
 endif else begin
    thick = 1
-   color = 'white'
-   background = 'black'
 endelse
+!p.background=cgcolor('white')
+!p.color=cgcolor('black')
 
 d = sqrt((state.vector_coord1[0]-state.vector_coord2[0])^2 + $
          (state.vector_coord1[1]-state.vector_coord2[1])^2)
@@ -7788,13 +7797,11 @@ common kctv_images
 
 if (keyword_set(ps)) then begin
    thick = 3
-   color = 'black'
-   background = 'white'
 endif else begin
    thick = 1
-   color = 'white'
-   background = 'black'
 endelse
+!p.background=cgcolor('white')
+!p.color=cgcolor('black')
 
 d = sqrt((state.vector_coord1[0]-state.vector_coord2[0])^2 + $
          (state.vector_coord1[1]-state.vector_coord2[1])^2)
@@ -7928,13 +7935,11 @@ if (state.cube NE 1) then return
 
 if (keyword_set(ps)) then begin
    thick = 3
-   color = 'black'
-   background = 'white'
 endif else begin
    thick = 1
-   color = 'white'
-   background = 'black'
 endelse
+!p.background=cgcolor('white')
+!p.color=cgcolor('black')
 
 if (ptr_valid(state.head_ptr)) then head = *(state.head_ptr) $
    else head = strarr(1)
@@ -8042,13 +8047,11 @@ common kctv_images
 
 if (keyword_set(ps)) then begin
    thick = 3
-   color = 'black'
-   background = 'white'
 endif else begin
    thick = 1
-   color = 'white'
-   background = 'black'
 endelse
+!p.background=cgcolor('white')
+!p.color=cgcolor('black')
 
 if (not (keyword_set(ps))) then begin
 
@@ -8064,7 +8067,7 @@ if (not (keyword_set(ps))) then begin
 ; set new plot coords if passed from a main window keyboard event
     if (keyword_set(newcoord)) then begin
         plotsize = $
-          fix(min([50, state.image_size[0]/2., state.image_size[1]/2.]))
+          fix(min([50, state.image_size[0]/4., state.image_size[1]/4.]))
         center = plotsize > state.coord < (state.image_size[0:1] - plotsize) 
         
         shade_image = main_image[center[0]-plotsize:center[0]+plotsize-1, $
@@ -8151,13 +8154,11 @@ pro kctv_contourplot, ps=ps, fullrange=fullrange, newcoord=newcoord
 
 if (keyword_set(ps)) then begin
    thick = 3
-   color = 'black'
-   background = 'white'
 endif else begin
    thick = 1
-   color = 'white'
-   background = 'black'
 endelse
+!p.background=cgcolor('white')
+!p.color=cgcolor('black')
 
 common kctv_state
 common kctv_images
@@ -8176,7 +8177,7 @@ if (not (keyword_set(ps))) then begin
     if (keyword_set(newcoord)) then begin
         
         plotsize = $
-          fix(min([50, state.image_size[0]/2., state.image_size[1]/2.]))
+          fix(min([50, state.image_size[0]/4., state.image_size[1]/4.]))
         center = plotsize > state.coord < (state.image_size[0:1] - plotsize) 
         
         contour_image =  main_image[center[0]-plotsize:center[0]+plotsize-1, $
@@ -8275,13 +8276,11 @@ common kctv_images
 
 if (keyword_set(ps)) then begin
    thick = 3
-   color = 'black'
-   background = 'white'
 endif else begin
    thick = 1
-   color = 'white'
-   background = 'black'
 endelse
+!p.background=cgcolor('white')
+!p.color=cgcolor('black')
 
 if (not (keyword_set(ps))) then begin
 
@@ -10590,13 +10589,11 @@ common kctv_spectrum
 
 if (keyword_set(ps)) then begin
    thick = 3
-   color = 'black'
-   background = 'white'
 endif else begin
    thick = 1
-   color = 'white'
-   background = 'black'
 endelse
+!p.background=cgcolor('white')
+!p.color=cgcolor('black')
 
 if (keyword_set(newcoord)) then newcoord = 1 else newcoord = 0
 
@@ -10671,13 +10668,11 @@ common kctv_spectrum
 
 if (keyword_set(ps)) then begin
    thick = 3
-   color = 'black'
-   background = 'white'
 endif else begin
    thick = 1
-   color = 'white'
-   background = 'black'
 endelse
+!p.background=cgcolor('white')
+!p.color=cgcolor('black')
 
 if (keyword_set(newcoord)) then newcoord = 1 else newcoord = 0
 
