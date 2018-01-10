@@ -341,7 +341,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						;
 						; write out flux calibrated obj panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocubes',/nodir)
-						kcwi_write_image,obj,hdr,ofil,kpars[i]
+						kcwi_write_image,obj,objhdr,ofil,kpars[i]
 					endif
 					;
 					; handle the case when no std frames were taken
