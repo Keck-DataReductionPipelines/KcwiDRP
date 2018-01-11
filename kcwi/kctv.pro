@@ -180,10 +180,10 @@ state = {                   $
         dwave: 0., $            ; wavelengths/slice
         wave0: 0., $            ; min wavelength
         wave1: 0., $            ; max wavelength
-	waveg0: 0., $           ; min good wavelength
-	waveg1: 0., $           ; max good wavelength
-	wavea0: 0., $           ; min all wavelength
-	wavea1: 0., $           ; max all wavelength
+        waveg0: 0., $           ; min good wavelength
+        waveg1: 0., $           ; max good wavelength
+        wavea0: 0., $           ; min all wavelength
+        wavea1: 0., $           ; max all wavelength
         frame: 1L, $            ; put frame around ps output?
         framethick: 6, $        ; thickness of frame
         plot_coord: [0L, 0L], $ ; cursor position for a plot
@@ -210,11 +210,11 @@ state = {                   $
         lineplot_ymax: 0.0, $   ; ymax for lineplot windows
         lineplot_xmin_orig: 0.0, $ ; original xmin saved from histplot
         lineplot_xmax_orig: 0.0, $ ; original xmax saved from histplot
-	lineplot_x_vsize:0, $	; !d.x_vsize
-	lineplot_y_vsize:0, $	; !d.y_vsize
-	lineplot_x_s: [0.,0.], $; !x.s
-	lineplot_y_s: [0.,0.], $; !y.s
-	lineplot_location_id: 0L, $	; id of lineplot location field
+        lineplot_x_vsize:0, $   ; !d.x_vsize
+        lineplot_y_vsize:0, $   ; !d.y_vsize
+        lineplot_x_s: [0.,0.], $; !x.s
+        lineplot_y_s: [0.,0.], $; !y.s
+        lineplot_location_id: 0L, $; id of lineplot location field
         holdrange_base_id: 0L, $ ; base id for 'Hold Range' button
         holdrange_button_id: 0L, $ ; button id for 'Hold Range' button
         holdrange_value: 0, $   ; 0=HoldRange Off, 1=HoldRange On
@@ -1216,9 +1216,9 @@ if (event.type EQ 5) then begin
         't': kctv_contourplot, /newcoord
         'h': kctv_histplot, /newcoord
         'p': begin
-	     kctv_apphot
-	     if state.kcwicube then kctvdrill, /newcoord
-	end
+             kctv_apphot
+             if state.kcwicube then kctvdrill, /newcoord
+        end
         'i': kctv_showstats
         'm': kctv_changemode
         'w': print, state.coord
@@ -3723,8 +3723,8 @@ if (ptr_valid(state.head_ptr)) then head = *(state.head_ptr) $
 ; Test for whether this is an OSIRIS cube.  
 currinst = strcompress(string(sxpar(head, 'CURRINST',count=nhk)), /remove_all)
 if nhk le 0 then $
-	currinst = strcompress(string(sxpar(head, 'INSTRUME',count=nhk)), $
-				/remove_all)
+        currinst = strcompress(string(sxpar(head, 'INSTRUME',count=nhk)), $
+                               /remove_all)
 instr = strcompress(string(sxpar(head, 'INSTR')), /remove_all)
 
 if ((currinst EQ 'OSIRIS') AND (instr EQ 'spec')) then begin
@@ -7358,27 +7358,32 @@ state.lineplot_base_id = $
 state.lineplot_widget_id = $
   widget_draw(state.lineplot_base_id, $
               frame = 0, $
-	      /motion_events, $
+              /motion_events, $
               scr_xsize = state.lineplot_size[0], $
               scr_ysize = state.lineplot_size[1], $
               uvalue = 'lineplot_window')
-
-lineplot_location_base = $
-  widget_base(state.lineplot_base_id, $
-              /base_align_bottom, $
-              /column, frame=2)
-
-tmp_string = string(1000., 1000., $
-                    format = '("(",f9.2,",",g12.5,")        ")' )
-
-state.lineplot_location_id = widget_label (lineplot_location_base, $
-                                      value = tmp_string,  $
-                                      uvalue = 'lineplot_location', frame=1)
 
 lbutton_base = $
   widget_base(state.lineplot_base_id, $
               /base_align_bottom, $
               /column, frame=2)
+
+location_base = $
+  widget_base(lbutton_base, $
+              /base_align_bottom, $
+              /column, frame=2)
+
+tmp_string = string(1000., 1000., $
+                    format = '(f9.2,",",g12.5)' )
+
+state.lineplot_location_id = $
+   cw_field(location_base, $
+            /string, $
+            /noedit, $
+            title='Coords:', $
+            xsize=23, $
+            value = tmp_string,  $
+            uvalue = 'lineplot_location')
 
 state.histbutton_base_id = $
   widget_base(lbutton_base, $
@@ -7521,14 +7526,15 @@ pro kctv_lineplot_draw_event, event
 common kctv_state
 
 if (event.type EQ 2) then begin
-   xd = (float(event.x)/float(state.lineplot_x_vsize)-state.lineplot_x_s[0]) / $
-    		 	      state.lineplot_x_s[1]
-   yd = (float(event.y)/float(state.lineplot_y_vsize)-state.lineplot_y_s[0]) / $
-    		 state.lineplot_y_s[1]
-   
-   tmp_string = string(xd, yd, format = '("(",f9.3,",",g12.5,")        ")' )
+   if state.lineplot_x_s[1] ne 0. and state.lineplot_y_s[1] ne 0. then begin
+      xd = ( float(event.x)/float(state.lineplot_x_vsize) - $
+             state.lineplot_x_s[0] ) / state.lineplot_x_s[1]
+      yd = ( float(event.y)/float(state.lineplot_y_vsize) - $
+             state.lineplot_y_s[0]) / state.lineplot_y_s[1]
 
-   widget_control, state.lineplot_location_id, set_value = tmp_string
+      tmp_string = string(xd, yd, format = '(f9.3,",",g12.5)' )
+      widget_control, state.lineplot_location_id, set_value = tmp_string
+   endif
 
 endif
 
@@ -7559,6 +7565,7 @@ if (not (keyword_set(ps))) then begin
     endif 
 
     widget_control, state.histbutton_base_id, map=0
+    widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=1
 
     widget_control, state.lineplot_xmin_id, get_value=xmin
@@ -7640,6 +7647,7 @@ if (not (keyword_set(ps))) then begin
     endif 
 
     widget_control, state.histbutton_base_id, map=0
+    widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=1
 
     widget_control, state.lineplot_xmin_id, get_value=xmin
@@ -7754,6 +7762,7 @@ if (not (keyword_set(ps))) then begin
     endif
     
     widget_control, state.histbutton_base_id, map=0
+    widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=1
 
     widget_control, state.lineplot_xmin_id, get_value=xmin
@@ -7885,6 +7894,7 @@ if (not (keyword_set(ps))) then begin
     endif
     
     widget_control, state.histbutton_base_id, map=0
+    widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=1
 
     widget_control, state.lineplot_xmin_id, get_value=xmin
@@ -8014,6 +8024,7 @@ if (not (keyword_set(ps))) then begin
     endif
     
     widget_control, state.histbutton_base_id, map=0
+    widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=1
 
     widget_control, state.lineplot_xmin_id, get_value=xmin
@@ -8212,6 +8223,7 @@ if (not (keyword_set(ps))) then begin
     endif
     
     widget_control, state.histbutton_base_id, map=0
+    widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=0
     
     if (keyword_set(newcoord)) then begin
@@ -8502,11 +8514,11 @@ case uvalue of
         if nof le 0 then $
              ofname = 'kctv_plot.ps' $
         else begin
-	    if state.nregions le 0 then $
-	         ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '.ps' $
-	    else ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '_' + $
-	                  string(state.nregions,form='(i02)') + '.ps'
-	endelse
+           if state.nregions le 0 then $
+                ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '.ps' $
+           else ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '_' + $
+                         string(state.nregions,form='(i02)') + '.ps'
+        endelse
         fname = strcompress(state.current_dir + ofname, /remove_all)
         state.ispsformon = 1
         lpforminfo = cmps_form(cancel = canceled, create = create, $
@@ -10660,6 +10672,7 @@ if (not (keyword_set(ps))) then begin
     endif 
 
     widget_control, state.histbutton_base_id, map=0
+    widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=1
 
     widget_control, state.lineplot_xmin_id, get_value=xmin
@@ -10739,6 +10752,7 @@ if (not (keyword_set(ps))) then begin
     endif 
 
     widget_control, state.histbutton_base_id, map=0
+    widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=1
 
     widget_control, state.lineplot_xmin_id, get_value=xmin
