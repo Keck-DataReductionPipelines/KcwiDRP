@@ -96,7 +96,7 @@ common kctv_images, $
    pan_image
 
 state = {                   $
-        version: '3.0b8', $     ; version # of this release
+        version: '0.6.1dev', $     ; version # of this release
         panel_side: 2, $        ; 0=left, 1=right, 2=top for panel location
         head_ptr: ptr_new(), $  ; pointer to image header
         astr_ptr: ptr_new(), $  ; pointer to astrometry info structure
@@ -174,7 +174,7 @@ state = {                   $
         slicecombine: 1, $      ; # slices to combine
         wavecombine_id: 0, $    ; widget id of wave combine box
         wavecombine: 0., $      ; # waves to combine
-        slicecombine_method: 1, $ ; 0 for average, 1 for median
+        slicecombine_method: 0, $ ; 0 for average, 1 for median
         nslices: 0, $           ; number of slices
         crslice: 0, $           ; wavelength reference slice
         dwave: 0., $            ; wavelengths/slice
@@ -210,6 +210,11 @@ state = {                   $
         lineplot_ymax: 0.0, $   ; ymax for lineplot windows
         lineplot_xmin_orig: 0.0, $ ; original xmin saved from histplot
         lineplot_xmax_orig: 0.0, $ ; original xmax saved from histplot
+	lineplot_x_vsize:0, $	; !d.x_vsize
+	lineplot_y_vsize:0, $	; !d.y_vsize
+	lineplot_x_s: [0.,0.], $; !x.s
+	lineplot_y_s: [0.,0.], $; !y.s
+	lineplot_location_id: 0L, $	; id of lineplot location field
         holdrange_base_id: 0L, $ ; base id for 'Hold Range' button
         holdrange_button_id: 0L, $ ; button id for 'Hold Range' button
         holdrange_value: 0, $   ; 0=HoldRange Off, 1=HoldRange On
@@ -574,7 +579,6 @@ if (state.panel_side LE 1) then begin
    buttonbar_base = widget_base(side_base,column=3,scr_xsize=sidebasesize+6, $
                                 frame=1, /base_align_center)
 
-
    tmp_string = string(1000, 1000, 1.0e-10, $
                        format = '("(",i5,",",i5,")        ",g12.5)' )
    
@@ -588,8 +592,7 @@ if (state.panel_side LE 1) then begin
    state.wcs_bar_id = widget_label (info_base, $
                                     value = tmp_string,  $
                                     uvalue = 'wcs_bar', frame=0)
-   
-   
+
    minmax_base = widget_base(info_base,/row,/base_align_center, $
                              scr_xsize = sidebasesize)
    
@@ -3752,6 +3755,8 @@ if strpos(currinst,'CWI') ge 0 then begin
    state.wave0 = sxpar(head,'CRVAL3')
    state.dwave = sxpar(head,'CD3_3')
    state.wave1 = state.wave0 + (state.nslices - state.crslice) * state.dwave
+   state.slice = state.nslices / 2
+   state.wave = state.wave0 + (state.slice - state.crslice) * state.dwave
 endif else begin
    state.kcwicube = 0
 endelse
@@ -3833,10 +3838,10 @@ if (not(xregistered('kctvslicer', /noshow))) then begin
 
 endif
 
-state.slice = 0
-state.wave = state.wave0
-widget_control, state.slicer_id, set_value = 0
-widget_control, state.sliceselect_id, set_value = 0
+;state.slice = 0
+;state.wave = state.wave0
+widget_control, state.slicer_id, set_value = state.slice
+widget_control, state.sliceselect_id, set_value = state.slice
 widget_control, state.slicer_id, set_slider_max = state.nslices-1
 
 if (state.slicecombine GT state.nslices) then begin
@@ -3881,7 +3886,6 @@ common kctv_images
 
 if (n_elements(event) EQ 0) then begin
    event_name = 'sliceslider'
-   state.slice = 0
 endif else begin
    widget_control, event.id, get_uvalue = event_name
    if ((event_name EQ 'sliceslider') OR (event_name EQ 'sliceselect')) then $
@@ -7475,6 +7479,13 @@ lineplot_done = $
                 value = 'Done', $
                 uvalue = 'lineplot_done')
 
+tmp_string = string(1000., 1000., $
+                    format = '("(",f9.2,",",g12.5,")        ")' )
+
+state.lineplot_location_id = widget_label (lbutton_base, $
+                                      value = tmp_string,  $
+                                      uvalue = 'lineplot_location', frame=1)
+
 widget_control, state.lineplot_base_id, /realize
 widget_control, state.holdrange_button_id, set_button=state.holdrange_value
 
@@ -7484,7 +7495,7 @@ state.lineplot_window_id = tmp_value
 lbuttgeom = widget_info(lbutton_base, /geometry)
 state.lineplot_min_size[1] = lbuttgeom.ysize
 
-;widget_control, state.lineplot_widget_id, event_pro = 'kctv_lineplot_draw_event'
+widget_control, state.lineplot_widget_id, event_pro = 'kctv_lineplot_draw_event'
 
 basegeom = widget_info(state.lineplot_base_id, /geometry)
 drawgeom = widget_info(state.lineplot_widget_id, /geometry)
@@ -7503,9 +7514,15 @@ pro kctv_lineplot_draw_event, event
 common kctv_state
 
 if (event.type EQ 2) then begin
-    kctv_setwindow, state.lineplot_window_id
-    print,event.x,event.y
-    stop
+   xd = (float(event.x)/float(state.lineplot_x_vsize)-state.lineplot_x_s[0]) / $
+    		 	      state.lineplot_x_s[1]
+   yd = (float(event.y)/float(state.lineplot_y_vsize)-state.lineplot_y_s[0]) / $
+    		 state.lineplot_y_s[1]
+   
+   tmp_string = string(xd, yd, format = '("(",f9.3,",",g12.5,")        ")' )
+
+   widget_control, state.lineplot_location_id, set_value = tmp_string
+
 endif
 
 end
@@ -7578,6 +7595,11 @@ cgplot, main_image[*, state.plot_coord[1]], $
         yran = [state.lineplot_ymin, state.lineplot_ymax], $
         thick = thick, xthick = thick, ythick = thick, charthick = thick, $
         charsize = state.plotcharsize
+
+state.lineplot_x_vsize = !d.x_vsize
+state.lineplot_y_vsize = !d.y_vsize
+state.lineplot_x_s = !x.s
+state.lineplot_y_s = !y.s
 
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
@@ -7654,6 +7676,11 @@ cgplot, main_image[state.plot_coord[0], *], $
         yran = [state.lineplot_ymin, state.lineplot_ymax], $
         thick = thick, xthick = thick, ythick = thick, charthick = thick, $
         charsize = state.plotcharsize
+
+state.lineplot_x_vsize = !d.x_vsize
+state.lineplot_y_vsize = !d.y_vsize
+state.lineplot_x_s = !x.s
+state.lineplot_y_s = !y.s
 
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
@@ -7779,6 +7806,11 @@ cgplot, vectdist, pixval, $
         yran = [state.lineplot_ymin, state.lineplot_ymax], $
         thick = thick, xthick = thick, ythick = thick, charthick = thick, $
         charsize = state.plotcharsize
+
+state.lineplot_x_vsize = !d.x_vsize
+state.lineplot_y_vsize = !d.y_vsize
+state.lineplot_x_s = !x.s
+state.lineplot_y_s = !y.s
 
 
 if (not (keyword_set(ps))) then begin 
@@ -8260,6 +8292,11 @@ cgcontour, temporary(contour_image), $
            thick = thick, xthick = thick, ythick = thick, charthick = thick, $
            charsize = state.plotcharsize
 
+state.lineplot_x_vsize = !d.x_vsize
+state.lineplot_y_vsize = !d.y_vsize
+state.lineplot_x_s = !x.s
+state.lineplot_y_s = !y.s
+
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
   kctv_resetwindow
@@ -8382,6 +8419,10 @@ plothist, hist_image, xhist, yhist, bin=state.binsize, /NaN, $
           thick = thick, xthick = thick, ythick = thick, charthick = thick, $
           charsize = state.plotcharsize
 
+state.lineplot_x_vsize = !d.x_vsize
+state.lineplot_y_vsize = !d.y_vsize
+state.lineplot_x_s = !x.s
+state.lineplot_y_s = !y.s
 
 if (not (keyword_set(ps))) then begin 
     widget_control, state.lineplot_base_id, /clear_events
@@ -9392,6 +9433,9 @@ pro kctv_radplotf, x, y, fwhm
 common kctv_state
 common kctv_images
 
+!p.background = cgcolor('white')
+!p.color = cgcolor('black')
+
 ; set defaults
 inrad = 0.5*sqrt(2)
 outrad = round(state.outersky * 1.2)
@@ -9794,6 +9838,9 @@ endif
 kctv_tvphot
 
 kctv_resetwindow
+
+if state.kcwicube then kctvdrill
+
 end
 
 ;----------------------------------------------------------------------
@@ -10733,11 +10780,16 @@ cgplot, xspec, spectrum, $
         xran = [state.lineplot_xmin, state.lineplot_xmax], $
         yran = [state.lineplot_ymin, state.lineplot_ymax], $
         thick = thick, xthick = thick, ythick = thick, charthick = thick, $
-        charsize = state.plotcharsize
+        charsize = state.plotcharsize, /nodata
 
 cgoplot, xspec, specsky, psym=10, color=cgcolor('blue')
 cgoplot, xspec, specerr, psym=10, color=cgcolor('red')
+cgoplot, xspec, spectrum, psym=10, thick=thick
 
+state.lineplot_x_vsize = !d.x_vsize
+state.lineplot_y_vsize = !d.y_vsize
+state.lineplot_x_s = !x.s
+state.lineplot_y_s = !y.s
 
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
