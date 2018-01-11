@@ -196,7 +196,7 @@ state = {                   $
         lineplot_widget_id: 0L, $ ; id of lineplot widget
         lineplot_window_id: 0L, $ ; id of lineplot window
         lineplot_base_id: 0L, $ ; id of lineplot top-level base
-        lineplot_size: [600L, 500L], $ ; size of lineplot window
+        lineplot_size: [600L, 582L], $ ; size of lineplot window
         lineplot_min_size: [100L, 0L], $ ; min size of lineplot window
         lineplot_pad: [0L, 0L], $ ; padding around lineplot window
         lineplot_xmin_id: 0L, $ ; id of xmin for lineplot windows
@@ -215,6 +215,7 @@ state = {                   $
         lineplot_x_s: [0.,0.], $; !x.s
         lineplot_y_s: [0.,0.], $; !y.s
         lineplot_location_id: 0L, $; id of lineplot location field
+	lineplot_locfmt:'', $  ; location field format
         holdrange_base_id: 0L, $ ; base id for 'Hold Range' button
         holdrange_button_id: 0L, $ ; button id for 'Hold Range' button
         holdrange_value: 0, $   ; 0=HoldRange Off, 1=HoldRange On
@@ -3757,6 +3758,7 @@ if strpos(currinst,'CWI') ge 0 then begin
    state.wave1 = state.wave0 + (state.nslices - state.crslice) * state.dwave
    state.slice = state.nslices / 2
    state.wave = state.wave0 + (state.slice - state.crslice) * state.dwave
+   state.cunit = sxpar(head,'CUNIT3')
 endif else begin
    state.kcwicube = 0
 endelse
@@ -7373,14 +7375,14 @@ location_base = $
               /base_align_bottom, $
               /column, frame=2)
 
-tmp_string = string(1000., 1000., $
-                    format = '(f9.2,",",g12.5)' )
+state.lineplot_locfmt = '(f9.2,",",g12.5)'
+tmp_string = string(1000., 1000., format=state.lineplot_locfmt)
 
 state.lineplot_location_id = $
    cw_field(location_base, $
             /string, $
             /noedit, $
-            title='Coords:', $
+            title='Cursor:', $
             xsize=23, $
             value = tmp_string,  $
             uvalue = 'lineplot_location')
@@ -7532,7 +7534,7 @@ if (event.type EQ 2) then begin
       yd = ( float(event.y)/float(state.lineplot_y_vsize) - $
              state.lineplot_y_s[0]) / state.lineplot_y_s[1]
 
-      tmp_string = string(xd, yd, format = '(f9.3,",",g12.5)' )
+      tmp_string = string(xd, yd, format = state.lineplot_locfmt )
       widget_control, state.lineplot_location_id, set_value = tmp_string
    endif
 
@@ -7556,6 +7558,8 @@ endelse
 !p.color=cgcolor('black')
 
 if (keyword_set(newcoord)) then state.plot_coord = state.coord
+
+state.lineplot_locfmt = '(f9.2,",",g12.5)'
 
 if (not (keyword_set(ps))) then begin
     newplot = 0
@@ -7638,6 +7642,8 @@ endelse
 !p.color=cgcolor('black')
 
 if (keyword_set(newcoord)) then state.plot_coord = state.coord
+
+state.lineplot_locfmt = '(f9.2,",",g12.5)'
 
 if (not (keyword_set(ps))) then begin
     newplot = 0
@@ -7752,6 +7758,8 @@ for j = 0, n_elements(x) - 1 do begin
                         main_image[ceil_col,ceil_row]])) / 4.
     
 endfor
+
+state.lineplot_locfmt = '(f9.2,",",g12.5)'
 
 if (not (keyword_set(ps))) then begin
 
@@ -7885,6 +7893,8 @@ for j = 0, n_elements(x) - 1 do begin
     
 endfor
 
+state.lineplot_locfmt = '(f9.2,",",g12.5)'
+
 if (not (keyword_set(ps))) then begin
 
     newplot = 0
@@ -7948,6 +7958,11 @@ cgplot, vectdist, pixval, $
         thick = thick, xthick = thick, ythick = thick, charthick = thick, $
         charsize = state.plotcharsize
 
+state.lineplot_x_vsize = !d.x_vsize
+state.lineplot_y_vsize = !d.y_vsize
+state.lineplot_x_s = !x.s
+state.lineplot_y_s = !y.s
+
 ; do the fit
 
 if (n_elements(vectdist) GT 10) then begin
@@ -7990,17 +8005,7 @@ endelse
 !p.background=cgcolor('white')
 !p.color=cgcolor('black')
 
-if (ptr_valid(state.head_ptr)) then head = *(state.head_ptr) $
-   else head = strarr(1)
-
-cd = float(sxpar(head,'CD1_1', /silent))
-if (cd EQ 0.0) then $
-   cd = float(sxpar(head,'CDELT1', /silent))
-crpix = float(sxpar(head,'CRPIX1', /silent)) - 1
-crval = float(sxpar(head,'CRVAL1', /silent))
-shifta = float(sxpar(head, 'SHIFTA1', /silent))
-
-wave = (findgen(state.nslices) * cd) + crval
+wave = ( (findgen(state.nslices)-state.crslice) * state.dwave) + state.wave0
 if (max(wave) EQ min(wave)) then begin
    wave = findgen(state.nslices)
 endif
@@ -8014,6 +8019,8 @@ pixval = main_image_cube[x1:x2, y1:y2, *]
 
 ; collapse to a 1d spectrum:
 pixval = total(total(pixval,1),1)
+
+state.lineplot_locfmt = '(f9.2,",",g12.5)'
 
 if (not (keyword_set(ps))) then begin
 
@@ -8080,6 +8087,11 @@ cgplot, wave, pixval, $
         yran = [state.lineplot_ymin, state.lineplot_ymax], $
         thick = thick, xthick = thick, ythick = thick, charthick = thick, $
         charsize = state.plotcharsize
+
+state.lineplot_x_vsize = !d.x_vsize
+state.lineplot_y_vsize = !d.y_vsize
+state.lineplot_x_s = !x.s
+state.lineplot_y_s = !y.s
 
 if (not (keyword_set(ps))) then begin 
   widget_control, state.lineplot_base_id, /clear_events
@@ -8214,6 +8226,8 @@ endelse
 common kctv_state
 common kctv_images
 
+state.lineplot_locfmt = '(f9.2,",",f9.2)'
+
 if (not (keyword_set(ps))) then begin
 
     newplot = 0
@@ -8339,6 +8353,8 @@ endelse
 !p.background=cgcolor('white')
 !p.color=cgcolor('black')
 
+state.lineplot_locfmt = '(f9.5,",",f9.2)'
+
 if (not (keyword_set(ps))) then begin
 
     newplot = 0
@@ -8348,6 +8364,7 @@ if (not (keyword_set(ps))) then begin
     endif
     
     widget_control, state.histbutton_base_id, map=1
+    widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=0
     
     if (keyword_set(newcoord)) then begin
@@ -10664,6 +10681,8 @@ endelse
 
 if (keyword_set(newcoord)) then newcoord = 1 else newcoord = 0
 
+state.lineplot_locfmt = '(f9.3,",",g12.5)'
+
 if (not (keyword_set(ps))) then begin
     newplot = 0
     if (not (xregistered('kctv_lineplot', /noshow))) then begin
@@ -10743,6 +10762,8 @@ endelse
 !p.color=cgcolor('black')
 
 if (keyword_set(newcoord)) then newcoord = 1 else newcoord = 0
+
+state.lineplot_locfmt = '(f9.3,",",g12.5)'
 
 if (not (keyword_set(ps))) then begin
     newplot = 0
@@ -11375,9 +11396,11 @@ endif else begin
 endelse
 
 openw, unit0, filename, /get_lun
+printf, unit0, '# KCTV '+state.version+' written '+systime(0)
+printf, unit0, '# Wave, spec, err, bkg'
 
 for i = 0L, n_elements(xspec)-1 do begin
-   printf, unit0, wavelength[i], spectrum[i]
+   printf, unit0, wavelength[i], spectrum[i], specerr[i], specsky[i]
 endfor
 
 close, unit0
