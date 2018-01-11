@@ -7363,6 +7363,18 @@ state.lineplot_widget_id = $
               scr_ysize = state.lineplot_size[1], $
               uvalue = 'lineplot_window')
 
+lineplot_location_base = $
+  widget_base(state.lineplot_base_id, $
+              /base_align_bottom, $
+              /column, frame=2)
+
+tmp_string = string(1000., 1000., $
+                    format = '("(",f9.2,",",g12.5,")        ")' )
+
+state.lineplot_location_id = widget_label (lineplot_location_base, $
+                                      value = tmp_string,  $
+                                      uvalue = 'lineplot_location', frame=1)
+
 lbutton_base = $
   widget_base(state.lineplot_base_id, $
               /base_align_bottom, $
@@ -7479,12 +7491,7 @@ lineplot_done = $
                 value = 'Done', $
                 uvalue = 'lineplot_done')
 
-tmp_string = string(1000., 1000., $
-                    format = '("(",f9.2,",",g12.5,")        ")' )
 
-state.lineplot_location_id = widget_label (lbutton_base, $
-                                      value = tmp_string,  $
-                                      uvalue = 'lineplot_location', frame=1)
 
 widget_control, state.lineplot_base_id, /realize
 widget_control, state.holdrange_button_id, set_button=state.holdrange_value
@@ -8094,6 +8101,7 @@ if (not (keyword_set(ps))) then begin
     endif
     
     widget_control, state.histbutton_base_id, map=0
+    widget_control, state.lineplot_location_id, map=0
     widget_control, state.holdrange_button_id, sensitive=0
     
 ; set new plot coords if passed from a main window keyboard event
