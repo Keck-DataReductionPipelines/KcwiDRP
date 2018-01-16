@@ -62,6 +62,7 @@ ndir = n_elements(dirlist)
 ; get defaults from KCWI_PPAR struct
 A = {kcwi_ppar}
 ppar = struct_init(A)
+cd,current=cwd
 ;
 ; loop over directories
 for i=0,ndir-1 do begin
@@ -196,7 +197,7 @@ for i=0,ndir-1 do begin
 	endelse
 	;
 	; return to where we started
-	cd,'..'
+	cd,cwd
 endfor	; loop over directories
 ;
 return
