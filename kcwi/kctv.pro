@@ -11494,6 +11494,7 @@ pro kctv, image, $
          block = block, $
          align = align, $
          stretch = stretch, $
+	 infile = infile, $
          header = header
 
 common kctv_state
@@ -11515,6 +11516,7 @@ if ( (n_params() EQ 0) AND (xregistered('kctv', /noshow))) then begin
     print, '         [,/align] [,/stretch] [,header=header]'
     return
 endif
+
 
 if (!d.name NE 'X' AND !d.name NE 'WIN' AND !d.name NE 'MAC') then begin
     print, 'Graphics device must be set to X, WIN, or MAC for KCTV to work.'
@@ -11548,6 +11550,10 @@ endif
 
 if (n_elements(align) EQ 0) then align = state.default_align
 if (n_elements(stretch) EQ 0) then stretch = state.default_stretch
+if keyword_set(infile) then $
+     state.imagename = strcompress(infile) $
+else state.imagename = ''
+
 
 ; If image is a filename, read in the file
 if ( (n_params() NE 0) AND (size(image, /tname) EQ 'STRING')) then begin
@@ -11581,7 +11587,6 @@ if ( (n_params() NE 0) AND (size(image, /tname) NE 'STRING') AND $
    endif else begin
       main_image = image
       newimage = 1
-      state.imagename = ''
       state.title_extras = ''
       kctv_setheader, header
       

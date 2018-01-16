@@ -53,7 +53,7 @@ sxaddpar,hdr,'CRPIX1',xsize/2.0
 sxaddpar,hdr,'CRPIX2',ysize/2.0
 ;
 ; display it
-kctv,cube,header=hdr
+kctv,cube,header=hdr,infile=cubef
 ;fluxer,cube,header=hdr
 ;
 return
