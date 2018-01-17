@@ -94,7 +94,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	endif
 	;
 	; check standard
-	sname = strcompress(strlowcase(strtrim(kcfg.targname,2)),/remove)
+	sname = kcwi_std_name(kcfg.targname)
 	;
 	; is standard file available?
 	spath = !KCWI_DATA + '/stds/'+sname+'.fits'

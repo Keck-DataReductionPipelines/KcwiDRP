@@ -70,27 +70,36 @@ function kcwi_find_stds,kcfg,ppar,nstds
 		return,stds
 	endif
 	;
-	; get list of standard star reference spectra
-	reflist = file_search(ddir+'stds/*.fit*',count=nrefs)
+	; number of observations
+	nobs = n_elements(kcfg)
 	;
-	; get names from file names
-	for i=0,nrefs-1 do begin
-		fdecomp,reflist[i],disk,dir,name,ext
-		reflist[i] = name
-	endfor
+	; set up a status array
+	stdstat = intarr(nobs)
 	;
 	; get observation names
 	obnames = strcompress(strlowcase(strtrim(kcfg.targname,2)),/remove)
 	obstat = strcmp(strtrim(kcfg.imgtype,2),'object')
 	;
-	; set up a status array
-	stdstat = intarr(n_elements(kcfg))
+	; get list of standard star reference spectra
+	reffiles = file_search(ddir+'stds/*.fit*',count=nrefs)
 	;
-	; loop over reference list
-	for i=0,nrefs-1 do begin
-		t = where(obstat eq 1 and strcmp(obnames,reflist[i]) eq 1, nt)
-		if nt gt 0 then stdstat[t] = 1
-	endfor
+	; get names from file names
+	fdecomp,reffiles,disk,dir,reflist,ext
+	;
+	; loop over observations
+	for i=0,nobs-1 do begin
+		;
+		; are we a science object?
+		if obstat[i] then begin
+			;
+			; get canonical standard name
+			sname = kcwi_std_name(obnames[i])
+			;
+			; are we in the ref list?
+			yes = where(strcmp(sname,reflist) eq 1, nyes)
+			if nyes ge 1 then stdstat[i] = 1
+		endif	; are we a science object?
+	endfor	; loop over observations
 	;
 	; get the standards, if any
 	stds = where(stdstat eq 1, nstds)
