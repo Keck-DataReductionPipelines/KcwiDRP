@@ -205,11 +205,11 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					if file_test(msfile) then begin
 						;
 						; read in master sky
-						sky = mrdfits(msfile,0,mshdr,/fscale,/silent)
+						sky = mrdfits(msfile,0,skyhdr,/fscale,/silent)
 					endif else begin
 						;
 						; read sky input image
-						skimg = mrdfits(sinfile,0,sihdr,/fscale,/silent)
+						skimg = mrdfits(sinfile,0,skyhdr,/fscale,/silent)
 						;
 						; check for a sky mask file, (txt or fits)
 						smfil = repstr(sinfile,'_intf.fits','_smsk.txt')
@@ -218,19 +218,19 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 						; make the master sky
 						if file_test(smfil) then begin
 							kcwi_print_info,ppar,pre,'Using sky mask region file',smfil
-							kcwi_make_sky,kpars[i],skimg,sihdr,gfile,sky, $
+							kcwi_make_sky,kpars[i],skimg,skyhdr,gfile,sky, $
 								sky_mask_file=smfil
 						endif else if file_test(smfits) eq 1 then begin
 							kcwi_print_info,ppar,pre,'Using sky mask image',smfits
-							kcwi_make_sky,kpars[i],skimg,sihdr,gfile,sky, $
+							kcwi_make_sky,kpars[i],skimg,skyhdr,gfile,sky, $
 								sky_mask_file=smfits,/fits
 						endif else begin
 							kcwi_print_info,ppar,pre,'No sky mask'
-							kcwi_make_sky,kpars[i],skimg,sihdr,gfile,sky
+							kcwi_make_sky,kpars[i],skimg,skyhdr,gfile,sky
 						endelse
 					endelse
 					;
-					; read in image
+					; read in image to sky subtract
 					img = mrdfits(obfil,0,hdr,/fscale,/silent)
 					;
 					; get dimensions
@@ -256,11 +256,41 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 						kcwi_print_info,ppar,pre,'mask image not found for: '+obfil,/warning
 					endelse
 					;
+					; is sky model from input image?
+					obofname = sxpar(hdr,'OFNAME')
+					skofname = sxpar(skyhdr,'OFNAME')
+					;
+					; if not scale the sky by exposure time
+					if strcmp(obofname,skofname) eq 0 then begin
+						;
+						; are we interactive?
+						if kpars[i].display ge 2 then begin
+							kcwi_sky_tweak,kpars[i],img,sky,hdr,skyhdr,skscl
+						;
+						; if not interactive, just scale by exposure time
+						endif else begin
+							obtime = sxpar(hdr,'XPOSURE')
+							sktime = sxpar(skyhdr,'XPOSURE')
+							;
+							; verify exposure times
+							if obtime le 0. or sktime le 0. then begin
+								kcwi_print_info,ppar,pre,'bad exposure times (obj,sky)',obtime,sktime, $
+											format='(a,2f9.2)'
+								skscl = 1.0
+							;
+							; scale if good
+							endif else	skscl = obtime / sktime
+						endelse
+					;
+					; sky model is from object image, so no scaling
+					endif	else	skscl = 1.0
+					kcwi_print_info,ppar,pre,'sky scaling factor',skscl,format='(a,f9.3)'
+					;
 					; do correction
-					img = img - sky
+					img = img - sky * skscl
 					;
 					; variance is multiplied by sky squared
-					var = var + sky^2
+					var = var + (sky*skscl)^2
 					;
 					; mask is not changed by flat
 					;
@@ -269,6 +299,7 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,mskhdr,'SKYCOR','T',' sky corrected?'
 					sxaddpar,mskhdr,'SKYMAST',root+'.'+ext,' master sky file'
+					sxaddpar,mskhdr,'SKYSCL',skscl,' sky scale factor'
 					;
 					; write out sky corrected mask image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mskk',/nodir)
@@ -278,6 +309,7 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,varhdr,'SKYCOR','T',' sky corrected?'
 					sxaddpar,varhdr,'SKYMAST',root+'.'+ext,' master sky file'
+					sxaddpar,varhdr,'SKYSCL',skscl,' sky scale factor'
 					;
 					; write out sky corrected variance image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vark',/nodir)
@@ -287,6 +319,7 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,hdr,'SKYCOR','T',' sky corrected?'
 					sxaddpar,hdr,'SKYMAST',root+'.'+ext,' master sky file'
+					sxaddpar,hdr,'SKYSCL',skscl,' sky scale factor'
 					;
 					; write out sky corrected intensity image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_intk',/nodir)

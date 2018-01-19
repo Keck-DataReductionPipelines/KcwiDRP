@@ -306,7 +306,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						;
 						; do correction
 						for is=0,sz[0]-1 do for ix = 0, sz[1]-1 do $
-							sky[is,ix,*] = (sky[is,ix,*]/expt) * mscal
+							sky[is,ix,*] = (sky[is,ix,*]/expt) * mscal * 1.d16
 						;
 						; update header
 						sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
@@ -330,7 +330,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						;
 						; do correction
 						for is=0,sz[0]-1 do for ix = 0, sz[1]-1 do $
-							obj[is,ix,*] = (obj[is,ix,*]/expt) * mscal
+							obj[is,ix,*] = (obj[is,ix,*]/expt) * mscal * 1.d16
 						;
 						; update header
 						sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
