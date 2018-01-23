@@ -148,8 +148,6 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	area = -1.0
 	if strpos(tel,'Keck') ge 0 then begin
 		area = 760000.d0	; Keck effective area in cm^2
-	endif else if strpos(tel,'5m') ge 0 then begin
-		area = 194165.d0	; Hale 5m area in cm^2
 	endif
 	tlab = tel
 	;

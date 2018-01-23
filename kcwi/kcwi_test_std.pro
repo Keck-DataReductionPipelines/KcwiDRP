@@ -17,6 +17,9 @@
 ; INPUTS:
 ;	Imno	- Image number of calibrated standard star observation
 ;
+; OPTIONAL INPUTS:
+;	Ppar	- KCWI_PPAR pipeline parameter struct
+;
 ; OUTPUTS:
 ;	None
 ;
@@ -37,7 +40,7 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2014-APR-22	Initial Revision
 ;-
-pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
+pro kcwi_test_std,imno,ppar,instrument=instrument,ps=ps, $
 	verbose=verbose,display=display
 	;
 	; setup
@@ -47,20 +50,30 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	;
 	; check input
 	if n_params(0) lt 1 then begin
-		print,pre+': Info - Usage: '+pre+', Imno'
+		print,pre+': Info - Usage: '+pre+', Imno <, Ppar>'
 		return
 	endif
 	;
 	; get params
-	pfile = 'kcwi.ppar'
-	if not file_test(pfile) then begin
-		pfile = 'redux/kcwi.ppar'
+	if n_elements(ppar) le 0 then begin
+		pfile = 'kcwi.ppar'
 		if not file_test(pfile) then begin
-			print,'Parameter file not found: ',pfile
-			return
+			pfile = 'redux/kcwi.ppar'
+			if not file_test(pfile) then begin
+				print,'Parameter file not found: ',pfile
+				return
+			endif
 		endif
+		ppar = kcwi_read_ppar(pfile)
 	endif
-	ppar = kcwi_read_ppar(pfile)
+	;
+	; verify ppar
+	if kcwi_verify_ppar(ppar,/init) ne 0 then begin
+		print,pre + $
+		    ': ERROR - pipeline parameter file not initialized: ' + $
+		    ppfname
+		return
+	endif
 	;
 	; get input file
 	ifil = kcwi_get_imname(ppar,imno,'_icubes',/reduced)
@@ -120,7 +133,7 @@ pro kcwi_test_std,imno,instrument=instrument,ps=ps, $
 	if bunit eq 'FLAM16' then icub = icub / 1.d16
 	;
 	; check standard
-	sname = strcompress(strlowcase(strtrim(kcfg.targname,2)),/remove)
+	sname = kcwi_std_name(kcfg.targname)
 	;
 	; is standard file available?
 	spath = !KCWI_DATA + '/stds/'+sname+'.fits'
