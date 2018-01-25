@@ -5,7 +5,7 @@ Copyright (c) 2018, California Institute of Technology.  All rights reserved.
         KCWI Data Extraction and Reduction Pipeline (KDERP) README
 
 
-Twentieth beta release; Version: 0.6.0 (REL) Date: 2018/01/08
+Twenty-first beta release; Version: 0.6.1 (DEV) Date: 2018/01/00
 
 Caveat Emptor!  Use at your own risk!  In active development!
 
@@ -491,6 +491,35 @@ you no longer see oversubtraction near object spectral features in the
 output image.  If an object fills the IFU with object light and there are
 no sky pixels, then a separate sky image must be taken and used as the
 input sky master as specified in the kcwi.proc file.
+
+Object pixels can also be masked for sky determination using a fits image.
+The mask image should be a simple byte image with the value 1 for pixels that
+should be masked and 0 everywhere else.  It should have the suffix '_smsk.fits'
+and have the same prefix and dimensions as the corresponding '_intf.fits'
+image.  This mask image can be generated from a standard ds9 region file that
+delineates the regions of object flux in the image using a new utility in the
+'devel' subdirectory of the pipeline release.  For example:
+
+# python ~/kderp/devel/kcwi_masksky_ds9.py  kb180101_00101_intf.fits ds9.reg
+
+will generate a mask image, kb180101_00101_smsk.fits, which the pipeline
+will automatically detect and use during stage 5.  See this routine in the
+devel directory for details about library dependencies.
+
+This stage is run as follows:
+
+IDL> kcwi_stage5sky
+
+In this case, the cleaned pixels are plotted as a function of wavelength
+and the model is shown as an orange line.  If you set the display keyword
+to 2 or higher, it will show all the pixels and the un-rejected pixels as
+blue points, with the orange model fit.
+
+The outputs are the same as the stage4 outputs, but will have a 'k'
+appended as such: '_intk.fits', '_vark.fits', '_mskk.fits'.  In addition,
+each sky model is output with the suffix '_sky.fits'.  It is a good idea to
+load each set of '_intf.fits', '_intk.fits', and '_sky.fits' images into
+ds9 and blink them to determine how well the sky subtraction has done.
 
 
 Stage 6 - cube generation:
