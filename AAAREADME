@@ -615,7 +615,16 @@ the keyword '/ps' to the command line call.
 
 3. ANCILLARY UTILITIES:
 
-There are two useful utilities that might be of use to observers:
+Here are some useful utilities that might be of use to observers:
+
+kcwi_masksky_ds9.py:
+
+This is a python utility that converts ds9 region files into a mask image
+that will be used in stage5 (sky subtraction).  It requires astropy and
+pyregions libraries to be installed.  This item can be found in the 'devel'
+subdirectory in the DRP release directory.  Details are found within the
+file.
+
 
 KCWI_READ_CFGS, and KCWI_PRINT_CFGS:
 

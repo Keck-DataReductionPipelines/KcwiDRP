@@ -12,6 +12,7 @@ kcwi_group_obs.pro		development	group objects by name
 kcwi_group_rr.pro		obsolete	group relative resp. ims
 kcwi_init_dispersion.pro	obsolete	interactive wave solns.
 kcwi_make_rr.pro		obsolete	make a master relative resp. im
+kcwi_masksky_ds9.py             development     python routine creates mask img
 kcwi_proc_std.pro		development	process Oke AB mag std file
 kcwi_solve_thar.pro		obsolete	old ThAr arc solver
 kcwi_sort_atlas.pro		obsolete	sort atlas lines by wavelength
