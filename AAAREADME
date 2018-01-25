@@ -176,7 +176,7 @@ The proc file allows you to see the automatic associations that are made and
 to adjust which images are processed.  The ppar file allows you to adjust the
 default or global pipeline parameters for each stage.
 
-Stage 0 - preparation:
+STAGE 0 - preparation:
 
 Here you choose several options for processing.  To see the parameters and
 keywords that are available, issue the command with the /help keyword set:
@@ -278,7 +278,7 @@ or less.  If you set the keywords properly on the command line, it is
 unlikely you will need to edit this file.
 
 
-Stage 1 - basic image reduction:
+STAGE 1 - basic image reduction:
 
 Once you are happy with the files, go back to the raw directory and start
 IDL again:
@@ -328,7 +328,7 @@ will also be '_obj.fits' and '_sky.fits' images containing just the object
 panel and just the sky panel respectively of the nod-and-shuffle segments.
 
 
-Stage 2 - dark/scattered light subtraction:
+STAGE 2 - dark/scattered light subtraction:
 
 The input and output directories default to './redux'.  You can run the
 command from the raw directory and it will find the files you already
@@ -351,7 +351,7 @@ unless there is some compelling scientific reason not to subtract the
 scattered light.
 
 
-Stage 3 - geometric solution and data cube generation:
+STAGE 3 - geometric solution and data cube generation:
 
 This stage is run as follows:
 
@@ -435,7 +435,7 @@ trace the bars and will end in '_slicemap.fits', '_posmap.fits',
 without deleting these, they are just re-used.
 
 
-Stage 4 - flat field and illumination correction:
+STAGE 4 - flat field and illumination correction:
 
 You can control which master flat is used and which observations are flat
 corrected using the 'kcwi.proc' file in the output directory specified when
@@ -457,7 +457,7 @@ different master flat.  Just be careful to use a flat image with the same
 calibration setting as your object image.
 
 
-Stage 5 - sky modeling and subtraction:
+STAGE 5 - sky modeling and subtraction:
 
 This stage uses the geometry maps output from stage3 to assemble all of the
 image spectra in order to derive an accurate estimate of the sky spectrum.
@@ -497,14 +497,14 @@ The mask image should be a simple byte image with the value 1 for pixels that
 should be masked and 0 everywhere else.  It should have the suffix '_smsk.fits'
 and have the same prefix and dimensions as the corresponding '_intf.fits'
 image.  This mask image can be generated from a standard ds9 region file that
-delineates the regions of object flux in the image using a new utility in the
-'devel' subdirectory of the pipeline release.  For example:
+delineates the regions of object flux in the image using a new python
+utility in the 'devel' subdirectory of the pipeline release.  For example:
 
 # python ~/kderp/devel/kcwi_masksky_ds9.py  kb180101_00101_intf.fits ds9.reg
 
 will generate a mask image, kb180101_00101_smsk.fits, which the pipeline
 will automatically detect and use during stage 5.  See this routine in the
-devel directory for details about library dependencies.
+devel directory for details about python library dependencies.
 
 This stage is run as follows:
 
@@ -522,7 +522,7 @@ load each set of '_intf.fits', '_intk.fits', and '_sky.fits' images into
 ds9 and blink them to determine how well the sky subtraction has done.
 
 
-Stage 6 - cube generation:
+STAGE 6 - cube generation:
 
 This step is run as follows:
 
@@ -547,7 +547,7 @@ deviations from straightness across the image.  These are written into the
 output directory and have names like *_icube_2d.fits.
 
 
-Stage 7 - differential atmospheric refraction correction:
+STAGE 7 - differential atmospheric refraction correction:
 
 This stage requires no calibration files and is performed purely on the
 basis of each observation's properties.  The relevant properties are the
@@ -570,7 +570,7 @@ a stellar continuum source due to the effects of DAR.  Displaying the
 motion.
 
 
-Stage 8 - standard star calibration:
+STAGE 8 - standard star calibration:
 
 The kcwi_prep.pro run will attempt to associate any standard observations
 you have with the appropriate object observations by comparing the object
