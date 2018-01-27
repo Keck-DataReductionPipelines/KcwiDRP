@@ -1,3 +1,4 @@
+implement user-selected output wavelength specs
 bad columns for N&S images
 fix gain float in dual amp modes
 fix horizontal stripes in biases
