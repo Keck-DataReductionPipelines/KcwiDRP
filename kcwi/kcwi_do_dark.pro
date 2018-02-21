@@ -85,7 +85,7 @@ endif else begin
 endelse
 ;
 ; display test plot
-if ppar.display ge 2 then begin
+if ppar.display ge 2 or ppar.saveplots ge 2 then begin
 	;
 	; set up plotting
 	deepcolor
@@ -101,8 +101,17 @@ if ppar.display ge 2 then begin
 	oplot,[conthi[0],conthi[0]],!y.crange,linesty=2
 	oplot,[conthi[1],conthi[1]],!y.crange,linesty=2
 	;
+	; LEVEL 2 output
+	if ppar.saveplots ge 2 then begin
+		imgnum = sxpar(hdr,'FRAMENO')
+		fn = kcwi_get_imname(ppar,imgnum,'_darksig',/reduced)
+		plotfn = repstr(fn,'.fits','.png')
+		write_png,plotfn,tvrd(/true)
+	endif
+	;
 	; make interactive if display >= 2
-	read,'next: ',q
+	if ppar.display ge 2 then $
+		read,'next: ',q
 endif
 ;
 return, retval

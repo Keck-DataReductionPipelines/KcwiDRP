@@ -90,9 +90,6 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 	if n_elements(display) eq 1 then $
 		ppar.display = display
 	;
-	; do we plot?
-	do_plot = (ppar.display ge 1)
-	;
 	; log file
 	lgfil = reddir + 'kcwi_stage2dark.log'
 	filestamp,lgfil,/arch
@@ -113,6 +110,9 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 	;
 	; read proc file
 	kpars = kcwi_read_proc(ppar,procfname,imgnum,count=nproc)
+	;
+	; interactive?
+	interact = (ppar.display ge 2)
 	;
 	; gather configuration data on each observation in reddir
 	kcwi_print_info,ppar,pre,'Number of input images',nproc
@@ -137,6 +137,9 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 			;
 			; check if output file exists already
 			if kpars[i].clobber eq 1 or not file_test(ofil) then begin
+				;
+				; do we plot?
+				do_plots = (ppar.display ge 1 or kpars[i].saveplots ge 2)
 				;
 				; print image summary
 				kcwi_print_cfgs,kcfg,imsum,/silent
@@ -383,7 +386,7 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 					endelse	; no dark signatures
 					;
 					; plot if display set
-					if do_plot then begin
+					if do_plots then begin
 						deepcolor
 						!p.background=colordex('white')
 						!p.color=colordex('black')
@@ -397,31 +400,18 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 							color=[colordex('C'),colordex('R'),colordex('B')], $
 							linesty=[0,0,0]
 						;
-						; make interactive if display greater than 1
-						if do_plot and kpars[i].display ge 2 then begin
-							q = ''
-							read,'Next? (Q-quit plotting, <cr>-next): ',q
-							if strupcase(strmid(q,0,1)) eq 'Q' then do_plot = 0
+						; LEVEL 2 output
+						if kpars[i].saveplots ge 2 then begin
+							plotfn = strmid(ofil,0,strpos(ofil,'.fits'))+'_scat.png'
+							write_png,plotfn,tvrd(/true)
 						endif
 						;
-						; plot scattered light
-						plfil = kcwi_get_imname(kpars[i],imgnum[i],'_scat',/reduced)
-						plfil = strmid(plfil,0,strpos(plfil,'.fit'))
-						psfile,plfil
-						kcwi_print_info,ppar,pre,'plotting scattered light to: '+plfil+'.ps'
-						deepcolor
-						!p.background=colordex('white')
-						!p.color=colordex('black')
-						plot,fx,slp,/xs,psym=1,xtitle='ROW',ytitle='Scattered Light (e-)', $
-							title='Image: '+strn(imgnum[i]), $
-							charth=2,charsi=1.5,xthi=2,ythi=2
-						oplot,fx,elp,color=colordex('blue')
-						oplot,fx,scat,thick=3,color=colordex('red')
-						kcwi_legend,['Data', 'Fit', 'Err'],thick=[1,3,1], $
-							charthi=2,charsi=1.5, $
-							color=[colordex('C'),colordex('R'),colordex('B')], $
-							linesty=[0,0,0]
-						psclose
+						; make interactive if display greater than 1
+						if interact then begin
+							q = ''
+							read,'Next? (Q-quit prompting for plots, <cr>-next): ',q
+							if strupcase(strmid(q,0,1)) eq 'Q' then interact = 0
+						endif
 					endif
 					;
 					; subtract scat

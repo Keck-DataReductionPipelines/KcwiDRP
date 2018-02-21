@@ -107,10 +107,10 @@ step = 80/kgeom.ybinsize
 if keyword_set(stepsize) then step=stepsize
 navg = 6/kgeom.ybinsize
 if keyword_set(avgrows) then navg=avgrows
-do_plots = ppar.display
+do_plots = (ppar.display ge 1 or ppar.saveplots ge 2)
 ;
 ; prepare plots, if needed
-if do_plots ge 1 then begin
+if do_plots then begin
 	if !d.window lt 0 then $
 		window,0,title=kcwi_drp_version() $
 	else	wset,0
@@ -118,6 +118,9 @@ if do_plots ge 1 then begin
 	!p.background=colordex('white')
 	!p.color=colordex('black')
 endif
+;
+; interactive?
+interact = (ppar.display ge 2)
 ;
 ; check image size
 sz=size(img,/dim)
@@ -344,7 +347,7 @@ for j=0,npks-1 do begin
 	pp += 1
 	;
 	; plot results
-	if do_plots ge 2 then begin
+	if do_plots then begin
 		xrng = [min(x)-1,max(x)+1]
 		plot,x,y,psym=-4,xran=xrng,/xsty,xtitle='PIX', $
 			yran=yrng,/ysty,ytitle='INT', $
@@ -362,16 +365,27 @@ for j=0,npks-1 do begin
 		; overplot centroid
 		oplot,[cnt,cnt],[-100,1e9]
 		;
+		; LEVEL 3 output
+		if ppar.saveplots ge 3 then begin
+			plotfn = kcwi_get_imname(ppar,kgeom.cbarsimgnum, $
+					'_bar'+string(j,form='(i003)'), $
+					/reduced)
+			plotfn = repstr(plotfn,'.fits','.png')
+			write_png,plotfn,tvrd(/true)
+		endif
+		;
 		; query user
-		read,'Next? (Q-quit plotting, <cr>-next): ',q
-		if strupcase(strmid(strtrim(q,2),0,1)) eq 'Q' then $
-			do_plots = 0
+		if interact then begin
+			read,'Next? (Q-quit prompting for plots, <cr>-next): ',q
+			if strupcase(strmid(strtrim(q,2),0,1)) eq 'Q' then $
+				interact = 0
+		endif
 	endif
 endfor
 print,pre+': Info - Done.'
 ;
-; recover plot state
-do_plots = ppar.display
+; recover interactive state
+interact = (ppar.display ge 2)
 ;
 ; calculate reference output x control point positions
 ; assumes kgeom.refbar is middle bar of slice (out of 5 bars per slice)
@@ -534,8 +548,15 @@ for k=0,1 do begin
 endfor	; loop over directions (up,down)
 print,pre+': Info - Done.'
 ;
+; LEVEL 2 output
+if ppar.saveplots ge 2 then begin
+	plotfn = kcwi_get_imname(ppar,kgeom.cbarsimgnum,'_bars',/reduced)
+	plotfn = repstr(plotfn,'.fits','.png')
+	write_png,plotfn,tvrd(/true)
+endif
+;
 ; continue?
-if do_plots ge 2 then $
+if interact then $
 	read,'Continue (<cr>): ',q
 ;
 ; yo is the same as yi

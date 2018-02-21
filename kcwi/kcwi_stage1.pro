@@ -143,8 +143,8 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 	; read proc file
 	kpars = kcwi_read_proc(ppar,procfname,imgnum,count=nproc)
 	;
-	; plot status
-	doplots = (ppar.display ge 1)
+	; interactive?
+	interact = (ppar.display ge 2)
 	;
 	; gather configuration data on each observation in rawdir
 	kcwi_print_info,ppar,pre,'Number of input images',nproc
@@ -164,6 +164,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 		;
 		; check if file exists or if we want to overwrite it
 		if kpars[i].clobber eq 1 or not file_test(ofil) then begin
+			;
+			; plot status
+			do_plots = (ppar.display ge 1 or kpars[i].saveplots ge 2)
 			;
 			; print image summary
 			kcwi_print_cfgs,kcfg,imsum,/silent
@@ -382,7 +385,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,hdr,'OSCNRN'+strn(ia+1),sdrs,' amp'+strn(ia+1)+' RN in e- from oscan'
 					;
 					; plot if display set
-					if doplots then begin
+					if do_plots then begin
 						deepcolor
 						!p.background=colordex('white')
 						!p.color=colordex('black')
@@ -395,6 +398,12 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						oplot,xx,osfit,thick=2,color=colordex('green')
 						kcwi_legend,['Resid RMS: '+string(sqrt(mo[1]),form='(f5.1)')+$
 							' DN'],box=0,charthi=2,charsi=1.5,/right,/bottom
+						;
+						; LEVEL 2 output
+						if kpars[i].saveplots ge 2 then begin
+							plotfn = strmid(ofil,0,strpos(ofil,'.fits'))+'_oscan_amp'+strn(ia+1)+'.png'
+							write_png,plotfn,tvrd(/true)
+						endif
 					endif
 					;
 					; loop over rows
@@ -425,10 +434,10 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						', '+strtrim(string(mnrs),2)+', '+strtrim(string(sdrs),2)
 					;
 					; make interactive if display greater than 1
-					if doplots and kpars[i].display ge 2 then begin
+					if interact then begin
 						q = ''
-						read,'Next? (Q-quit plotting, <cr>-next): ',q
-						if strupcase(strmid(q,0,1)) eq 'Q' then doplots = 0
+						read,'Next? (Q-quit prompting for plots, <cr>-next): ',q
+						if strupcase(strmid(q,0,1)) eq 'Q' then interact = 0
 					endif
 				endfor	; loop over amps
 				;

@@ -85,7 +85,10 @@ else	nav = 8/kgeom.ybinsize
 if keyword_set(ccwindow) then $
 	ccwn = ccwindow $
 else	ccwn = kgeom.ccwn
-do_plots = ppar.display
+do_plots = (ppar.display ge 2 or ppar.saveplots ge 3)
+;
+; interactive?
+interact = (ppar.display ge 2)
 ;
 ; check size of input image
 sz = size(img,/dim)
@@ -149,7 +152,7 @@ kcwi_print_info,ppar,pre,'Writing',outfile,/info,format='(a,1x,a)'
 mwrfits,spec,outfile,hdr,/create,/iscale
 ;
 ; setup for display (if requested)
-if do_plots ge 2 then begin
+if do_plots then begin
 	if !d.window lt 0 then $
 		window,0,title=kcwi_drp_version() $
 	else	wset,0
@@ -187,7 +190,7 @@ for i=0,ns-1 do begin
 	kcwi_print_info,ppar,pre,'Bar#, yoffset',i,off,format='(a,i4,f9.3)',info=2
 	;
 	; plot if requested
-	if do_plots ge 2 then begin
+	if do_plots then begin
 		plot,w,spec[*,refb],thick=th,xthick=th,ythick=th, $
 			charsi=si,charthi=th, $
 			xran=xrng,xtitle='Pixel',xstyle=1, $
@@ -200,9 +203,19 @@ for i=0,ns-1 do begin
 		kcwi_legend,['RefBar: '+strn(refb),'Bar: '+strn(i)], $
 			linesty=[0,0], thick=[th,0], $
 			color=[colordex('R'),colordex('G')],box=0
-		read,'Next? (Q-quit plotting, <cr>-next): ',q
-		if strupcase(strmid(q,0,1)) eq 'Q' then $
-			do_plots = 0
+		;
+		; LEVEL 3 output
+		if ppar.saveplots ge 3 then begin
+			plotfn = kcwi_get_imname(ppar,kgeom.arcimgnum, $
+					'_arc'+string(i,form='(i03)'), $
+					/reduced)
+			plotfn = repstr(plotfn,'.fits','.png')
+			write_png,plotfn,tvrd(/true)
+		endif
+		if interact then begin
+			read,'Next? (Q-quit plotting, <cr>-next): ',q
+			if strupcase(strmid(q,0,1)) eq 'Q' then interact = 0
+		endif
 	endif
 endfor
 ;
