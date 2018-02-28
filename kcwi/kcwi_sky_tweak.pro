@@ -51,6 +51,7 @@ if obtime le 0. or sktime le 0. then begin
 		obtime, sktime, format='(a,2f9.2)'
 	scl = 1.0
 endif	else	scl = obtime / sktime
+print,''
 print,'Current scale value: ',scl
 ;
 ; initial correction
@@ -61,7 +62,11 @@ st = '^[-+]?([0-9]+\.?[0-9]*|\.[0-9]+)([eEdD][-+]?[0-9]+)?$'
 ;
 ; loop until done
 while q ne 'Q' do begin
+	!quiet=1
+	print,'Examine sky-subtracted image and then'
+	print,'quit kctv to enter new scale value.'
 	kctv,dimg,header=ihdr,/block
+	!quiet=0
 	read,'new scale value (q - quit): ',q
 	if stregex(strtrim(q,2),st,/bool) then begin
 		scl = float(strtrim(q,2))
