@@ -44,11 +44,12 @@ q=''
 ; log info
 kcwi_print_info,ppar,pre,systime(0)
 ;
-; do we want to display stuff? 
-display = (ppar.display ge 2)
-ddisplay = (ppar.display ge 3)
+; do plots?
+do_plots = (ppar.display ge 2 or ppar.saveplots ge 2)
+interact = (ppar.display ge 2)
+do_dplots = (ppar.display ge 3)
 
-if ppar.display ge 2 then begin
+if do_plots then begin
 	if !d.window lt 0 then $
 		window,0,title=kcwi_drp_version() $
 	else	wset,0
@@ -60,8 +61,8 @@ if ppar.display ge 2 then begin
 	si=2.0
 endif
 ;
-; set some system parameters -- these may need to be populated
-;                               differently later
+; set some system parameters 
+;
 pix = 0.0150d		; pixel size in mm
 ybin = kgeom.ybinsize	; binning in spectral direction
 fcam = 305.0d		; focal length of camera in mm
@@ -202,7 +203,7 @@ if skymod gt 0. and skysig gt 0. and skymod-2.*skysig gt 0. then begin
 		(skymod-2.*skysig),format='(a,f9.3)'
 endif
 ;
-if ppar.display ge 2 then begin
+if do_plots then begin
 	plot,prelim_subwvl,prelim_spec/max(prelim_spec),charsi=si,charthi=th,thick=th, $
 		xthick=th, xtitle='Wave(A)', $
 		ythick=th, ytitle='Rel. Flux',title=imglab+' ('+kgeom.refname+'), No Offset',/xs
@@ -220,15 +221,15 @@ prelim_refspec = prelim_refspec * tukeywgt(n_elements(prelim_refspec),ppar.taper
 ;
 ; now we have two spectra we can try to cross-correlate
 ; (prelim_intspec and prelim_refspec), so let's do that:
-if ddisplay then window,1,title='kcwi_xspec'
+if ppar.display ge 3 then window,1,title='kcwi_xspec'
 kcwi_xspec,prelim_intspec,prelim_refspec,ppar,prelim_offset,prelim_value, $
 	/min,/shift,/plot,label='Obj(0) vs '+kgeom.refname+'(1)',central=5.
-if ddisplay then wset,0
+if ppar.display ge 3 then wset,0
 ;
 ; record initial offset
 kcwi_print_info,ppar,pre,'Initial arc-atlas offset (px, Ang)',prelim_offset, $
 	prelim_offset*refdisp,format='(a,1x,f9.2,1x,f9.2)'
-if ppar.display ge 2 then begin
+if do_plots then begin
 	q='test'
 	while strlen(q) gt 0 do begin
 	    plot,prelim_subwvl-prelim_offset*refdisp,prelim_spec/max(prelim_spec), $
@@ -248,6 +249,14 @@ if ppar.display ge 2 then begin
 	    if strlen(q) gt 0 then $
 		    prelim_offset = float(q)
 	endwhile
+	;
+	; save final offset plot
+	if ppar.saveplots ge 2 then begin
+		plotfn = kcwi_get_imname(ppar,kgeom.arcimgnum, $
+			'_atlas_offset',/reduced)
+		plotfn = repstr(plotfn,'.fits','.png')
+		write_png,plotfn,tvrd(/true)
+	endif
 endif
 ;
 ; record final offset
@@ -344,10 +353,10 @@ for b = 0,119 do begin
 		xslab = 'Bar '+strn(b)+', '+strn(d)+'/'+strn(nn)+', Dsp = '+string(disps[d],form='(f6.3)')
 		; 
 		; cross correlate the interpolated spectrum with the atlas spectrum
-		if ddisplay then wset,1
+		if do_dplots then wset,1
 		kcwi_xspec,intspec,subrefspec,ppar,soffset,svalue,status=status, $
-			/min,/shift,/pad,/central,plot=ddisplay,label=xslab
-		if ppar.display ge 3 then wset,0
+			/min,/shift,/pad,/central,plot=do_dplots,label=xslab
+		wset,0
 		;
 		maxima[d] = double(svalue)/total(subrefspec)/total(intspec)
 		shifts[d] = soffset
@@ -422,7 +431,7 @@ for b = 0,119 do begin
 	kcwi_print_info,ppar,pre,'Central Fit: Bar#,Cdisp,Coefs',b,bardisp[b],scoeff[0:3], $
 		format='(a,i4,2x,f8.4,f9.2,f8.4,2g13.5)'
 	;
-	if display then begin
+	if do_plots then begin
 		yrng = get_plotlims(maxima)
 		plot,disps,maxima,psym=-4,charsi=si,charthi=th,thick=th, $
 			xthick=th,xtitle='Central Dispersion',/xs, $
@@ -439,22 +448,30 @@ for b = 0,119 do begin
 			linesty=[0,0,0],thick=[th,th,th*2.],box=0, $
 			color=[colordex('green'),colordex('blue'),colordex('red')], $
 			charsi=si,charthi=th
-		if ppar.display ge 3 then $
-			read,'Next? (Q - quit plotting, D - diagnostic plots, <cr> - next): ',q $
-		else	read,'Next? (Q - quit plotting, <cr> - next): ',q
-		if strupcase(strmid(q,0,1)) eq 'Q' then begin
-			display = (1 eq 0)
-			if ppar.display ge 3 then begin
-				ddisplay = (1 eq 0)
-				wdelete,1
+		if interact then begin
+			if ppar.display ge 3 then $
+				read,'Next? (Q - quit plotting, D - diagnostic plots, <cr> - next): ',q $
+			else	read,'Next? (Q - quit plotting, <cr> - next): ',q
+			if strupcase(strmid(q,0,1)) eq 'Q' then begin
+				interact = (1 eq 0)
+				do_plots = (ppar.saveplots ge 3)
+				if ppar.display ge 3 then begin
+					wdelete,1
+				endif
 			endif
+			if strupcase(strmid(q,0,1)) eq 'D' then do_dplots = (1 eq 1)
 		endif
-		if strupcase(strmid(q,0,1)) eq 'D' then ddisplay = (1 eq 1)
+		if ppar.saveplots ge 3 then begin
+			plotfn = kcwi_get_imname(ppar,kgeom.arcimgnum, $
+				'_cdisp_bar'+string(b,form='(i03)'),/reduced)
+			plotfn = repstr(plotfn,'.fits','.png')
+			write_png,plotfn,tvrd(/true)
+		endif
 	endif
 endfor	; b
 ;
 ; clean up
-if ddisplay then wdelete,1
+if interact then wdelete,1
 ;
 ; now clean each slice of outlying bars
 if ppar.cleancoeffs then $
@@ -497,6 +514,12 @@ endif else begin
 		if ppar.display ge 2 then $
 			read,'next: ',q
 		!p.multi=0
+		if ppar.saveplots ge 2 then begin
+			plotfn = kcwi_get_imname(ppar,kgeom.arcimgnum, $
+				'_central_fit',/reduced)
+			plotfn = repstr(plotfn,'.fits','.png')
+			write_png,plotfn,tvrd(/true)
+		endif
 	endif
 endelse
 ;
