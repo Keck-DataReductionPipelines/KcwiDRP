@@ -52,10 +52,11 @@ if kgeom.status gt 0 then begin
 endif
 ;
 ; do we want to display stuff?
-display = (ppar.display gt 2)
+do_plots = (ppar.display ge 2 or ppar.saveplots ge 3)
+interact = (ppar.display ge 3)
 ;
 ; set up plots
-if ppar.display ge 1 then begin
+if ppar.display ge 1 or ppar.saveplots ge 2 then begin
 	deepcolor
 	!p.background=colordex('white')
 	!p.color=colordex('black')
@@ -256,7 +257,7 @@ for pp = 0,spec_npks-1 do begin
 		if woff gt 5. or xoff gt 1.5 or wrat gt 1.1 then $
 			is_good = (1 eq 0)
 		at_pk_wl = a[1]
-		if is_good and display then begin
+		if is_good and interact then begin
 		  wvs = where(refwvl gt spec_cent[pp]-30. and $
 			      refwvl lt spec_cent[pp]+30.)
 		  plot,refwvl[wvs],refspec[wvs],psym=10,title='Atlas', $
@@ -269,7 +270,6 @@ for pp = 0,spec_npks-1 do begin
 		woff = -1.
 		wrat = 0.
 	endelse
-	;print,'Atlas: ',is_good,nffs,xoff,woff,wrat
 	;
 	; fit Spec peak in X pixels
 	ffs = get_line_window(subwvals,subyvals,spec_cent[pp],count=nffs)
@@ -283,7 +283,7 @@ for pp = 0,spec_npks-1 do begin
 		if xrat gt 1.25 or not finite(a[1]) or a[2] gt nffs then $
 			is_good = (1 eq 0)
 		sp_pk_x = a[1]
-		if is_good and display then begin
+		if is_good and interact then begin
 		  wvs = where(subwvals gt spec_cent[pp]-30. and $
 			      subwvals lt spec_cent[pp]+30.)
 		  plot,subxvals[wvs],subyvals[wvs],psym=10,title='Spec', $
@@ -295,12 +295,10 @@ for pp = 0,spec_npks-1 do begin
 		xoff = -1.
 		xrat = 0.
 	endelse
-	;print,'Spec : ',is_good,nffs,xoff,xrat
-	;print,' '
 	;
 	; are we good?
 	if is_good then begin
-	   if display then begin
+	   if interact then begin
 		q = ''
 		read,'<cr> - skip, f - fit: ',q
 		if strupcase(strtrim(q,2)) eq 'F' then begin
@@ -310,7 +308,7 @@ for pp = 0,spec_npks-1 do begin
 			refof[fi] = woff
 			fi += 1
 		endif else if strupcase(strtrim(q,2)) eq 'Q' then begin
-			display = (1 eq 0)
+			interact = (1 eq 0)
 		endif
 	    endif else begin
 			refxs[fi] = sp_pk_x
@@ -321,6 +319,9 @@ for pp = 0,spec_npks-1 do begin
 	    endelse
 	endif	; are we good?
 endfor	; examine lines
+;
+; reset interact
+interact = (ppar.display ge 2)
 ;
 ; get fit lines
 good = where(refws gt 0., ngood)
@@ -374,7 +375,7 @@ twkcoeff[*,b] = 0.
 twkcoeff[0:degree,b] = newcoeff
 ;
 ; plot residuals
-if ppar.display ge 1 then begin
+if do_plots then begin
 	!p.multi=0
 	yran = get_plotlims(diff)
 	if abs(newcoeff[1]) gt 0.4 then $
@@ -391,7 +392,7 @@ if ppar.display ge 1 then begin
 		     'NMatch = '+strn(ngood), $
 		     'NRej = '+strn(nbad)],charsi=si,charthi=th
 endif
-if display then $
+if interact then $
 	read,'next: ',q
 ;
 ; write out atlas line list
@@ -487,28 +488,28 @@ for b = 0,119 do begin
 		twkcoeff[0:degree,b] = newcoeff
 		;
 		; plot residuals
-		if display then begin
-		  yran = get_plotlims(diff)
-		  if abs(newcoeff[1]) gt 0.4 then $
-			yrng = [yran[0]<(-0.4),yran[1]>0.4] $
-		  else	yrng = [yran[0]<(-0.2),yran[1]>0.2]
-		  plot,fitws,diff,psym=4,charsi=si,charthi=th,thick=th, $
-			title=imglab+' (bar '+strn(b)+')', $
-			xthick=th, xtitle='Wavelength (A)', $
-			ythick=th, ytitle='Atlas - Spec (A)',yrange=yrng,/ys
-		  oplot,!x.crange,[0,0],linestyle=2,color=colordex('blue')
-		  oplot,!x.crange,[sigmas[b],sigmas[b]],linesty=1, $
-			color=colordex('blue')
-		  oplot,!x.crange,-[sigmas[b],sigmas[b]],linesty=1, $
-			color=colordex('blue')
-		  kcwi_legend,["RMS = "+string(sigmas[b],form='(f7.3)')+' Ang',$
-			       'NMatch = '+strn(ngood), $
-	     		       'NRej = '+strn(nbad)],charsi=si,charthi=th
-		  read,'Next? (Q - quit plotting, <cr> - next): ',q
-		  if strupcase(strmid(q,0,1)) eq 'Q' then display = (1 eq 0)
-		endif
+		if interact then begin
+			yran = get_plotlims(diff)
+			if abs(newcoeff[1]) gt 0.4 then $
+				yrng = [yran[0]<(-0.4),yran[1]>0.4] $
+			else	yrng = [yran[0]<(-0.2),yran[1]>0.2]
+			plot,fitws,diff,psym=4,charsi=si,charthi=th,thick=th, $
+				title=imglab+' (bar '+strn(b)+')', $
+				xthick=th, xtitle='Wavelength (A)', $
+				ythick=th, ytitle='Atlas - Spec (A)',yrange=yrng,/ys
+			oplot,!x.crange,[0,0],linestyle=2,color=colordex('blue')
+			oplot,!x.crange,[sigmas[b],sigmas[b]],linesty=1, $
+				color=colordex('blue')
+			oplot,!x.crange,-[sigmas[b],sigmas[b]],linesty=1, $
+				color=colordex('blue')
+			kcwi_legend,['RMS = '+string(sigmas[b],form='(f7.3)')+' Ang',$
+				     'NMatch = '+strn(ngood), $
+	     			     'NRej = '+strn(nbad)],charsi=si,charthi=th
+			read,'Next? (Q - quit prompting for plots, <cr> - next): ',q
+			if strupcase(strmid(q,0,1)) eq 'Q' then interact = (1 eq 0)
+		endif	; do_plots
     	endif	; b ne refbar
-endfor
+endfor	; b
 ;
 ; our final coefficients
 fincoeff = twkcoeff
@@ -660,7 +661,7 @@ kcwi_plot_arcfits,specs,kgeom,ppar,cntcoeff,fincoeff,sigmas,fwaves,dwaves, $
 	/tweak,plot_file=plot_file,ftype=ftype
 ;
 ; finally, let's make a diagnostic summary plot
-if ppar.display ge 1 then begin
+if ppar.display ge 1 or ppar.saveplots ge 2 then begin
 	deepcolor
 	!p.background=colordex('white')
 	!p.color=colordex('black')
@@ -684,6 +685,12 @@ if ppar.display ge 1 then begin
 		xthick=th,xtitle='Bar #',xrange=[-1,120],/xs, $
 		ythick=th,ytitle='Ang/pix',yrange=yrngd,/ys
 	kcwi_oplot_slices
+	if ppar.saveplots ge 2 then begin
+		plotfn = kcwi_get_imname(ppar,kgeom.arcimgnum, $
+			'_final_fit',/reduced)
+		plotfn = repstr(plotfn,'.fits','.png')
+		write_png,plotfn,tvrd(/true)
+	endif
 	if ppar.display ge 2 then read,'next: ',q
 endif
 !p.multi=0

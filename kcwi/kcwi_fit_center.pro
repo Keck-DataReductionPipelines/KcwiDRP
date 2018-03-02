@@ -212,7 +212,7 @@ if do_plots then begin
 	kcwi_legend,['Ref Bar ('+strn(refbar)+')','Atlas','CWAVE'],linesty=[0,0,2], $
 		thick=[th,th,th],box=0,charsi=si,charthi=th, $
 		color=[colordex('black'),colordex('red'),colordex('green')]
-	read,'next: ',q
+	if interact then read,'next: ',q
 endif
 ;
 ; let's apply cosine bell taper to both
@@ -243,11 +243,13 @@ if do_plots then begin
 	    kcwi_legend,['Ref Bar ('+strn(refbar)+')','Atlas','CWAVE'],linesty=[0,0,2], $
 		thick=[th,th,th],box=0,charsi=si,charthi=th, $
 		color=[colordex('black'),colordex('red'),colordex('green')]
-	    read,'Enter: <cr> - next, new offset (px): ',q
-	    if strupcase(strmid(q,0,1)) eq 'Q' then $	; just in case user enters 'q'
+	    if interact then begin
+	    	read,'Enter: <cr> - next, new offset (px): ',q
+	    	if strupcase(strmid(q,0,1)) eq 'Q' then $	; just in case user enters 'q'
 		    q = ''
-	    if strlen(q) gt 0 then $
+	    	if strlen(q) gt 0 then $
 		    prelim_offset = float(q)
+	    endif else q = ''
 	endwhile
 	;
 	; save final offset plot
@@ -299,6 +301,9 @@ coeff = dblarr(9)
 ;
 ; x values for central fit
 subxvals = xvals[minrow:maxrow]
+;
+; do plots?
+do_plots = (ppar.display ge 2 or ppar.saveplots ge 3)
 ;
 ; loop over bars
 for b = 0,119 do begin
@@ -450,8 +455,8 @@ for b = 0,119 do begin
 			charsi=si,charthi=th
 		if interact then begin
 			if ppar.display ge 3 then $
-				read,'Next? (Q - quit plotting, D - diagnostic plots, <cr> - next): ',q $
-			else	read,'Next? (Q - quit plotting, <cr> - next): ',q
+				read,'Next? (Q - quit prompting for plots, D - diagnostic plots, <cr> - next): ',q $
+			else	read,'Next? (Q - quit prompting for plots, <cr> - next): ',q
 			if strupcase(strmid(q,0,1)) eq 'Q' then begin
 				interact = (1 eq 0)
 				do_plots = (ppar.saveplots ge 3)
@@ -459,7 +464,7 @@ for b = 0,119 do begin
 					wdelete,1
 				endif
 			endif
-			if strupcase(strmid(q,0,1)) eq 'D' then do_dplots = (1 eq 1)
+			if ppar.display ge 3 and strupcase(strmid(q,0,1)) eq 'D' then do_dplots = (1 eq 1)
 		endif
 		if ppar.saveplots ge 3 then begin
 			plotfn = kcwi_get_imname(ppar,kgeom.arcimgnum, $
