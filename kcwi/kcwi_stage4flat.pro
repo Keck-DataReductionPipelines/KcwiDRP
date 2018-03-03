@@ -238,9 +238,10 @@ pro kcwi_stage4flat,procfname,ppfname,help=help,verbose=verbose, display=display
 							;
 							; build master flat
 							fpar = kcwi_read_ppar(mfppfn)
-							fpar.loglun  = kpars[i].loglun
-							fpar.verbose = kpars[i].verbose
-							fpar.display = kpars[i].display
+							fpar.loglun    = kpars[i].loglun
+							fpar.verbose   = kpars[i].verbose
+							fpar.display   = kpars[i].display
+							fpar.saveplots = kpars[i].saveplots
 							kcwi_make_flat,fpar,gfile
 						endif
 						;

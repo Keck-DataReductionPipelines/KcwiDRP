@@ -244,7 +244,7 @@ pro kcwi_make_flat,ppar,gfile
 	ask=''
 	;
 	; set up plots
-	do_plots = (ppar.display ge 1)
+	do_plots = (ppar.display ge 1 or ppar.saveplots ge 2)
 	if do_plots then begin
 		deepcolor
 		!p.background=colordex('white')
@@ -395,6 +395,11 @@ pro kcwi_make_flat,ppar,gfile
 				xtitle='Wavelength (A)', $
 				ytitle='Flux (e-)',yran=yrng,/ys
 			oplot,wwflat,pl_wlf,color=colordex('orange')
+			if ppar.saveplots ge 3 then begin
+				plotfn = reddir + repstr(ppar.masterflat, $
+						'_mflat.fits','_wslope.png')
+				write_png,plotfn,tvrd(/true)
+			endif
 			if ppar.display ge 2 then read,'next: ',ask
 			;
 			; plot vignetting correction fits
@@ -412,6 +417,11 @@ pro kcwi_make_flat,ppar,gfile
 			oplot,[fitr,fitr],!y.crange,color=colordex('blue')
 			oplot,[flatl,flatl],!y.crange,color=colordex('green')
 			oplot,[flatr,flatr],!y.crange,color=colordex('green')
+			if ppar.saveplots ge 2 then begin
+				plotfn = reddir + repstr(ppar.masterflat, $
+						'_mflat.fits','_vcor.png')
+				write_png,plotfn,tvrd(/true)
+			endif
 			if ppar.display ge 2 then read,'next: ',ask
 		endif
 		; compute the intersection
@@ -508,6 +518,11 @@ pro kcwi_make_flat,ppar,gfile
                 oplot,fpoints,hifit[0]+hifit[1]*fpoints, $
 			color=colordex('green'),linestyle=1,thick=th
                 oplot,xledge,yledge,psym=3
+		if ppar.saveplots ge 3 then begin
+			plotfn = reddir + repstr(ppar.masterflat, $
+						'_mflat.fits','_grledge.png')
+			write_png,plotfn,tvrd(/true)
+		endif
 		if ppar.display ge 2 then read,'next: ',ask
 	      endif
            endif
@@ -570,6 +585,11 @@ pro kcwi_make_flat,ppar,gfile
 		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
 			color=colordex('green')
 		oplot,!x.crange,[0.,0.]
+		if ppar.saveplots ge 3 then begin
+			plotfn = reddir + repstr(ppar.masterflat, $
+						'_mflat.fits','_brfits.png')
+			write_png,plotfn,tvrd(/true)
+		endif
 		if ppar.display ge 2 then read,'next: ',ask
 	endif
 
@@ -607,6 +627,11 @@ pro kcwi_make_flat,ppar,gfile
 				xtitle='Wavelength (A)',xthick=th,/xs, $
 				ytitle='Flux (e-)',ythick=th,yran=yrng,/ys
 			oplot,waves[qbluefit],bluefit,color=colordex('blue')
+			if ppar.saveplots ge 3 then begin
+				plotfn = reddir + repstr(ppar.masterflat, $
+						'_mflat.fits','_bfits.png')
+				write_png,plotfn,tvrd(/true)
+			endif
 			if ppar.display ge 2 then read,'next: ',ask
 			;
 			; plot blue ratios
@@ -619,6 +644,11 @@ pro kcwi_make_flat,ppar,gfile
 			oplot,waves[qbluefit], $
 		      		bluelinfit[0]+bluelinfit[1]*waves[qbluefit], $
 		      		color=colordex('blue')
+			if ppar.saveplots ge 3 then begin
+				plotfn = reddir + repstr(ppar.masterflat, $
+						'_mflat.fits','_bratio.png')
+				write_png,plotfn,tvrd(/true)
+			endif
 			if ppar.display ge 2 then read,'next: ',ask
 		endif
 
@@ -632,6 +662,11 @@ pro kcwi_make_flat,ppar,gfile
 				xtitle='Wavelength (A)',xthick=th,/xs, $
 				ytitle='Flux (e-)',ythick=th,yran=yrng,/ys
 			oplot,waves[qredfit],redfit,color=colordex('red')
+			if ppar.saveplots ge 3 then begin
+				plotfn = reddir + repstr(ppar.masterflat, $
+						'_mflat.fits','_rfits.png')
+				write_png,plotfn,tvrd(/true)
+			endif
 			if ppar.display ge 2 then read,'next: ',ask
 			;
 			; plot the red ratios
@@ -644,6 +679,11 @@ pro kcwi_make_flat,ppar,gfile
 			oplot,waves[qredfit], $
 		      		redlinfit[0]+redlinfit[1]*waves[qredfit], $
 		      		color=colordex('red')
+			if ppar.saveplots ge 3 then begin
+				plotfn = reddir + repstr(ppar.masterflat, $
+						'_mflat.fits','_rratio.png')
+				write_png,plotfn,tvrd(/true)
+			endif
 			if ppar.display ge 2 then read,'next: ',ask
 		endif
 	endif
@@ -693,6 +733,11 @@ pro kcwi_make_flat,ppar,gfile
 			color=colordex('orange')
 		oplot,[kgeom.wavegood1,kgeom.wavegood1],!y.crange, $
 			color=colordex('orange')
+		if ppar.saveplots ge 2 then begin
+			plotfn = reddir + repstr(ppar.masterflat, $
+						'_mflat.fits','_mffit.png')
+			write_png,plotfn,tvrd(/true)
+		endif
 		if ppar.display ge 2 then read,'next: ',ask
 	endif
 

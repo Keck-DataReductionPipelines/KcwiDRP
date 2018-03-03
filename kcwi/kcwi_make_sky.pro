@@ -190,7 +190,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf,fits=fits
 	kcwi_print_info,ppar,pre,'Number of pixels masked',tmsk
 	;
 	; prepare plots
-	do_plots = (ppar.display ge 1)
+	do_plots = (ppar.display ge 1 or ppar.saveplots ge 2)
 	if do_plots then begin
 		deepcolor
 		!p.background=colordex('white')
@@ -308,6 +308,11 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf,fits=fits
 				color=[colordex('C'), colordex('O')], $
 				linesty=[0,0],/clear,clr_color=!p.background
 		endelse
+		if ppar.saveplots ge 2 then begin
+			plotfn = reddir + repstr(sxpar(hdr,'OFNAME'), $
+						'.fits','_sky.png')
+			write_png,plotfn,tvrd(/true)
+		endif
 	endif
 	;
 	; create sky image
