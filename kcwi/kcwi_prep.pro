@@ -147,6 +147,8 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	ppar.verbose = verbose
 	if n_elements(display) eq 0 then display = 1
 	ppar.display = display
+	if n_elements(saveplots) eq 0 then saveplots = 1
+	ppar.saveplots = saveplots
 	;
 	; check directory inputs
 	if n_elements(rawdir) le 0 then $
@@ -310,9 +312,6 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	if keyword_set(clobber) then $
 		ppar.clobber = 1 $
 	else	ppar.clobber = 0
-	if keyword_set(saveplots) then $
-		ppar.saveplots = 1 $
-	else	ppar.saveplots = 0
 	;
 	; log file
 	lgfil = odir + 'kcwi_prep.log'
@@ -355,8 +354,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		printf,ll,'Clobbering existing images'
 	printf,ll,'Verbosity level   : ',verbose
 	printf,ll,'Plot display level: ',display
-	if keyword_set(saveplots) then $
-		printf,ll,'Saving plots'
+	printf,ll,'Plot save level   : ',saveplots
 	if keyword_set(batch) then $
 		printf,ll,'Batch mode'
 	;

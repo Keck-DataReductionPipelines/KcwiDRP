@@ -108,9 +108,6 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 	printf,ll,'Verbosity level   : ',ppar.verbose
 	printf,ll,'Plot display level: ',ppar.display
 	;
-	; keep list of master standard image numbers
-	msnum = [-1]
-	;
 	; read proc file
 	kpars = kcwi_read_proc(ppar,procfname,imgnum,count=nproc)
 	;
@@ -194,9 +191,6 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						;
 						; build master std
 						kcwi_make_std,scfg,kpars[i]
-						;
-						; store number
-						msnum = [msnum, scfg.imgnum]
 					endif
 					;
 					; read in master calibration (inverse sensitivity)
@@ -367,11 +361,6 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 		endif else $
 			kcwi_print_info,ppar,pre,'input file not found: '+obfil,/info
 	endfor	; loop over images
-	;
-	; make plots
-	for i = 0, n_elements(msnum)-1 do $
-		if msnum[i] ge 0 then $
-			kcwi_test_std,msnum[i],ppar,/ps
 	;
 	; report
 	eltime = systime(1) - startime

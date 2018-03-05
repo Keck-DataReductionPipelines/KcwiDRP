@@ -173,6 +173,10 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	interact = (ppar.display ge 2)
 	plotsky = (ppar.display ge 3)
 	;
+	; info strings
+	cwv = strn(fix(kcfg.bcwave))
+	imstr = string(kcfg.frameno,format='(i0'+strn(ppar.fdigits)+')')
+	;
 	; find standard in slices
 	tot = total(icub[*,gy0:gy1,z0:z1],3)	; sum over wavelength
 	yy = findgen(gy1-gy0)+gy0		; spatial coordinates
@@ -370,6 +374,11 @@ pro kcwi_make_std,kcfg,ppar,invsen
 			kcwi_print_info,ppar,pre,'Wavelength range for Invsens fit',wlm0,wlm1, $
 				format='(a,2f9.2)'
 			read,'Next: ',q
+			if ppar.saveplots ge 2 then begin
+				plotfn = reddir + sname + '_' + strtrim(kcfg.bgratnam,2) + '_' + cwv + '_' + $
+					strtrim(kcfg.ifunam,2) + '_' + imstr + '_wlran.png'
+				write_png,plotfn,tvrd(/true)
+			endif
 			;
 			; final wavelength range
 			t = where(w ge wlm0 and w le wlm1, nt)
@@ -557,6 +566,18 @@ pro kcwi_make_std,kcfg,ppar,invsen
 					endelse	; marking a region
 				endelse	; not quitting
 			endwhile	; still working on fits
+			;
+			; output plots?
+			if ppar.saveplots ge 1 then begin
+				plotfn = reddir + sname + '_' + strtrim(kcfg.bgratnam,2) + '_' + cwv + '_' + $
+					strtrim(kcfg.ifunam,2) + '_' + imstr + '_invsens.png'
+				write_png,plotfn,tvrd(/true)
+				wset,1
+				plotfn = reddir + sname + '_' + strtrim(kcfg.bgratnam,2) + '_' + cwv + '_' + $
+					strtrim(kcfg.ifunam,2) + '_' + imstr + '.png'
+				write_png,plotfn,tvrd(/true)
+				wset,0
+			endif
 		endif	; are we interactive?
 		;
 		; now fit effective area
@@ -614,6 +635,13 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		oplot,w[goo],fearea[goo],thick=5,color=colordex('blue')
 	if interact then $
 		read,'Next: ',q
+	if ppar.saveplots ge 1 then begin
+		cwv = strn(fix(kcfg.bcwave))
+		imstr = string(kcfg.frameno,format='(i0'+strn(ppar.fdigits)+')')
+		plotfn = reddir + sname + '_' + strtrim(kcfg.bgratnam,2) + '_' + cwv + '_' + $
+			strtrim(kcfg.ifunam,2) + '_' + imstr + '_ea.png'
+		write_png,plotfn,tvrd(/true)
+	endif
 	;
 	; write out effective inverse sensitivity
 	;
