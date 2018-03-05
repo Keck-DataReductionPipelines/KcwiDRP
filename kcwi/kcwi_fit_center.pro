@@ -258,6 +258,7 @@ if do_plots then begin
 			'_atlas_offset',/reduced)
 		plotfn = repstr(plotfn,'.fits','.png')
 		write_png,plotfn,tvrd(/true)
+		kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 	endif
 endif
 ;
@@ -471,6 +472,7 @@ for b = 0,119 do begin
 				'_cdisp_bar'+string(b,form='(i03)'),/reduced)
 			plotfn = repstr(plotfn,'.fits','.png')
 			write_png,plotfn,tvrd(/true)
+			kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 		endif
 	endif
 endfor	; b
@@ -524,6 +526,7 @@ endif else begin
 				'_central_fit',/reduced)
 			plotfn = repstr(plotfn,'.fits','.png')
 			write_png,plotfn,tvrd(/true)
+			kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 		endif
 	endif
 endelse

@@ -403,6 +403,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						if kpars[i].saveplots ge 2 then begin
 							plotfn = strmid(ofil,0,strpos(ofil,'.fits'))+'_oscan_amp'+strn(ia+1)+'.png'
 							write_png,plotfn,tvrd(/true)
+							kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 						endif
 					endif
 					;

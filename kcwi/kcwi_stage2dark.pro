@@ -404,6 +404,7 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 						if kpars[i].saveplots ge 2 then begin
 							plotfn = strmid(ofil,0,strpos(ofil,'.fits'))+'_scat.png'
 							write_png,plotfn,tvrd(/true)
+							kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 						endif
 						;
 						; make interactive if display greater than 1

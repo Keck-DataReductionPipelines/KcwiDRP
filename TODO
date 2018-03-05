@@ -1,13 +1,13 @@
 implement user-selected output wavelength specs
-bad columns for N&S images
-fix gain float in dual amp modes
 fix horizontal stripes in biases
-implement handling of dark current decay
+fix gain float in dual amp modes
 compression of all files?
-use arcbars for direct geometry solution
-implement saveplots option & date-stamping plots
+implement handling of dark current decay
+bad columns for N&S images
 implement nod-and-shuffle scattered light fitting/removal
 add option to re-scale the sky for aborted nod-and-shuffel obs
+use arcbars for direct geometry solution
+#05-MAR-2018 DONE implement saveplots option
 #22-JAN-2018 DONE postscript output of standard star results
 #08-JAN-2018 DONE bad columns for TUP 1x1 images
 #05-JAN-2018 DONE flag saturated pixels

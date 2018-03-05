@@ -134,7 +134,7 @@ function kcwi_read_proc,ppar,procf,imgs, $
 					kcwi_print_info,ppar,pre,rec,info=3
 				;
 				; parse keyword
-				tag = strupcase(gettok(rec,'='))
+				tag = strtrim(strupcase(gettok(rec,'=')),2)
 				;
 				; find tag in ppar struct
 				ti = where(strcmp(keys,tag),nti)

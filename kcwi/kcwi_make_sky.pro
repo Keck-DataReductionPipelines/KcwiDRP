@@ -312,6 +312,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf,fits=fits
 			plotfn = reddir + repstr(sxpar(hdr,'OFNAME'), $
 						'.fits','_sky.png')
 			write_png,plotfn,tvrd(/true)
+			kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 		endif
 	endif
 	;

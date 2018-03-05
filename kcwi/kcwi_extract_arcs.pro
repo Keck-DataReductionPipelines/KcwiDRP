@@ -211,6 +211,7 @@ for i=0,ns-1 do begin
 					/reduced)
 			plotfn = repstr(plotfn,'.fits','.png')
 			write_png,plotfn,tvrd(/true)
+			kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 		endif
 		if interact then begin
 			read,'Next? (Q-quit plotting, <cr>-next): ',q

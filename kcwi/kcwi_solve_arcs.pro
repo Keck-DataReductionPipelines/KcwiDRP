@@ -690,6 +690,7 @@ if ppar.display ge 1 or ppar.saveplots ge 2 then begin
 			'_final_fit',/reduced)
 		plotfn = repstr(plotfn,'.fits','.png')
 		write_png,plotfn,tvrd(/true)
+		kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 	endif
 	if ppar.display ge 2 then read,'next: ',q
 endif

@@ -107,6 +107,7 @@ if ppar.display ge 2 or ppar.saveplots ge 2 then begin
 		fn = kcwi_get_imname(ppar,imgnum,'_darksig',/reduced)
 		plotfn = repstr(fn,'.fits','.png')
 		write_png,plotfn,tvrd(/true)
+		kcwi_print_info,ppar,pre,'saved plot to',plotfn,form='(a,a)'
 	endif
 	;
 	; make interactive if display >= 2

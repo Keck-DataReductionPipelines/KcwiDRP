@@ -399,6 +399,7 @@ pro kcwi_make_flat,ppar,gfile
 				plotfn = reddir + repstr(ppar.masterflat, $
 						'_mflat.fits','_wslope.png')
 				write_png,plotfn,tvrd(/true)
+				kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 			endif
 			if ppar.display ge 2 then read,'next: ',ask
 			;
@@ -421,6 +422,7 @@ pro kcwi_make_flat,ppar,gfile
 				plotfn = reddir + repstr(ppar.masterflat, $
 						'_mflat.fits','_vcor.png')
 				write_png,plotfn,tvrd(/true)
+				kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 			endif
 			if ppar.display ge 2 then read,'next: ',ask
 		endif
@@ -522,6 +524,7 @@ pro kcwi_make_flat,ppar,gfile
 			plotfn = reddir + repstr(ppar.masterflat, $
 						'_mflat.fits','_grledge.png')
 			write_png,plotfn,tvrd(/true)
+			kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 		endif
 		if ppar.display ge 2 then read,'next: ',ask
 	      endif
@@ -589,6 +592,7 @@ pro kcwi_make_flat,ppar,gfile
 			plotfn = reddir + repstr(ppar.masterflat, $
 						'_mflat.fits','_brfits.png')
 			write_png,plotfn,tvrd(/true)
+			kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 		endif
 		if ppar.display ge 2 then read,'next: ',ask
 	endif
@@ -631,6 +635,7 @@ pro kcwi_make_flat,ppar,gfile
 				plotfn = reddir + repstr(ppar.masterflat, $
 						'_mflat.fits','_bfits.png')
 				write_png,plotfn,tvrd(/true)
+				kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 			endif
 			if ppar.display ge 2 then read,'next: ',ask
 			;
@@ -648,6 +653,7 @@ pro kcwi_make_flat,ppar,gfile
 				plotfn = reddir + repstr(ppar.masterflat, $
 						'_mflat.fits','_bratio.png')
 				write_png,plotfn,tvrd(/true)
+				kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 			endif
 			if ppar.display ge 2 then read,'next: ',ask
 		endif
@@ -666,6 +672,7 @@ pro kcwi_make_flat,ppar,gfile
 				plotfn = reddir + repstr(ppar.masterflat, $
 						'_mflat.fits','_rfits.png')
 				write_png,plotfn,tvrd(/true)
+				kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 			endif
 			if ppar.display ge 2 then read,'next: ',ask
 			;
@@ -683,6 +690,7 @@ pro kcwi_make_flat,ppar,gfile
 				plotfn = reddir + repstr(ppar.masterflat, $
 						'_mflat.fits','_rratio.png')
 				write_png,plotfn,tvrd(/true)
+				kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 			endif
 			if ppar.display ge 2 then read,'next: ',ask
 		endif
@@ -737,6 +745,7 @@ pro kcwi_make_flat,ppar,gfile
 			plotfn = reddir + repstr(ppar.masterflat, $
 						'_mflat.fits','_mffit.png')
 			write_png,plotfn,tvrd(/true)
+			kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 		endif
 		if ppar.display ge 2 then read,'next: ',ask
 	endif

@@ -166,11 +166,8 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	rdnoise /= float(kcfg.nvidinp)
 	kgeom.rdnoise = rdnoise
 	;
-	; wavelength numbers default from header
+	; default central wavelength from header
 	kgeom.cwave = kcfg.cwave
-	kgeom.wave0out = kcfg.wave0	
-	kgeom.wave1out = kcfg.wave1
-	kgeom.dwout = kcfg.dwav
 	;
 	; reference spectrum: ppar value has top priority
 	if strlen(strtrim(ppar.atlas,2)) gt 0 then begin
@@ -281,21 +278,6 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 	endif
 	;
 	; now check ppar values which override defaults
-	if ppar.dw gt 0. then begin
-		kgeom.dwout = ppar.dw
-		kcwi_print_info,ppar,pre,'Data cube output Disp (A/px)', $
-				kgeom.dwout,format='(a,f6.3)'
-	endif
-	if ppar.wave0 gt 0. then begin
-		kgeom.wave0out = ppar.wave0
-		kcwi_print_info,ppar,pre,'Data cube output Wave0 (A)', $
-				kgeom.wave0out,format='(a,f9.2)'
-	endif
-	if ppar.wave1 gt 0. then begin
-		kgeom.wave1out = ppar.wave1
-		kcwi_print_info,ppar,pre,'Data cube output Wave1 (A)', $
-				kgeom.wave1out,format='(a,f9.2)'
-	endif
 	if ppar.cleancoeffs gt -1. then $
 		kgeom.bclean = ppar.cleancoeffs
 	;

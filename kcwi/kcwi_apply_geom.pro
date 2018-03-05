@@ -67,9 +67,11 @@ y1 = (sz[1]-1) + pad
 ;
 ; get low trim wavelength
 wave0 = kgeom.wave0out
+wave1 = kgeom.wave1out
+dwout = kgeom.dwout
 ;
 ; get high trim pixel
-lastpix = long ( ( kgeom.wave1out - kgeom.wave0out ) / kgeom.dwout )
+lastpix = long ( ( wave1 - wave0 ) / dwout )
 ;
 ; pad image to include full slices
 ;
@@ -337,7 +339,7 @@ sxaddpar,chdr,'CD1_1',cd11,' RA degrees per column pixel'
 sxaddpar,chdr,'CD2_1',cd21,' DEC degrees per column pixel'
 sxaddpar,chdr,'CD1_2',cd12,' RA degrees per row pixel'
 sxaddpar,chdr,'CD2_2',cd22,' DEC degrees per row pixel'
-sxaddpar,chdr,'CD3_3',kgeom.dwout,' Wavelength Angstroms per pixel'
+sxaddpar,chdr,'CD3_3',dwout,' Wavelength Angstroms per pixel'
 sxaddpar,chdr,'LONPOLE',180.0,' Native longitude of Celestial pole'
 sxaddpar,chdr,'LATPOLE',0.0,' Celestial latitude of native pole'
 sxaddpar,chdr,'HISTORY','  '+kgeom.progid+' '+systime(0,kgeom.timestamp)

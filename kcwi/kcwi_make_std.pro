@@ -378,6 +378,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				plotfn = reddir + sname + '_' + strtrim(kcfg.bgratnam,2) + '_' + cwv + '_' + $
 					strtrim(kcfg.ifunam,2) + '_' + imstr + '_wlran.png'
 				write_png,plotfn,tvrd(/true)
+				kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 			endif
 			;
 			; final wavelength range
@@ -538,8 +539,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 								status=fitstat)
 						finvsen = poly(w-wf0,res)
 					;
-					; mark a region for resoration or deletion
-					endif else begin
+					; mark a region for resoration
+					endif else if strupcase(strtrim(q,2)) eq 'R' then begin
 						wlma = -1.
 						wlmb = -1.
 						print,'Mark first wavelength limit'
@@ -552,18 +553,28 @@ pro kcwi_make_std,kcfg,ppar,invsen
 						wl1 = max([wlma,wlmb])
 						roi = where(wf ge wl0 and wf le wl1, nroi)
 						;
-						if nroi gt 0 then begin
-							;
-							; restore points
-							if strupcase(strtrim(q,2)) eq 'R' then begin
-								use[roi] = 1
-							;
-							; delete points
-							endif else if strupcase(strtrim(q,2)) eq 'D' then begin
-								use[roi] = 0
-							endif else print,'I do not understand ',q
-						endif
-					endelse	; marking a region
+						; restore points
+						if nroi gt 0 then use[roi] = 1
+					;
+					; mark a region for deletion
+					endif else if strupcase(strtrim(q,2)) eq 'D' then begin
+						wlma = -1.
+						wlmb = -1.
+						print,'Mark first wavelength limit'
+						cursor,wlma,yy,/data,/down
+						oplot,[wlma,wlma],10.^!y.crange,linesty=2
+						print,'Mark next wavelength limit'
+						cursor,wlmb,yy,/data,/down
+						oplot,[wlmb,wlmb],10.^!y.crange,linesty=2
+						wl0 = min([wlma,wlmb])
+						wl1 = max([wlma,wlmb])
+						roi = where(wf ge wl0 and wf le wl1, nroi)
+						;
+						; delete points
+						if nroi gt 0 then use[roi] = 0
+					;
+					; unknown character
+					endif else print,'I do not understand ',q
 				endelse	; not quitting
 			endwhile	; still working on fits
 			;
@@ -572,10 +583,12 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				plotfn = reddir + sname + '_' + strtrim(kcfg.bgratnam,2) + '_' + cwv + '_' + $
 					strtrim(kcfg.ifunam,2) + '_' + imstr + '_invsens.png'
 				write_png,plotfn,tvrd(/true)
+				kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 				wset,1
 				plotfn = reddir + sname + '_' + strtrim(kcfg.bgratnam,2) + '_' + cwv + '_' + $
 					strtrim(kcfg.ifunam,2) + '_' + imstr + '.png'
 				write_png,plotfn,tvrd(/true)
+				kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 				wset,0
 			endif
 		endif	; are we interactive?
@@ -641,6 +654,7 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		plotfn = reddir + sname + '_' + strtrim(kcfg.bgratnam,2) + '_' + cwv + '_' + $
 			strtrim(kcfg.ifunam,2) + '_' + imstr + '_ea.png'
 		write_png,plotfn,tvrd(/true)
+		kcwi_print_info,ppar,pre,'saved plot to',plotfn,format='(a,a)'
 	endif
 	;
 	; write out effective inverse sensitivity
