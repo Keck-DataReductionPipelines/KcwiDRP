@@ -1,16 +1,16 @@
-# Copyright (c) 2013-2017, California Institute of Technology, all rights reserved
+# Copyright (c) 2013-2018, California Institute of Technology, all rights reserved
 
-2018-Mar-09: v1.0.0 - First full release
+2018-Mar-09: v1.0.1 - First full release
 
-- implemented saveplots ppar keyword that saves various level of diagnostic
-	plots as png images depending on how high you set it.
+- implemented saveplots ppar keyword that saves some (2) or all (3) plots.
 
 - added python utility for converting ds9 region files into a sky mask
 	image.  Named kcwi_masksky_ds9.py and found in devel subdirectory.
 
 - added scaling of non-local sky by exposure time.
 
-- added tweaking of sky scaling enabled by setting display to 2 or more.
+- added tweaking of sky scaling enabled by setting display to 2 or more
+	when running kcwi_stage5sky.pro.
 
 - depricated kcwi_quick.pro to devel as normal routines can be used at
 	telescope with no performance delay.

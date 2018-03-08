@@ -5,9 +5,7 @@ Copyright (c) 2018, California Institute of Technology.  All rights reserved.
         KCWI Data Extraction and Reduction Pipeline (KDERP) README
 
 
-Twenty-first beta release; Version: 0.6.1 (DEV) Date: 2018/01/00
-
-Caveat Emptor!  Use at your own risk!  In active development!
+First full release; Version: 1.0.1 (REL) Date: 2018/03/09
 
 **CONTENTS**
 
@@ -42,7 +40,7 @@ f. setenv IDL_STARTUP /Path/to/package/kderp-<ver>/startup.pro
 1. INSTALLATION:
 
 Installation requires four steps.  In all steps below replace the string
-<ver> with the DRP version string, e.g., "0.1.2" (not including the
+<ver> with the DRP version string, e.g., "1.0.1" (not including the
 quotes).
 
 
@@ -105,7 +103,7 @@ file.  If you are running the pipeline stand-alone then do this:
 
 If you are integrating the pipeline with other IDL software, then you must
 add the system variable definitions from 'startup.pro' into the file that
-your current environment variable IDL_STARTUP points to.
+your current IDL_STARTUP environment variable points to.
 
 Once you have verified that all the paths are correct, you may wish to add
 the environment variable definitions for IDL_PATH and IDL_STARTUP to your
@@ -149,11 +147,11 @@ algorithm to generate a model of the sky for each pixel in the 2d image.
 This 'noise-free' sky is then subtracted from the 2d object frame.  This
 step should be skipped if the sky is not well sampled in the frame or is
 mixed with a large fraction of object light (e.g., objects that fill the
-slicer).
+field-of-view of the slicer).
 
 Stage 6 is the cube generation step.  It applies the transformations solved
-in stage 3 to the object intensity, variance and mask images output from
-any of the previous stages.
+for in stage 3 to the object intensity, variance and mask images output
+from any of the previous stages.
 
 Stage 7 performs a differential atmospheric refraction correction based on
 the airmass of the observation, the orientation of the slicer during the
@@ -164,7 +162,8 @@ shifting process.
 Stage 8 uses a standard star observation to generate an inverse sensitivity
 curve which is applied to the corresponding observations to flux calibrate
 them.  This defaults to be run interactively (display=2), so be aware of
-this if you are running the pipeline in batch mode.
+this if you are running the pipeline in batch mode.  It is not recommended,
+but you disable interactive mode by setting display to 1.
 
 Each step is controlled by the master 'proc' file which defaults to
 kcwi.proc, and a corresponding 'ppar' file which defaults to kcwi.ppar.
@@ -173,13 +172,15 @@ options for your needs.  Run KCWI_PREP with the /help keyword set and it
 will print all the available options for you.
 
 The proc file allows you to see the automatic associations that are made and 
-to adjust which images are processed.  The ppar file allows you to adjust the
-default or global pipeline parameters for each stage.
+to adjust which images are processed.  It also allows you to set pipeline
+parameters on an image-by-image basis.  The ppar file allows you to adjust
+the default or global pipeline parameters.
 
 STAGE 0 - preparation:
 
-Here you choose several options for processing.  To see the parameters and
-keywords that are available, issue the command with the /help keyword set:
+Here you choose several global options for processing.  To see the
+parameters and keywords that are available, issue the command with the
+/help keyword set:
 
 IDL> kcwi_prep,/help
 
@@ -193,7 +194,7 @@ These are the keywords:
 
 /NOCRREJECT	- turn off CR rejection (good for quick look)
 /NONASSUB	- turn off nod-and-shuffle subtraction (why?)
-/SAVEINTIMS	- save intermediate images (takes a lot of disk space)
+/SAVEINTIMS	- save intermediate images (takes extra disk space)
 /INCLUDETEST	- includes images of type 'test' (focus images, etc.)
 /EXTERNAL_FLAT	- set to give priority to external (dome/twilight) flats (why?)
 /CLOBBER	- set to overwrite output files (default: it won't)
@@ -212,6 +213,15 @@ DISPLAY		- display level for extra diagnostic plots:
 		NOTE: These can be overridden for each stage on the IDL
 		command line by using verbose and display keywords in the
 		stage invocation (see below).
+SAVEPLOTS	- save level for plots:
+			1 - default to save basic set of plots
+			2 - save extra diagnostic plots
+			3 - save maximum number of diagnostic plots
+		NOTE: This should only be used to help diagnose a
+		problem and should be set on an image-by-image basis
+		in the kcwi.proc file (see below).  Setting this to
+		2 or 3 at the global level will generate a large number
+		of plots.
 
 MINGROUPBIAS	- minimum required number of bias frames to combine
 			this defaults to 5
@@ -243,7 +253,7 @@ You'll see all the files that specify master calibration file generation
 Take a look at the kcwi.proc file.  This shows the automatically generated
 linking between the master calibrations and the other images.  Header lines
 are designated by starting with a hash ('#') character.  After the header
-there is one record per processed image followed by a set of keyword value
+there is one record per processed image followed by a set of keyword-value
 pairs (separated by an equals sign) that control the association of each
 object image with the corresponding calibration object.  The header gives
 the legend for the columns in the image record.  This image record
@@ -251,10 +261,19 @@ specifically gives the image number and all the configuration data relevant
 to the calibration process.  The processing keywords that follow are
 derived from the master ppar file which defaults to 'kcwi.ppar' in the
 output directory.  If one wants to change these associations, one simply
-edits the keyword values.  One may also add new keyword value pairs, as
-long as the keywords exist in the ppar file.  These keyword value pairs
+edits the keyword values.  One may also add new keyword-value pairs, as
+long as the keywords exist in the ppar file.  These keyword-value pairs
 override the default values in the ppar file for the given image being
 processed.
+
+An example of this is the SAVEPLOTS keyword.  If you add the text
+
+saveplots=2
+
+to a single image's keyword-value pairs list, it will only save the
+diagnostic plots for that particular image.  This is the safest way to use
+the SAVEPLOTS keyword as a global setting will generate a large number of
+diagnostic plots.
 
 The proc file is read in by all subsequent stages so you can control which
 images are processed by commenting out any you don't want run through the
@@ -434,6 +453,11 @@ trace the bars and will end in '_slicemap.fits', '_posmap.fits',
 '_wavemap.fits', and '_geom.fits'.  If you re-run the stage3 pipeline
 without deleting these, they are just re-used.
 
+If you want to save any of the intermediate plots, edit the kcwi.proc file
+and add 'saveplots=2' or 'saveplots=3' to the list of keyword-value pairs
+for the cbars and arc images that are used to generate the geometry.  This
+will save many of the plots listed above.
+
 
 STAGE 4 - flat field and illumination correction:
 
@@ -553,7 +577,8 @@ This stage requires no calibration files and is performed purely on the
 basis of each observation's properties.  The relevant properties are the
 temperature, the relative humidity, the airmass, the IFU orientation with
 respect to the parallactic angle, and the wavelengths of each spatial image
-within the cube.  The output cubes will be padded in the spatial dimensions
+within the cube.  All of these parameters are derived from the FITS image
+header keywords.  The output cubes will be padded in the spatial dimensions
 a standard amount that depends on the grating used.
 
 This step is run as follows:
@@ -580,18 +605,18 @@ name with the list of standard star files in the directory pointed to by
 You can control which standard star images are used and which
 observations are standard star corrected using the 'kcwi.proc' file in the
 output directory specified when you ran KCWI_PREP.  Currently the standard
-star library is extremely limited.  A Keck standard star list that includes
+star library is somewhat limited.  A Keck-formatted star list that includes
 all the standard stars can be found in the data/stds directory.  It is
 called 'kderp_stds_starlist.txt' and should be given to the observatory
 assistant prior to your run.  It is recommended that you use standards that
 have HST observations (STIS, NICMOS, etc.) since these have wavelength
 sampling closer to KCWI.
 
-This stage defaults to be run interactively to allow the user to
-specify the wavelength range for fitting the calibration and to tweak the
-spectral regions that are used for the fit (to avoid sharp absorption
-features, for example).  If you do not want to run it interactively, you
-should set display to 1 or 0 on the command line.
+This stage runs interactively by default to allow the user to specify the
+wavelength range for fitting the calibration and to tweak the spectral
+regions that are used for the fit (to avoid sharp absorption features, for
+example).  If you do not want to run it interactively, you should set
+display to 1 or 0 on the command line.
 
 This step is run as follows:
 
@@ -601,7 +626,8 @@ This will display a plot of the observed standard star spectrum with the
 'good' spectral region bounded by green vertical lines.  You will be
 prompted to specify the wavelength range for the fitting.  If the shape
 looks good beyond the 'good' range, you might want to include these data
-in the fit to avoid edge problems within the good range.
+in the fit to avoid edge problems within the good range.  You should always
+include the wavelength range between the two green vertical lines.
 
 Next, you will be presented with a plot of the inverse sensitivity with
 some automatic masking of the Balmer lines indicated by vertical dashed
@@ -617,7 +643,7 @@ d - delete points,
 f - re-fit the data
 q - exit the fitting process and use the last fit.
 
-This allows you to tweak the fit until you get a residual of 2% or better.
+This allows you to tweak the fit until you get the lowest residuals.
 
 If you have run the observation through stage5sky and performed sky
 subtraction, there will be no further sky subtraction done here.  However,
@@ -635,10 +661,14 @@ sensitivity applied will also be output with the following suffixes:
 '_mcubes.fits' for the mask data cube (and also the '_ocubes.fits' and
 '_scubes.fits' files).
 
-There is a routine that will produce a diagnostic plot and an effective
-area and efficiency curve from the calibration.  This routine is called
-'kcwi_test_std.pro' and requires only the standard star observation image
-number as input.  If you want a postscript output of the plots, just add
+In addition, diagnostic plots showing the derived effective area, the
+derived inverse sensitivity, and the observerd versus reference flux and
+residual spectrum are saved.  Look for '*.png' files that start with the
+name of the standard star being used.
+
+You can generate postscript versions of these plots using the routine
+'kcwi_test_std.pro' which requires only the standard star observation image
+number as input.  To create the postscript output of the plots, just add
 the keyword '/ps' to the command line call.
 
 
@@ -684,6 +714,20 @@ IDL> kcwi_print_cfgs,kcfg,/header
 
 
 4. NEW FEATURES:
+
+SAVEPLOTS keyword
+
+You can now use the saveplots keyword either on the command line when
+running kcwi_prep.pro (not recommended), or in the kcwi.proc file on an
+image-by-image basis (recommended).  The pipeline will generate a basic set
+of diagnostic plots in the redux directory if this keyword is not used.
+However, if you wish to save and examine other diagnostic plots that are
+shown on the screen when display values of 2 or 3 are used, you can use the
+saveplots keyword to indicate the level of plots to save beyond the default
+level.  Adding 'saveplots=3' to the keyword-value pairs for a given image
+will generate the maximum number of output '*.png' plots.  Setting
+saveplots to 2 will save a intermediate number of '*.png' plots and is the
+recommended first step when trying to diagnose a problem.
 
 New Flat Fielding and Sky Subtraction
 
@@ -747,20 +791,6 @@ These are mostly transparent to the user with the exception of the relative
 response stage.  For direct mode observations, the user should use the
 routine kcwi_stage6drr.pro.  There is no profile or standard star step for
 direct mode observations as of now.
-
-Quick Look Pipeline
-
-NB: This feature is currently obsolete: use the regular pipeline, but turn
-off cosmic ray rejection if you want a quick look at the telescope.
-
-For at-telescope reductions there is a new routine: kcwi_quick.pro.  This
-routine will process a single targeted image, or if no target is specified,
-it will process the most recent image with imgtype of 'object'.  It has the
-same parameters as kcwi_prep.pro (see above) with the addition of the
-keyword IMGTARG which can be set to a target image number.
-
-This routine will process the target image and the needed calibration images
-as far forward as possible based on what calibrations are available.
 
 Standard Star Associations
 
