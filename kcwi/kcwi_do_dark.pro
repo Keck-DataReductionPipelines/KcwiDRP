@@ -16,6 +16,9 @@
 ;	Hdr	- image header
 ;	Ppar	- Pipline parameter struct
 ;
+; KEYWORDS:
+;	INTERACT - set to make routine interactive
+;
 ; RETURNS:
 ;	True (1) if dark current signatures are significant,
 ;	False (0) if no dark current signatures are detected.
@@ -24,7 +27,7 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2017-12-18	Initial version
 ;-
-function kcwi_do_dark, im, hdr, ppar
+function kcwi_do_dark, im, hdr, ppar, interact=interact
 ;
 ; setup
 pre = 'KCWI_DO_DARK'
@@ -85,7 +88,7 @@ endif else begin
 endelse
 ;
 ; display test plot
-if ppar.display ge 2 or ppar.saveplots ge 2 then begin
+if interact or ppar.saveplots ge 2 then begin
 	;
 	; set up plotting
 	deepcolor
@@ -110,8 +113,8 @@ if ppar.display ge 2 or ppar.saveplots ge 2 then begin
 		kcwi_print_info,ppar,pre,'saved plot to',plotfn,form='(a,a)'
 	endif
 	;
-	; make interactive if display >= 2
-	if ppar.display ge 2 then $
+	; make interactive?
+	if interact then $
 		read,'next: ',q
 endif
 ;

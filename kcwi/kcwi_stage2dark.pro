@@ -163,7 +163,7 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 				sz = size(img,/dimension)
 				;
 				; does this image need dark subtraction?
-				do_dark = kcwi_do_dark(img,hdr,kpars[i])
+				do_dark = kcwi_do_dark(img,hdr,kpars[i],interact=interact)
 				;
 				; get exposure time
 				exptime = kcfg.exptime
@@ -390,9 +390,11 @@ pro kcwi_stage2dark,procfname,ppfname,help=help,verbose=verbose, display=display
 						deepcolor
 						!p.background=colordex('white')
 						!p.color=colordex('black')
+						yrn = get_plotlims([slp,elp])
+						if yrn[0] gt 0 then yrn[0] = 0.
 						plot,fx,slp,/xs,psym=1,xtitle='ROW',ytitle='Scattered Light (e-)', $
 							title='Image: '+strn(imgnum[i]), $
-							charth=2,charsi=1.5,xthi=2,ythi=2
+							charth=2,charsi=1.5,xthi=2,ythi=2,yran=yrn
 						oplot,fx,elp,color=colordex('blue')
 						oplot,fx,scat,thick=3,color=colordex('red')
 						kcwi_legend,['Data', 'Fit', 'Err'],thick=[1,3,1], $
