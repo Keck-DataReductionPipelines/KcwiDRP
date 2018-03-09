@@ -347,7 +347,7 @@ for j=0,npks-1 do begin
 	pp += 1
 	;
 	; plot results
-	if do_plots then begin
+	if ppar.display ge 2 or ppar.saveplots ge 3 then begin
 		xrng = [min(x)-1,max(x)+1]
 		plot,x,y,psym=-4,xran=xrng,/xsty,xtitle='PIX', $
 			yran=yrng,/ysty,ytitle='INT', $
@@ -381,7 +381,7 @@ for j=0,npks-1 do begin
 			if strupcase(strmid(strtrim(q,2),0,1)) eq 'Q' then $
 				interact = 0
 		endif
-	endif
+	endif	; plot results
 endfor
 print,pre+': Info - Done.'
 ;
@@ -504,7 +504,7 @@ for k=0,1 do begin
 				redchi gt 0. and a[0] gt pkmax[j]*0.05 and $
 				sig[1] lt 99. and sig[1] gt 0. and $
 				abs(cnt-a[1]) lt 1.5 then begin
-				if do_plots ge 1 then plots,a[1],iy,psym=1
+				if do_plots then plots,a[1],iy,psym=1
 				;
 				; store values
 				peakx[i,j] = a[1]
@@ -524,7 +524,7 @@ for k=0,1 do begin
 			; check centroid
 			if abs(x0c - cnt) le 2.0 and $
 			   max(y) gt pkmax[j]*0.05 then begin
-				if do_plots ge 1 then plots,cnt,iy,psym=1
+				if do_plots then plots,cnt,iy,psym=1
 				;
 				; store values
 				peakx[i,j] = cnt
