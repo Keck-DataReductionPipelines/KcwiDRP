@@ -97,6 +97,7 @@ if n_params(0) lt 3 then begin
 endif
 ;
 ; check keywords
+do_gauss = keyword_set(gauss)
 nter = 4
 if keyword_set(moffat) then nter=5
 pdeg = 3
@@ -226,12 +227,89 @@ kcwi_print_info,ppar,pre,'final bar thresh, ntries',barth,tries, $
 	format='(a,f9.2,i5)'
 ;
 ; did we succeed?
-if npks ne 120 then begin
-	kcwi_print_info,ppar,pre,'unable to find 120 peaks',npks,/error
-	kgeom.status=1
+if npks lt 120 then begin
+	kcwi_print_info,ppar,pre,'unable to find at least 120 peaks',npks,/error
+	kgeom.status = 1
 	return
 endif
-kcwi_print_info,ppar,pre,'Found 120 peaks'
+kcwi_print_info,ppar,pre,'Found this many peaks',npks,format='(a,i5)'
+;
+; if we found more than 120, then ghosts may be present
+if npks gt 120 then begin
+	;
+	; log that we are ghost hunting
+	kcwi_print_info,ppar,pre,'Found more than 120 peaks: hunting for ghosts'
+	;
+	; which ones should we use?
+	ghosts = intarr(npks)
+	;
+	; check distance to previous peak
+	prevx = 0.
+	;
+	; loop over peaks and check positions
+	for j=0,npks-1 do begin
+		;
+		; get index range for this peak
+		st = sta[j]
+		;
+		; convert back into index list
+		rangepar,sta[j],x
+		;
+		; get fluxes in range
+		y = row[x]
+		;
+		; centroid on this peak
+		cnt=cntrd1d(x,y)
+		;
+		; re-center window based on centroid
+		t0 = fix(cnt) - pbuf
+		t1 = fix(cnt) + pbuf
+		nx = (t1-t0)+1
+		;
+		; get x values
+		x = t0 + indgen(nx)
+		;
+		; get fluxes in range
+		y = row[x]
+		;
+		; re-centroid before fitting
+		cnt=cntrd1d(x,y)
+		;
+		; initial estimates to improve fitting success ratio
+		est=[max(y),cnt,2.,1.]
+		;
+		; do fit
+		yfit = mpfitpeak(x,y,a,nterms=nter,estimate=est,error=sqrt(y), $
+			chisq=chi2,dof=dof,perror=sig,gauss=gauss,moffat=moffat)
+		;
+		; check position
+		if a[1] - prevx le 2. then begin
+			ghosts[j] = 1
+			kcwi_print_info,ppar,pre,'Found a ghost at bar',j, $
+				format='(a,i4)',/warn
+		endif else prevx = a[1]
+	endfor	; loop over peaks, looking for ghosts
+	;
+	; did we find all the ghosts?
+	good = where(ghosts ne 1, ngood)
+	bad = where(ghosts eq 1, nghosts)
+	if ngood ne 120 then begin
+		kcwi_print_info,ppar,pre,'Could not clean out ghosts, geometry fails',/error
+		kgeom.status = 1
+		return
+	;
+	; we ain't afraid of no ghosts!
+	endif else begin
+		kcwi_print_info,ppar,pre,'Successfully busted this many ghosts', $
+			nghosts,format='(a,i3)'
+		npks = ngood
+		sta = sta[good]
+		do_gauss = (1 eq 1)
+	endelse
+endif	; npks gt 120
+;
+; we got 120 peaks if we made it here
+kcwi_print_info,ppar,pre,'Found 120 good peaks'
 ;
 ; keep track of max values
 pkmax = fltarr(npks)
@@ -277,7 +355,7 @@ for j=0,npks-1 do begin
 	cnt=cntrd1d(x,y)
 	;
 	; choose a fit method (default is centroid)
-	if keyword_set(gauss) or keyword_set(moffat) then begin
+	if do_gauss or keyword_set(gauss) or keyword_set(moffat) then begin
 		;
 		; x-vector for plotting
 		xp = t0 + indgen(nx*100)/100.
@@ -483,7 +561,7 @@ for k=0,1 do begin
 		cnt=cntrd1d(x,y)
 		;
 		; do fitting if we are not centroiding
-		if keyword_set(gauss) or keyword_set(moffat) then begin
+		if do_gauss or keyword_set(gauss) or keyword_set(moffat) then begin
 			;
 			; initial estimates to improve fitting success ratio
 			est=[max(y),cnt,2.,1.]

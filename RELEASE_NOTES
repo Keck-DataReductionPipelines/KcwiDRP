@@ -4,6 +4,8 @@
 
 - implemented saveplots ppar keyword that saves some (2) or all (3) plots.
 
+- implemented ghost busting in kcwi_trace_cbars.pro.
+
 - added python utility for converting ds9 region files into a sky mask
 	image.  Named kcwi_masksky_ds9.py and found in devel subdirectory.
 
