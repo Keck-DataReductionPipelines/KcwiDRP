@@ -1,8 +1,8 @@
 # Copyright (c) 2013-2018, California Institute of Technology, all rights reserved
 
-2018-Mar-09: v1.0.1 - First full release
+2018-Mar-12: v1.0.1 - First full release
 
-- implemented saveplots ppar keyword that saves some (2) or all (3) plots.
+- implemented saveplots ppar keyword that saves a few (2) or many (3) plots.
 
 - implemented ghost busting in kcwi_trace_cbars.pro.
 
