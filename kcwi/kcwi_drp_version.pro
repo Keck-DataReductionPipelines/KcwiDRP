@@ -2,7 +2,7 @@ function kcwi_drp_version
 	cd,current=cwd
 	cd,!KCWI_DATA
 	cd,'..'
-	verstring = 'KCWI DERP Version: 1.0,1 DEV 2018/03/12'
+	verstring = 'KCWI DERP Version: 1.0.2 DEV 2018/04/00'
 	spawn,'git describe --tags --long', gitver, errmsg
 	errlen = total(strlen(errmsg))
 	if errlen le 0 then begin

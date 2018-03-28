@@ -1,5 +1,10 @@
 # Copyright (c) 2013-2018, California Institute of Technology, all rights reserved
 
+2018-Apr-00: v1.0.2 - Minor release
+
+- added user contributed software section to the AAAREADME file.
+
+
 2018-Mar-12: v1.0.1 - First full release
 
 - implemented saveplots ppar keyword that saves a few (2) or many (3) plots.

@@ -5,7 +5,7 @@ Copyright (c) 2018, California Institute of Technology.  All rights reserved.
         KCWI Data Extraction and Reduction Pipeline (KDERP) README
 
 
-First full release; Version: 1.0.1 (REL) Date: 2018/03/12
+Second minor release; Version: 1.0.2 (DEV) Date: 2018/04/00
 
 **CONTENTS**
 
@@ -13,8 +13,9 @@ First full release; Version: 1.0.1 (REL) Date: 2018/03/12
 1. INSTALLATTION
 2. RUNNING THE PIPELINE
 3. ANCILLARY UTILITIES
-4. NEW FEATURES
-5. TROUBLESHOOTING
+4. USER CONTRIBUTED SOFTWARE
+5. NEW FEATURES
+6. TROUBLESHOOTING
 
 
 0. QUICK START:
@@ -713,7 +714,22 @@ IDL> kcfg = kcwi_read_cfgs(/stage2)
 IDL> kcwi_print_cfgs,kcfg,/header
 
 
-4. NEW FEATURES:
+4. USER CONTRIBUTED SOFTWARE
+
+In this section we provide links to user contributed software.  These
+routines carry out their own testing and reliability independent from the
+KCWI DRP, and we cannot guarantee the quality of the outputs.  However,
+many of these routines are very useful and add value to the output from the
+standard pipeline.
+
+https://github.com/dbosul/CWITools
+
+CWITools are a set of python tools for post-processing of KCWI (and PCWI)
+data written by Donal O'Sullivan.  These tools include stacking and
+continuum subtraction.
+
+
+5. NEW FEATURES:
 
 SAVEPLOTS keyword
 
@@ -803,7 +819,7 @@ correction is now included in the calibration using the Palomar Observatory
 coefficients.
 
 
-5. TROUBLESHOOTING:
+6. TROUBLESHOOTING:
 
 1. No mouse reaction during kcwi_stage4geom:
 	If the mouse seems to not be read by the program, check the X windows
