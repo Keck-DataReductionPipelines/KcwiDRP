@@ -126,10 +126,6 @@ for i=0,ns-1 do begin
 	; compute spectrum
 	vec = median(sub,dim=1)
 	ims_asym,vec,mn,sig,wgt,siglim=[1.5,3.0]
-	good = where(wgt eq 1,ngood)
-	if ngood gt 9 then $
-		cont = min(vec[good]) $
-	else	cont = median(vec[good])
 	cont = mn - 3.*sig
 	vec -= cont
 	spec(*,i) = vec
