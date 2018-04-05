@@ -230,6 +230,66 @@ pro kcwi_set_geom,kgeom,ikcfg,ppar,atlas=atlas,atname=atname, help=help
 		kgeom.dwout = 0.125 * float(kcfg.ybinsize)
 	endif
 	;
+	; grating parameters RH1
+	if strtrim(kcfg.gratid,2) eq 'RH1' then begin
+		kgeom.atsig = 2.5
+		if kgeom.ifunum gt 2 then $
+			kgeom.atsig = 1.5
+		kgeom.ccwn = 100.		;360./kgeom.ybinsize
+		kgeom.rho = 2.420d
+		kgeom.adjang = 180.d
+		kgeom.lastdegree = 4
+		kgeom.bclean = 0
+		;
+		; output disperison
+		kgeom.dwout = 0.125 * float(kcfg.ybinsize)
+	endif
+	;
+	; grating parameters RH2
+	if strtrim(kcfg.gratid,2) eq 'RH2' then begin
+		kgeom.atsig = 2.5
+		if kgeom.ifunum gt 2 then $
+			kgeom.atsig = 1.5
+		kgeom.ccwn = 100.		;360./kgeom.ybinsize
+		kgeom.rho = 2.030d
+		kgeom.adjang = 180.d
+		kgeom.lastdegree = 4
+		kgeom.bclean = 0
+		;
+		; output disperison
+		kgeom.dwout = 0.125 * float(kcfg.ybinsize)
+	endif
+	;
+	; grating parameters RH3
+	if strtrim(kcfg.gratid,2) eq 'RH3' then begin
+		kgeom.atsig = 2.5
+		if kgeom.ifunum gt 2 then $
+			kgeom.atsig = 1.5
+		kgeom.ccwn = 100.		;360./kgeom.ybinsize
+		kgeom.rho = 1.705d
+		kgeom.adjang = 180.d
+		kgeom.lastdegree = 4
+		kgeom.bclean = 0
+		;
+		; output disperison
+		kgeom.dwout = 0.125 * float(kcfg.ybinsize)
+	endif
+	;
+	; grating parameters RH4
+	if strtrim(kcfg.gratid,2) eq 'RH4' then begin
+		kgeom.atsig = 2.5
+		if kgeom.ifunum gt 2 then $
+			kgeom.atsig = 1.5
+		kgeom.ccwn = 100.		;360./kgeom.ybinsize
+		kgeom.rho = 1.435d
+		kgeom.adjang = 180.d
+		kgeom.lastdegree = 4
+		kgeom.bclean = 0
+		;
+		; output disperison
+		kgeom.dwout = 0.125 * float(kcfg.ybinsize)
+	endif
+	;
 	; grating parameters BM
 	if strtrim(kcfg.gratid,2) eq 'BM' then begin
 		kgeom.atsig = 4.0
