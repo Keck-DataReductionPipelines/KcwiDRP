@@ -1,38 +1,39 @@
-;
+;+
 ; KCWI_SIM_GEOM
 ; 
-; Once the KCWI pipeline determiens the mapping, this procedure
-; can be used to generate an inverse mapping that helps the user
-; determine where wavelengths originally fell on the CCD.  Can serve
-; as a sanity check 
-;
-; the procedure outputs a file:
-; $OUTDIR/imageNNNNN_wavemap.fits
-; where NNNNN is the cbars image number for the geometry 
-;  
-;
-; To do:
-; > change how things are loaded? 
-; > add some headers to the data.
+; Simulate KCRM geometry files
+;-
 
-pro KCWI_SIM_GEOM, kgeom, ppar
+pro KCWI_SIM_GEOM, new_cwave, rl=rl, rm1=rm1, rm2=rm2
 
 pre = "KCWI_SIM_GEOM"
 
-; Check structs
-if kcwi_verify_geom(kgeom,/init) ne 0 then return
+; get ppar
+ppar = kcwi_read_ppar()
 if kcwi_verify_ppar(ppar) ne 0 then begin
 	ppar = {kcwi_ppar}
 endif
 
+; get geom
+if keyword_set(rl) then begin
+	kgeom = mrdfits('store/BL_Large_4500_2x2_geom.fits',1,ghdr)
+endif
+if keyword_set(rm1) then begin
+	kgeom = mrdfits('store/BM_Large_4000_2x2_geom.fits',1,ghdr)
+endif
+if keyword_set(rm2) then begin
+	kgeom = mrdfits('store/BM_Large_4900_2x2_geom.fits',1,ghdr)
+endif
+if kcwi_verify_geom(kgeom,/init) ne 0 then begin
+	kcwi_print_info,ppar,pre,'Bad geometry input',/error
+	return
+endif
+
 ; read in quantities from the geometry.
 ; trying to avoid using these inside of the code proper
-imno = kgeom.cbarsimgnum
-arcno = kgeom.arcimgnum
 nx = kgeom.nx
 ny = kgeom.ny
 ypad = kgeom.ypad
-nasmask = kgeom.nasmask
 trimy0 = kgeom.trimy0
 trimy1 = kgeom.trimy1
 kwx = kgeom.kwx
@@ -40,14 +41,33 @@ kwy = kgeom.kwy
 xi = kgeom.xi
 yi = kgeom.yi
 xw = kgeom.xw
-yw = kgeom.yw * 2.0
+yw = kgeom.yw
 slice = kgeom.slice
-refoutx = kgeom.refoutx
 x0out = kgeom.x0out
 dwout = kgeom.dwout
-wave0out = kgeom.wave0out * 2.0
+wave0out = kgeom.wave0out
 xbin = kgeom.xbinsize
 xpad = 17/xbin
+;
+; select grating
+if keyword_set(rl) then begin
+	outgrat = 'RL'
+	disprat = kgeom.rho / 0.514
+endif else if keyword_set(rm1) then begin
+	outgrat = 'RM1'
+	disprat = kgeom.rho / 1.220
+endif else if keyword_set(rm2) then begin
+	outgrat = 'RM2'
+	disprat = kgeom.rho / 0.921
+endif
+waveoff = new_cwave - (kgeom.wavemid * disprat)
+kcwi_print_info,ppar,pre,'Disprat, WaveOff',disprat,waveoff, $
+	format='(a,2f9.3)'
+;
+; apply
+yw *= disprat
+wave0out = wave0out*disprat + waveoff
+
 
 x = dindgen(nx)
 y = dindgen(ny); ypad
@@ -124,46 +144,11 @@ endfor
 ;
 ; get header
 hdr = headfits(kgeom.arcfname)
-cwave = sxpar(hdr,'BCWAVE')*2.0
-sxaddpar,hdr, 'BCWAVE',cwave, ' Blue central wavelength (Ang)'
+sxaddpar,hdr, 'BCWAVE',new_cwave, ' Blue central wavelength (Ang,sim)'
+sxaddpar,hdr, 'BGRATNAM', outgrat, ' Blue Grating name (sim)'
 
 ;
-; update header
-;
-; spatial scale and zero point
-;sxaddpar,hdr,'BARSEP',kgeom.refdelx,' separation of bars (binned pix)'
-;sxaddpar,hdr,'BAR0',kgeom.x0out,' first bar pixel position'
-;
-; wavelength ranges
-;sxaddpar,hdr, 'WAVALL0', kgeom.waveall0*2.0, ' Low inclusive wavelength'
-;sxaddpar,hdr, 'WAVALL1', kgeom.waveall1*2.0, ' High inclusive wavelength'
-;sxaddpar,hdr, 'WAVGOOD0',kgeom.wavegood0*2.0, ' Low good wavelength'
-;sxaddpar,hdr, 'WAVGOOD1',kgeom.wavegood1*2.0, ' High good wavelength'
-;sxaddpar,hdr, 'WAVMID',kgeom.wavemid*2.0, ' middle wavelength'
-;
-; wavelength solution RMS
-;sxaddpar,hdr,'AVWVSIG',kgeom.avewavesig,' Avg. bar wave sigma (Ang)'
-;sxaddpar,hdr,'SDWVSIG',kgeom.stdevwavesig,' Stdev. bar wave sigma (Ang)'
-;
-; geometry solution RMS
-;xmo = moment(kgeom.xrsd,/nan)
-;ymo = moment(kgeom.yrsd,/nan)
-;sxaddpar,hdr, 'GEOXGSG', xmo[0], ' Global geometry X sigma (pix)'
-;sxaddpar,hdr, 'GEOYGSG', ymo[0], ' Global geometry Y sigma (pix)'
-;
-; pixel scales
-;sxaddpar,hdr,'PXSCL', kgeom.pxscl*kgeom.xbinsize,' Pixel scale along slice'
-;sxaddpar,hdr,'SLSCL', kgeom.slscl,' Pixel scale purpendicular to slices'
-;
-; geometry origins
-;sxaddpar,hdr, 'CBARSFL', kgeom.cbarsfname,' Continuum bars image'
-;sxaddpar,hdr, 'ARCFL',   kgeom.arcfname, ' Arc image'
-;sxaddpar,hdr, 'CBARSNO', kgeom.cbarsimgnum,' Continuum bars image number'
-;sxaddpar,hdr, 'ARCNO',   kgeom.arcimgnum, ' Arc image number'
-;sxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file'
-
-;
-outno = long(cwave)
+outno = long(new_cwave)
 outarcf = kcwi_get_imname(ppar,outno,"_int",/reduced)
 outcbaf = kcwi_get_imname(ppar,outno-1,"_int",/reduced)
 sxaddpar,hdr,'FRAMENO',outno
@@ -174,7 +159,8 @@ mwrfits, float(sim), outarcf, hdr,/create
 ;
 ; read in cbars image
 cbars = mrdfits(kgeom.cbarsfname,0,chdr)
-sxaddpar,chdr, 'BCWAVE',cwave, ' Blue central wavelength (Ang)'
+sxaddpar,chdr, 'BCWAVE',new_cwave, ' Blue central wavelength (Ang,sim)'
+sxaddpar,chdr, 'BGRATNAM', outgrat, ' Blue Grating name (sim)'
 sxaddpar,chdr,'FRAMENO',outno-1
 sxaddpar,chdr,'OFNAME','kb180000_'+string(outno-1,form='(i05)')+'.fits'
 ; write the cbars file
