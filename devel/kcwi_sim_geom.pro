@@ -4,7 +4,7 @@
 ; Simulate KCRM geometry files
 ;-
 
-pro KCWI_SIM_GEOM, new_cwave, rl=rl, rm1=rm1, rm2=rm2, $
+pro KCWI_SIM_GEOM, new_cwave, ohsky=ohsky, rl=rl, rm1=rm1, rm2=rm2, $
 				rh1=rh1, rh2=rh2, rh3=rh3, rh4=rh4
 
 pre = "KCWI_SIM_GEOM"
@@ -149,6 +149,10 @@ for s=0, 23 do begin
 endfor
 ;
 ; get atlas
+if keyword_set(ohsky) then $
+	if strpos(kgeom.refspec,'thar') ge 0 then $
+		kgeom.refspec = repstr(kgeom.refspec,'thar','ohsky') $
+	else	kgeom.refspec = repstr(kgeom.refspec,'fear','ohsky')
 kcwi_read_atlas,kgeom,ppar,refspec,refwvl,refdisp
 ;
 ; sim image
@@ -171,6 +175,7 @@ endfor
 hdr = headfits(arc_file)
 sxaddpar,hdr, 'BCWAVE',new_cwave, ' Blue central wavelength (Ang,sim)'
 sxaddpar,hdr, 'BGRATNAM', outgrat, ' Blue Grating name (sim)'
+if keyword_set(ohsky) then sxaddpar,hdr,'LMP1NAM','OHSky'
 
 ;
 outno = long(new_cwave)
@@ -186,6 +191,7 @@ mwrfits, float(sim), outarcf, hdr,/create
 cbars = mrdfits(cbars_file,0,chdr)
 sxaddpar,chdr, 'BCWAVE',new_cwave, ' Blue central wavelength (Ang,sim)'
 sxaddpar,chdr, 'BGRATNAM', outgrat, ' Blue Grating name (sim)'
+if keyword_set(ohsky) then sxaddpar,chdr,'LMP1NAM','OHSky'
 sxaddpar,chdr,'FRAMENO',outno-1
 sxaddpar,chdr,'OFNAME','kb180000_'+string(outno-1,form='(i05)')+'.fits'
 ; write the cbars file

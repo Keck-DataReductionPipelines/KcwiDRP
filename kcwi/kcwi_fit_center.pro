@@ -113,6 +113,14 @@ kcwi_read_atlas,kgeom,ppar,refspec,refwvl,refdisp
 ; make sure spectrum is double precision
 specs = double(specs)
 ;
+; take log if we need to
+spec_store = specs
+if strpos(grating,'R') ge 0 and cwvl gt 8100. and cwvl lt 10000. then begin
+	do_log = (1 eq 1)
+	specs = alog10(specs)
+	refspec = alog10(refspec)
+endif else	do_log = (1 eq 0)
+;
 ; get dimensions
 specsz = size(specs,/dim)
 ;
@@ -180,6 +188,14 @@ prelim_spec = reform(specs[minrow:maxrow,refbar])
 prelim_xvals = xvals[minrow:maxrow]
 prelim_subwvl = prelim_wvl[minrow:maxrow]
 ;
+; check for scattered light problems
+mmm,prelim_spec,skymod,skysig
+if skymod gt 0. and skysig gt 0. and skymod-2.*skysig gt 0. then begin
+	prelim_spec -= (skymod-2.*skysig)
+	kcwi_print_info,ppar,pre,'OBS: subtracting scattered light offset of', $
+		(skymod-2.*skysig),format='(a,f9.3)'
+endif
+;
 ; determine the wavelengths to interpolate to and extract the relevant
 ; atlas portion
 qwvl = where(refwvl gt prelim_minwvl and refwvl lt prelim_maxwvl, nqwvl)
@@ -192,16 +208,20 @@ endif
 prelim_refspec = refspec[qwvl]
 prelim_refwvl = refwvl[qwvl]
 ;
+; check for scattered light problems
+mmm,prelim_refspec,skymod,skysig
+if skymod gt 0. and skysig gt 0. and skymod-2.*skysig gt 0. then begin
+	prelim_refspec -= (skymod-2.*skysig)
+	kcwi_print_info,ppar,pre,'REF: subtracting scattered light offset of', $
+		(skymod-2.*skysig),format='(a,f9.3)'
+endif
+;
 ; and interpolate
 prelim_intspec = interpol(prelim_spec,prelim_subwvl,prelim_refwvl,/spline)
 ;
-; check for scattered light problems
-mmm,prelim_intspec,skymod,skysig
-if skymod gt 0. and skysig gt 0. and skymod-2.*skysig gt 0. then begin
-	prelim_intspec = prelim_intspec - (skymod-2.*skysig)
-	kcwi_print_info,ppar,pre,'subtracting scattered light offset of', $
-		(skymod-2.*skysig),format='(a,f9.3)'
-endif
+; let's apply cosine bell taper to both
+prelim_intspec = prelim_intspec * tukeywgt(n_elements(prelim_intspec),ppar.taperfrac)
+prelim_refspec = prelim_refspec * tukeywgt(n_elements(prelim_refspec),ppar.taperfrac)
 ;
 if do_plots then begin
 	plot,prelim_subwvl,prelim_spec/max(prelim_spec),charsi=si,charthi=th,thick=th, $
@@ -214,10 +234,6 @@ if do_plots then begin
 		color=[colordex('black'),colordex('red'),colordex('green')]
 	if interact then read,'next: ',q
 endif
-;
-; let's apply cosine bell taper to both
-prelim_intspec = prelim_intspec * tukeywgt(n_elements(prelim_intspec),ppar.taperfrac)
-prelim_refspec = prelim_refspec * tukeywgt(n_elements(prelim_refspec),ppar.taperfrac)
 ;
 ; now we have two spectra we can try to cross-correlate
 ; (prelim_intspec and prelim_refspec), so let's do that:
@@ -343,6 +359,11 @@ for b = 0,119 do begin
 		; get bell cosine taper to avoid nasty edge effects
 		tkwgt = tukeywgt(n_elements(subrefspec), ppar.taperfrac)
 		;
+		; subtract continuum
+		mmm,subrefspec,skymod,skysig
+		if do_log and skymod gt 0. and skysig gt 0. and skymod-skysig gt 0. then $
+			subrefspec -= (skymod-skysig)
+		;
 		; apply taper to atlas spectrum
 		subrefspec = subrefspec * tkwgt
 		;
@@ -351,6 +372,11 @@ for b = 0,119 do begin
 		;
 		; interpolate the bar spectrum
 		intspec = interpol(subspec,waves,subrefwvl,/spline) * prelim_disp/disps[d]
+		;
+		; subtract continuum
+		mmm,intspec,skymod,skysig
+		if do_log and skymod gt 0. and skysig gt 0. and skymod-skysig gt 0. then $
+			intspec -= (skymod-skysig)
 		;
 		; apply taper to bar spectrum
 		intspec = intspec * tkwgt
@@ -530,6 +556,8 @@ endif else begin
 		endif
 	endif
 endelse
+;
+specs = spec_store
 ;
 return
 end		; kcwi_fit_center
