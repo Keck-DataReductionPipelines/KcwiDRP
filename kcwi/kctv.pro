@@ -94,9 +94,12 @@ common kctv_images, $
    blink_image3, $
    unblink_image, $  
    pan_image
+;
+; get version string
+vstr = kcwi_drp_version(/short)
 
 state = {                   $
-        version: '0.6.1dev', $     ; version # of this release
+        version: vstr, $        ; version # of this release
         panel_side: 2, $        ; 0=left, 1=right, 2=top for panel location
         head_ptr: ptr_new(), $  ; pointer to image header
         astr_ptr: ptr_new(), $  ; pointer to astrometry info structure
@@ -11308,6 +11311,24 @@ if state.kcwicube then begin
    wavelength = crval + ((dindgen(state.nslices) - crpix) * cd) + $
                 (shifta * cd)
    wavelength = wavelength[state.drill_zregion[0]:state.drill_zregion[1]]
+   ; delete obsolete header keywords
+   sxdelpar, outheader, 'CTYPE2'
+   sxdelpar, outheader, 'CTYPE3'
+   sxdelpar, outheader, 'CUNIT2'
+   sxdelpar, outheader, 'CUNIT3'
+   sxdelpar, outheader, 'CNAME2'
+   sxdelpar, outheader, 'CNAME3'
+   sxdelpar, outheader, 'CRVAL2'
+   sxdelpar, outheader, 'CRVAL3'
+   sxdelpar, outheader, 'CRPIX2'
+   sxdelpar, outheader, 'CRPIX3'
+   sxdelpar, outheader, 'CD2_1'
+   sxdelpar, outheader, 'CD1_2'
+   sxdelpar, outheader, 'CD2_2'
+   sxdelpar, outheader, 'CD3_3'
+   sxdelpar, outheader, 'RADESYS'
+   sxdelpar, outheader, 'LONPOLE'
+   sxdelpar, outheader, 'LATPOLE'
 endif else begin
 
    if (crval NE 0) AND (cd NE 0) then begin
@@ -11325,14 +11346,22 @@ cd = wavelength[1] - wavelength[0]
 crval = wavelength[0]
 
 if (ptr_valid(state.head_ptr)) then begin
+   if state.kcwicube then begin
+      sxaddpar, outheader, 'CTYPE1', 'AWAV'
+      sxaddpar, outheader, 'CUNIT1', 'Angstrom', ' AWAV units'
+      sxaddpar, outheader, 'CNAME1', 'KCWI Wavelength', ' AWAV name'
+      sxaddpar, outheader, 'CRPIX1', 1
+   endif
    sxaddpar, outheader, 'CRVAL1', crval
    sxaddpar, outheader, 'CD1_1', cd
+   sxaddpar, outheader, 'HISTORY', '  KCTV '+state.version+' written '+systime(0)
    writefits, filename, spectrum, outheader
 endif else begin
    writefits, filename, spectrum
    spectrum = readfits(filename, outheader)
    sxaddpar, outheader, 'CRVAL1', crval
    sxaddpar, outheader, 'CD1_1', cd
+   sxaddpar, outheader, 'HISTORY', '  KCTV '+state.version+' written '+systime(0)
    writefits, filename, spectrum, outheader
 endelse
 
