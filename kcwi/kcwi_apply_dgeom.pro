@@ -127,11 +127,11 @@ sxaddpar,dhdr,'PXSCL', kdgeom.pxscl*kdgeom.xbinsize,' Pixel scale along slice'
 sxaddpar,dhdr,'SLSCL', kdgeom.slscl,' Pixel scale purpendicular to slices'
 ;
 ; geometry origins
-sxaddpar,dhdr, 'CBARSFL', kdgeom.cbarsfname,' Continuum bars image'
-sxaddpar,dhdr, 'ARCFL',   kdgeom.arcfname, ' Arc image'
 sxaddpar,dhdr, 'CBARSNO', kdgeom.cbarsimgnum,' Continuum bars image number'
+fxaddpar,dhdr, 'CBARSFL', kdgeom.cbarsfname,' Continuum bars image',before='CBARSNO'
 sxaddpar,dhdr, 'ARCNO',   kdgeom.arcimgnum, ' Arc image number'
-sxaddpar,dhdr, 'GEOMFL',  kdgeom.geomfile,' Geometry file'
+fxaddpar,dhdr, 'ARCFL',   kdgeom.arcfname, ' Arc image',before='ARCNO'
+fxaddpar,dhdr, 'GEOMFL',  kdgeom.geomfile,' Geometry file',after='ARCFL'
 ;
 ; get sky coords
 rastr = sxpar(hdr,'RA',count=nra)

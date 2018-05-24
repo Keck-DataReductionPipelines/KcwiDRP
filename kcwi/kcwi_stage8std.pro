@@ -267,7 +267,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					fdecomp,msfile,disk,dir,root,ext
 					sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,mskhdr,'STDCOR','T',' std corrected?'
-					sxaddpar,mskhdr,'MSFILE',root+'.'+ext,' master std file applied'
+					fxaddpar,mskhdr,'MSFILE',root+'.'+ext,' master std file applied',before='HISTORY'
 					sxaddpar,mskhdr,'MSIMNO',msimgno,' master std image number'
 					;
 					; write out flux calibrated mask image
@@ -277,7 +277,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					; update header
 					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,varhdr,'STDCOR','T',' std corrected?'
-					sxaddpar,varhdr,'MSFILE',root+'.'+ext,' master std file applied'
+					fxaddpar,varhdr,'MSFILE',root+'.'+ext,' master std file applied',before='HISTORY'
 					sxaddpar,varhdr,'MSIMNO',msimgno,' master std image number'
 					sxaddpar,varhdr,'BUNIT','FLAM16**2',' brightness units (Flam*10^16)^2'
 					;
@@ -288,7 +288,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					; update header
 					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,hdr,'STDCOR','T',' std corrected?'
-					sxaddpar,hdr,'MSFILE',root+'.'+ext,' master std file applied'
+					fxaddpar,hdr,'MSFILE',root+'.'+ext,' master std file applied',before='HISTORY'
 					sxaddpar,hdr,'MSIMNO',msimgno,' master std image number'
 					sxaddpar,hdr,'BUNIT','FLAM16',' brightness units (Flam*10^16)'
 					;
@@ -311,7 +311,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						; update header
 						sxaddpar,skyhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,skyhdr,'STDCOR','T',' std corrected?'
-						sxaddpar,skyhdr,'MSFILE',root+'.'+ext,' master std file applied'
+						fxaddpar,skyhdr,'MSFILE',root+'.'+ext,' master std file applied',before='HISTORY'
 						sxaddpar,skyhdr,'MSIMNO',msimgno,' master std image number'
 						sxaddpar,skyhdr,'BUNIT','FLAM16',' brightness units (Flam*10^16)'
 						;
@@ -335,7 +335,7 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						; update header
 						sxaddpar,objhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,objhdr,'STDCOR','T',' std corrected?'
-						sxaddpar,objhdr,'MSFILE',root+'.'+ext,' master std file applied'
+						fxaddpar,objhdr,'MSFILE',root+'.'+ext,' master std file applied',before='HISTORY'
 						sxaddpar,objhdr,'MSIMNO',msimgno,' master std image number'
 						sxaddpar,objhdr,'BUNIT','FLAM16',' brightness units (Flam*10^16)'
 						;

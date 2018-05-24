@@ -93,6 +93,13 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		return
 	endif
 	;
+	; read in del wave cube
+	dcub = kcwi_read_image(kcfg.imgnum,ppar,'_dcubed',dhdr,/calib, $
+								status=dstat)
+	if dstat ne 0 then begin
+		kcwi_print_info,ppar,pre,'no delwave cube: EA is only approximate!!',/warning
+	endif
+	;
 	; check standard
 	sname = kcwi_std_name(kcfg.targname)
 	;
@@ -204,6 +211,11 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	; log results
 	kcwi_print_info,ppar,pre,'Std slices; max, sl0, sl1, spatial cntrd', $
 		mxsl,sl0,sl1,cy,format='(a,3i4,f9.2)'
+	;
+	; get dwave spectrum
+	if dstat eq 0 then $
+		dwspec = reform(dcub[mxsl,cy,*]) $
+	else	dwspec = fltarr(sz[2]) + dw
 	;
 	; copy of input cube
 	scub = icub
@@ -328,6 +340,9 @@ pro kcwi_make_std,kcfg,ppar,invsen
 	;
 	; get effective area
 	earea = ubsspec / rspho
+	;
+	; correct to native bins
+	earea = earea * dw / dwspec
 	;
 	; Balmer lines
 	blines = [4861., 4341., 4102., 3970., 3889., 3835.]

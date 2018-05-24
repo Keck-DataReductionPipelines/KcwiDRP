@@ -273,13 +273,12 @@ pro kcwi_stage4flat,procfname,ppfname,help=help,verbose=verbose, display=display
 							pof = ''
 						;
 						; update header
-						fdecomp,mffile,disk,dir,root,ext
 						sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,mskhdr,'FLATCOR','T',' flat corrected?'
-						sxaddpar,mskhdr,'MFFILE',root+'.'+ext,' master flat file applied'
-						sxaddpar,mskhdr,'WAVMAPF',wmf,' Wavemap file'
-						sxaddpar,mskhdr,'SLIMAPF',slf,' Slicemap file'
-						sxaddpar,mskhdr,'POSMAPF',pof,' Posmap file'
+						fxaddpar,mskhdr,'MFFILE',mffile,' master flat file applied',after='FLATCOR'
+						fxaddpar,mskhdr,'WAVMAPF',wmf,' Wavemap file',after='MFFILE'
+						fxaddpar,mskhdr,'SLIMAPF',slf,' Slicemap file',after='WAVMAPF'
+						fxaddpar,mskhdr,'POSMAPF',pof,' Posmap file',after='SLIMAPF'
 						;
 						; write out flat corrected mask image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mskf',/nodir)
@@ -288,10 +287,10 @@ pro kcwi_stage4flat,procfname,ppfname,help=help,verbose=verbose, display=display
 						; update header
 						sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,varhdr,'FLATCOR','T',' flat corrected?'
-						sxaddpar,varhdr,'MFFILE',root+'.'+ext,' master flat file applied'
-						sxaddpar,varhdr,'WAVMAPF',wmf,' Wavemap file'
-						sxaddpar,varhdr,'SLIMAPF',slf,' Slicemap file'
-						sxaddpar,varhdr,'POSMAPF',pof,' Posmap file'
+						fxaddpar,varhdr,'MFFILE',mffile,' master flat file applied',after='FLATCOR'
+						fxaddpar,varhdr,'WAVMAPF',wmf,' Wavemap file',after='MFFILE'
+						fxaddpar,varhdr,'SLIMAPF',slf,' Slicemap file',after='WAVMAPF'
+						fxaddpar,varhdr,'POSMAPF',pof,' Posmap file',after='SLIMAPF'
 						;
 						; write out flat corrected variance image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_varf',/nodir)
@@ -300,10 +299,10 @@ pro kcwi_stage4flat,procfname,ppfname,help=help,verbose=verbose, display=display
 						; update header
 						sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 						sxaddpar,hdr,'FLATCOR','T',' flat corrected?'
-						sxaddpar,hdr,'MFFILE',root+'.'+ext,' master flat file applied'
-						sxaddpar,hdr,'WAVMAPF',wmf,' Wavemap file'
-						sxaddpar,hdr,'SLIMAPF',slf,' Slicemap file'
-						sxaddpar,hdr,'POSMAPF',pof,' Posmap file'
+						fxaddpar,hdr,'MFFILE',mffile,' master flat file applied',after='FLATCOR'
+						fxaddpar,hdr,'WAVMAPF',wmf,' Wavemap file',after='MFFILE'
+						fxaddpar,hdr,'SLIMAPF',slf,' Slicemap file',after='WAVMAPF'
+						fxaddpar,hdr,'POSMAPF',pof,' Posmap file',after='SLIMAPF'
 						;
 						; write out flat corrected intensity image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_intf',/nodir)

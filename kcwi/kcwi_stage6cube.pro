@@ -255,6 +255,19 @@ pro kcwi_stage6cube,procfname,ppfname,help=help,verbose=verbose, display=display
 							endif else $
 								kcwi_print_info,ppar,pre,'no mask image found',/warning
 							;
+							; check for delmap images
+							dfil = kcwi_get_imname(kpars[i],imgnum[i],'_delmap',/reduced)
+							if file_test(dfil,/read) then begin
+								del = mrdfits(dfil,0,delhdr,/fscale,/silent)
+								;
+								sxaddpar,delhdr,'HISTORY','  '+pre+' '+systime(0)
+                                                        	kcwi_apply_geom,del,delhdr,kgeom,kpars[i],dcub,dchdr
+								;
+								; write out sky cube
+								ofil = kcwi_get_imname(kpars[i],imgnum[i],'_dcube',/nodir)
+								kcwi_write_image,dcub,dchdr,ofil,kpars[i]
+							endif
+							;
 							; check for nod-and-shuffle and model sky images
 							sfil = kcwi_get_imname(kpars[i],imgnum[i],'_sky',/reduced)
 							if file_test(sfil,/read) then begin

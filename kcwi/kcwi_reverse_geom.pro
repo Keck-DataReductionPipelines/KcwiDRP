@@ -58,6 +58,7 @@ endif
   outfile = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_wavemap",/reduced)
   outfilepos = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_posmap",/reduced)
   outfilesli = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_slicemap",/reduced)
+  outfiledel = kcwi_get_imname(ppar,kgeom.cbarsimgnum,"_delmap",/reduced)
 
   x = dindgen(nx)
   y = dindgen(ny); ypad
@@ -68,10 +69,12 @@ endif
   yy = onex#y
   
   wavemap = xx-xx-10
+  delmap = wavemap
   slicemap=wavemap+100
   posmap=wavemap-90.0
   tmp_posmap=posmap
   tmp_wavemap = wavemap - wavemap
+  tmp_delmap = tmp_wavemap
   ; loop over slices
   for s=0, 23 do begin
      qs = where(slice eq s and xi gt 0 and finite(xw) and finite(yw), nqs)
@@ -105,11 +108,14 @@ endif
 
      ; set the pixel values to the wavelengths.
      tmp_wavemap[xin-x0out+x0min,yin-ypad] = yout*dwout+wave0out
+     ; delta wavelength
+     tmp_delmap = tmp_wavemap - shift(tmp_wavemap,0,1)
      tmp_posmap[xin-x0out+x0min,yin-ypad] = xout ;-x0min+x0out
      qz = where(tmp_posmap ge -2/xbin and tmp_posmap le 140.0/xbin)
      slicemap[qz]=s
      posmap[qz]=tmp_posmap[qz]
      wavemap[qz] = tmp_wavemap[qz]
+     delmap[qz] = tmp_delmap[qz]
      tmp_posmap[*]=-100
   endfor
 
@@ -145,17 +151,19 @@ endif
   sxaddpar,hdr,'SLSCL', kgeom.slscl,' Pixel scale purpendicular to slices'
   ;
   ; geometry origins
-  sxaddpar,hdr, 'CBARSFL', kgeom.cbarsfname,' Continuum bars image'
-  sxaddpar,hdr, 'ARCFL',   kgeom.arcfname, ' Arc image'
   sxaddpar,hdr, 'CBARSNO', kgeom.cbarsimgnum,' Continuum bars image number'
+  fxaddpar,hdr, 'CBARSFL', kgeom.cbarsfname,' Continuum bars image',before='CBARSNO'
   sxaddpar,hdr, 'ARCNO',   kgeom.arcimgnum, ' Arc image number'
-  sxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file'
+  fxaddpar,hdr, 'ARCFL',   kgeom.arcfname, ' Arc image',before='ARCNO'
+  fxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file',after='ARCFL'
 
   ; write the file
   kcwi_print_info,ppar,pre,"Writing",outfilepos,/info,format='(a,1x,a)'
   mwrfits, float(posmap), outfilepos,hdr,/create
   kcwi_print_info,ppar,pre,"Writing",outfilesli,/info,format='(a,1x,a)'
   mwrfits, byte((slicemap)), outfilesli,hdr,/create
+  kcwi_print_info,ppar,pre,"Writing",outfiledel,/info,format='(a,1x,a)'
+  mwrfits, float(delmap), outfiledel, hdr,/create
   kcwi_print_info,ppar,pre,"Writing",outfile,/info,format='(a,1x,a)'
   mwrfits, float(wavemap), outfile, hdr,/create
   kcwi_print_info,ppar,pre,"Generated reverse maps.",/info

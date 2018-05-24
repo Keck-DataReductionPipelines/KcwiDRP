@@ -136,11 +136,11 @@ hdr = headfits(kgeom.arcfname)
 sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 ;
 ; geometry origins
-sxaddpar,hdr, 'CBARSFL', kgeom.cbarsfname,' Continuum bars image'
-sxaddpar,hdr, 'ARCFL',   kgeom.arcfname, ' Arc image'
 sxaddpar,hdr, 'CBARSNO', kgeom.cbarsimgnum,' Continuum bars image number'
+fxaddpar,hdr, 'CBARSFL', kgeom.cbarsfname,' Continuum bars image',before='CBARSNO'
 sxaddpar,hdr, 'ARCNO',   kgeom.arcimgnum, ' Arc image number'
-sxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file'
+fxaddpar,hdr, 'ARCFL',   kgeom.arcfname, ' Arc image',before='ARCNO'
+fxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file',after='ARCFL'
 ;
 ; write out arcs
 outfile = kcwi_get_imname(ppar,kgeom.arcimgnum,"_arcs",/reduced)

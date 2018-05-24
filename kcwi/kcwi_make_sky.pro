@@ -331,7 +331,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf,fits=fits
 	sxaddpar,shdr,'SKYIMAGE',ofn,' image used for sky model'
 	if tmsk gt 0 then begin
 		sxaddpar,shdr,'SKYMSK','T',' was sky masked?'
-		sxaddpar,shdr,'SKYMSKF', skymf, ' sky mask file'
+		fxaddpar,shdr,'SKYMSKF', skymf, ' sky mask file',before='HISTORY'
 	endif
 	;
 	; write out image file

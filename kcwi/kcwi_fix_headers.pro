@@ -238,7 +238,7 @@ for j=0,nf-1 do begin
 				nfix += 1L
 				;
 				; log modification
-				sxaddpar,h,'HFIXFILE',hmf,' file used to modify header'
+				fxaddpar,h,'HFIXFILE',hmf,' file used to modify header',before='HISTORY'
 				sxaddpar,h,'HFIXDATE',systime(0),' header modify date'
 				;
 				; check to see that imgnum is in header

@@ -227,7 +227,7 @@ pro kcwi_stage6drr,procfname,ppfname,help=help,verbose=verbose, display=display
 					; update header
 					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,hdr,'RRCOR','T',' drr corrected?'
-					sxaddpar,hdr,'MRFILE',mrfile,' master drr file applied'
+					fxaddpar,hdr,'MRFILE',mrfile,' master drr file applied',before='HISTORY'
 					sxaddpar,hdr,'MRIMNO',mrimgno,' master drr image number'
 					;
 					; write out rr corrected image

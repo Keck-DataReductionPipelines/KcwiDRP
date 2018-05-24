@@ -132,7 +132,7 @@ pro kcwi_flatten_cube,cfile,help=help,iscale=iscale,trim=trim,reverse=reverse
 				;
 				; update header
 				sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
-				sxaddpar,hdr,'INCUBEF',cfile,' Inpute cube filename'
+				fxaddpar,hdr,'INCUBEF',cfile,' Inpute cube filename',before='HISTORY'
 				;
 				; remove old WCS
 				sxdelpar,hdr,'NAXIS3'

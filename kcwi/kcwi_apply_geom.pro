@@ -207,11 +207,11 @@ sxaddpar,chdr,'PXSCL', kgeom.pxscl*kgeom.xbinsize,' Pixel scale along slice'
 sxaddpar,chdr,'SLSCL', kgeom.slscl,' Pixel scale purpendicular to slices'
 ;
 ; geometry origins
-sxaddpar,chdr, 'CBARSFL', kgeom.cbarsfname,' Continuum bars image'
-sxaddpar,chdr, 'ARCFL',   kgeom.arcfname, ' Arc image'
 sxaddpar,chdr, 'CBARSNO', kgeom.cbarsimgnum,' Continuum bars image number'
+fxaddpar,chdr, 'CBARSFL', kgeom.cbarsfname,' Continuum bars image',before='CBARSNO'
 sxaddpar,chdr, 'ARCNO',   kgeom.arcimgnum, ' Arc image number'
-sxaddpar,chdr, 'GEOMFL',  kgeom.geomfile,' Geometry file'
+fxaddpar,chdr, 'ARCFL',   kgeom.arcfname, ' Arc image',before='ARCNO'
+fxaddpar,chdr, 'GEOMFL',  kgeom.geomfile,' Geometry file',after='ARCFL'
 ;
 ; get sky coords
 if shuffmod and not skyobs then begin

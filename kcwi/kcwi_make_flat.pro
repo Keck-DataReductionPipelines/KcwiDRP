@@ -794,9 +794,9 @@ pro kcwi_make_flat,ppar,gfile
 	sxaddpar,hdr,'FLATLST',ppar.cflats, $
 		' range list of image numbers for stack'
 	sxaddpar,hdr,'AVRDN',avrn,' Stack RN accounting for root n'
-	sxaddpar,hdr,'WAVMAPF',wmf,' Wavemap file'
-	sxaddpar,hdr,'SLIMAPF',slf,' Slicemap file'
-	sxaddpar,hdr,'POSMAPF',pof,' Posmap file'
+	fxaddpar,hdr,'WAVMAPF',wmf,' Wavemap file',before='HISTORY'
+	fxaddpar,hdr,'SLIMAPF',slf,' Slicemap file',before='HISTORY'
+	fxaddpar,hdr,'POSMAPF',pof,' Posmap file',before='HISTORY'
 	varhdr = hdr
 	imghdr = hdr
 	mskhdr = hdr

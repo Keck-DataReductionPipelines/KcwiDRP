@@ -298,9 +298,8 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				endif
 				;
 				; update header
-				fdecomp,mbfile,disk,dir,root,ext
 				sxaddpar,hdr,'BIASSUB','T',' bias subtracted?'
-				sxaddpar,hdr,'MBFILE',root+'.'+ext,' master bias file subtracted'
+				fxaddpar,hdr,'MBFILE',mbfile,' master bias file subtracted',after='BIASSUB'
 			;
 			; handle the case when no bias frames were taken
 			endif else begin
@@ -637,7 +636,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					endelse
 				endfor
 				sxaddpar,hdr,'BPCLEAN','T',' cleaned bad pixels?'
-				sxaddpar,hdr,'BPFILE',bcfil,' bad pixel map filename'
+				fxaddpar,hdr,'BPFILE',bcfil,' bad pixel map filename'
 			endif else begin
 				sxaddpar,hdr,'BPCLEAN','F',' cleaned bad pixels?'
 				kcwi_print_info,ppar,pre, 'no bad column file for ' + $

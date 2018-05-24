@@ -281,6 +281,25 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 					msk_out = fltarr(sz[0]+2*pad_x, sz[1]+2*pad_y,sz[2]) + 128.
 					msk_out[pad_x:pad_x+sz[0]-1, pad_y:pad_y+sz[1]-1,*] = float(msk)
 					;
+					; read del cube
+					dfil = repstr(sxpar(hdr,'CBARSFL'),'_int','_dcube')
+					if file_test(dfil) then begin
+						del = mrdfits(dfil,0,delhdr,/silent)
+						;
+						; update WCS
+						crpix1 = sxpar(delhdr,'crpix1')
+						crpix2 = sxpar(delhdr,'crpix2')
+						sxaddpar,delhdr,'crpix1',crpix1+float(pad_x)
+						sxaddpar,delhdr,'crpix2',crpix2+float(pad_y)
+					endif else begin
+						del = bytarr(sz)
+						del[0] = 1b	; give delmap value range
+						delhdr = hdr
+						kcwi_print_info,ppar,pre,'delmap image not found for: '+obfil,/warning
+					endelse
+					del_out = fltarr(sz[0]+2*pad_x, sz[1]+2*pad_y,sz[2])
+					del_out[pad_x:pad_x+sz[0]-1, pad_y:pad_y+sz[1]-1,*] = del
+					;
 					; do correction
 					for j = 0,sz[2]-1 do begin
 						dcor = atm_disper(wref,wl[j],air)
@@ -289,6 +308,7 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 						img_out[*,*,j] = fshift(img_out[*,*,j],xsh,ysh)
 						var_out[*,*,j] = fshift(var_out[*,*,j],xsh,ysh)
 						msk_out[*,*,j] = fshift(msk_out[*,*,j],xsh,ysh)
+						del_out[*,*,j] = fshift(del_out[*,*,j],xsh,ysh)
 					endfor
 					msk_out = byte(msk_out)
 					;
@@ -315,6 +335,18 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 					; write out dar corrected variance image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vcubed',/nodir)
 					kcwi_write_image,var_out,varhdr,ofil,kpars[i]
+					;
+					; update header
+					sxaddpar,delhdr,'HISTORY','  '+pre+' '+systime(0)
+					sxaddpar,delhdr,'DARCOR','T',' DAR corrected?'
+					sxaddpar,delhdr,'DARANG',projang_deg,' DAR projection angle (deg)'
+					sxaddpar,delhdr,'DARPADX',pad_x,' DAR X padding (pix)'
+					sxaddpar,delhdr,'DARPADY',pad_y,' DAR Y padding (pix)'
+					sxaddpar,delhdr,'DAREFWL',wref,' DAR reference wl (Ang)'
+					;
+					; write out dar corrected variance image
+					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_dcubed',/nodir)
+					kcwi_write_image,del_out,delhdr,ofil,kpars[i]
 					;
 					; update header
 					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
