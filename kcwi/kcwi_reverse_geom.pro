@@ -155,7 +155,7 @@ endif
   fxaddpar,hdr, 'CBARSFL', kgeom.cbarsfname,' Continuum bars image',before='CBARSNO'
   sxaddpar,hdr, 'ARCNO',   kgeom.arcimgnum, ' Arc image number'
   fxaddpar,hdr, 'ARCFL',   kgeom.arcfname, ' Arc image',before='ARCNO'
-  fxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file',after='ARCFL'
+  fxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file',after='ARCNO'
 
   ; write the file
   kcwi_print_info,ppar,pre,"Writing",outfilepos,/info,format='(a,1x,a)'

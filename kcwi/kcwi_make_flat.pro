@@ -75,8 +75,6 @@ pro kcwi_make_flat,ppar,gfile
 	wmf = repstr(gfile,'_geom', '_wavemap')
 	if file_test(wmf) then begin
 		wavemap = mrdfits(wmf,0,wmfh,/fscale,/silent)
-		fdecomp,wmf,disk,dir,root,ext
-		wmf = root+'.'+ext
 	endif else begin
 		kcwi_print_info,ppar,pre,'no wavemap file',/error
 		return
@@ -86,8 +84,6 @@ pro kcwi_make_flat,ppar,gfile
 	slf = repstr(gfile,'_geom','_slicemap')
 	if file_test(slf) then begin
 		slice = mrdfits(slf,0,slfh,/fscale,/silent)
-		fdecomp,slf,disk,dir,root,ext
-		slf = root+'.'+ext
 	endif else begin
 		kcwi_print_info,ppar,pre,'no slicemap file',/error
 		return
@@ -97,8 +93,6 @@ pro kcwi_make_flat,ppar,gfile
 	pof = repstr(gfile,'_geom','_posmap')
 	if file_test(pof) then begin
 		pos = mrdfits(pof,0,pofh,/fscale,/silent)
-		fdecomp,pof,disk,dir,root,ext
-		pof = root+'.'+ext
 	endif else begin
 		kcwi_print_info,ppar,pre,'no posmap file',/error
 		return
@@ -794,9 +788,9 @@ pro kcwi_make_flat,ppar,gfile
 	sxaddpar,hdr,'FLATLST',ppar.cflats, $
 		' range list of image numbers for stack'
 	sxaddpar,hdr,'AVRDN',avrn,' Stack RN accounting for root n'
-	fxaddpar,hdr,'WAVMAPF',wmf,' Wavemap file',before='HISTORY'
-	fxaddpar,hdr,'SLIMAPF',slf,' Slicemap file',before='HISTORY'
-	fxaddpar,hdr,'POSMAPF',pof,' Posmap file',before='HISTORY'
+	fxaddpar,hdr,'POSMAPF',pof,' Posmap file',after='AVRDN'
+	fxaddpar,hdr,'SLIMAPF',slf,' Slicemap file',after='AVRDN'
+	fxaddpar,hdr,'WAVMAPF',wmf,' Wavemap file',after='AVRDN'
 	varhdr = hdr
 	imghdr = hdr
 	mskhdr = hdr

@@ -238,8 +238,8 @@ for j=0,nf-1 do begin
 				nfix += 1L
 				;
 				; log modification
-				fxaddpar,h,'HFIXFILE',hmf,' file used to modify header',before='HISTORY'
 				sxaddpar,h,'HFIXDATE',systime(0),' header modify date'
+				fxaddpar,h,'HFIXFILE',hmf,' file used to modify header',after='HFIXDATE'
 				;
 				; check to see that imgnum is in header
 				ino = sxpar(h,'IMGNUM',count=nino)

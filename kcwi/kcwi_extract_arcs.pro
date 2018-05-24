@@ -140,7 +140,7 @@ sxaddpar,hdr, 'CBARSNO', kgeom.cbarsimgnum,' Continuum bars image number'
 fxaddpar,hdr, 'CBARSFL', kgeom.cbarsfname,' Continuum bars image',before='CBARSNO'
 sxaddpar,hdr, 'ARCNO',   kgeom.arcimgnum, ' Arc image number'
 fxaddpar,hdr, 'ARCFL',   kgeom.arcfname, ' Arc image',before='ARCNO'
-fxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file',after='ARCFL'
+fxaddpar,hdr, 'GEOMFL',  kgeom.geomfile,' Geometry file',after='ARCNO'
 ;
 ; write out arcs
 outfile = kcwi_get_imname(ppar,kgeom.arcimgnum,"_arcs",/reduced)
