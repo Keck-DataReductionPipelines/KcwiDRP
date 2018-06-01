@@ -58,11 +58,11 @@ if '_intf.fits' not in imfname:
 
 # do inputs exist?
 if os.path.exists(imfname) == False:
-    print("File does not exist: "+imfname)
+    print("Image file does not exist: "+imfname)
     exit()
 
 if os.path.exists(regfname) == False:
-    print("File does not exist: "+regfname)
+    print("Region file does not exist: "+regfname)
     exit()
 
 # create output mask image name
@@ -73,12 +73,9 @@ print("Creating: "+outfile)
 hdu_list = astropy.io.fits.open(imfname)
 header= hdu_list[0].header
 
-# determine the size of the array 
-shape = (header["NAXIS1"], header["NAXIS2"])
-
 # load in the region file 
 r = pyregion.open(regfname).as_imagecoord(header)
-m = r.get_mask(shape=shape)
+m = pyregion.get_mask(r, hdu_list[0])
 
 # write out the mask
 hdu = astropy.io.fits.PrimaryHDU(np.uint8(m))
