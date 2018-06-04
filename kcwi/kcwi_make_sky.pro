@@ -230,7 +230,10 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf,fits=fits
 	fluxes=fluxes[s]
 	;
 	; knots
-	n = fix(sm_sz[1] * 1.25)
+	if tag_exist(ppar,'KNOTSPP') then $
+		knotspp = ppar.knotspp $
+	else	knotspp = 1.25
+	n = fix(sm_sz[1] * knotspp)
 	;
 	; calculate break points for b splines
 	bkpt = min(waves) + findgen(n+1) * (max(waves) - min(waves)) / n

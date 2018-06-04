@@ -144,6 +144,7 @@ tmp = { kcwi_ppar, $
 	masterprof:'', $	; master profile image filename
 ;
 ; Sky processing
+	knotspp:1.25, $		; knots per Y image pixel for sky modeling
 	mastersky:'', $		; master sky image filename
 ;
 ; Relative response processing

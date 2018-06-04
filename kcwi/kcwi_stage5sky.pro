@@ -281,18 +281,20 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 							; scale if good
 							endif else	skscl = obtime / sktime
 						endelse
+						;
+						; update variance in case where non-local sky used
+						; variance is summed with sky squared
+						var = var + (sky*skscl)^2
 					;
 					; sky model is from object image, so no scaling
+					; and variance is not affected by using sky model
 					endif	else	skscl = 1.0
 					kcwi_print_info,ppar,pre,'sky scaling factor',skscl,format='(a,f9.3)'
 					;
 					; do correction
 					img = img - sky * skscl
 					;
-					; variance is multiplied by sky squared
-					var = var + (sky*skscl)^2
-					;
-					; mask is not changed by flat
+					; mask image: not changed by sky subtraction
 					;
 					; update header
 					sxaddpar,mskhdr,'HISTORY','  '+pre+' '+systime(0)
@@ -304,6 +306,8 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mskk',/nodir)
 					kcwi_write_image,msk,mskhdr,ofil,kpars[i]
 					;
+					; variance image
+					;
 					; update header
 					sxaddpar,varhdr,'HISTORY','  '+pre+' '+systime(0)
 					sxaddpar,varhdr,'SKYCOR','T',' sky corrected?'
@@ -313,6 +317,8 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 					; write out sky corrected variance image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_vark',/nodir)
 					kcwi_write_image,var,varhdr,ofil,kpars[i]
+					;
+					; intensity image
 					;
 					; update header
 					sxaddpar,hdr,'HISTORY','  '+pre+' '+systime(0)
