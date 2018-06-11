@@ -731,6 +731,22 @@ continuum subtraction.
 
 5. NEW FEATURES:
 
+KNOTSPP pipeline parameter
+
+In order to give the user more control over sky subtraction, we have added
+a new pipeline parameter that specifies the number of knots per Y pixel
+for the sky fitting with b-splines.  Currently this defaults to a value of
+1.25, but if the fitting is not tracking the sky well, this can be doubled
+to 2.50.  After running kcwi_prep.pro, the default value for this parameter
+will be set in the redux/kcwi.ppar file.  If you only want to change it for
+specific images, you can use the redux/kcwi.proc file and add an entry:
+
+knotspp=2.5
+
+under the specific image entry in the proc file.  The value of 2.5 is just
+an example.  Feel free to experiment until you get the best sky
+subtraction.
+
 SAVEPLOTS keyword
 
 You can now use the saveplots keyword either on the command line when

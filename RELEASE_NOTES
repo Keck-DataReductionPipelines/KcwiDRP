@@ -1,6 +1,17 @@
 # Copyright (c) 2013-2018, California Institute of Technology, all rights reserved
 
-2018-Apr-00: v1.0.2 - Minor release
+2018-Jun-11: v1.0.2 - Minor release
+
+- added knotspp keyword to pipeline parameters to control the number of knots
+	per Y pixel when using b-splines to fit sky (defaults to 1.25).
+
+- fixed bug in variance calculation when sky model is used instead of sky obs.
+
+- fixed bug in kcwi_masksky_ds9.py that swapped image dimensions.
+
+- use OGIP method for putting long strings into keywords in FITS headers.
+
+- added geometry file simulator for KCRM (in development).
 
 - added user contributed software section to the AAAREADME file.
 
