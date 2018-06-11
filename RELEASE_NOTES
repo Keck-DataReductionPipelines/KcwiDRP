@@ -1,6 +1,6 @@
 # Copyright (c) 2013-2018, California Institute of Technology, all rights reserved
 
-2018-Jun-11: v1.0.2 - Minor release
+2018-Jun-11: v1.1.0 - First Minor release
 
 - use delta wavelength map to calculated more accurate effective area curves.
 
