@@ -2,6 +2,10 @@
 
 2018-Jun-11: v1.0.2 - Minor release
 
+- use delta wavelength map to calculated more accurate effective area curves.
+
+- added delta wavelength 2-D map to keep track of the native wavelength bins.
+
 - added knotspp keyword to pipeline parameters to control the number of knots
 	per Y pixel when using b-splines to fit sky (defaults to 1.25).
 
