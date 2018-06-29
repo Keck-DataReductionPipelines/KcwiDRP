@@ -463,7 +463,7 @@ pro kcwi_make_flat,ppar,gfile
         ;; added 171128
         if strtrim(kgeom.gratid) eq 'BM' then begin
            ledge_wave=kcwi_bm_ledge_position(kgeom.cwave)
-	   kcwi_print_info,ppar,pre,'BM ledge wavelength (A)',ledge_wave, $
+	   kcwi_print_info,ppar,pre,'BM ledge calculated wavelength for ref slice (A)',ledge_wave, $
 	   	format='(a,f10.2)'
            if ( ledge_wave ge kgeom.wavegood0 and $
 	   	ledge_wave le kgeom.wavegood1 ) then begin

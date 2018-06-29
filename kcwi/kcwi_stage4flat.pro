@@ -214,7 +214,7 @@ pro kcwi_stage4flat,procfname,ppfname,help=help,verbose=verbose, display=display
 						;
 						; log that we haven't got it
 						if not file_test(mfppfn) then $
-							kcwi_print_info,ppar,pre,'flat file not found: '+mffile,/error
+							kcwi_print_info,ppar,pre,'flat ppar file not found: '+mfppfn,/error
 						if not file_test(gfile) then $
 							kcwi_print_info,ppar,pre,'geom file not found: '+gfile,/error
 					endelse

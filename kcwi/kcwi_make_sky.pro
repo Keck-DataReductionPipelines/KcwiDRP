@@ -281,7 +281,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf,fits=fits
 	if do_plots then begin
 		gp = where(gpts eq 1)
 		if ppar.display ge 2 then begin
-			plot,waves,fluxes,psym=3,title=sxpar(hdr,'OFNAME'), $
+			plot,waves,fluxes,psym=3,title=sxpar(hdr,'OFNAME') + ' Sky', $
 				charsi=si, charthi=th, $
 				xtitle='Wavelength (A)',xthick=th, /xs, $
 				ytitle='Flux (e-)', ythick=th, /ys
@@ -298,7 +298,7 @@ pro kcwi_make_sky,ppar,img,hdr,gfil,sky,sky_mask_file=skymf,fits=fits
 			read,'next: ',ask
 		endif else begin
 			plot,waves[gp],fluxes[gp],psym=3, $
-				title=sxpar(hdr,'OFNAME'), $
+				title=sxpar(hdr,'OFNAME') + ' Sky', $
 				charsi=si, charthi=th, $
 				xtitle='Wavelength (A)',xthick=th, /xs, $
 				ytitle='Flux (e-)', ythick=th, /ys
