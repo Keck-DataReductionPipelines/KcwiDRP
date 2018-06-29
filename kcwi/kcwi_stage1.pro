@@ -361,12 +361,12 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					;
 					; fit overscan vector
 					;
-					; don't let first read pixels skew the fit (they can be high)
-					; are we reading out so that larger y-values are read out first?
+					; don't let first read rows skew the fit (they can be high)
+					; are we reading out so that larger y-valued rows are read out first?
 					if direc[ia,1] lt 0 then begin
 						res = polyfit(xx[0:nx-50],osvec[0:nx-50],order)
 					;
-					; reading out so that smaller y-values are read out first
+					; reading out so that smaller y-valued rows are read out first
 					endif else begin
 						res = polyfit(xx[49:*],osvec[49:*],order)
 					endelse
