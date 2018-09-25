@@ -112,6 +112,7 @@ state = {                   $
         display_equinox: 'J2000', $ ; equinox of displayed coords
         display_base60: 1B, $   ; Display RA,dec in base 60?
         cunit: '', $            ; wavelength units
+	bunit: 'Counts', $	; brightness units
         imagename: '', $        ; image file name
         title_extras: '', $     ; extras for image title
         bitdepth: 8, $          ; 8 or 24 bit color mode?
@@ -5273,6 +5274,7 @@ if (xregistered('kctv_stats')) then begin
 endif
 
 state.cunit = ''
+state.bunit = 'Counts'
 
 if (n_elements(head) LE 1) then begin
 ; If there's no image header...
@@ -5288,6 +5290,9 @@ endif
 ptr_free, state.head_ptr
 state.head_ptr = ptr_new(head)
 
+; get bunit keyword
+bunit = sxpar(head,'BUNIT', count=nbunit)
+if nbunit ge 1 then state.bunit = bunit
 ; get exposure time for photometry, if present, otherwise set to 1s
 state.exptime = float(sxpar(head, 'EXPTIME'))
 if strcompress(string(sxpar(head, 'CURRINST')), /remove_all) eq 'KCWI' then $
@@ -9634,7 +9639,7 @@ ymax = ymaxpoint + blankspace*(ymaxpoint - yminpoint)
 ; needed to avoid a bug in cgcolor.pro for very small window sizes.
 if (!d.x_size GT 10) then begin
    cgplot, radpts[0, *], radpts[1, *], /nodata, xtitle = 'Radius (pixels)', $
-           ytitle = 'Counts',  $
+           ytitle = state.bunit,  $
            charsize=1.2, yrange = [ymin,ymax], yst=1
    cgplot, radpts[0, *], radpts[1, *], psym = pp, color='black', /overplot
    if (finite(mean(out)) EQ 1) then $
@@ -10732,7 +10737,7 @@ cgplot, xspec, spectrum, $
         title = strcompress('Extracted Spectrum'), $
         
         xtitle = 'Row', $
-        ytitle = 'Counts', $
+        ytitle = state.bunit, $
         xmargin=[10,3], $
         xran = [state.lineplot_xmin, state.lineplot_xmax], $
         yran = [state.lineplot_ymin, state.lineplot_ymax], $
@@ -10821,7 +10826,7 @@ cgplot, xspec, spectrum, $
         xst = 3, yst = 3, psym = 10, $
         title = tlab, $
         xtitle = 'Wavelength (A)', $
-        ytitle = 'Counts', $
+        ytitle = state.bunit, $
         xmargin=[10,3], $
         xran = [state.lineplot_xmin, state.lineplot_xmax], $
         yran = [state.lineplot_ymin, state.lineplot_ymax], $
