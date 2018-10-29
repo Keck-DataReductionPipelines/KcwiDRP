@@ -1,61 +1,32 @@
-pro kcwi_resamp_err, imno
+pro kcwi_resamp_err, ppar, kproc, kcfg, img, hdr, slice_map, slice, $
+	offset, wl, perr, ps=ps, noclean=noclean
 ;+
 ; kcwi_resamp_err - calculate resampling error plot for given image number
 ;-
 pre = 'KCWI_RESAMP_ERR'
 ;
-; read ppar
-ppar = kcwi_read_ppar()
+; get slice
+if n_params() lt 2 then $
+	slice = 11 $
+else	slice = fix(slice)
 ;
-; read proc
-kproc = kcwi_read_proc(ppar,pfn,imgnum,count=nproc)
+; get offset
+if n_params() lt 3 then $
+	off = 0 $
+else	off = fix(offset)
 ;
-; check image number
-t = where(imgnum eq imno, nim)
-if nim ne 1 then begin
-	kcwi_print_info,ppar,pre, $
-	'Wrong number of entries in proc file for image number', $
-	imno, nim,/error
-	return
-endif
-kproc = kproc[t[0]]
+; get image number
+imno = sxpar(hdr,'FRAMENO')
 ;
 ; get output image number and filename
 out_imno = imno + 10L^(ppar.fdigits-1)
 out_fname = ppar.froot + string(out_imno,format='(i0'+strn(ppar.fdigits)+')') +$
 	'_intk.fits'
 ;
-; find intk.fits file
-fspec = ppar.froot + string(imno,format='(i0'+strn(ppar.fdigits)+')')
-flist = file_search(fspec+'_intk.fit*', count=nf)
-;
-; did we find the file?
-if nf ne 1 then begin
-	kcwi_print_info,ppar,pre, $
-		'Wrong number of _intk.fits files found for image number', $
-		imno,nf,/error
-	return
-endif
-;
-; read in config
-kcfg = kcwi_read_cfgs('./',filespec=flist[0])
-;
-; read in the slice map
-smf = repstr(kproc.geomcbar,'_int.fits','_slicemap.fits')
-slice = mrdfits(smf, 0)
-;
-; find the middle of slice 11
-sl = where(slice eq 11)
-slinds = array_indices(slice,sl)
-row = fix(avg(slinds[0,*]))
-;
-; read image in
-img = mrdfits(flist[0], 0, hdr)
-;
-; update header
-sxaddpar,hdr,'FRAMENO',out_imno
-sxaddpar,hdr,'OFNAME',ppar.froot + $
-	string(out_imno,format='(i0'+strn(ppar.fdigits)+')') + '.fits'
+; find the middle of slice
+sl = where(slice_map eq slice)
+slinds = array_indices(slice_map,sl)
+row = fix(avg(slinds[0,*])) + off
 ;
 ; generate fake counts
 outim = img - img
@@ -70,14 +41,15 @@ for k=0,2 do junk = gettok(imsum, ' ')
 sta = strsplit(imsum,/extract)
 ;
 ; add entry to proc file
-openw,pl,kproc.prfname,/append,/get_lun
+rpf = 'resamp_err.proc'
+openw,pl,rpf,/append,/get_lun
 printf,pl,out_imno,imsum,format='(i6,1x,a)'
 printf,pl,'geomcbar='+kproc.geomcbar
 printf,pl,'geomarc='+kproc.geomarc
 free_lun,pl
 ;
 ; run kcwi_stage6cube
-kcwi_stage6cube
+kcwi_stage6cube,rpf
 ;
 ; read in cube
 cube_fname = ppar.froot + string(out_imno,format='(i0'+strn(ppar.fdigits)+')')+$
@@ -104,10 +76,23 @@ perr = ((csum/6000.) - 1.0) * 100.
 g = where(wl gt wl0 and wl lt wl1)
 ylims = get_plotlims(perr[g])
 ;
-; get title
-tlab = 'Im: ' +strn(imno)+ ', '+sta[0]+', '+sta[6]+', '+sta[7]+', '+sta[9]
+; get note
+tlab = 'Im: ' +strn(imno)+ ', '+sta[0]+', '+sta[6]+', '+sta[7]+', '+sta[9] + $
+	', Sl: '+strn(slice)+', Off: '+strn(off)
+;print,tlab
 ;
-; plot ratio
+; postscript output requested?
+if keyword_set(ps) then begin
+	psf = 'resamp_err_'+strn(imno)+'_'+string(slice,form='(i02)')
+	if off lt 0 then $
+		psf = psf + '_m'+strn(abs(off)) $
+	else	if off gt 0 then $
+		psf = psf + '_p'+strn(abs(off))
+	psfile,psf
+	!p.font = 0
+endif
+;
+; plot percent error
 deepcolor
 !p.background=colordex('white')
 !p.color=colordex('black')
@@ -117,6 +102,15 @@ plot,wl,perr,title=tlab,charsi=si,charthi=th, $
 	xthick=th,xtitle='WAVELENGTH(A)',xran=[wl0,wl1],/xs, $
 	ythick=th,ytitle='% ERROR',yran=ylims,/ys
 oplot,!x.crange,[0,0],linesty=2
+;
+if keyword_set(ps) then psclose
+;
+if not keyword_set(noclean) then begin
+	file_delete,out_fname
+	file_delete,rpf
+	file_delete,cube_fname
+	file_delete,'kcwi_stage6cube.log'
+endif
 
 return
 end
