@@ -73,7 +73,7 @@ wl = sxpar(chdr, 'CRVAL3') + findgen(csize[2]) * sxpar(chdr, 'CD3_3')
 wg0 = sxpar(chdr, 'WAVGOOD0')
 wg1 = sxpar(chdr, 'WAVGOOD1')
 gw = where(wl ge wg0 and wl le wg1)
-vec = cube[*, 10:(csize[1]-10), min(gw):max(gw)]
+vec = cube[*, 10:(csize[1]-10), (min(gw)+5):(max(gw)-5)]
 mo = moment(vec)
 print,'Min,Max,Avg,Std: ',min(vec),max(vec),mo[0],sqrt(mo[1])
 sxaddpar,chdr,'SAMERMIN',min(vec),' resampling error min'
