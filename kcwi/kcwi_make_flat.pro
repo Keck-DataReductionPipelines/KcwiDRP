@@ -137,6 +137,12 @@ pro kcwi_make_flat,ppar,gfile
 	; read first image
 	im = mrdfits(ffil,0,hdr,/fscale,/silent)
 	;
+	; id label
+	idlab = 'Sl: ' + strtrim(kgeom.ifunam,2) + $
+		', Fl: ' + strtrim(kgeom.filter,2) + $
+		', Gr: ' + strtrim(kgeom.gratid,2) + $
+		', Im: ' + strn(sxpar(hdr,'FRAMENO'))
+	;
 	; get type of flat
 	internal = (strpos(sxpar(hdr,'CALTYPE'),'cflat') ge 0)
 	;
@@ -384,7 +390,7 @@ pro kcwi_make_flat,ppar,gfile
 			;
 			; plot wavelength slope fit
 			yrng = get_plotlims([ywflat,pl_wlf])
-			plot,wwflat,ywflat,title='Wavelength Slope',charsi=si, $
+			plot,wwflat,ywflat,title='Wavelength Slope for '+idlab,charsi=si, $
 				charthi=th,xthick=th,ythick=th, $
 				xtitle='Wavelength (A)', $
 				ytitle='Flux (e-)',yran=yrng,/ys
@@ -399,7 +405,7 @@ pro kcwi_make_flat,ppar,gfile
 			;
 			; plot vignetting correction fits
 			plot,pos[q],mflat[q]/poly(wavemap[q],wavlinfit), $
-				title='Vignetting Characterization', $
+				title='Vignetting for '+idlab, $
 				charthi=th,charsi=si,psym=3,/nodata, $
 				xtitle='Slice Pos (px)',xthick=th,/xs, $
 				ytitle='Ratio',ythick=th
@@ -500,7 +506,7 @@ pro kcwi_make_flat,ppar,gfile
               yfr[qcorr]/=ratio
 	      if do_plots then begin
 	      	yrng = get_plotlims([smyledge,ylfit])
-              	plot,xledge,smyledge,title='BM Grating Ledge',psym=3, $
+              	plot,xledge,smyledge,title='BM Grating Ledge for '+idlab,psym=3, $
 			charsi=si,charth=th, $
 			xtitle='Wavelength (A)',xthick=th,/xs, $
 			ytitle='Flux (e-)',ythick=th,yran=yrng,/ys
@@ -571,7 +577,7 @@ pro kcwi_make_flat,ppar,gfile
 
 	if do_plots then begin
 		yrng = get_plotlims([yfitr,yfitb,yfitd])
-		plot,xfr,yfitr,title='Blue/Red Fits',charsi=si,charthi=th, $
+		plot,xfr,yfitr,title='Blue/Red Fits for '+idlab,charsi=si,charthi=th, $
 			xtitle='Wavelength (A)',xthick=th, $
 			xrange=[kgeom.waveall0,kgeom.waveall1],/xs, $
 			ytitle='Flux (e-)',ythick=th,yrange=yrng,/ys
@@ -620,7 +626,7 @@ pro kcwi_make_flat,ppar,gfile
 			; plot the blue fits
 			yrng = get_plotlims([refbluefit,bluefit])
 			yrng[0] = 0.
-			plot,waves[qbluefit],refbluefit,title='Blue Fits', $
+			plot,waves[qbluefit],refbluefit,title='Blue Fits for '+idlab, $
 				charsi=si,charthi=th, $
 				xtitle='Wavelength (A)',xthick=th,/xs, $
 				ytitle='Flux (e-)',ythick=th,yran=yrng,/ys
@@ -637,7 +643,7 @@ pro kcwi_make_flat,ppar,gfile
 			yrng = get_plotlims([refbluefit/bluefit, $
 				bluelinfit[0]+bluelinfit[1]*waves[qbluefit]])
 			plot,waves[qbluefit],refbluefit/bluefit, $
-				title='Blue Ratio',charsi=si,charthi=th, $
+				title='Blue Ratio for '+idlab,charsi=si,charthi=th, $
 				xtitle='Wavelength (A)',xthick=th,/xs, $
 				ytitle='Ratio',ythick=th,yran=yrng,/ys
 			oplot,waves[qbluefit], $
@@ -657,7 +663,7 @@ pro kcwi_make_flat,ppar,gfile
 			; plot the red fits
 			yrng = get_plotlims([refredfit,redfit])
 			yrng[0] = 0.
-			plot,waves[qredfit],refredfit,title='Red Fits', $
+			plot,waves[qredfit],refredfit,title='Red Fits for '+idlab, $
 				charsi=si,charthi=th, $
 				xtitle='Wavelength (A)',xthick=th,/xs, $
 				ytitle='Flux (e-)',ythick=th,yran=yrng,/ys
@@ -674,7 +680,7 @@ pro kcwi_make_flat,ppar,gfile
 			yrng = get_plotlims([refredfit/redfit, $
 				redlinfit[0]+redlinfit[1]*waves[qredfit]])
 			plot,waves[qredfit],refredfit/redfit, $
-				title='Red Ratio',charsi=si,charth=th, $
+				title='Red Ratio for '+idlab,charsi=si,charth=th, $
 				xtitle='Wavelength (A)',xthick=th,/xs, $
 				ytitle='Ratio',ythick=th,yran=yrng,/ys
 			oplot,waves[qredfit], $
@@ -722,7 +728,7 @@ pro kcwi_make_flat,ppar,gfile
 	
 	if do_plots then begin
 		yrng = get_plotlims([yfr,ally,yfitall,yfitr])
-		plot,xfr,yfr,title='B-Spline Fits to Flat: '+flrute,psym=3, $
+		plot,xfr,yfr,title='Master Illumination for '+idlab,psym=3, $
 			charsi=si,charthi=th, /nodata, $
 			xtitle='Wavelength (A)',xthick=th, $
 			xrange=[kgeom.waveall0,kgeom.waveall1],/xs, $
