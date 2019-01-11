@@ -45,6 +45,7 @@ pro kcwi_std_fwhm,imno,ppar,ps=ps,verbose=verbose,display=display,fwhm=fwhm
 	pre = 'KCWI_STD_FWHM'
 	version = kcwi_drp_version()
 	q=''
+	fwhm = -1.
 	;
 	; check input
 	if n_params(0) lt 1 then begin
