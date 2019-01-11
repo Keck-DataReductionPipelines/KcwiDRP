@@ -39,7 +39,8 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2014-APR-22	Initial Revision
 ;-
-pro kcwi_std_fwhm,imno,ppar,ps=ps,verbose=verbose,display=display,fwhm=fwhm
+pro kcwi_std_fwhm,imno,ppar,ps=ps,verbose=verbose,display=display,fwhm=fwhm, $
+	allbins=allbins
 	;
 	; setup
 	pre = 'KCWI_STD_FWHM'
@@ -149,7 +150,9 @@ pro kcwi_std_fwhm,imno,ppar,ps=ps,verbose=verbose,display=display,fwhm=fwhm
 		mxsl,cx,format='(a,i4,f9.2)'
 	;
 	; get vector and fit
-	vec = reform(total(icub[mxsl,gx0:gx1,zave-2:zave+2],3))/5.0
+	if keyword_set(allbins) then $
+		vec = reform(total(icub[mxsl,gx0:gx1,z0:z1],3))/float(z1-z0) $
+	else	vec = reform(total(icub[mxsl,gx0:gx1,zave-2:zave+2],3))/5.0
 	res = gaussfit(xx,vec,a)
 	fwhm = a[2]*2.354*pxscl
 	;
