@@ -141,13 +141,14 @@ pro kcwi_std_fwhm,imno,ppar,ps=ps,verbose=verbose,display=display,fwhm=fwhm
 	y1 = sxpar(invh,'INVSY1')
 	pxscl = sxpar(hdr,'PXSCL')*3600.0
 	xx = findgen(gx1-gx0+1)+gx0
+	zave = (z0 + z1) / 2
 	;
 	; log results
 	kcwi_print_info,ppar,pre,'Std slices; max, spatial cntrd', $
 		mxsl,cx,format='(a,i4,f9.2)'
 	;
 	; get vector and fit
-	vec = reform(total(icub[mxsl,gx0:gx1,z0:z1],3)/float(z1-z0))
+	vec = reform(total(icub[mxsl,gx0:gx1,zave-2:zave+2],3))/5.0
 	res = gaussfit(xx,vec,a)
 	fwhm = a[2]*2.354*pxscl
 	;
