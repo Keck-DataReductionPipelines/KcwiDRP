@@ -46,12 +46,14 @@
 ;	2013-SEP-09	Added loglun keyword
 ;	2013-SEP-13	Now use KCWI_PPAR struct for parameters
 ;	2017-NOV-15	Group all flats
+;	2019-FEB-04	More robust grouping
 ;-
 pro kcwi_group_flats, kcfg, ppar, fcfg
 	;
 	; setup
 	pre = 'KCWI_GROUP_FLATS'
 	ppar.nfgrps = 0
+	max_ngroups = 20
 	;
 	; instantiate and init a KCWI_CFG struct for the flat groups
 	F = {kcwi_cfg}
@@ -68,105 +70,186 @@ pro kcwi_group_flats, kcfg, ppar, fcfg
 	;
 	; get groups for each
 	ngroups = 0
+	fcfg = replicate(fcfg,max_ngroups)
 	;
 	; cont flats
 	if ncflats gt 0 then begin
-		rangepar,cflats,cflist
-		cfgroups = strsplit(cflist,',',/extract,count=ncgroups)
-		if ncgroups gt 0 then begin
-			fgroups = cfgroups
-			ngroups += ncgroups
-		endif
+		cfcfg = kcfg[cflats]
+		cp = 0
+		while cp lt ncflats do begin
+			m = kcwi_match_cfg(cfcfg,cfcfg[cp],ppar)
+			;
+			; fresh copy of KCWI_PPAR struct
+			pp = ppar
+			;
+			; get image numbers for this group
+			nims = n_elements(m)
+			imnums = m.imgnum
+			rangepar,imnums,rl
+			;
+			; copy params
+			tags = tag_names(cfcfg[cp])
+			for it = 0, n_elements(tags)-1 do $
+				fcfg[ngroups].(it) = cfcfg[cp].(it)
+			;
+			; set parameters
+			pp.cflats		= rl
+			fcfg[ngroups].grouplist	= rl
+			fcfg[ngroups].nimages	= nims
+			;
+			; configuration
+			fcfg[ngroups].imgtype	= cfcfg[cp].imgtype
+			;
+			; use first image in group
+			gi = cfcfg[cp].imgnum
+			grt = strmid(cfcfg[cp].obsfname,0, $
+				     strpos(cfcfg[cp].obsfname,'.fit'))
+			;
+			; files and directories
+			pp.masterflat		= grt + '_mflat.fits'
+			pp.ppfname		= grt + '_mflat.ppar'
+			;
+			fcfg[ngroups].groupnum	= gi
+			fcfg[ngroups].groupfile	= pp.masterflat
+			fcfg[ngroups].grouppar	= pp.ppfname
+			;
+			; status
+			pp.nfgrps		= 1
+			pp.initialized		= 1
+			pp.progid		= pre
+			fcfg[ngroups].initialized	= 1
+			;
+			; write out ppar file
+			kcwi_write_ppar,pp
+			;
+			ngroups += 1
+			cp += nims
+		endwhile
 	endif
 	;
 	; dome flats
 	if ndflats gt 0 then begin
-		rangepar,dflats,dflist
-		dfgroups = strsplit(dflist,',',/extract,count=ndgroups)
-		if ndgroups gt 0 then begin
-			if ngroups gt 0 then begin
-				fgroups = [fgroups,dfgroups]
-			endif else begin
-				fgroups = dfgroups
-			endelse
-			ngroups += ndgroups
-		endif
+		dfcfg = kcfg[dflats]
+		cp = 0
+		while cp lt ndflats do begin
+			m = kcwi_match_cfg(dfcfg,dfcfg[cp],ppar)
+			;
+			; fresh copy of KCWI_PPAR struct
+			pp = ppar
+			;
+			; get image numbers for this group
+			nims = n_elements(m)
+			imnums = m.imgnum
+			rangepar,imnums,rl
+			;
+			; copy params
+			tags = tag_names(dfcfg[cp])
+			for it = 0, n_elements(tags)-1 do $
+				fcfg[ngroups].(it) = dfcfg[cp].(it)
+			;
+			; set parameters
+			pp.cflats		= rl
+			fcfg[ngroups].grouplist	= rl
+			fcfg[ngroups].nimages	= nims
+			;
+			; configuration
+			fcfg[ngroups].imgtype	= dfcfg[cp].imgtype
+			;
+			; use first image in group
+			gi = dfcfg[cp].imgnum
+			grt = strmid(dfcfg[cp].obsfname,0, $
+				     strpos(dfcfg[cp].obsfname,'.fit'))
+			;
+			; files and directories
+			pp.masterflat		= grt + '_mflat.fits'
+			pp.ppfname		= grt + '_mflat.ppar'
+			;
+			fcfg[ngroups].groupnum	= gi
+			fcfg[ngroups].groupfile	= pp.masterflat
+			fcfg[ngroups].grouppar	= pp.ppfname
+			;
+			; status
+			pp.nfgrps		= 1
+			pp.initialized		= 1
+			pp.progid		= pre
+			fcfg[ngroups].initialized	= 1
+			;
+			; write out ppar file
+			kcwi_write_ppar,pp
+			;
+			ngroups += 1
+			cp += nims
+		endwhile
 	endif
 	;
 	; twilight flats
 	if ntflats gt 0 then begin
-		rangepar,tflats,tflist
-		tfgroups = strsplit(tflist,',',/extract,count=ntgroups)
-		if ntgroups gt 0 then begin
-			if ngroups gt 0 then begin
-				fgroups = [fgroups,tfgroups]
-			endif else begin
-				fgroups = tfgroups
-			endelse
-			ngroups += ntgroups
-		endif
+		tfcfg = kcfg[tflats]
+		cp = 0
+		while cp lt ntflats do begin
+			m = kcwi_match_cfg(tfcfg,tfcfg[cp],ppar)
+			;
+			; fresh copy of KCWI_PPAR struct
+			pp = ppar
+			;
+			; get image numbers for this group
+			nims = n_elements(m)
+			imnums = m.imgnum
+			rangepar,imnums,rl
+			;
+			; copy params
+			tags = tag_names(tfcfg[cp])
+			for it = 0, n_elements(tags)-1 do $
+				fcfg[ngroups].(it) = tfcfg[cp].(it)
+			;
+			; set parameters
+			pp.cflats		= rl
+			fcfg[ngroups].grouplist	= rl
+			fcfg[ngroups].nimages	= nims
+			;
+			; configuration
+			fcfg[ngroups].imgtype	= tfcfg[cp].imgtype
+			;
+			; use first image in group
+			gi = tfcfg[cp].imgnum
+			grt = strmid(tfcfg[cp].obsfname,0, $
+				     strpos(tfcfg[cp].obsfname,'.fit'))
+			;
+			; files and directories
+			pp.masterflat		= grt + '_mflat.fits'
+			pp.ppfname		= grt + '_mflat.ppar'
+			;
+			fcfg[ngroups].groupnum	= gi
+			fcfg[ngroups].groupfile	= pp.masterflat
+			fcfg[ngroups].grouppar	= pp.ppfname
+			;
+			; status
+			pp.nfgrps		= 1
+			pp.initialized		= 1
+			pp.progid		= pre
+			fcfg[ngroups].initialized	= 1
+			;
+			; write out ppar file
+			kcwi_write_ppar,pp
+			;
+			ngroups += 1
+			cp += nims
+		endwhile
 	endif
 	;
 	; if we have flat groups, set them up
 	if ngroups gt 0 then begin
 		;
 		; setup KCWI_CFG struct for groups
-		fcfg = replicate(fcfg, ngroups)
+		fcfg = fcfg[0:(ngroups-1)]
 		;
 		; report number of flat groups
 		ppar.nfgrps = ngroups
 		kcwi_print_info,ppar,pre,'Number of flat groups',ngroups
-		;
-		; loop over flat groups
-		for i=0,ngroups-1 do begin
-			;
-			; fresh copy of KCWI_PPAR struct
-			pp = ppar
-			;
-			; get image numbers for this group
-			rangepar,fgroups[i],flist
-			nims = n_elements(flist)
-			imnums = kcfg[flist].imgnum
-			rangepar,imnums,rl
-			;
-			; copy params
-			f = flist[0]
-			tags = tag_names(fcfg)
-			for it = 0, n_elements(tags)-1 do $
-				fcfg[i].(it) = kcfg[f].(it)
-			;
-			; set parameters
-			pp.cflats		= rl
-			fcfg[i].grouplist	= rl
-			fcfg[i].nimages		= nims
-			;
-			; configuration
-			fcfg[i].imgtype		= kcfg[f].imgtype
-			;
-			; use first image in group
-			gi = kcfg[f].imgnum
-			grt = strmid(kcfg[f].obsfname,0, $
-				     strpos(kcfg[f].obsfname,'.fit'))
-			;
-			; files and directories
-			pp.masterflat		= grt + '_mflat.fits'
-			pp.ppfname		= grt + '_mflat.ppar'
-			;
-			fcfg[i].groupnum	= gi
-			fcfg[i].groupfile	= pp.masterflat
-			fcfg[i].grouppar	= pp.ppfname
-			;
-			; status
-			pp.nfgrps		= 1
-			pp.initialized		= 1
-			pp.progid		= pre
-			fcfg[i].initialized	= 1
-			;
-			; write out ppar file
-			kcwi_write_ppar,pp
-		endfor	; loop over flat groups
-	endif else $
+	endif else begin
+		fcfg = fcfg[0]
 		kcwi_print_info,ppar,pre,'no flat frames found',/warning
+	endelse
 	;
 	return
 end
