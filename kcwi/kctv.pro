@@ -2,15 +2,15 @@
 ;
 ; NAME:
 ;       KCTV
-; 
-; PURPOSE: 
+;
+; PURPOSE:
 ;       Interactive display of 2-D images.
 ;
-; CATEGORY: 
+; CATEGORY:
 ;       Image display.
 ;
 ; CALLING SEQUENCE:
-;       kctv [,array_name OR fits_file] [,min = min_value] [,max=max_value] 
+;       kctv [,array_name OR fits_file] [,min = min_value] [,max=max_value]
 ;           [,/linear] [,/log] [,/histeq] [,/asinh] [,/block]
 ;           [,/align] [,/stretch] [,header = header]
 ;
@@ -28,17 +28,17 @@
 ;       min:        minimum data value to be mapped to the color table
 ;       max:        maximum data value to be mapped to the color table
 ;       linear:     use linear stretch
-;       log:        use log stretch 
+;       log:        use log stretch
 ;       histeq:     use histogram equalization
 ;       asinh:      use asinh stretch
 ;       block:      block IDL command line until KCTV terminates
 ;       align:      align image with previously displayed image
 ;       stretch:    keep same min and max as previous image
 ;       header:     FITS image header (string array) for use with data array
-;       
+;
 ; OUTPUTS:
-;       None.  
-; 
+;       None.
+;
 ; COMMON BLOCKS:
 ;       kctv_state:  contains variables describing the display state
 ;       kctv_images: contains the internal copies of the display image
@@ -55,14 +55,14 @@
 ;
 ; EXAMPLE:
 ;       To start kctv running, just enter the command 'kctv' at the idl
-;       prompt, either with or without an array name or fits file name 
+;       prompt, either with or without an array name or fits file name
 ;       as an input.  Only one kctv window will be created at a time,
 ;       so if one already exists and another image is passed to kctv
-;       from the idl command line, the new image will be displayed in 
+;       from the idl command line, the new image will be displayed in
 ;       the pre-existing kctv window.
 ;
 ; MODIFICATION HISTORY:
-;       Written/maintained by Aaron J. Barth, with contributions by 
+;       Written/maintained by Aaron J. Barth, with contributions by
 ;       numerous others.  First released 17 December 1998.
 ;
 ;       This version is 3.0b8, last modified 28 Nov 2016.
@@ -92,7 +92,7 @@ common kctv_images, $
    blink_image1, $
    blink_image2, $
    blink_image3, $
-   unblink_image, $  
+   unblink_image, $
    pan_image
 ;
 ; get version string
@@ -191,9 +191,9 @@ state = {                   $
         frame: 1L, $            ; put frame around ps output?
         framethick: 6, $        ; thickness of frame
         plot_coord: [0L, 0L], $ ; cursor position for a plot
-        vector_coord1: [0L, 0L], $ ; 1st cursor position in vector plot  
+        vector_coord1: [0L, 0L], $ ; 1st cursor position in vector plot
         vector_coord2: [0L, 0L], $ ; 2nd cursor position in vector plot
-        vector_pixmap_id: 0L, $ ; id for vector pixmap 
+        vector_pixmap_id: 0L, $ ; id for vector pixmap
         vectorpress: 0L, $      ; are we plotting a vector?
         vectorstart: [0L,0L], $ ; device x,y of vector start
         plot_type:'', $         ; plot type for plot window
@@ -212,6 +212,10 @@ state = {                   $
         lineplot_xmax: 0.0, $   ; xmax for lineplot windows
         lineplot_ymin: 0.0, $   ; ymin for lineplot windows
         lineplot_ymax: 0.0, $   ; ymax for lineplot windows
+        lineplot_zoom_x0: 0.0, $ ; zoom first x coord
+        lineplot_zoom_x1: 0.0, $ ; zoom second x coord
+        lineplot_zoom_y0: 0.0, $ ; zoom first y coord
+        lineplot_zoom_y1: 0.0, $ ; zoom second y coord
         lineplot_xmin_orig: 0.0, $ ; original xmin saved from histplot
         lineplot_xmax_orig: 0.0, $ ; original xmax saved from histplot
         lineplot_x_vsize:0, $   ; !d.x_vsize
@@ -273,7 +277,7 @@ state = {                   $
         pixtable_tbl_id: 0L, $  ; pixel table widget_table id
         stats_base_id: 0L, $    ; base widget for image stats
         statboxsize: 11L, $     ; box size for computing statistics
-        statbox_id: 0L, $       ; widget id for stat box size 
+        statbox_id: 0L, $       ; widget id for stat box size
         stat_npix_id: 0L, $     ; widget id for # pixels in stats box
         statxcenter_id: 0L, $   ; widget id for stat box x center
         statycenter_id: 0L, $   ; widget id for stat box y center
@@ -300,11 +304,11 @@ state = {                   $
         x_xstart_id: 0, $       ; widget id for extraction x start
         x_xend_id: 0, $         ; widget id for extraction x end
         x_traceorder: 3, $      ; extraction trace fit order
-        x_traceorder_id: 0, $   ; widget id for extraction trace order 
+        x_traceorder_id: 0, $   ; widget id for extraction trace order
         x_xlower: -5, $         ; extraction lower bound
         x_xlower_id: 0, $       ; widget id for extraction lower
         x_xupper: 5, $          ; extraction upper bound
-        x_xupper_id: 0, $       ; widget id for extraction upper 
+        x_xupper_id: 0, $       ; widget id for extraction upper
         x_backsub: 1, $         ; background subtraction on?
         x_back1: -25, $         ; extraction lower background 1
         x_back2: -15, $         ; extraction lower background 2
@@ -322,7 +326,7 @@ state = {                   $
         drill_wavestart_id: 0L, $ ; widget id for drill wave start
         drill_waveend_id: 0L, $ ; widget id for drill wave end
         activator: 0, $         ; is "activator" mode on?
-        delimiter: '/', $       ; filesystem level delimiter 
+        delimiter: '/', $       ; filesystem level delimiter
         default_align: 1, $     ; align next image by default?
         default_autoscale: 1, $ ; autoscale images by default?
         default_stretch: 0, $   ; use previous minmax for new image?
@@ -406,7 +410,7 @@ state.ncolors = !d.table_size
 ; For normal idl operation, use the following.  Comment this block out
 ; if compiling kctv for idl vm.
 if (!d.n_colors LE 256) then begin
-    state.bitdepth = 8 
+    state.bitdepth = 8
 endif else begin
     state.bitdepth = 24
 ;    device, decomposed=0  ; not needed any more as of ATV 3.0
@@ -436,7 +440,7 @@ if (state.panel_side LE 1) then begin   ; panels on left or right
                       uvalue = 'kctv_base', $
                       /tlb_size_events)
 endif else begin                        ; panels on top
-   base = widget_base(title = 'kctv', $  
+   base = widget_base(title = 'kctv', $
                       /column, /base_align_right, $
                       app_mbar = top_menu, $
                       uvalue = 'kctv_base', $
@@ -546,13 +550,13 @@ top_menu = cw_pdmenu(top_menu, top_menu_desc, $
                      uvalue = 'top_menu')
 
 ; set arrangement of side/top panel and main draw window based on the
-; value of state.panel_side. 
+; value of state.panel_side.
 
 ; from here on the setup is very different if the panel is to be on
 ; top vs on the left or right side
 
 if (state.panel_side LE 1) then begin
-; panel on left or right   
+; panel on left or right
 
    case state.panel_side of
       0: begin
@@ -566,19 +570,19 @@ if (state.panel_side LE 1) then begin
          side_base = widget_base(base,/column,/base_align_center)
       end
    endcase
-  
+
    state.colorbar_size = [256,6]
 
    sidebasesize = 254
    buttonsize = 72
 
    track_base = widget_base(side_base, /row, frame=1, xsize=sidebasesize+6)
-   
+
    colorbar_base = widget_base(side_base, $
                                uvalue = 'colorbar_base', $
                                /column, /base_align_left, $
                                frame = 1, scr_xsize = sidebasesize+6)
-   
+
    info_base = widget_base(side_base, /column, frame = 1, $
                            /base_align_center)
    buttonbar_base = widget_base(side_base,column=3,scr_xsize=sidebasesize+6, $
@@ -586,21 +590,21 @@ if (state.panel_side LE 1) then begin
 
    tmp_string = string(1000, 1000, 1.0e-10, $
                        format = '("(",i5,",",i5,")        ",g12.5)' )
-   
+
    state.location_bar_id = widget_label (info_base, $
                                          value = tmp_string,  $
                                          uvalue = 'location_bar', frame=0)
-   
+
    tmp_string = string(12, 12, 12.001, -60, 60, 60.01, ' J2000', $
             format = '(i2,":",i2,":",f6.3,"  ",i3,":",i2,":",f5.2," ",a6)' )
-   
+
    state.wcs_bar_id = widget_label (info_base, $
                                     value = tmp_string,  $
                                     uvalue = 'wcs_bar', frame=0)
 
    minmax_base = widget_base(info_base,/row,/base_align_center, $
                              scr_xsize = sidebasesize)
-   
+
    state.min_text_id = cw_field(minmax_base, $
                                 uvalue = 'min_text', $
                                 /floating,  $
@@ -608,7 +612,7 @@ if (state.panel_side LE 1) then begin
                                 value = state.min_value,  $
                                 /return_events, $
                                 xsize = 11)
-   
+
    state.max_text_id = cw_field(minmax_base, $
                                 uvalue = 'max_text', $
                                 /floating,  $
@@ -616,21 +620,21 @@ if (state.panel_side LE 1) then begin
                                 value = state.max_value, $
                                 /return_events, $
                                 xsize = 11)
-   
+
    state.pan_widget_id = widget_draw(track_base, $
                                      xsize = state.pan_window_size, $
                                      ysize = state.pan_window_size, $
                                      frame = 0, uvalue = 'pan_window', $
                                      /button_events, /motion_events)
-   
+
    dummy_spacing_widget = widget_base(track_base,xsize=5)
-   
-   
+
+
    track_window = widget_draw(track_base, $
                               xsize=state.track_window_size, $
                               ysize=state.track_window_size, $
                               frame=0, uvalue='track_window')
-  
+
    modebase = widget_base(buttonbar_base, /column, /base_align_center)
    mode_label = widget_label(modebase,value='Mouse Mode:')
 
@@ -647,52 +651,52 @@ if (state.panel_side LE 1) then begin
    invert_button = widget_button(button_base1, $
                                  value = 'Invert', $
                                  uvalue = 'invert', xsize=buttonsize)
-   
+
    restretch_button = widget_button(button_base1, $
                                     value = 'Restretch', $
                                     uvalue = 'restretch_button', $
                                     xsize=buttonsize)
-   
+
    autoscale_button = widget_button(button_base1, $
                                     uvalue = 'autoscale_button', $
                                     value = 'AutoScale', xsize=buttonsize)
-   
+
    fullrange_button = widget_button(button_base1, $
                                     uvalue = 'full_range', $
                                     value = 'FullRange', xsize=buttonsize)
-   
+
    zoomin_button = widget_button(button_base2, $
                                  value = 'ZoomIn', $
                                  uvalue = 'zoom_in', xsize=buttonsize)
-   
+
    zoomout_button = widget_button(button_base2, $
                                   value = 'ZoomOut', $
                                   uvalue = 'zoom_out', xsize=buttonsize)
-   
+
    zoomone_button = widget_button(button_base2, $
                                   value = 'Zoom1', $
                                   uvalue = 'zoom_one', xsize=buttonsize)
-   
+
    fullview_button = widget_button(button_base2, $
                                    value = 'FullView', $
                                    uvalue = 'fullview', xsize=buttonsize)
-   
+
    center_button = widget_button(button_base2, $
                                  value = 'Center', $
                                  uvalue = 'center', xsize=buttonsize)
-   
+
    state.draw_widget_id = widget_draw(state.draw_base_id, $
                                       uvalue = 'draw_window', $
                                       /motion_events,  /button_events, $
                                       keyboard_events=2, $
                                       scr_xsize = state.draw_window_size[0], $
-                                      scr_ysize = state.draw_window_size[1]) 
-   
+                                      scr_ysize = state.draw_window_size[1])
+
    state.colorbar_widget_id = widget_draw(colorbar_base, $
                                           uvalue = 'colorbar', $
                                           scr_xsize = sidebasesize, $
                                           scr_ysize = state.colorbar_size[1])
-   
+
 endif else begin
 ; widget layout for info panels on top
 
@@ -705,9 +709,9 @@ endif else begin
    buttonbar_base = widget_base(base,column=7, /base_align_right)
 
    info_base = widget_base(row1base, column=1, /base_align_right)
- 
+
    track_base = widget_base(row1base, /row)
-   
+
    state.min_text_id = cw_field(info_base, $
                                 uvalue = 'min_text', $
                                 /floating,  $
@@ -715,7 +719,7 @@ endif else begin
                                 value = state.min_value,  $
                                 /return_events, $
                                 xsize = 11)
-   
+
    state.max_text_id = cw_field(info_base, $
                                 uvalue = 'max_text', $
                                 /floating,  $
@@ -726,14 +730,14 @@ endif else begin
 
    tmp_string = string(1000, 1000, 1.0e-10, $
                        format = '("(",i5,",",i5,")        ",g12.5)' )
-   
+
    state.location_bar_id = widget_label (info_base, $
                                          value = tmp_string,  $
                                          uvalue = 'location_bar', frame=1)
 
    tmp_string = string(12, 12, 12.001, -60, 60, 60.01, ' J2000', $
             format = '(i2,":",i2,":",f6.3,"  ",i3,":",i2,":",f5.2," ",a6)' )
-   
+
    state.wcs_bar_id = widget_label (info_base, $
                                     value = tmp_string,  $
                                     uvalue = 'wcs_bar', frame=1)
@@ -750,16 +754,16 @@ endif else begin
                                      ysize = state.pan_window_size, $
                                      frame = 0, uvalue = 'pan_window', $
                                      /button_events, /motion_events)
-   
+
    dummy_spacing_widget2 = widget_base(track_base,xsize=1)
-   
+
    track_window = widget_draw(track_base, $
                               xsize=state.track_window_size, $
                               ysize=state.track_window_size, $
                               frame=0, uvalue='track_window')
-   
+
    mode_label = widget_label(buttonbar_base,value='Mouse Mode: ')
-   
+
    modelist = ['Color', 'Zoom', 'Blink', 'ImExam', 'Vector']
    mode_droplist_id = widget_droplist(buttonbar_base, $
                                       uvalue = 'mode', $
@@ -778,7 +782,7 @@ endif else begin
    zoomin_button = widget_button(buttonbar_base, $
                                  value = 'ZoomIn', $
                                  uvalue = 'zoom_in', xsize=buttonsize)
- 
+
    restretch_button = widget_button(buttonbar_base, $
                                     value = 'Restretch', $
                                     uvalue = 'restretch_button', $
@@ -787,7 +791,7 @@ endif else begin
    zoomout_button = widget_button(buttonbar_base, $
                                   value = 'ZoomOut', $
                                   uvalue = 'zoom_out', xsize=buttonsize)
- 
+
    autoscale_button = widget_button(buttonbar_base, $
                                     uvalue = 'autoscale_button', $
                                     value = 'AutoScale', xsize=buttonsize)
@@ -795,37 +799,37 @@ endif else begin
    zoomone_button = widget_button(buttonbar_base, $
                                   value = 'Zoom1', $
                                   uvalue = 'zoom_one', xsize=buttonsize)
-   
+
    fullrange_button = widget_button(buttonbar_base, $
                                     uvalue = 'full_range', $
                                     value = 'FullRange', xsize=buttonsize)
-     
+
    fullview_button = widget_button(buttonbar_base, $
                                    value = 'FullView', $
                                    uvalue = 'fullview', xsize=buttonsize)
-   
+
    done_button = widget_button(buttonbar_base, $
                                value = 'Quit', $
                                uvalue = 'done', xsize = buttonsize)
-  
+
    center_button = widget_button(buttonbar_base, $
                                  value = 'Center', $
                                  uvalue = 'center', xsize=buttonsize)
-   
+
 ; Set widget y size for small screens. not needed any more?
 ; state.draw_window_size[1] = state.draw_window_size[1] < $
 ;  (state.screen_ysize - 300)
-   
+
    state.draw_base_id = widget_base(base, /column, /base_align_left, $
-                                    uvalue = 'draw_base', frame = 0) 
-   
+                                    uvalue = 'draw_base', frame = 0)
+
    state.draw_widget_id = widget_draw(state.draw_base_id, $
                                       uvalue = 'draw_window', $
                                       /motion_events,  /button_events, $
                                       keyboard_events=2, $
                                       scr_xsize = state.draw_window_size[0], $
-                                      scr_ysize = state.draw_window_size[1]) 
-   
+                                      scr_ysize = state.draw_window_size[1])
+
 endelse
 
 ; Create the widgets on screen
@@ -851,7 +855,7 @@ widget_control, state.draw_widget_id, event_pro = 'kctv_draw_event'
 widget_control, state.pan_widget_id, event_pro = 'kctv_pan_event'
 
 ; Find window padding sizes needed for resizing routines.
-; Add extra padding for menu bar, since this isn't included in 
+; Add extra padding for menu bar, since this isn't included in
 ; the geometry returned by widget_info.
 ; Also add extra padding for margin (frame) in draw base.
 
@@ -887,7 +891,7 @@ end
 
 pro kctv_colorbar
 
-; Routine to tv the colorbar 
+; Routine to tv the colorbar
 
 common kctv_state
 
@@ -945,7 +949,7 @@ kctv_getwindow
 
 
 case event_name of
-    
+
 ; File menu options:
     'ReadFits': begin
         kctv_readfits, newimage=newimage
@@ -976,7 +980,7 @@ case event_name of
     'SaveRegions': kctv_saveregion
     'Quit':     if (state.activator EQ 0) then kctv_shutdown $
       else state.activator = 0
-; ColorMap menu options:            
+; ColorMap menu options:
     'Grayscale': kctv_getct, 0
     'Blue-White': kctv_getct, 1
     'Red-Orange': kctv_getct, 3
@@ -1024,15 +1028,15 @@ case event_name of
     'EraseAll': kctverase
 
 ; Blink options:
-    'SetBlink1': begin   
+    'SetBlink1': begin
         kctv_setwindow, state.draw_window_id
-        blink_image1 = tvrd(true = true) 
+        blink_image1 = tvrd(true = true)
     end
-    'SetBlink2': begin   
+    'SetBlink2': begin
         kctv_setwindow, state.draw_window_id
         blink_image2 = tvrd(true = true)
     end
-    'SetBlink3': begin   
+    'SetBlink3': begin
         kctv_setwindow, state.draw_window_id
         blink_image3 = tvrd(true = true)
     end
@@ -1066,45 +1070,45 @@ case event_name of
 
 ; Coordinate system options:
     '--------------':
-    'RA,dec (J2000)': BEGIN 
+    'RA,dec (J2000)': BEGIN
        state.display_coord_sys = 'RA--'
        state.display_equinox = 'J2000'
        state.display_base60 = 1B
        kctv_gettrack             ; refresh coordinate window
-    END 
-    'RA,dec (B1950)': BEGIN 
+    END
+    'RA,dec (B1950)': BEGIN
        state.display_coord_sys = 'RA--'
        state.display_equinox = 'B1950'
        state.display_base60 = 1B
        kctv_gettrack             ; refresh coordinate window
     END
-    'RA,dec (J2000) deg': BEGIN 
+    'RA,dec (J2000) deg': BEGIN
        state.display_coord_sys = 'RA--'
        state.display_equinox = 'J2000'
        state.display_base60 = 0B
        kctv_gettrack             ; refresh coordinate window
-    END 
-    'Galactic': BEGIN 
+    END
+    'Galactic': BEGIN
        state.display_coord_sys = 'GLON'
        kctv_gettrack             ; refresh coordinate window
-    END 
-    'Ecliptic (J2000)': BEGIN 
+    END
+    'Ecliptic (J2000)': BEGIN
        state.display_coord_sys = 'ELON'
        state.display_equinox = 'J2000'
        kctv_gettrack             ; refresh coordinate window
-    END 
-    'Native': BEGIN 
-       IF (state.wcstype EQ 'angle') THEN BEGIN 
+    END
+    'Native': BEGIN
+       IF (state.wcstype EQ 'angle') THEN BEGIN
           state.display_coord_sys = strmid((*state.astr_ptr).ctype[0], 0, 4)
           state.display_equinox = state.equinox
           kctv_gettrack          ; refresh coordinate window
-       ENDIF 
-    END 
+       ENDIF
+    END
 
-    
-; Help options:            
+
+; Help options:
     'KCTV Help': kctv_help
-    
+
     else: print, 'Unknown event in file menu!'
 endcase
 
@@ -1174,13 +1178,13 @@ case event.type of
     end
     2: begin                ; motion event
         if (state.cstretch EQ 1) then begin
-            kctv_stretchct, event.x, event.y, /getcursor 
+            kctv_stretchct, event.x, event.y, /getcursor
             kctv_resetwindow
             if (state.bitdepth EQ 24) then kctv_refresh, /fast
-        endif else begin 
+        endif else begin
             kctv_draw_motion_event, event
         endelse
-    end 
+    end
 endcase
 
 widget_control, state.draw_widget_id, /sensitive, /input_focus
@@ -1205,7 +1209,7 @@ if (event.type EQ 5) then begin
 
     if (!d.name NE state.graphicsdevice and eventchar NE 'q') then return
     if (state.bitdepth EQ 24) then true = 1 else true = 0
-    
+
     case eventchar of
         '1': kctv_move_cursor, eventchar
         '2': kctv_move_cursor, eventchar
@@ -1232,19 +1236,19 @@ if (event.type EQ 5) then begin
         '-': kctv_zoom, 'out'
         '=': kctv_zoom, 'in'
         '+': kctv_zoom, 'in'
-        '!': begin  
+        '!': begin
             kctv_setwindow, state.draw_window_id
-            blink_image1 = tvrd(true = true) 
+            blink_image1 = tvrd(true = true)
             kctv_resetwindow
         end
-        '@': begin  
+        '@': begin
             kctv_setwindow, state.draw_window_id
-            blink_image2 = tvrd(true = true) 
+            blink_image2 = tvrd(true = true)
             kctv_resetwindow
         end
-        '#': begin  
+        '#': begin
             kctv_setwindow, state.draw_window_id
-            blink_image3 = tvrd(true = true) 
+            blink_image3 = tvrd(true = true)
             kctv_resetwindow
         end
         'q': if (state.activator EQ 0) then kctv_shutdown $
@@ -1252,7 +1256,7 @@ if (event.type EQ 5) then begin
 
         else:                   ;any other key press does nothing
     endcase
- 
+
 endif
 
 ; Starting with IDL 6.0, can generate events on arrow keys:
@@ -1264,8 +1268,8 @@ if (event.type EQ 6) then begin
         8: kctv_move_cursor, '2'
         else:
     endcase
-endif 
-   
+endif
+
 if (xregistered('kctv', /noshow)) then $
   widget_control, state.draw_widget_id, /sensitive, /input_focus
 
@@ -1281,7 +1285,7 @@ pro kctv_activate
 ; current session variables, type "kctv_activate" to temporarily
 ; activate kctv again.  This will de-activate the command line but
 ; allow kctv to be used until you hit "q" in kctv or kill the kctv
-; window. 
+; window.
 
 ; Also, if you need to call kctv from a command-line idl program and
 ; have that program wait until you're done looking at an image in kctv
@@ -1303,7 +1307,7 @@ while (activator EQ 1) do begin
 
     wait, 0.01
     void = widget_event(/nowait)
-    
+
 ; If kctv is killed by the window manager, then by the time we get here
 ; the state structure has already been destroyed by kctv_shutdown.
     if (size(state, /type) NE 8) then begin
@@ -1311,7 +1315,7 @@ while (activator EQ 1) do begin
     endif else begin
         activator = state.activator
     endelse
-    
+
 endwhile
 
 widget_control, /hourglass
@@ -1359,10 +1363,10 @@ pro kctv_draw_zoom_event, event
 ; Event handler for zoom mode
 
 common kctv_state
- 
+
 if (!d.name NE state.graphicsdevice) then return
 
-if (event.type EQ 0) then begin 
+if (event.type EQ 0) then begin
     case event.press of
         1: kctv_zoom, 'in', /recenter
         2: kctv_zoom, 'none', /recenter
@@ -1397,19 +1401,19 @@ case event.type of
             unblink_image = tvrd(true = true)
             state.newrefresh = 0
         endif
-        
+
         case event.press of
             1: if n_elements(blink_image1) GT 1 then $
               tv, blink_image1, true = true
             2: if n_elements(blink_image2) GT 1 then $
               tv, blink_image2, true = true
             4: if n_elements(blink_image3) GT 1 then $
-              tv, blink_image3, true = true  
+              tv, blink_image3, true = true
             else: event.press = 0 ; in case of errors
         endcase
         state.blinks = (state.blinks + event.press) < 7
     end
-    
+
     1: begin                    ; button release
         if (n_elements(unblink_image) EQ 0) then return ; just in case
         kctv_setwindow, state.draw_window_id
@@ -1433,12 +1437,12 @@ case event.type of
               tv, blink_image3, true = true $
             else tv, unblink_image, true = true
             5: if n_elements(blink_image1) GT 1 then begin
-                tv, blink_image1, true = true 
+                tv, blink_image1, true = true
             endif else if n_elements(blink_image3) GT 1 then begin
                 tv, blink_image3, true = true
             endif else begin
                 tv, unblink_image, true = true
-            endelse 
+            endelse
             6: if n_elements(blink_image2) GT 1 then begin
                 tv, blink_image2, true = true
             endif else if n_elements(blink_image4) GT 1 then begin
@@ -1479,7 +1483,7 @@ if (event.type EQ 0) then begin
          end
       2: kctv_zoom, 'none', /recenter
       4: kctv_showstats
-      else: 
+      else:
    endcase
 endif
 
@@ -1500,7 +1504,7 @@ common kctv_state
 
 if (!d.name NE state.graphicsdevice) then return
 
-tmp_event = [event.x, event.y]            
+tmp_event = [event.x, event.y]
 state.coord = $
   round( (0.5 >  ((tmp_event / state.zoom_factor) + state.offset) $
           < (state.image_size - 0.5) ) - 0.5)
@@ -1508,8 +1512,8 @@ kctv_gettrack
 
 widget_control, state.draw_widget_id, /sensitive, /input_focus
 
-;if kctv_pixtable on, then create a 5x5 array of pixel values and the 
-;X & Y location strings that are fed to the pixel table 
+;if kctv_pixtable on, then create a 5x5 array of pixel values and the
+;X & Y location strings that are fed to the pixel table
 
 if (xregistered('kctv_pixtable', /noshow)) then kctv_pixtable_update
 
@@ -1519,7 +1523,7 @@ end
 
 pro kctv_draw_vector_event, event
 
-; Check for left button press/depress, then get coords at point 1 and 
+; Check for left button press/depress, then get coords at point 1 and
 ; point 2.  Call kctv_lineplot.  Calculate vector distance between
 ; endpoints and plot Vector Distance vs. Pixel Value with kctv_vectorplot
 
@@ -1532,7 +1536,7 @@ if (!d.name NE state.graphicsdevice) then return
 
 case event.type of
    0: begin                     ; button press
-      if ((event.press EQ 1) AND (state.vectorpress EQ 0)) then begin          
+      if ((event.press EQ 1) AND (state.vectorpress EQ 0)) then begin
          ; left button press
          state.vector_coord1[0] = state.coord[0]
          state.vector_coord1[1] = state.coord[1]
@@ -1540,7 +1544,7 @@ case event.type of
          kctv_drawvector, event
          state.vectorpress = 1
       endif
-      if ((event.press EQ 2) AND (state.vectorpress EQ 0)) then begin          
+      if ((event.press EQ 2) AND (state.vectorpress EQ 0)) then begin
          ; left button press
          state.vector_coord1[0] = state.coord[0]
          state.vector_coord1[1] = state.coord[1]
@@ -1548,7 +1552,7 @@ case event.type of
          kctv_drawvector, event
          state.vectorpress = 2
       endif
-      if ((event.press EQ 4) AND (state.vectorpress EQ 0)) then begin 
+      if ((event.press EQ 4) AND (state.vectorpress EQ 0)) then begin
          ; right button press
          state.vector_coord1[0] = state.coord[0]
          state.vector_coord1[1] = state.coord[1]
@@ -1558,7 +1562,7 @@ case event.type of
       endif
    end
    1: begin                     ; button release
-      if ((event.release EQ 1) AND (state.vectorpress EQ 1)) then begin 
+      if ((event.release EQ 1) AND (state.vectorpress EQ 1)) then begin
          ; left button release
          state.vectorpress = 0
          state.vector_coord2[0] = state.coord[0]
@@ -1566,7 +1570,7 @@ case event.type of
          kctv_drawvector, event
          kctv_vectorplot, /newcoord
       endif
-      if ((event.release EQ 2) AND (state.vectorpress EQ 2)) then begin 
+      if ((event.release EQ 2) AND (state.vectorpress EQ 2)) then begin
          ; left button release
          state.vectorpress = 0
          state.vector_coord2[0] = state.coord[0]
@@ -1585,7 +1589,7 @@ case event.type of
 
    end
    2: begin                     ; motion event
-      kctv_draw_motion_event, event 
+      kctv_draw_motion_event, event
       if (state.vectorpress EQ 1) then kctv_drawvector, event
       if (state.vectorpress EQ 2) then kctv_drawvector, event
       if (state.vectorpress EQ 4) then kctv_drawdepth, event
@@ -1623,7 +1627,7 @@ if (event.type EQ 1) then begin
     wdelete, state.vector_pixmap_id
 endif
 
-; motion event: redraw with new vector    
+; motion event: redraw with new vector
 if (event.type EQ 2) then begin
     kctv_setwindow, state.draw_window_id
 
@@ -1666,7 +1670,7 @@ if (event.type EQ 1) then begin
     wdelete, state.vector_pixmap_id
 endif
 
-; motion event: redraw with new vector    
+; motion event: redraw with new vector
 if (event.type EQ 2) then begin
 
     kctv_setwindow, state.draw_window_id
@@ -1735,7 +1739,7 @@ kctv_getwindow
 
 case uvalue of
 
-    'kctv_base': begin     
+    'kctv_base': begin
         c = where(tag_names(event) EQ 'ENTER', count)
         if (count EQ 0) then begin       ; resize event
             kctv_resize
@@ -1773,7 +1777,7 @@ case uvalue of
             endelse
         endif
     end
-    
+
     'restretch_button': kctv_restretch
 
     'min_text': begin     ; text entry in 'min = ' box
@@ -1801,7 +1805,7 @@ case uvalue of
         kctv_set_minmax
         kctv_displayall
     end
-    
+
     'zoom_in':  kctv_zoom, 'in'         ; zoom buttons
     'zoom_out': kctv_zoom, 'out'
     'zoom_one': kctv_zoom, 'one'
@@ -1843,7 +1847,7 @@ if (window EQ 1) then begin  ; print message to popup window
           dialog_message(msg_txt,/error,dialog_parent=state.base_id)
         'information': t = $
           dialog_message(msg_txt,/information,dialog_parent=state.base_id)
-        else: 
+        else:
     endcase
 endif else begin           ;  print message to IDL console
     message = strcompress(strupcase(msgtype) + ': ' + msg_txt)
@@ -1883,7 +1887,7 @@ end
 pro kctv_refresh, fast = fast, panfast = panfast
 
 ; Make the display image from the scaled_image, and redisplay the pan
-; image and tracking image. 
+; image and tracking image.
 ; The /fast option skips the steps where the display_image is
 ; recalculated from the main_image.  The /fast option is used in 24
 ; bit color mode, when the color map has been stretched but everything
@@ -1914,7 +1918,7 @@ cgimage, pan_image, state.pan_offset[0], state.pan_offset[1], /tv, $
 kctv_panoplot
 kctv_resetwindow
 
-; redisplay the pan image 
+; redisplay the pan image
 
 kctv_setwindow, state.pan_window_id
 
@@ -1935,10 +1939,10 @@ kctv_panoplot, /nobox
 kctv_resetwindow
 
 if (state.bitdepth EQ 24) then kctv_colorbar
-   
+
 ; redisplay the tracking image
 if (not(keyword_set(fast))) then kctv_gettrack
-   
+
 kctv_resetwindow
 
 state.newrefresh = 1
@@ -1956,7 +1960,7 @@ pro kctv_getdisplay
 common kctv_state
 common kctv_images
 
-widget_control, /hourglass   
+widget_control, /hourglass
 
 display_image = bytarr(state.draw_window_size[0], state.draw_window_size[1])
 
@@ -1964,8 +1968,8 @@ view_min = round(state.centerpix - $
                   (0.5 * state.draw_window_size / state.zoom_factor))
 view_max = round(view_min + state.draw_window_size / state.zoom_factor)
 
-view_min = (0 > view_min < (state.image_size - 1)) 
-view_max = (0 > view_max < (state.image_size - 1)) 
+view_min = (0 > view_min < (state.image_size - 1))
+view_max = (0 > view_max < (state.image_size - 1))
 
 newsize = round( (view_max - view_min + 1) * state.zoom_factor) > 1
 startpos = abs( round(state.offset * state.zoom_factor) < 0)
@@ -2123,12 +2127,12 @@ end
 pro kctv_get_minmax, uvalue, newvalue
 
 ; Change the min and max state variables when user inputs new numbers
-; in the text boxes. 
+; in the text boxes.
 
 common kctv_state
 
 case uvalue of
-    
+
     'min_text': begin
         if (newvalue LT state.max_value) then begin
             state.min_value = newvalue
@@ -2140,7 +2144,7 @@ case uvalue of
             state.max_value = newvalue
         endif
     end
-        
+
 endcase
 
 kctv_set_minmax
@@ -2187,7 +2191,7 @@ kctv_refresh, /panfast
 if (n_elements(recenter) GT 0) then begin
     newpos = (state.coord - state.offset + 0.5) * state.zoom_factor
     kctv_setwindow,  state.draw_window_id
-    tvcrs, newpos[0], newpos[1], /device 
+    tvcrs, newpos[0], newpos[1], /device
     kctv_resetwindow
     kctv_gettrack
 endif
@@ -2204,7 +2208,7 @@ common kctv_state
 ; set the zoom level so that the full image fits in the display window
 
 sizeratio = float(state.image_size) / float(state.draw_window_size)
-maxratio = (max(sizeratio)) 
+maxratio = (max(sizeratio))
 
 state.zoom_level = floor((alog(maxratio) / alog(2.0)) * (-1))
 state.zoom_factor = (2.0)^(state.zoom_level)
@@ -2237,7 +2241,7 @@ case ichange of
             main_image = reverse(main_image,1)
         endelse
     end
-    
+
     'y': begin
         if ptr_valid(state.astr_ptr) then begin
             hreverse, main_image, *(state.head_ptr), $
@@ -2248,10 +2252,10 @@ case ichange of
             main_image = reverse(main_image,2)
         endelse
     end
-    
-    
+
+
     'xy': begin
-        
+
         if ptr_valid(state.astr_ptr) then begin
             hreverse, main_image, *(state.head_ptr), $
               main_image, *(state.head_ptr), 1, /silent
@@ -2264,7 +2268,7 @@ case ichange of
             main_image = reverse(main_image,2)
         endelse
     end
-    
+
     else:  print,  'problem in kctv_invert!'
 endcase
 
@@ -2295,7 +2299,7 @@ if (keyword_set(get_angle)) then begin
   formdesc = ['0, float,, label_left=Rotation Angle: ', $
               '1, base, , row', $
               '0, button, Cancel, quit', $
-              '0, button, Rotate, quit']    
+              '0, button, Rotate, quit']
 
   textform = cw_form(formdesc, /column, title = 'Rotate')
 
@@ -2309,8 +2313,8 @@ if (not(keyword_set(get_angle)) OR (rchange EQ '90') or $
    OR (rchange EQ '0')) then begin
     case rchange of
         '0':                    ; do nothing
-        
-        '90': begin 
+
+        '90': begin
             if ptr_valid(state.astr_ptr) then begin
                 hrotate, main_image, *(state.head_ptr), $
                   main_image, *(state.head_ptr), 3
@@ -2326,7 +2330,7 @@ if (not(keyword_set(get_angle)) OR (rchange EQ '90') or $
                 main_image = rotate(main_image, 2)
             endelse
         end
-        '270': begin    
+        '270': begin
             if ptr_valid(state.astr_ptr) then begin
                 hrotate, main_image, *(state.head_ptr), $
                   main_image, *(state.head_ptr), 1
@@ -2335,7 +2339,7 @@ if (not(keyword_set(get_angle)) OR (rchange EQ '90') or $
             endelse
         end
     endcase
-    
+
 endif else begin
 ; arbitrary rotation angle
     rchange = float(rchange)
@@ -2347,7 +2351,7 @@ endif else begin
         main_image = rot(main_image, rchange, $
                          cubic=-0.5, missing=0)
     endelse
-    
+
 endelse
 
 ;Update header information after rotation if header is present
@@ -2370,9 +2374,9 @@ end
 
 pro kctv_autoscale
 
-; Routine to auto-scale the image.  
+; Routine to auto-scale the image.
 
-common kctv_state 
+common kctv_state
 common kctv_images
 
 widget_control, /hourglass
@@ -2401,7 +2405,7 @@ state.asinh_beta = state.skysig
 
 kctv_set_minmax
 
-end  
+end
 
 ;--------------------------------------------------------------------
 
@@ -2435,7 +2439,7 @@ if (state.scaling EQ 1) then begin
       + offset
     state.min_value = 10.^(sfac*(sx-sy)+alog10(state.min_value - offset)) $
       + offset
-    
+
 endif
 
 ; Try different behavior in asinh mode: usually want to keep the min
@@ -2445,7 +2449,7 @@ if (state.scaling EQ 3) then begin
       asinh(state.min_value / state.asinh_beta)
 
     state.max_value = sinh(sfac*(sx+sy) + $
-          asinh(state.min_value/state.asinh_beta))*state.asinh_beta 
+          asinh(state.min_value/state.asinh_beta))*state.asinh_beta
 endif
 
 ; do this differently for 8 or 24 bit color, to prevent flashing
@@ -2495,17 +2499,17 @@ IF (disp_equinox EQ 'J2000') THEN num_disp_equinox = 2000.0 ELSE $
   num_disp_equinox = float(equinox)
 
 ; first convert lon,lat to RA,dec (J2000)
-CASE headtype OF 
+CASE headtype OF
     'GLON': euler, lon, lat, ra, dec, 2 ; J2000
-    'ELON': BEGIN 
+    'ELON': BEGIN
         euler, lon, lat, ra, dec, 4 ; J2000
         IF num_equinox NE 2000.0 THEN precess, ra, dec, num_equinox, 2000.0
-    END 
-    'RA--': BEGIN    
+    END
+    'RA--': BEGIN
         ra = lon
         dec = lat
         IF num_equinox NE 2000.0 THEN precess, ra, dec, num_equinox, 2000.0
-    END 
+    END
     'DEC-': BEGIN       ; for SDSS images
         ra = lon
         dec = lat
@@ -2517,19 +2521,19 @@ CASE headtype OF
         state.wcstype = 'none'
         return, wcsstring
     end
-ENDCASE  
+ENDCASE
 
-; Now convert RA,dec (J2000) to desired display coordinates:  
+; Now convert RA,dec (J2000) to desired display coordinates:
 
-IF (disp_type[0] EQ 'RA--' or disp_type[0] EQ 'DEC-') THEN BEGIN 
-; generate (RA,dec) string 
+IF (disp_type[0] EQ 'RA--' or disp_type[0] EQ 'DEC-') THEN BEGIN
+; generate (RA,dec) string
    disp_ra  = ra
    disp_dec = dec
    IF num_disp_equinox NE 2000.0 THEN precess, disp_ra, disp_dec, $
      2000.0, num_disp_equinox
 
    IF disp_base60 THEN BEGIN ; (hh:mm:ss) format
-      
+
       neg_dec  = disp_dec LT 0
       radec, disp_ra, abs(disp_dec), ihr, imin, xsec, ideg, imn, xsc
       wcsstring = string(ihr, imin, xsec, ideg, imn, xsc, disp_equinox, $
@@ -2544,25 +2548,25 @@ IF (disp_type[0] EQ 'RA--' or disp_type[0] EQ 'DEC-') THEN BEGIN
 
       wcsstring = string(disp_ra, disp_dec, disp_equinox, $
                          format='("Deg ",F9.5,",",F9.5,a6)')
-   ENDELSE 
-ENDIF 
+   ENDELSE
+ENDIF
 
 IF disp_type[0] EQ 'GLON' THEN BEGIN ; generate (l,b) string
     euler, ra, dec, l, b, 1
-    
+
     wcsstring = string(l, b, format='("Galactic (",F9.5,",",F9.5,")")')
-ENDIF 
+ENDIF
 
 IF disp_type[0] EQ 'ELON' THEN BEGIN ; generate (l,b) string
-    
+
     disp_ra = ra
     disp_dec = dec
     IF num_disp_equinox NE 2000.0 THEN precess, disp_ra, disp_dec, $
       2000.0, num_disp_equinox
     euler, disp_ra, disp_dec, lam, bet, 3
-    
+
     wcsstring = string(lam, bet, format='("Ecliptic (",F9.5,",",F9.5,")")')
-ENDIF 
+ENDIF
 
 return, wcsstring
 END
@@ -2622,12 +2626,12 @@ zcenter = (0 > state.coord < state.image_size)
 track = bytarr(11,11)
 boxsize=5
 xmin = 0 > (zcenter[0] - boxsize)
-xmax = (zcenter[0] + boxsize) < (state.image_size[0] - 1) 
-ymin = 0 > (zcenter[1] - boxsize) 
+xmax = (zcenter[0] + boxsize) < (state.image_size[0] - 1)
+ymin = 0 > (zcenter[1] - boxsize)
 ymax = (zcenter[1] + boxsize) < (state.image_size[1] - 1)
 
 startx = abs( (zcenter[0] - boxsize) < 0 )
-starty = abs( (zcenter[1] - boxsize) < 0 ) 
+starty = abs( (zcenter[1] - boxsize) < 0 )
 
 track[startx,starty] = scaled_image[xmin:xmax,ymin:ymax]
 track_image = rebin(track, $
@@ -2649,11 +2653,11 @@ loc_string = $
          state.coord[1], $
          main_image[state.coord[0], $
                     state.coord[1]], $
-         format = '("(",i5,",",i5,") ",g12.5)') 
+         format = '("(",i5,",",i5,") ",g12.5)')
 
 widget_control, state.location_bar_id, set_value = loc_string
 
-; Update coordinate display. 
+; Update coordinate display.
 
 if (state.wcstype EQ 'angle') then begin
     xy2ad, state.coord[0], state.coord[1], *(state.astr_ptr), lon, lat
@@ -2664,7 +2668,7 @@ if (state.wcstype EQ 'angle') then begin
 
     widget_control, state.wcs_bar_id, set_value = wcsstring
 
-endif    
+endif
 
 if (state.wcstype EQ 'lambda') then begin
     wavestring = kctv_wavestring()
@@ -2679,7 +2683,7 @@ end
 
 pro kctv_panoplot, nobox = nobox
 
-; Routine to add overplots to the pan window or pan pixmap.  
+; Routine to add overplots to the pan window or pan pixmap.
 ; A replacement for the old kctv_drawbox.  Now, has an option to not
 ; draw the box (will still draw the weathervane).  Also, does not set
 ; the window, so this draws to the current window, and the calling
@@ -2690,7 +2694,7 @@ common kctv_state
 common kctv_images
 
 view_min = round(state.centerpix - $
-        (0.5 * state.draw_window_size / state.zoom_factor)) 
+        (0.5 * state.draw_window_size / state.zoom_factor))
 view_max = round(view_min + state.draw_window_size / state.zoom_factor) - 1
 
 ; Create the vectors which contain the box coordinates
@@ -2699,13 +2703,13 @@ box_x = float((([view_min[0], $
                  view_max[0], $
                  view_max[0], $
                  view_min[0], $
-                 view_min[0]]) * state.pan_scale) + state.pan_offset[0]) 
+                 view_min[0]]) * state.pan_scale) + state.pan_offset[0])
 
 box_y = float((([view_min[1], $
                  view_min[1], $
                  view_max[1], $
                  view_max[1], $
-                 view_min[1]]) * state.pan_scale) + state.pan_offset[1]) 
+                 view_min[1]]) * state.pan_scale) + state.pan_offset[1])
 
 ; set limits on box to make sure all sides always appear
 box_x = 0 > box_x < (state.pan_window_size - 1)
@@ -2736,7 +2740,7 @@ common kctv_state
 
 ; get the new box coords and draw the new box
 
-tmp_event = [event.x, event.y] 
+tmp_event = [event.x, event.y]
 
 newpos = state.pan_offset > tmp_event < $
   (state.pan_offset + (state.image_size * state.pan_scale))
@@ -2755,7 +2759,7 @@ end
 pro kctv_resize
 
 ; Routine to resize the draw window when a top-level resize event
-; occurs.  
+; occurs.
 
 common kctv_state
 
@@ -2766,7 +2770,7 @@ window = (state.base_min_size > tmp_event)
 newbase = window - state.base_pad
 
 newxsize = (tmp_event[0] - state.base_pad[0]) > $
-  (state.base_min_size[0] - state.base_pad[0]) 
+  (state.base_min_size[0] - state.base_pad[0])
 newysize = (tmp_event[1] - state.base_pad[1]) > $
   (state.base_min_size[1] - state.base_pad[1])
 
@@ -2792,7 +2796,7 @@ pro kctv_scaleimage
 common kctv_state
 common kctv_images
 
-; Since this can take some time for a big image, set the cursor 
+; Since this can take some time for a big image, set the cursor
 ; to an hourglass until control returns to the event loop.
 widget_control, /hourglass
 
@@ -2804,32 +2808,32 @@ case state.scaling of
              /nan, $
              min=state.min_value, $
              max=state.max_value, $
-             top = state.ncolors - 1) 
-    
+             top = state.ncolors - 1)
+
     1: begin                            ; log stretch
         offset = state.min_value - $
           (state.max_value - state.min_value) * 0.01
 
-        scaled_image = $        
+        scaled_image = $
           bytscl( alog10(main_image - offset), $
                   min=alog10(state.min_value - offset), /nan, $
                   max=alog10(state.max_value - offset),  $
-                  top=state.ncolors - 1)   
+                  top=state.ncolors - 1)
     end
 
     2: scaled_image = $                 ; histogram equalization
       bytscl(hist_equal(main_image, $
-                        minv = state.min_value, $    
+                        minv = state.min_value, $
                         maxv = state.max_value), $
-             /nan, top = state.ncolors - 1) 
-    
+             /nan, top = state.ncolors - 1)
+
     3:  begin                            ; asinh
         scaled_image = bytscl(asinh((main_image - state.min_value) $
                                     / state.asinh_beta), $
                 min = 0, $
                 max = asinh((state.max_value - state.min_value) / $
                             state.asinh_beta), $
-                              /nan, top = state.ncolors - 1) 
+                              /nan, top = state.ncolors - 1)
     end
 
 endcase
@@ -2889,8 +2893,8 @@ if ((oldimagesize[0] NE state.image_size[0]) OR $
 if (state.cube EQ 0) then begin
    statimage = main_image
 endif else begin
-   statimage = main_image_cube 
-endelse 
+   statimage = main_image_cube
+endelse
 
 state.image_min = min(statimage, max=maxx, /nan)
 state.image_max = maxx
@@ -2932,7 +2936,7 @@ IF (NOT keyword_set(align) OR (state.firstimage EQ 1)) THEN $
 kctv_getoffset
 
 ; Clear all plot annotations
-if (not(keyword_set(noerase))) then kctverase, /norefresh  
+if (not(keyword_set(noerase))) then kctverase, /norefresh
 
 end
 
@@ -3029,7 +3033,7 @@ if (not(xregistered('kctv_pixtable', /noshow))) then begin
 
   state.pixtable_tbl_id = $
     widget_table(state.pixtable_base_id,   $
-                 value=[0,0], xsize=5, ysize=5, row_labels='', $ 
+                 value=[0,0], xsize=5, ysize=5, row_labels='', $
                  column_labels='', alignment=2, /resizeable_columns, $
                  column_widths = 3, units=2)
 
@@ -3076,7 +3080,7 @@ if (zcenter[0] gt (state.image_size[0]-3)) then $
 
 if (zcenter[1] le 2) then zcenter[1] = 2
 if (zcenter[1] gt (state.image_size[1]-3)) then $
-  zcenter[1] = state.image_size[1] - 3 
+  zcenter[1] = state.image_size[1] - 3
 
 ;pix_values = dblarr(5,5)
 row_labels = strarr(5)
@@ -3084,8 +3088,8 @@ column_labels = strarr(5)
 boxsize=2
 
 xmin = 0 > (zcenter[0] - boxsize)
-xmax = (zcenter[0] + boxsize) < (state.image_size[0] - 1) 
-ymin = 0 > (zcenter[1] - boxsize) 
+xmax = (zcenter[0] + boxsize) < (state.image_size[0] - 1)
+ymin = 0 > (zcenter[1] - boxsize)
 ymax = (zcenter[1] + boxsize) < (state.image_size[1] - 1)
 
 row_labels = [strcompress(string(ymax),/remove_all),   $
@@ -3122,7 +3126,7 @@ pro kctv_readfits, fitsfilename=fitsfilename, newimage=newimage
 
 ; Read in a new image when user goes to the File->ReadFits menu.
 ; Do a reasonable amount of error-checking first, to prevent unwanted
-; crashes. 
+; crashes.
 
 common kctv_state
 common kctv_images
@@ -3144,7 +3148,7 @@ if (n_elements(fitsfilename) EQ 0) then begin
       /read, $
       path = state.current_dir, $
       get_path = tmp_dir, $
-      title = 'Select Fits Image')        
+      title = 'Select Fits Image')
    if (tmp_dir NE '') then state.current_dir = tmp_dir
    if (fitsfile EQ '') then return ; 'cancel' button returns empty string
 endif else begin
@@ -3162,7 +3166,7 @@ endif else begin
    head = headfits(fitsfile, errmsg = errmsg)
 endelse
 
-; Check validity of fits file header 
+; Check validity of fits file header
 if (n_elements(strcompress(head, /remove_all)) LT 2) then begin
     kctv_message, 'File does not appear to be a valid FITS image!', $
       window = window, msgtype = 'error'
@@ -3305,9 +3309,9 @@ formdesc = ['0, button, Read Primary Image, quit', $
 textform = cw_form(formdesc, /column, $
                    title = 'Fits Extension Selector')
 
-if (textform.tag4 EQ 1) then begin  ; cancelled 
+if (textform.tag4 EQ 1) then begin  ; cancelled
     cancelled = 1
-    return                         
+    return
 endif
 
 if (textform.tag3 EQ 1) then begin   ;extension selected
@@ -3362,12 +3366,12 @@ endif else begin
    for i = 1, numext do begin
       numlist = strcompress(numlist + string(i) + '|', /remove_all)
    endfor
-   
+
    numlist = strmid(numlist, 0, strlen(numlist)-1)
-   
+
    droptext = strcompress('0, droplist, ' + numlist + $
                           ', label_left=Select Extension:, set_value=0')
-   
+
    formdesc = ['0, button, Read Primary Image, quit', $
                '0, label, OR:', $
                droptext, $
@@ -3377,23 +3381,23 @@ endif else begin
    textform = cw_form(formdesc, /column, $
                       title = 'Fits Extension Selector')
 
-   if (textform.tag4 EQ 1) then begin ; cancelled 
+   if (textform.tag4 EQ 1) then begin ; cancelled
       cancelled = 1
-      return                         
+      return
    endif
-   
+
    if (textform.tag3 EQ 1) then begin ;extension selected
       extension = long(textform.tag2) + 1
    endif else begin
       extension = 0             ; primary image selected
    endelse
-   
+
    if (extension GE 1) then begin
       state.title_extras = strcompress('Extension ' + string(extension))
    endif else begin
       state.title_extras = 'Primary Image'
    endelse
-   
+
    main_image = readfits(fitsfile, head, exten_no = extension)
 
 endelse
@@ -3436,7 +3440,7 @@ end
 ;------------------------------------------------------------------
 
 pro kctv_wfpc2_read, fitsfile, head, cancelled
-    
+
 ; Fits reader for 4-panel HST WFPC2 images
 
 common kctv_state
@@ -3453,7 +3457,7 @@ textform = cw_form(formdesc, /column, title = 'WFPC2 CCD Selector')
 
 if (textform.tag2 EQ 1) then begin ; cancelled
     cancelled = 1
-    return                      
+    return
 endif
 
 ccd = long(textform.tag0) + 1
@@ -3468,7 +3472,7 @@ if (ccd EQ 5) then begin
     main_image=0
     wfpc2_read, fitsfile, main_image, head, /batwing
 endif
-        
+
 case ccd of
     1: state.title_extras = 'PC1'
     2: state.title_extras = 'WF2'
@@ -3483,7 +3487,7 @@ end
 ;----------------------------------------------------------------------
 
 pro kctv_2mass_read, fitsfile, head, cancelled
-    
+
 ; Fits reader for 3-plane 2MASS Extended Source J/H/Ks data cube.
 common kctv_state
 common kctv_images
@@ -3499,13 +3503,13 @@ textform = cw_form(formdesc, /column, title = '2MASS Band Selector')
 
 if (textform.tag2 EQ 1) then begin ; cancelled
     cancelled = 1
-    return                     
+    return
 endif
 
 main_image=0
-main_image = mrdfits(fitsfile, 0, head, /silent, /fscale) 
+main_image = mrdfits(fitsfile, 0, head, /silent, /fscale)
 
-band = long(textform.tag0) 
+band = long(textform.tag0)
 main_image = main_image[*,*,band]    ; fixed 11/28/2000
 
 case textform.tag0 of
@@ -3537,7 +3541,7 @@ formdesc = ['0, text, , label_left=Object Name: , width=15, tag=objname', $
             '0, float, 10.0, label_left=Image Size (arcmin; max=60): ,tag=imsize', $
             '1, base, , row', $
             '0, button, GetImage, tag=getimage, quit', $
-            '0, button, Cancel, tag=cancel, quit']    
+            '0, button, Cancel, tag=cancel, quit']
 
 archiveform = cw_form(formdesc, /column, title = 'kctv: Get DSS Image')
 
@@ -3556,7 +3560,7 @@ case archiveform.band of
     3: band = '2i'
     else: print, 'error in kctv_getdss!'
 endcase
-    
+
 ;case archiveform.lookupsource of
 ;    0: ned = 1
 ;    1: ned = 0  ; simbad lookup
@@ -3616,7 +3620,7 @@ formdesc = ['0, text, , label_left=Object Name: , width=15, tag=objname', $
             '0, float, 10.0, label_left=Image Size (arcmin; max=30): ,tag=imsize', $
             '1, base, , row', $
             '0, button, GetImage, tag=getimage, quit', $
-            '0, button, Cancel, tag=cancel, quit']    
+            '0, button, Cancel, tag=cancel, quit']
 
 archiveform = cw_form(formdesc, /column, title = 'kctv: Get FIRST Image')
 
@@ -3644,7 +3648,7 @@ if (archiveform.objname NE '') then begin
         kctv_message, errmsg, msgtype='error', /window
         return
     endif
-    
+
 ; convert decimal ra, dec to hms, dms
     sra = sixty(ra/15.0)
     rahour = string(round(sra[0]))
@@ -3657,7 +3661,7 @@ if (archiveform.objname NE '') then begin
         decsign = '+'
     endelse
     sdec = sixty(abs(dec))
- 
+
     decdeg = strcompress(decsign + string(round(sdec[0])), /remove_all)
     decmin = string(round(sdec[1]))
     decsec = string(sdec[2])
@@ -3720,12 +3724,12 @@ common kctv_images
 ; First: if data cube is in OSIRIS IFU (lambda,x,y) format, re-form it
 ; into (x,y,lambda).  If it's a normal image stack (x,y,n), don't
 ; modify it.  This way, we can treat both kinds of cubes identically
-; later on. 
+; later on.
 
 if (ptr_valid(state.head_ptr)) then head = *(state.head_ptr) $
    else head = strarr(1)
 
-; Test for whether this is an OSIRIS cube.  
+; Test for whether this is an OSIRIS cube.
 currinst = strcompress(string(sxpar(head, 'CURRINST',count=nhk)), /remove_all)
 if nhk le 0 then $
         currinst = strcompress(string(sxpar(head, 'INSTRUME',count=nhk)), $
@@ -3737,13 +3741,13 @@ if ((currinst EQ 'OSIRIS') AND (instr EQ 'spec')) then begin
    nl = (size(main_image_cube))[1]
    ny = (size(main_image_cube))[2]
    nx = (size(main_image_cube))[3]
-   
+
    tmpcube = fltarr(nx, ny, nl)
-   
+
    for i = 0, nl-1 do begin
       tmpcube[*,*,i] = transpose(reform(main_image_cube[i,*,*]))
    endfor
-   
+
    main_image_cube = tmpcube
    tmpcube = 0.0
    state.osiriscube = 1
@@ -3803,7 +3807,7 @@ if (not(xregistered('kctvslicer', /noshow))) then begin
                           maximum = state.nslices - 1, $
                           uvalue = 'sliceslider')
    state.slicer_id = slicer
-   
+
    combinebase = widget_base(slicebase, /row)
 
    state.slicecombine_id = cw_field(combinebase, $
@@ -3813,7 +3817,7 @@ if (not(xregistered('kctvslicer', /noshow))) then begin
                                     value = state.slicecombine, $
                                     /return_events, $
                                     xsize = 7)
-   
+
    allslice = widget_button(combinebase, $
                             uvalue = 'allslice', $
                             value = 'All')
@@ -3964,11 +3968,11 @@ endif
 
 ; get the new main image from the cube
 if state.slicecombine EQ 1 then begin
-   
+
    main_image = reform(main_image_cube[*, *, state.slice])
-   
+
 endif else begin
-   
+
    firstslice = 0 > round(state.slice - state.slicecombine/2)
    lastslice = (firstslice + state.slicecombine - 1) < (state.nslices - 1)
 
@@ -3976,7 +3980,7 @@ endif else begin
       firstslice = lastslice - state.slicecombine + 1
 
    case state.slicecombine_method of
-      
+
       0: begin
          main_image = total(main_image_cube[*, *, firstslice:lastslice], 3) $
                       / float(state.slicecombine)
@@ -3986,7 +3990,7 @@ endif else begin
                              dimension=3)
          end
    endcase
-   
+
 endelse
 
 ; if new slice selected from slider, display it
@@ -4010,7 +4014,7 @@ common kctv_images
 
 ; Get filename to save image
 
-filename = dialog_pickfile(filter = '*.fits', $ 
+filename = dialog_pickfile(filter = '*.fits', $
                            file = 'kctv.fits', $
                            default_extension = '.fits', $
                            dialog_parent =  state.base_id, $
@@ -4028,7 +4032,7 @@ if (filename EQ state.current_dir) then begin
 endif
 
 if (ptr_valid(state.head_ptr)) then begin
-  writefits, filename, main_image, (*state.head_ptr) 
+  writefits, filename, main_image, (*state.head_ptr)
 endif else begin
   writefits, filename, main_image
 endelse
@@ -4075,14 +4079,14 @@ depth = state.bitdepth
 
 ;- Handle window devices (other than the Z buffer)
 if (!d.flags and 256) ne 0 then begin
-    
+
   ;- Copy the contents of the current display to a pixmap
    current_window = state.draw_window_id
    xsize =  state.draw_window_size[0]
    ysize = state.draw_window_size[1]
    window, /free, /pixmap, xsize=xsize, ysize=ysize, retain=2
    device, copy=[0, 0, xsize, ysize, 0, 0, current_window]
-    
+
   ;- Set decomposed color mode for 24-bit displays
    if (depth gt 8) then device, get_decomposed=entry_decomposed
    device, decomposed=1
@@ -4097,7 +4101,7 @@ endelse
 
 ;- Handle window devices (other than the Z buffer)
 if (!d.flags and 256) ne 0 then begin
-   
+
   ;- Restore decomposed color mode for 24-bit displays
    if (depth gt 8) then begin
       device, decomposed=entry_decomposed
@@ -4127,7 +4131,7 @@ if (imgtype eq 'png') then begin
 endif
 
 if (imgtype eq 'jpg') or (imgtype eq 'tiff') then begin
-      
+
     ;- Convert 8-bit image to 24-bit
    if (depth le 8) then begin
       info = size(image)
@@ -4139,7 +4143,7 @@ if (imgtype eq 'jpg') or (imgtype eq 'tiff') then begin
       true[2, *, *] = b[image]
       image = temporary(true)
    endif
-      
+
     ;- If TIFF format output, reverse image top to bottom
    if (imgtype eq 'tiff') then image = reverse(temporary(image), 3)
 
@@ -4169,7 +4173,7 @@ common kctv_images
 if (n_elements(blink_image1) EQ 1 OR $
     n_elements(blink_image2) EQ 1 OR $
     n_elements(blink_image3) EQ 1) then begin
-    
+
     kctv_message, $
       'You need to set the 3 blink channels first to make an RGB image.', $
       msgtype = 'error', /window
@@ -4178,7 +4182,7 @@ endif
 
 kctv_getwindow
 
-window, /free, xsize = state.draw_window_size[0], $ 
+window, /free, xsize = state.draw_window_size[0], $
   ysize = state.draw_window_size[1], /pixmap
 tempwindow = !d.window
 
@@ -4284,11 +4288,11 @@ if (nfiles GT 0) then begin
     result =  dialog_message(mesg, $
                              /default_no, $
                              dialog_parent = state.base_id, $
-                             /question)                 
+                             /question)
 endif
 
 if (strupcase(result) EQ 'NO') then return
-    
+
 widget_control, /hourglass
 
 screen_device = !d.name
@@ -4310,8 +4314,8 @@ newdisplay = bytarr(xsize, ysize)
 
 startpos = abs(round(state.offset) < 0)
 
-view_min = (0 > view_min < (state.image_size - 1)) 
-view_max = (0 > view_max < (state.image_size - 1)) 
+view_min = (0 > view_min < (state.image_size - 1))
+view_max = (0 > view_max < (state.image_size - 1))
 
 dimage = bytscl(scaled_image[view_min[0]:view_max[0], $
                                  view_min[1]:view_max[1]], $
@@ -4363,19 +4367,19 @@ common kctv_color
 
 ; New in 2.0: scale the contrast by 0.75- gives better contrast by
 ; default when first starting up, and better in general with asinh
-; scaling 
+; scaling
 
 contrastscale=0.75
 
-if (keyword_set(getcursor)) then begin 
+if (keyword_set(getcursor)) then begin
     state.brightness = brightness/float(state.draw_window_size[0])
     state.contrast = contrast/float(state.draw_window_size[1])
     x = state.brightness*(state.ncolors-1)
-    y = state.contrast*(state.ncolors-1)*contrastscale > 2 
+    y = state.contrast*(state.ncolors-1)*contrastscale > 2
 endif else begin
     if (n_elements(brightness) EQ 0 OR n_elements(contrast) EQ 0) then begin
         x = state.brightness*(state.ncolors-1)
-        y = state.contrast*(state.ncolors-1)*contrastscale > 2 
+        y = state.contrast*(state.ncolors-1)*contrastscale > 2
     endif else begin
         x = brightness*(state.ncolors-1)
         y = contrast*(state.ncolors-1)*contrastscale > 2
@@ -4439,7 +4443,7 @@ case tablename of
 
     'SAURON': begin
        ; This is the 'SAURON' color map by Michele Cappellari & Eric Emsellem
-       ; based on v1.01 of sauron_colormap.pro from the Cappellari 
+       ; based on v1.01 of sauron_colormap.pro from the Cappellari
        ; IDL libraries at http://www-astro.physics.ox.ac.uk/~mxc/software/
 
        x = [1.0, 43.5, 86.0, 86.0+20, 128.5-10, 128.5, 128.5+10, $
@@ -4448,39 +4452,39 @@ case tablename of
        red =   [0.0, 0.0, 0.4,  0.5, 0.3, 0.0, 0.7, 1.0, 1.0,  1.0, 0.9]
        green = [0.0, 0.0, 0.85, 1.0, 1.0, 0.9, 1.0, 1.0, 0.85, 0.0, 0.9]
        blue =  [0.0, 1.0, 1.0,  1.0, 0.7, 0.0, 0.0, 0.0, 0.0,  0.0, 0.9]
-       
+
        xnew = findgen(256)+1
-       
+
        r = INTERPOL(red, x, xnew) * 255
        g = INTERPOL(green, x, xnew) * 255
        b = INTERPOL(blue, x, xnew) * 255
 
     end
-    
+
     'Cubehelix': begin
 ; based on D. A. Green algorithm, arXiv:1108.5083 and
-; Bull. Astr. Soc. India 39, 289 (2011). 
+; Bull. Astr. Soc. India 39, 289 (2011).
 
        lambda = findgen(256) / 255.0
        phi = 2.0 * !pi * $
              (state.cubehelix_start / 3.0 + state.cubehelix_nrot * lambda)
        a = state.cubehelix_hue * lambda^(state.cubehelix_gamma) * $
            (1.0 - lambda^(state.cubehelix_gamma)) / 2.0
-       
+
        r = lambda^(state.cubehelix_gamma) + $
            a * (-0.14861 * cos(phi) + 1.78277 * sin(phi))
        g = lambda^(state.cubehelix_gamma) + $
            a * (-0.29227 * cos(phi) - 0.90649 * sin(phi))
        b = lambda^(state.cubehelix_gamma) + $
            a * (1.97294 * cos(phi))
-       
+
        r = 0 > (r * 255.0) < 255
        g = 0 > (g * 255.0) < 255
        b = 0 > (b * 255.0) < 255
     end
 
     'Viridis': begin
-       ; Viridis color map from matplotlib. 
+       ; Viridis color map from matplotlib.
        ; Credit: Eric Firing
        viridis_data =  [[0.267004, 0.004874, 0.329415], $
                  [0.268510, 0.009605, 0.335427], $
@@ -4739,13 +4743,13 @@ case tablename of
                  [0.983868, 0.904867, 0.136897], $
                  [0.993248, 0.906157, 0.143936]]
 
-       r = total(viridis_data[0,*],1) * 255 
-       g = total(viridis_data[1,*],1) * 255        
-       b = total(viridis_data[2,*],1) * 255     
+       r = total(viridis_data[0,*],1) * 255
+       g = total(viridis_data[1,*],1) * 255
+       b = total(viridis_data[2,*],1) * 255
     end
 
     'Magma': begin
-       ; Magma color map from matplotlib. 
+       ; Magma color map from matplotlib.
        ; Credit: Nathaniel J. Smith & Stefan van der Walt
        magma_data = [[0.001462, 0.000466, 0.013866], $
                [0.002258, 0.001295, 0.018331],  $
@@ -5004,14 +5008,14 @@ case tablename of
                [0.987387, 0.984288, 0.742002],  $
                [0.987053, 0.991438, 0.749504]]
 
-       r = total(magma_data[0,*],1) * 255 
-       g = total(magma_data[1,*],1) * 255        
-       b = total(magma_data[2,*],1) * 255    
+       r = total(magma_data[0,*],1) * 255
+       g = total(magma_data[1,*],1) * 255
+       b = total(magma_data[2,*],1) * 255
     end
-    
+
 ; add more color table definitions here as needed...
-    else: return                                 
-                                                
+    else: return
+
 endcase
 
 r = congrid(r, state.ncolors)
@@ -5082,7 +5086,7 @@ if (not (xregistered('kctv_cubehelix', /noshow))) then begin
                                        value = state.cubehelix_gamma, $
                                        uvalue = 'cubehelix_gamma', $
                                        title = 'Gamma:      (0:3)  ')
-   
+
    cubehelix_plot = widget_draw(cubehelix_base, frame=2, $
                                            xsize = 300, ysize = 230)
 
@@ -5091,7 +5095,7 @@ if (not (xregistered('kctv_cubehelix', /noshow))) then begin
    cubehelix_reset = widget_button(cubehelix_buttons, $
                                    value = 'Reset to Defaults', $
                                    uvalue = 'cubehelix_defaults')
-   
+
    cubehelix_done = widget_button(cubehelix_buttons, value = 'Done', $
                                   uvalue = 'cubehelix_done')
 
@@ -5172,7 +5176,7 @@ endcase
 if (xregistered('kctv_cubehelix')) then begin
 
    kctv_makect, 'Cubehelix'
-   
+
    kctv_setwindow, state.cubehelix_plot_id
    xvector = findgen(256)
    cgplot, [0], [0], /nodata, xrange = [0,255], yrange = [0,255], $
@@ -5189,7 +5193,7 @@ if (xregistered('kctv_cubehelix')) then begin
    b = congrid( findgen(state.ncolors), xsize)
    c = replicate(1, ysize)
    a = b # c
-   
+
    tvlct, r_vector, g_vector, b_vector
 
    cgimage, a, 40, 10, /tv, /noerase
@@ -5226,7 +5230,7 @@ endif
 if (state.imagename EQ '') then begin
    title = strcompress('kctv: ' + state.title_extras)
    widget_control, state.base_id, tlb_set_title = title
-   
+
 endif else begin
    ; try to get the object name from the header
    title_object = sxpar(*(state.head_ptr), 'OBJECT')
@@ -5241,10 +5245,10 @@ endif else begin
    if (slash NE -1) then name = strmid(state.imagename, slash+1) $
    else name = state.imagename
    title = strcompress('kctv:  '+ name + '  ' + state.title_extras)
-   
+
    if (title_object NE '') then  $
       title = strcompress(title + ': ' + title_object)
-   
+
    widget_control, state.base_id, tlb_set_title = title
 endelse
 
@@ -5254,11 +5258,11 @@ end
 
 pro kctv_setheader, head
 
-; Routine to keep the image header using a pointer to a 
+; Routine to keep the image header using a pointer to a
 ; heap variable.  If there is no header (i.e. if kctv has just been
 ; passed a data array rather than a filename), then make the
-; header pointer a null pointer.  Get astrometry info from the 
-; header if available.  If there's no astrometry information, set 
+; header pointer a null pointer.  Get astrometry info from the
+; header if available.  If there's no astrometry information, set
 ; state.astr_ptr to be a null pointer.
 
 common kctv_state
@@ -5356,7 +5360,7 @@ if strcompress(sxpar(*state.head_ptr, 'CTYPE1'), /remove_all) EQ 'LAMBDA' then b
                             /remove_all)
     endif else begin
         state.cunit = ''
-    endelse   
+    endelse
     return
 endif
 
@@ -5364,7 +5368,7 @@ endif
 extast, head, astr, noparams
 
 ; No valid astrometry in header
-if (noparams EQ -1) then begin 
+if (noparams EQ -1) then begin
     widget_control, state.wcs_bar_id, set_value = '---No WCS Info---'
     state.wcstype = 'none'
     return
@@ -5382,7 +5386,7 @@ if ( (checkastr EQ 'PIXEL') OR $
     return
 endif
 
-; as of recent updates, TNX format now seems to be working in 
+; as of recent updates, TNX format now seems to be working in
 ; extast.pro so we don't need this any more
 ;if (checkastr EQ 'RA---TNX') then begin
 ;   widget_control, state.wcs_bar_id, set_value = '---No WCS Info---'
@@ -5407,7 +5411,7 @@ if (astr.ctype[0] EQ 'LAMBDA' OR astr.ctype[0] EQ 'WAVE') then begin
                             /remove_all)
     endif else begin
         state.cunit = ''
-    endelse   
+    endelse
     return
 endif
 
@@ -5442,7 +5446,7 @@ catch, /cancel
 state.wcstype = 'angle'
 widget_control, state.wcs_bar_id, set_value = '                 '
 
-; Check for GSS type header  
+; Check for GSS type header
 if strmid( astr.ctype[0], 5, 3) EQ 'GSS' then begin
     hdr1 = head
     gsss_STDAST, hdr1
@@ -5461,9 +5465,9 @@ if (code NE -1) then begin
     if (equ NE 2000.0 and equ NE 1950.0) then $
       state.equinox = string(equ, format = '(f6.1)')
 endif else begin
-    IF (strmid(astr.ctype[0], 0, 4) EQ 'GLON') THEN BEGIN 
+    IF (strmid(astr.ctype[0], 0, 4) EQ 'GLON') THEN BEGIN
         state.equinox = 'J2000' ; (just so it is set)
-    ENDIF ELSE BEGIN   
+    ENDIF ELSE BEGIN
 ; If no valid equinox, then ignore the WCS info.
         print, 'Warning: WCS equinox not given in image header.  Ignoring WCS info.'
         ptr_free, state.astr_ptr    ; clear pointer
@@ -5471,7 +5475,7 @@ endif else begin
         state.equinox = 'J2000'
         state.wcstype = 'none'
         widget_control, state.wcs_bar_id, set_value = '---No WCS Info---'
-    ENDELSE 
+    ENDELSE
 endelse
 
 ; Set default display to native system in header
@@ -5534,7 +5538,7 @@ if (not(xregistered('kctv_headinfo', /noshow))) then begin
                             value = h, $
                             xsize = 85, $
                             ysize = 24)
-    
+
     headinfo_done = widget_button(headinfo_base, $
                               value = 'Done', $
                               uvalue = 'headinfo_done')
@@ -5641,8 +5645,8 @@ end
 
 ;----------------------------------------------------------------------
 
-function kctv_degperpix, hdr 
-             
+function kctv_degperpix, hdr
+
 ; This program calculates the pixel scale (deg/pixel) and returns the value
 
 common kctv_state
@@ -5659,9 +5663,9 @@ d1 = d + (1/factor)             ;compute x,y of crval + 1 arcmin
 
 proj = strmid(bastr.ctype[0],5,3)
 
-case proj of 
+case proj of
     'GSS': gsssadxy, bastr, [a,a], [d,d1], x, y
-    else:  ad2xy, [a,a], [d,d1], bastr, x, y 
+    else:  ad2xy, [a,a], [d,d1], bastr, x, y
 endcase
 
 dmin = sqrt( (x[1]-x[0])^2 + (y[1]-y[0])^2 ) ;det. size in pixels of 1 arcmin
@@ -5688,21 +5692,21 @@ if ptr_valid(state.astr_ptr) then begin
     disp_equinox = state.display_equinox
     disp_base60 = state.display_base60
     bastr = *(state.astr_ptr)
-    
+
 ; function to convert an KCTV region from wcs coordinates to pixel coordinates
     degperpix = kctv_degperpix(*(state.head_ptr))
-    
+
 ; need numerical equinox values
     IF (equinox EQ 'J2000') THEN num_equinox = 2000.0 ELSE $
       IF (equinox EQ 'B1950') THEN num_equinox = 1950.0 ELSE $
       num_equinox = float(equinox)
-    
+
     headtype = strmid(ctype[0], 0, 4)
     n_coords = n_elements(coords)
 endif
 
 case coord_sys of
-    
+
     'j2000': begin
         if (strpos(coords[0], ':')) ne -1 then begin
             ra_arr = strsplit(coords[0],':',/extract)
@@ -5724,10 +5728,10 @@ case coord_sys of
             dec=float(coords[1])
             if (keyword_set(line)) then begin
                 ra1=float(coords[2])
-                dec1=float(coords[3])  
+                dec1=float(coords[3])
             endif
         endelse
-        
+
         if (not keyword_set(line)) then begin
             if (n_coords ne 6) then $
               coords[2:n_coords-2] = $
@@ -5738,9 +5742,9 @@ case coord_sys of
               strcompress(string(float(coords[2:n_coords-3]) / $
                                  (degperpix * 60.)),/remove_all)
         endif
-        
+
     end
-    
+
     'b1950': begin
         if (strpos(coords[0], ':')) ne -1 then begin
             ra_arr = strsplit(coords[0],':',/extract)
@@ -5760,15 +5764,15 @@ case coord_sys of
             endif
         endif else begin      ; convert B1950 degrees to J2000 degrees
             ra = float(coords[0])
-            dec = float(coords[1]) 
+            dec = float(coords[1])
             precess, ra, dec, 1950.0, 2000.0
             if (keyword_set(line)) then begin
                 ra1=float(coords[2])
                 dec1=float(coords[3])
-                precess, ra1, dec1, 1950., 2000.0 
+                precess, ra1, dec1, 1950., 2000.0
             endif
         endelse
-        
+
         if (not keyword_set(line)) then begin
             if (n_coords ne 6) then $
               coords[2:n_coords-2] = $
@@ -5780,7 +5784,7 @@ case coord_sys of
                                  (degperpix * 60.)),/remove_all)
         endif
     end
-    
+
     'galactic': begin           ; convert galactic to J2000 degrees
         euler, float(coords[0]), float(coords[1]), ra, dec, 2
         if (not keyword_set(line)) then begin
@@ -5796,11 +5800,11 @@ case coord_sys of
             euler, float(coords[2]), float(coords[3]), ra1, dec1, 2
         endelse
     end
-    
+
     'ecliptic': begin           ; convert ecliptic to J2000 degrees
   euler, float(coords[0]), float(coords[1]), ra, dec, 4
   if (not keyword_set(line)) then begin
-      if (n_coords ne 6) then $ 
+      if (n_coords ne 6) then $
         coords[2:n_coords-2] = $
         strcompress(string(float(coords[2:n_coords-2]) / $
                            (degperpix * 60.)),/remove_all) $
@@ -5830,42 +5834,42 @@ end
       ra1 = ten(float(ra1_arr[0]), float(ra1_arr[1]), float(ra1_arr[2])) * 15.0
       dec1 = ten(float(dec1_arr[0]), float(dec1_arr[1]), float(dec1_arr[2]))
   endelse
-  
+
   if (num_equinox ne 2000.) then begin
       precess, ra, dec, num_equinox, 2000.
       if (keyword_set(line)) then precess, ra1, dec1, num_equinox, 2000.
   endif
-  
+
 end
 
 'pixel': begin
 ; Do nothing when pixel.  Will pass pixel coords array back.
 end
 
-else: 
+else:
 
 endcase
 
 if (ptr_valid(state.astr_ptr) AND coord_sys ne 'pixel') then begin
-    
+
     if (num_equinox ne 2000) then begin
         precess, ra, dec, 2000., num_equinox
         if (keyword_set(line)) then precess, ra1, dec1, 2000., num_equinox
     endif
-    
+
     proj = strmid(ctype[0],5,3)
-    
-    case proj of 
+
+    case proj of
         'GSS': begin
             gsssadxy, bastr, ra, dec, x, y
             if (keyword_set(line)) then gsssadxy, bastr, ra1, dec1, x1, y1
         end
         else: begin
-            ad2xy, ra, dec, bastr, x, y 
-            if (keyword_set(line)) then ad2xy, ra1, dec1, bastr, x1, y1 
+            ad2xy, ra, dec, bastr, x, y
+            if (keyword_set(line)) then ad2xy, ra1, dec1, bastr, x1, y1
         end
     endcase
-    
+
     coords[0] = strcompress(string(x),/remove_all)
     coords[1] = strcompress(string(y),/remove_all)
     if (keyword_set(line)) then begin
@@ -5894,33 +5898,33 @@ n_reg = n_elements(reg_array)
 
 for i=0, n_reg-1 do begin
     open_parenth_pos = strpos(reg_array[i],'(')
-    close_parenth_pos = strpos(reg_array[i],')')   
+    close_parenth_pos = strpos(reg_array[i],')')
     reg_type = strcompress(strmid(reg_array[i],0,open_parenth_pos),/remove_all)
     length = close_parenth_pos - open_parenth_pos
     coords_str = strcompress(strmid(reg_array[i], open_parenth_pos+1, $
                                     length-1),/remove_all)
-    coords_arr = strsplit(coords_str,',',/extract) 
+    coords_arr = strsplit(coords_str,',',/extract)
     n_coords = n_elements(coords_arr)
     color_begin_pos = strpos(strlowcase(reg_array[i]), 'color')
     text_pos = strpos(strlowcase(reg_array[i]), 'text')
-    
+
     if (color_begin_pos ne -1) then begin
         color_equal_pos = strpos(reg_array[i], '=', color_begin_pos)
     endif
-    
+
     text_begin_pos = strpos(reg_array[i], '{')
-    
+
 ; Text for region
     if (text_begin_pos ne -1) then begin
         text_end_pos = strpos(reg_array[i], '}')
         text_len = (text_end_pos-1) - (text_begin_pos)
         text_str = strmid(reg_array[i], text_begin_pos+1, text_len)
         color_str = ''
-        
+
 ; Color & Text for region
         if (color_begin_pos ne -1) then begin
 ; Compare color_begin_pos to text_begin_pos to tell which is first
-            
+
             case (color_begin_pos lt text_begin_pos) of
                 0: begin
 ;text before color
@@ -5938,37 +5942,37 @@ for i=0, n_reg-1 do begin
                 else:
             endcase
         endif
-        
+
     endif else begin
-        
+
 ; Color but no text for region
         if (color_begin_pos ne -1) then begin
             color_str = strcompress(strmid(reg_array[i], color_equal_pos+1, $
                                            strlen(reg_array[i])), /remove_all)
-            
+
 ; Neither color nor text for region
         endif else begin
             color_str = ''
         endelse
-        
+
         text_str = ''
-        
+
     endelse
-    
+
     index_j2000 = where(strlowcase(coords_arr) eq 'j2000')
     index_b1950 = where(strlowcase(coords_arr) eq 'b1950')
     index_galactic = where(strlowcase(coords_arr) eq 'galactic')
     index_ecliptic = where(strlowcase(coords_arr) eq 'ecliptic')
-    
+
     index_coord_system = where(strlowcase(coords_arr) eq 'j2000') AND $
       where(strlowcase(coords_arr) eq 'b1950') AND $
       where(strlowcase(coords_arr) eq 'galactic') AND $
       where(strlowcase(coords_arr) eq 'ecliptic')
-    
+
     index_coord_system = index_coord_system[0]
-    
+
     if (index_coord_system ne -1) then begin
-        
+
 ; Check that a WCS region is not overplotted on image with no WCS
         if (NOT ptr_valid(state.astr_ptr)) then begin
             kctv_message, $
@@ -5978,14 +5982,14 @@ for i=0, n_reg-1 do begin
             kctverase, 1
             return
         endif
-        
+
         case strlowcase(coords_arr[index_coord_system]) of
             'j2000': begin
                 if (strlowcase(reg_type) ne 'line') then $
                   coords_arr = kctv_wcs2pix(coords_arr, coord_sys='j2000') $
                 else $
                   coords_arr = $
-                  kctv_wcs2pix(coords_arr, coord_sys='j2000', /line) 
+                  kctv_wcs2pix(coords_arr, coord_sys='j2000', /line)
             end
             'b1950': begin
                 if (strlowcase(reg_type) ne 'line') then $
@@ -6008,12 +6012,12 @@ for i=0, n_reg-1 do begin
                   coords_arr = $
                   kctv_wcs2pix(coords_arr, coord_sys='ecliptic', /line)
             end
-            else: 
+            else:
         endcase
     endif else begin
-        
+
         if (strpos(coords_arr[0], ':')) ne -1 then begin
-            
+
 ; Check that a WCS region is not overplotted on image with no WCS
             if (NOT ptr_valid(state.astr_ptr)) then begin
                 kctv_message, $
@@ -6021,7 +6025,7 @@ for i=0, n_reg-1 do begin
                   msgtype='error', /window
                 return
             endif
-            
+
             if (strlowcase(reg_type) ne 'line') then $
               coords_arr = kctv_wcs2pix(coords_arr,coord_sys='current') $
             else $
@@ -6032,26 +6036,26 @@ for i=0, n_reg-1 do begin
             else $
               coords_arr = kctv_wcs2pix(coords_arr,coord_sys='pixel', /line)
         endelse
-        
+
     endelse
 
 ; use cgplot colors by name
     tstruct = kctvplotlist[iplot]
-    tstruct.options.color = string(color_str)    
+    tstruct.options.color = string(color_str)
     kctvplotlist[iplot] = tstruct
 
     kctv_setwindow,state.draw_window_id
-    kctv_plotwindow  
-    
+    kctv_plotwindow
+
     case strlowcase(reg_type) of
-        
+
         'circle': begin
             xcenter = (float(coords_arr[0]) - state.offset[0] + 0.5) * $
               state.zoom_factor
             ycenter = (float(coords_arr[1]) - state.offset[1] + 0.5) * $
               state.zoom_factor
             radius = float(coords_arr[2]) * state.zoom_factor
-            
+
         ; added by AJB: rescale for postscript output for each plot type
             if (!d.name EQ 'PS') then begin
                 xcenter = xcenter / state.draw_window_size[0] * !d.x_size
@@ -6061,7 +6065,7 @@ for i=0, n_reg-1 do begin
 
             tvcircle, radius, xcenter, ycenter, $
               _extra = kctvplotlist[iplot].options, /device
-           
+
 
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
               alignment=0.5, /device, charsize=state.plotcharsize, $
@@ -6078,23 +6082,23 @@ for i=0, n_reg-1 do begin
                 ywidth = float(coords_arr[3]) * state.zoom_factor
                 if (n_coords ge 5) then angle = float(coords_arr[4])
             endif
-            width_arr = [xwidth,ywidth]  
+            width_arr = [xwidth,ywidth]
 
             if (!d.name EQ 'PS') then begin
                 xcenter = xcenter / state.draw_window_size[0] * !d.x_size
                 ycenter = ycenter / state.draw_window_size[1] * !d.y_size
                 width_arr = width_arr / state.draw_window_size[0] * !d.x_size
-            endif       
+            endif
 
 ; angle = -angle because tvbox rotates clockwise
             tvbox, width_arr, xcenter, ycenter, angle=-angle, $
               _extra = kctvplotlist[iplot].options, /device
-            
+
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
               alignment=0.5, /device, charsize=state.plotcharsize, $
               color = cgcolor(kctvplotlist[iplot].options.color)
         end
-        
+
         'ellipse': begin
             angle = 0           ; initialize angle to 0
             if (n_coords ge 4) then begin
@@ -6102,14 +6106,14 @@ for i=0, n_reg-1 do begin
                   state.zoom_factor
                 ycenter = (float(coords_arr[1]) - state.offset[1] + 0.5) * $
                   state.zoom_factor
-                xradius = float(coords_arr[2]) * state.zoom_factor 
+                xradius = float(coords_arr[2]) * state.zoom_factor
                 yradius = float(coords_arr[3]) * state.zoom_factor
                 if (n_coords ge 5) then angle = float(coords_arr[4])
             endif
-            
+
 ; Correct angle for default orientation used by tvellipse
             angle=angle+180.
-            
+
             if (!d.name EQ 'PS') then begin
                 xcenter = xcenter / state.draw_window_size[0] * !d.x_size
                 ycenter = ycenter / state.draw_window_size[1] * !d.y_size
@@ -6119,7 +6123,7 @@ for i=0, n_reg-1 do begin
 
               kctv_plot1ellipse, xradius, yradius, xcenter, ycenter, angle, $
               _extra = kctvplotlist[iplot].options
-            
+
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
               alignment=0.5, /device, charsize=state.plotcharsize, $
               color = cgcolor(kctvplotlist[iplot].options.color)
@@ -6132,7 +6136,7 @@ for i=0, n_reg-1 do begin
                 xpoints[vert_i] = coords_arr[vert_i*2]
                 ypoints[vert_i] = coords_arr[vert_i*2+1]
             endfor
-            
+
             if (xpoints[0] ne xpoints[n_vert-1] OR $
                 ypoints[0] ne ypoints[n_vert-1]) then begin
                 xpoints1 = fltarr(n_vert+1)
@@ -6144,13 +6148,13 @@ for i=0, n_reg-1 do begin
                 xpoints = xpoints1
                 ypoints = ypoints1
             endif
-            
+
             xcenter = total(xpoints) / n_elements(xpoints)
             ycenter = total(ypoints) / n_elements(ypoints)
-            
+
             plots, xpoints, ypoints,  $
-              _extra = kctvplotlist[iplot].options         
-            
+              _extra = kctvplotlist[iplot].options
+
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
               alignment=0.5, /device, charsize=state.plotcharsize, $
               color = cgcolor(kctvplotlist[iplot].options.color)
@@ -6164,12 +6168,12 @@ for i=0, n_reg-1 do begin
               state.zoom_factor
             y2 = (float(coords_arr[3]) - state.offset[1] + 0.5) * $
               state.zoom_factor
-            
+
             xpoints = [x1,x2]
             ypoints = [y1,y2]
             xcenter = total(xpoints) / n_elements(xpoints)
             ycenter = total(ypoints) / n_elements(ypoints)
-            
+
             if (!d.name EQ 'PS') then begin
                 xpoints = xpoints / state.draw_window_size[0] * !d.x_size
                 ypoints = ypoints / state.draw_window_size[1] * !d.y_size
@@ -6177,19 +6181,19 @@ for i=0, n_reg-1 do begin
 
             plots, xpoints, ypoints, /device, $
               _extra = kctvplotlist[iplot].options
-            
+
             if (text_str ne '') then xyouts, xcenter, ycenter, text_str, $
               alignment=0.5, /device, charsize=state.plotcharsize, $
               color = cgcolor(kctvplotlist[iplot].options.color)
         end
 
-        ; these are all the region types we have defined so far.  
+        ; these are all the region types we have defined so far.
         else: begin
-            
+
         end
-        
+
     endcase
-    
+
 endfor
 
 kctv_resetwindow
@@ -6222,19 +6226,19 @@ z = kctvplotlist[iplot].z
 
 if  (size(x, /n_elements ) EQ dims[0]   $
    and size(y, /n_elements) EQ dims[1]) then begin
-    
+
    cgcontour, z, x, y, $
               position=[0,0,1,1], xrange=xrange, yrange=yrange, $
               xstyle=5, ystyle=5, /noerase, $
               _extra = kctvplotlist[iplot].options
-   
+
 endif else begin
-   
+
    cgcontour, z, $
               position=[0,0,1,1], xrange=xrange, yrange=yrange, $
               xstyle=5, ystyle=5, /noerase, $
               _extra = kctvplotlist[iplot].options
-   
+
 endelse
 
 kctv_resetwindow
@@ -6280,7 +6284,7 @@ common kctv_state
 kctv_setwindow, state.draw_window_id
 widget_control, /hourglass
 
-; routine arcbar doesn't recognize color=0, because it uses 
+; routine arcbar doesn't recognize color=0, because it uses
 ; keyword_set to check the color.  So we need to set !p.color = 0
 ; to get black if the user wants color=0
 
@@ -6314,14 +6318,14 @@ common kctv_state
 ; Library.
 
 ; Modifications for kctv:
-; Modified to work with zoomed KCTV images, AJB Jan. 2000 
+; Modified to work with zoomed KCTV images, AJB Jan. 2000
 ; Moved text label upwards a bit for better results, AJB Jan. 2000
 ; Modified to work with cgplot, apr 2011
 
 On_error,2                      ;Return to caller
- 
+
 extast, hdr, bastr, noparams    ;extract astrom params in deg.
- 
+
 if N_params() LT 2 then arclen = 1 ;default size = 1 arcmin
 
 if not keyword_set( SIZE ) then size = 1.0
@@ -6335,16 +6339,16 @@ d1 = d + (1/factor)             ;compute x,y of crval + 1 arcmin
 
 proj = strmid(bastr.ctype[0],5,3)
 
-case proj of 
+case proj of
     'GSS': gsssadxy, bastr, [a,a], [d,d1], x, y
-    else:  ad2xy, [a,a], [d,d1], bastr, x, y 
+    else:  ad2xy, [a,a], [d,d1], bastr, x, y
 endcase
 
 dmin = sqrt( (x[1]-x[0])^2 + (y[1]-y[0])^2 ) ;det. size in pixels of 1 arcmin
 
 if (!D.FLAGS AND 1) EQ 1 then begin ;Device have scalable pixels?
     if !X.s[1] NE 0 then begin
-        dmin = convert_coord( dmin, 0, /DATA, /TO_DEVICE) - $ 
+        dmin = convert_coord( dmin, 0, /DATA, /TO_DEVICE) - $
           convert_coord(    0, 0, /DATA, /TO_DEVICE) ;Fixed Apr 97
         dmin = dmin[0]
     endif else dmin = dmin/sxpar(hdr, 'NAXIS1' ) ;Fixed Oct. 96
@@ -6353,14 +6357,14 @@ endif else  dmin = dmin * state.zoom_factor    ; added by AJB Jan. '00
 dmini2 = round(dmin * arclen)
 
 if keyword_set(NORMAL) then begin
-    posn = convert_coord(position,/NORMAL, /TO_DEVICE) 
+    posn = convert_coord(position,/NORMAL, /TO_DEVICE)
     xi = posn[0] & yi = posn[1]
 endif else if keyword_set(DATA) then begin
-    posn = convert_coord(position,/DATA, /TO_DEVICE) 
+    posn = convert_coord(position,/DATA, /TO_DEVICE)
     xi = posn[0] & yi = posn[1]
 endif else begin
     xi = position[0]   & yi = position[1]
-endelse         
+endelse
 
 xf = xi + dmini2
 dmini3 = dmini2/10       ;Height of vertical end bars = total length/10.
@@ -6371,15 +6375,15 @@ cgplots,[xi,xi],[ yi+dmini3, yi-dmini3 ], COLOR=color, /DEV, THICK=thick
 
 if not keyword_set(Seconds) then begin
     if (!D.NAME EQ 'PS') and (!P.FONT EQ 0) then $ ;Postscript Font?
-      arcsym='!9'+string(162B)+'!X' else arcsym = "'" 
+      arcsym='!9'+string(162B)+'!X' else arcsym = "'"
 endif else begin
     if (!D.NAME EQ 'PS') and (!P.FONT EQ 0) then $ ;Postscript Font?
-      arcsym = '!9'+string(178B)+'!X' else arcsym = "''" 
+      arcsym = '!9'+string(178B)+'!X' else arcsym = "''"
 endelse
 if not keyword_set( LABEL) then begin
     if (arclen LT 1) then arcstr = string(arclen,format='(f4.2)') $
     else arcstr = string(arclen)
-    label = strtrim(arcstr,2) + arcsym 
+    label = strtrim(arcstr,2) + arcsym
 endif
 
 ; modified this to move the numerical label upward a bit: 5/8/2000
@@ -6471,7 +6475,7 @@ for iplot = 0, nplot-1 do begin
         'compass' : kctv_plot1compass, iplot
         'scalebar': kctv_plot1scalebar, iplot
         'region'  : kctv_plot1region, iplot
-        else      : print, 'Problem in kctv_plotall!'   
+        else      : print, 'Problem in kctv_plotall!'
     endcase
 endfor
 
@@ -6545,7 +6549,7 @@ if (count EQ 0) then options = create_struct(options, 'color', 'red')
 c = where(tag_names(options) EQ 'FONT', count)
 if (count EQ 0) then options = create_struct(options, 'font', 1)
 
-pstruct = {type: 'text',   $    ; type of plot 
+pstruct = {type: 'text',   $    ; type of plot
            x: x,             $  ; x coordinate
            y: y,             $  ; y coordinate
               text: text,       $     ; text to plot
@@ -6585,11 +6589,11 @@ if (n_elements(options) EQ 0) then options = {color: 'red'}
 c = where(tag_names(options) EQ 'COLOR', count)
 if (count EQ 0) then options = create_struct(options, 'color', 'red')
 
-pstruct = {type: 'arrow',   $   ; type of plot 
+pstruct = {type: 'arrow',   $   ; type of plot
            x1: x1,             $ ; x1 coordinate
            y1: y1,             $ ; y1 coordinate
            x2: x2,             $ ; x2 coordinate
-           y2: y2,             $ ; y2 coordinate     
+           y2: y2,             $ ; y2 coordinate
            options: options  $  ; plot keyword options
           }
 
@@ -6681,7 +6685,7 @@ end
 ;----------------------------------------------------------------------
 
 pro kctv_labelcolor, index, colorname
-  
+
 ; translates menu options back to color names. Note that we use red as
 ; the first menu option by default, so red and black are switched from
 ; their normal order
@@ -6716,7 +6720,7 @@ formdesc = ['0, text, , label_left=Text: , width=15', $
             '1, base, , row', $
             '0, button, Cancel, quit', $
             '0, button, DrawText, quit']
-            
+
 textform = cw_form(formdesc, /column, $
                    title = 'kctv text label')
 
@@ -6747,7 +6751,7 @@ formdesc = ['0, integer, , label_left=Tail x: ', $
             '1, base, , row', $
             '0, button, Cancel, quit', $
             '0, button, DrawArrow, quit']
-            
+
 textform = cw_form(formdesc, /column, $
                    title = 'kctv arrow')
 
@@ -6759,7 +6763,7 @@ if (textform.tag9 EQ 1) then begin
              textform.tag2, textform.tag3, $
              color = labelcolor, thick = textform.tag5, $
              hthick = textform.tag6
-   
+
 endif
 
 end
@@ -6787,7 +6791,7 @@ formdesc = ['0, droplist, red|black|green|blue|cyan|magenta|yellow|white,label_l
             '1, base, , row,', $
             '0, button, Cancel, quit', $
             '0, button, DrawContour, quit']
-            
+
 cform = cw_form(formdesc, /column, $
                    title = 'kctv text label')
 
@@ -6799,7 +6803,7 @@ if (cform.tag8 EQ 1) then begin
 ;      c_charsize = cform.tag1, c_charthick = cform.tag2, $
                c_linestyle = cform.tag1, $
                c_thick = cform.tag2, $
-               min_value = cform.tag3, max_value = cform.tag4, $, 
+               min_value = cform.tag3, max_value = cform.tag4, $,
                nlevels = cform.tag5
 endif
 
@@ -6815,14 +6819,14 @@ common kctv_state
 common kctv_images
 common kctv_pdata
 
-if (state.wcstype NE 'angle') then begin 
+if (state.wcstype NE 'angle') then begin
     kctv_message, 'Cannot get coordinate info for this image!', $
       msgtype = 'error', /window
     return
 endif
 
 view_min = round(state.centerpix - $
-        (0.5 * state.draw_window_size / state.zoom_factor)) 
+        (0.5 * state.draw_window_size / state.zoom_factor))
 view_max = round(view_min + state.draw_window_size / state.zoom_factor) - 1
 
 xpos = string(round(view_min[0] + 0.15 * (view_max[0] - view_min[0])))
@@ -6842,7 +6846,7 @@ formdesc = [ $
              '1, base, , row,', $
              '0, button, Cancel, quit', $
              '0, button, DrawCompass, quit']
-            
+
 cform = cw_form(formdesc, /column, $
                    title = 'kctv compass properties')
 
@@ -6854,7 +6858,7 @@ cform.tag1 = 0 > cform.tag1 < (state.image_size[1] - 1)
 kctv_labelcolor, cform.tag3, labelcolor
 
 pstruct = {type: 'compass',  $  ; type of plot
-           x: cform.tag0,         $ 
+           x: cform.tag0,         $
            y: cform.tag1,         $
            notvertex: cform.tag2, $
            color: labelcolor, $
@@ -6881,14 +6885,14 @@ common kctv_state
 common kctv_images
 common kctv_pdata
 
-if (state.wcstype NE 'angle') then begin 
+if (state.wcstype NE 'angle') then begin
     kctv_message, 'Cannot get coordinate info for this image!', $
       msgtype = 'error', /window
     return
 endif
 
 view_min = round(state.centerpix - $
-        (0.5 * state.draw_window_size / state.zoom_factor)) 
+        (0.5 * state.draw_window_size / state.zoom_factor))
 view_max = round(view_min + state.draw_window_size / state.zoom_factor) - 1
 
 xpos = string(round(view_min[0] + 0.75 * (view_max[0] - view_min[0])))
@@ -6908,7 +6912,7 @@ formdesc = [ $
              '1, base, , row,', $
              '0, button, Cancel, quit', $
              '0, button, DrawScalebar, quit']
-            
+
 cform = cw_form(formdesc, /column, $
                    title = 'kctv scalebar properties')
 
@@ -6926,7 +6930,7 @@ if (float(round(arclen)) EQ arclen) then arclen = round(arclen)
 pstruct = {type: 'scalebar',  $  ; type of plot
            arclen: arclen, $
            seconds: cform.tag3, $
-           position: [cform.tag0,cform.tag1], $ 
+           position: [cform.tag0,cform.tag1], $
            color: labelcolor, $
            thick: cform.tag5, $
            size: cform.tag6 $
@@ -6990,9 +6994,9 @@ ofname = sxpar(*state.head_ptr,'OFNAME',/silent,count=nof)
 if nof le 0 then $
      ofname = 'kctv.reg' $
 else ofname = strmid(ofname,0,strpos(ofname,'.fits')) + '.reg'
-reg_savefile = dialog_pickfile(file=ofname, filter='*.reg', /write) 
+reg_savefile = dialog_pickfile(file=ofname, filter='*.reg', /write)
 
-if (reg_savefile ne '') then begin 
+if (reg_savefile ne '') then begin
   openw, lun, reg_savefile, /get_lun
 
   nplot = n_elements(kctvplotlist)
@@ -7027,65 +7031,65 @@ common kctv_state
 common kctv_pdata
 
 CASE event.tag OF
-    
+
     'REG_OPT' : BEGIN
         CASE event.value OF
             '0' : BEGIN
-                widget_control,(*state.reg_ids_ptr)[3],Sensitive=1 
-                widget_control,(*state.reg_ids_ptr)[4],Sensitive=1
-                widget_control,(*state.reg_ids_ptr)[5],Sensitive=1
-                widget_control,(*state.reg_ids_ptr)[6],Sensitive=1
-                widget_control,(*state.reg_ids_ptr)[7],Sensitive=0         
-                widget_control,(*state.reg_ids_ptr)[8],Sensitive=0
-                widget_control,(*state.reg_ids_ptr)[9],Sensitive=0         
-                widget_control,(*state.reg_ids_ptr)[10],Sensitive=0  
-                widget_control,(*state.reg_ids_ptr)[11],Sensitive=0
-            END
-            '1' : BEGIN
-                widget_control,(*state.reg_ids_ptr)[3],Sensitive=1 
-                widget_control,(*state.reg_ids_ptr)[4],Sensitive=1
-                widget_control,(*state.reg_ids_ptr)[5],Sensitive=1
-                widget_control,(*state.reg_ids_ptr)[6],Sensitive=1
-                widget_control,(*state.reg_ids_ptr)[7],Sensitive=0         
-                widget_control,(*state.reg_ids_ptr)[8],Sensitive=0
-                widget_control,(*state.reg_ids_ptr)[9],Sensitive=0         
-                widget_control,(*state.reg_ids_ptr)[10],Sensitive=0
-                widget_control,(*state.reg_ids_ptr)[11],Sensitive=1         
-            END
-            '2' : BEGIN
-                widget_control,(*state.reg_ids_ptr)[3],Sensitive=1 
+                widget_control,(*state.reg_ids_ptr)[3],Sensitive=1
                 widget_control,(*state.reg_ids_ptr)[4],Sensitive=1
                 widget_control,(*state.reg_ids_ptr)[5],Sensitive=1
                 widget_control,(*state.reg_ids_ptr)[6],Sensitive=1
                 widget_control,(*state.reg_ids_ptr)[7],Sensitive=0
                 widget_control,(*state.reg_ids_ptr)[8],Sensitive=0
-                widget_control,(*state.reg_ids_ptr)[9],Sensitive=0         
+                widget_control,(*state.reg_ids_ptr)[9],Sensitive=0
+                widget_control,(*state.reg_ids_ptr)[10],Sensitive=0
+                widget_control,(*state.reg_ids_ptr)[11],Sensitive=0
+            END
+            '1' : BEGIN
+                widget_control,(*state.reg_ids_ptr)[3],Sensitive=1
+                widget_control,(*state.reg_ids_ptr)[4],Sensitive=1
+                widget_control,(*state.reg_ids_ptr)[5],Sensitive=1
+                widget_control,(*state.reg_ids_ptr)[6],Sensitive=1
+                widget_control,(*state.reg_ids_ptr)[7],Sensitive=0
+                widget_control,(*state.reg_ids_ptr)[8],Sensitive=0
+                widget_control,(*state.reg_ids_ptr)[9],Sensitive=0
+                widget_control,(*state.reg_ids_ptr)[10],Sensitive=0
+                widget_control,(*state.reg_ids_ptr)[11],Sensitive=1
+            END
+            '2' : BEGIN
+                widget_control,(*state.reg_ids_ptr)[3],Sensitive=1
+                widget_control,(*state.reg_ids_ptr)[4],Sensitive=1
+                widget_control,(*state.reg_ids_ptr)[5],Sensitive=1
+                widget_control,(*state.reg_ids_ptr)[6],Sensitive=1
+                widget_control,(*state.reg_ids_ptr)[7],Sensitive=0
+                widget_control,(*state.reg_ids_ptr)[8],Sensitive=0
+                widget_control,(*state.reg_ids_ptr)[9],Sensitive=0
                 widget_control,(*state.reg_ids_ptr)[10],Sensitive=0
                 widget_control,(*state.reg_ids_ptr)[11],Sensitive=1
             END
             '3' : BEGIN
-                widget_control,(*state.reg_ids_ptr)[3],Sensitive=0 
+                widget_control,(*state.reg_ids_ptr)[3],Sensitive=0
                 widget_control,(*state.reg_ids_ptr)[4],Sensitive=0
                 widget_control,(*state.reg_ids_ptr)[5],Sensitive=0
                 widget_control,(*state.reg_ids_ptr)[6],Sensitive=0
                 widget_control,(*state.reg_ids_ptr)[7],Sensitive=1
                 widget_control,(*state.reg_ids_ptr)[8],Sensitive=1
-                widget_control,(*state.reg_ids_ptr)[9],Sensitive=1         
-                widget_control,(*state.reg_ids_ptr)[10],Sensitive=1  
+                widget_control,(*state.reg_ids_ptr)[9],Sensitive=1
+                widget_control,(*state.reg_ids_ptr)[10],Sensitive=1
                 widget_control,(*state.reg_ids_ptr)[11],Sensitive=0
             END
             ELSE:
         ENDCASE
-        
+
     END
-    
+
     'QUIT': BEGIN
         if (ptr_valid(state.reg_ids_ptr)) then ptr_free, state.reg_ids_ptr
         widget_control, event.top, /destroy
     END
-    
+
     'DRAW': BEGIN
-       
+
        reg_type = ['circle','box','ellipse','line']
        reg_color = ['red','black','green','blue','cyan','magenta', $
                     'yellow','white']
@@ -7095,43 +7099,43 @@ CASE event.tag OF
        color_index = $
           widget_info((*state.reg_ids_ptr)[1], /droplist_select)
        coords_index = $
-          widget_info((*state.reg_ids_ptr)[2], /droplist_select) 
-       widget_control,(*state.reg_ids_ptr)[3],get_value=xcenter 
-       widget_control,(*state.reg_ids_ptr)[4],get_value=ycenter           
+          widget_info((*state.reg_ids_ptr)[2], /droplist_select)
+       widget_control,(*state.reg_ids_ptr)[3],get_value=xcenter
+       widget_control,(*state.reg_ids_ptr)[4],get_value=ycenter
        widget_control,(*state.reg_ids_ptr)[5],get_value=xwidth
        widget_control,(*state.reg_ids_ptr)[6],get_value=ywidth
-       widget_control,(*state.reg_ids_ptr)[7],get_value=x1            
+       widget_control,(*state.reg_ids_ptr)[7],get_value=x1
        widget_control,(*state.reg_ids_ptr)[8],get_value=y1
-       widget_control,(*state.reg_ids_ptr)[9],get_value=x2       
+       widget_control,(*state.reg_ids_ptr)[9],get_value=x2
        widget_control,(*state.reg_ids_ptr)[10],get_value=y2
        widget_control,(*state.reg_ids_ptr)[11],get_value=angle
        widget_control,(*state.reg_ids_ptr)[12],get_value=thick
        widget_control,(*state.reg_ids_ptr)[13],get_value=text_str
        text_str = strcompress(text_str[0],/remove_all)
-       
-       CASE reg_type[reg_index] OF 
-          
+
+       CASE reg_type[reg_index] OF
+
           'circle': BEGIN
              region_str = reg_type[reg_index] + '(' + xcenter + ', ' + $
-                          ycenter + ', ' + xwidth  
+                          ycenter + ', ' + xwidth
              if (coords_index ne 0 and coords_index ne 5) then $
                 region_str = $
                 region_str + ', ' + coords_type[coords_index]
              region_str = $
                 region_str + ') # color=' + reg_color[color_index]
           END
-          
+
           'box': BEGIN
              region_str = reg_type[reg_index] + '(' + xcenter + ', ' + $
                           ycenter + ', ' + xwidth + ', ' + $
-                          ywidth + ', ' + angle 
+                          ywidth + ', ' + angle
              if (coords_index ne 0 and coords_index ne 5) then $
                 region_str = $
                 region_str + ', ' + coords_type[coords_index]
              region_str = $
                 region_str + ') # color=' + reg_color[color_index]
           END
-          
+
           'ellipse': BEGIN
              region_str = reg_type[reg_index] + '(' + xcenter + ', ' + $
                           ycenter + ', ' + xwidth + ', ' + $
@@ -7142,7 +7146,7 @@ CASE event.tag OF
              region_str = $
                 region_str + ') # color=' + reg_color[color_index]
           END
-          
+
           'line': BEGIN
              region_str = reg_type[reg_index] + '(' + x1 + ', ' + y1 + ', ' + $
                           x2 + ', ' + y2
@@ -7152,32 +7156,32 @@ CASE event.tag OF
              region_str = $
                 region_str + ') # color=' + reg_color[color_index]
           END
-          
-          ELSE: 
+
+          ELSE:
        ENDCASE
-       
+
        if (text_str ne '') then region_str = region_str + $
                                              ' text={' + text_str + '}'
-       
+
        options = {color: reg_color[color_index], $
                   thick:thick}
-       
+
        pstruct = {type:'region', $ ;type of plot
                   reg_array:[region_str], $ ;region array to plot
                   options: options $
                  }
 
        kctvplotlist.add, pstruct
-       
+
        kctv_plotwindow
        nplot = n_elements(kctvplotlist)
        kctv_plot1region, nplot-1
 
 ;       if ptr_valid(state.reg_ids_ptr) then ptr_free, state.reg_ids_ptr
 ;       widget_control, event.top, /destroy
-        
+
     END
-    
+
     ELSE:
 ENDCASE
 
@@ -7191,12 +7195,12 @@ pro kctv_setregion
 
 common kctv_state
 common kctv_images
-common kctv_pdata  
+common kctv_pdata
 
 if (not(xregistered('kctv_setregion', /noshow))) then begin
 
 regionbase = widget_base(/row, group_leader=state.base_id)
-  
+
 formdesc = ['0, droplist, circle|box|ellipse|line,label_left=Region:, set_value=0, TAG=reg_opt ', $
             '0, droplist, red|black|green|blue|cyan|magenta|yellow|white,label_left=Color:, set_value=0, TAG=color_opt ', $
             '0, droplist, Pixel|RA Dec (J2000)|RA Dec (B1950)|Galactic|Ecliptic|Native,label_left=Coords:, set_value=0, TAG=coord_opt ', $
@@ -7214,7 +7218,7 @@ formdesc = ['0, droplist, circle|box|ellipse|line,label_left=Region:, set_value=
             '1, base, , row', $
             '0, button, Done, quit, TAG=quit ', $
             '0, button, DrawRegion, quit, TAG=draw']
-  
+
 regionform = cw_form(regionbase, formdesc, /column, title = 'kctv region',$
                      IDS=reg_ids_ptr)
 state.regionform_id = regionbase
@@ -7242,10 +7246,10 @@ widget_control,(*state.reg_ids_ptr)[11],sensitive=0
 ; Check for WCS.  If WCS exists, then convert to display coordinates.
 ;if (ptr_valid(state.astr_ptr)) then begin
 ; Convert to display coordinates and change droplist selection.
-    
+
 ;    if (state.wcstype EQ 'angle') then begin
 ;        xy2ad, state.coord[0], state.coord[1], *(state.astr_ptr), lon, lat
-;        
+;
 ;        wcsstring = kctv_wcsstring(lon, lat, (*state.astr_ptr).ctype,  $
 ;                                  state.equinox, state.display_coord_sys, $
 ;                                  state.display_equinox, state.display_base60)
@@ -7255,12 +7259,12 @@ widget_control,(*state.reg_ids_ptr)[11],sensitive=0
 ;        if (strpos(wcsstring, 'B1950') ne -1) then coord_select = 2
 ;        if (strpos(wcsstring, 'Galactic') ne -1) then coord_select = 3
 ;        if (strpos(wcsstring, 'Ecliptic') ne -1) then coord_select = 4
-;        
+;
 ;        if (strpos(wcsstring, 'J2000') eq -1 AND $
 ;            strpos(wcsstring, 'B1950') eq -1 AND $
 ;            strpos(wcsstring, 'Galactic') eq -1 AND $
 ;            strpos(wcsstring, 'Ecliptic') eq -1) then coord_select = 5
-;        
+;
 ;        wcsstring = repstr(wcsstring,'J2000','')
 ;        wcsstring = repstr(wcsstring,'B1950','')
 ;        wcsstring = repstr(wcsstring,'Deg','')
@@ -7268,17 +7272,17 @@ widget_control,(*state.reg_ids_ptr)[11],sensitive=0
 ;        wcsstring = repstr(wcsstring,'Ecliptic','')
 ;        wcsstring = repstr(wcsstring,'(','')
 ;        wcsstring = repstr(wcsstring,')','')
-;        
+;
 ;        xcent = strcompress(gettok(wcsstring,','), /remove_all)
 ;        ycent = strcompress(wcsstring, /remove_all)
-;        
+;
 ;        widget_control,(*state.reg_ids_ptr)[3], Set_Value = xcent
 ;        widget_control,(*state.reg_ids_ptr)[4], Set_Value = ycent
 ;        widget_control,(*state.reg_ids_ptr)[7], Set_Value = xcent
 ;        widget_control,(*state.reg_ids_ptr)[8], Set_Value = ycent
 ;        widget_control,(*state.reg_ids_ptr)[2], set_droplist_select=coord_select
-;    endif    
-;    
+;    endif
+;
 ;endif else begin
 ;    widget_control,(*state.reg_ids_ptr)[3], Set_Value = $
 ;      strcompress(string(state.coord[0]), /remove_all)
@@ -7293,13 +7297,13 @@ widget_control,(*state.reg_ids_ptr)[11],sensitive=0
 xmanager, 'kctv_setregion', regionbase
 
 endif else begin
-    
+
     if (ptr_valid(state.astr_ptr)) then begin
 ; Convert to display coordinates and change droplist selection.
-        
+
         if (state.wcstype EQ 'angle') then begin
             xy2ad, state.coord[0], state.coord[1], *(state.astr_ptr), lon, lat
-            
+
             wcsstring = kctv_wcsstring(lon, lat, (*state.astr_ptr).ctype,  $
                                       state.equinox, state.display_coord_sys, $
                                       state.display_equinox, state.display_base60)
@@ -7308,12 +7312,12 @@ endif else begin
       if (strpos(wcsstring, 'B1950') ne -1) then coord_select = 2
       if (strpos(wcsstring, 'Galactic') ne -1) then coord_select = 3
       if (strpos(wcsstring, 'Ecliptic') ne -1) then coord_select = 4
-      
+
       if (strpos(wcsstring, 'J2000') eq -1 AND $
           strpos(wcsstring, 'B1950') eq -1 AND $
           strpos(wcsstring, 'Galactic') eq -1 AND $
           strpos(wcsstring, 'Ecliptic') eq -1) then coord_select = 5
-      
+
       wcsstring = repstr(wcsstring,'J2000','')
       wcsstring = repstr(wcsstring,'B1950','')
       wcsstring = repstr(wcsstring,'Deg','')
@@ -7330,8 +7334,8 @@ endif else begin
       widget_control,(*state.reg_ids_ptr)[7], Set_Value = xcent
       widget_control,(*state.reg_ids_ptr)[8], Set_Value = ycent
       widget_control,(*state.reg_ids_ptr)[2], set_droplist_select=coord_select
-  endif  
-  
+  endif
+
 endif else begin
     widget_control,(*state.reg_ids_ptr)[3], Set_Value = $
       strcompress(string(state.coord[0]), /remove_all)
@@ -7368,7 +7372,7 @@ state.lineplot_base_id = $
 state.lineplot_widget_id = $
   widget_draw(state.lineplot_base_id, $
               frame = 0, $
-              /motion_events, $
+              /motion_events, /button_events, $
               scr_xsize = state.lineplot_size[0], $
               scr_ysize = state.lineplot_size[1], $
               uvalue = 'lineplot_window')
@@ -7524,7 +7528,7 @@ drawgeom = widget_info(state.lineplot_widget_id, /geometry)
 
 state.lineplot_pad[0] = basegeom.xsize - drawgeom.xsize
 state.lineplot_pad[1] = basegeom.ysize - drawgeom.ysize
-    
+
 xmanager, 'kctv_lineplot', state.lineplot_base_id, /no_block
 
 kctv_resetwindow
@@ -7546,6 +7550,44 @@ if (event.type EQ 2) then begin
       widget_control, state.lineplot_location_id, set_value = tmp_string
    endif
 
+endif else if (event.type eq 0) then begin
+    state.lineplot_zoom_x0 = ( float(event.x)/float(state.lineplot_x_vsize) - $
+           state.lineplot_x_s[0] ) / state.lineplot_x_s[1]
+    state.lineplot_zoom_y0 = ( float(event.y)/float(state.lineplot_y_vsize) - $
+           state.lineplot_y_s[0]) / state.lineplot_y_s[1]
+
+endif else if (event.type eq 1) then begin
+    state.lineplot_zoom_x1 = ( float(event.x)/float(state.lineplot_x_vsize) - $
+           state.lineplot_x_s[0] ) / state.lineplot_x_s[1]
+    state.lineplot_zoom_y1 = ( float(event.y)/float(state.lineplot_y_vsize) - $
+           state.lineplot_y_s[0]) / state.lineplot_y_s[1]
+    ; get min and max values
+    xmin = min([state.lineplot_zoom_x0, state.lineplot_zoom_x1])
+    ymin = min([state.lineplot_zoom_y0, state.lineplot_zoom_y1])
+    xmax = max([state.lineplot_zoom_x0, state.lineplot_zoom_x1])
+    ymax = max([state.lineplot_zoom_y0, state.lineplot_zoom_y1])
+    ; reset widgets
+    widget_control, state.lineplot_xmin_id, set_value=xmin
+    state.lineplot_xmin = xmin
+    widget_control, state.lineplot_ymin_id, set_value=ymin
+    state.lineplot_ymin = ymin
+    widget_control, state.lineplot_xmax_id, set_value=xmax
+    state.lineplot_xmax = xmax
+    widget_control, state.lineplot_ymax_id, set_value=ymax
+    state.lineplot_ymax = ymax
+    ; redraw plot
+    case state.plot_type of
+        'rowplot': kctv_rowplot
+        'colplot': kctv_colplot
+        'vectorplot': kctv_vectorplot
+        'gaussplot': kctv_gaussfit
+        'histplot': kctv_histplot
+        ; 'surfplot': kctv_surfplot ; don't want to do this one
+        'contourplot': kctv_contourplot
+        'specplot': kctv_specplot
+        'drillplot': kctv_drillplot
+        'depthplot': kctv_depthplot
+    endcase
 endif
 
 end
@@ -7574,7 +7616,7 @@ if (not (keyword_set(ps))) then begin
     if (not (xregistered('kctv_lineplot', /noshow))) then begin
         kctv_lineplot_init
         newplot = 1
-    endif 
+    endif
 
     widget_control, state.histbutton_base_id, map=0
     widget_control, state.lineplot_location_id, map=1
@@ -7591,9 +7633,9 @@ if (not (keyword_set(ps))) then begin
         xmin = 0.0
         xmax = state.image_size[0]
         ymin = min(main_image[*,state.plot_coord[1]])
-        ymax = max(main_image[*,state.plot_coord[1]]) 
+        ymax = max(main_image[*,state.plot_coord[1]])
     endif
-   
+
     widget_control, state.lineplot_xmin_id, set_value=xmin
     widget_control, state.lineplot_xmax_id, set_value=xmax
     widget_control, state.lineplot_ymin_id, set_value=ymin
@@ -7607,7 +7649,7 @@ if (not (keyword_set(ps))) then begin
     state.plot_type = 'rowplot'
     kctv_setwindow, state.lineplot_window_id
     erase
-    
+
 endif
 
 cgplot, main_image[*, state.plot_coord[1]], $
@@ -7627,7 +7669,7 @@ state.lineplot_y_vsize = !d.y_vsize
 state.lineplot_x_s = !x.s
 state.lineplot_y_s = !y.s
 
-if (not (keyword_set(ps))) then begin 
+if (not (keyword_set(ps))) then begin
   widget_control, state.lineplot_base_id, /clear_events
   kctv_resetwindow
 endif
@@ -7658,7 +7700,7 @@ if (not (keyword_set(ps))) then begin
     if (not (xregistered('kctv_lineplot', /noshow))) then begin
         kctv_lineplot_init
         newplot = 1
-    endif 
+    endif
 
     widget_control, state.histbutton_base_id, map=0
     widget_control, state.lineplot_location_id, map=1
@@ -7675,9 +7717,9 @@ if (not (keyword_set(ps))) then begin
         xmin = 0.0
         xmax = state.image_size[1]
         ymin = min(main_image[state.plot_coord[0],*])
-        ymax = max(main_image[state.plot_coord[0],*]) 
+        ymax = max(main_image[state.plot_coord[0],*])
     endif
-    
+
     widget_control, state.lineplot_xmin_id, set_value=xmin
     widget_control, state.lineplot_xmax_id, set_value=xmax
     widget_control, state.lineplot_ymin_id, set_value=ymin
@@ -7691,7 +7733,7 @@ if (not (keyword_set(ps))) then begin
     state.plot_type = 'colplot'
     kctv_setwindow, state.lineplot_window_id
     erase
-    
+
 endif
 
 cgplot, main_image[state.plot_coord[0], *], $
@@ -7711,7 +7753,7 @@ state.lineplot_y_vsize = !d.y_vsize
 state.lineplot_x_s = !x.s
 state.lineplot_y_s = !y.s
 
-if (not (keyword_set(ps))) then begin 
+if (not (keyword_set(ps))) then begin
   widget_control, state.lineplot_base_id, /clear_events
   kctv_resetwindow
 endif
@@ -7759,12 +7801,12 @@ for j = 0, n_elements(x) - 1 do begin
     ceil_col = ceil(col)
     floor_row = floor(row)
     ceil_row = ceil(row)
-    
+
     pixval[j] = (total([main_image[floor_col,floor_row], $
                         main_image[floor_col,ceil_row], $
                         main_image[ceil_col,floor_row], $
                         main_image[ceil_col,ceil_row]])) / 4.
-    
+
 endfor
 
 state.lineplot_locfmt = '(f9.2,",",g12.5)'
@@ -7776,7 +7818,7 @@ if (not (keyword_set(ps))) then begin
         kctv_lineplot_init
         newplot = 1
     endif
-    
+
     widget_control, state.histbutton_base_id, map=0
     widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=1
@@ -7792,9 +7834,9 @@ if (not (keyword_set(ps))) then begin
         xmin = 0.0
         xmax = max(vectdist)
         ymin = min(pixval)
-        ymax = max(pixval) 
-        
-    endif 
+        ymax = max(pixval)
+
+    endif
 
     widget_control, state.lineplot_xmin_id, set_value=xmin
     widget_control, state.lineplot_xmax_id, set_value=xmax
@@ -7811,7 +7853,7 @@ if (not (keyword_set(ps))) then begin
     erase
 
 endif
-  
+
 vecdistsq = float(state.vector_coord2[0] - state.vector_coord1[0])^2 + $
             float(state.vector_coord2[1] - state.vector_coord1[1])^2
 vecdist = sqrt(vecdistsq)
@@ -7845,7 +7887,7 @@ state.lineplot_x_s = !x.s
 state.lineplot_y_s = !y.s
 
 
-if (not (keyword_set(ps))) then begin 
+if (not (keyword_set(ps))) then begin
   widget_control, state.lineplot_base_id, /clear_events
   kctv_resetwindow
 endif
@@ -7893,12 +7935,12 @@ for j = 0, n_elements(x) - 1 do begin
     ceil_col = ceil(col)
     floor_row = floor(row)
     ceil_row = ceil(row)
-    
+
     pixval[j] = (total([main_image[floor_col,floor_row], $
                         main_image[floor_col,ceil_row], $
                         main_image[ceil_col,floor_row], $
                         main_image[ceil_col,ceil_row]])) / 4.
-    
+
 endfor
 
 state.lineplot_locfmt = '(f9.2,",",g12.5)'
@@ -7910,7 +7952,7 @@ if (not (keyword_set(ps))) then begin
         kctv_lineplot_init
         newplot = 1
     endif
-    
+
     widget_control, state.histbutton_base_id, map=0
     widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=1
@@ -7926,9 +7968,9 @@ if (not (keyword_set(ps))) then begin
         xmin = 0.0
         xmax = max(vectdist)
         ymin = min(pixval)
-        ymax = max(pixval) 
-        
-    endif 
+        ymax = max(pixval)
+
+    endif
 
     widget_control, state.lineplot_xmin_id, set_value=xmin
     widget_control, state.lineplot_xmax_id, set_value=xmax
@@ -7975,21 +8017,21 @@ state.lineplot_y_s = !y.s
 
 if (n_elements(vectdist) GT 10) then begin
    result = gaussfit(vectdist, pixval, a, nterms=5)
-   
+
    cgplot, vectdist, result, color='red', /overplot
 
    amplitude = a[0]
    centroid = a[1]
    fwhm = a[2] * 2.35
-   
+
    fwhmstring = strcompress(string(fwhm, format='("FWHM = ", f7.2)'), $
                             /remove_all)
-   
+
    cgtext, 0.7, 0.75, fwhmstring, /normal, charsize = state.plotcharsize
-   
+
 endif
 
-if (not (keyword_set(ps))) then begin 
+if (not (keyword_set(ps))) then begin
   widget_control, state.lineplot_base_id, /clear_events
   kctv_resetwindow
 endif
@@ -8037,7 +8079,7 @@ if (not (keyword_set(ps))) then begin
         kctv_lineplot_init
         newplot = 1
     endif
-    
+
     widget_control, state.histbutton_base_id, map=0
     widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=1
@@ -8053,9 +8095,9 @@ if (not (keyword_set(ps))) then begin
         xmin = min(wave)
         xmax = max(wave)
         ymin = min(pixval)
-        ymax = max(pixval) 
-        
-    endif 
+        ymax = max(pixval)
+
+    endif
 
     widget_control, state.lineplot_xmin_id, set_value=xmin
     widget_control, state.lineplot_xmax_id, set_value=xmax
@@ -8101,7 +8143,7 @@ state.lineplot_y_vsize = !d.y_vsize
 state.lineplot_x_s = !x.s
 state.lineplot_y_s = !y.s
 
-if (not (keyword_set(ps))) then begin 
+if (not (keyword_set(ps))) then begin
   widget_control, state.lineplot_base_id, /clear_events
   kctv_resetwindow
 endif
@@ -8130,27 +8172,27 @@ if (not (keyword_set(ps))) then begin
         kctv_lineplot_init
         newplot = 1
     endif
-    
+
     widget_control, state.histbutton_base_id, map=0
     widget_control, state.lineplot_location_id, map=0
     widget_control, state.holdrange_button_id, sensitive=0
-    
+
 ; set new plot coords if passed from a main window keyboard event
     if (keyword_set(newcoord)) then begin
         plotsize = $
           fix(min([50, state.image_size[0]/4., state.image_size[1]/4.]))
-        center = plotsize > state.coord < (state.image_size[0:1] - plotsize) 
-        
+        center = plotsize > state.coord < (state.image_size[0:1] - plotsize)
+
         shade_image = main_image[center[0]-plotsize:center[0]+plotsize-1, $
                                  center[1]-plotsize:center[1]+plotsize-1]
-        
+
         state.lineplot_xmin = center[0]-plotsize
         state.lineplot_xmax = center[0]+plotsize-1
-        state.lineplot_ymin = center[1]-plotsize 
+        state.lineplot_ymin = center[1]-plotsize
         state.lineplot_ymax = center[1]+plotsize-1
-        
+
         state.plot_coord = state.coord
-        
+
         widget_control, state.lineplot_xmin_id, $
           set_value = state.lineplot_xmin
         widget_control, state.lineplot_xmax_id, $
@@ -8160,7 +8202,7 @@ if (not (keyword_set(ps))) then begin
         widget_control, state.lineplot_ymax_id, $
           set_value = state.lineplot_ymax
     endif
-    
+
     if (keyword_set(fullrange)) then begin
         widget_control, state.lineplot_xmin_id, set_value = 0
         widget_control, state.lineplot_xmax_id, $
@@ -8173,12 +8215,12 @@ if (not (keyword_set(ps))) then begin
     state.plot_type = 'surfplot'
     kctv_setwindow, state.lineplot_window_id
     erase
-    
-; now get plot coords from the widget box   
+
+; now get plot coords from the widget box
     widget_control,state.lineplot_xmin_id, get_value=xmin
     widget_control,state.lineplot_xmax_id, get_value=xmax
     widget_control,state.lineplot_ymin_id, get_value=ymin
-    widget_control,state.lineplot_ymax_id, get_value=ymax  
+    widget_control,state.lineplot_ymax_id, get_value=ymax
 
     state.lineplot_xmin = xmin
     state.lineplot_xmax = xmax
@@ -8212,7 +8254,7 @@ cgsurf, shade_image, shades=bytscl(shade_image), $
         title = plottitle, xtitle = 'X', ytitle = 'Y', $
         ztitle = 'Pixel Value', charsize = state.plotcharsize
 
-if (not (keyword_set(ps))) then begin 
+if (not (keyword_set(ps))) then begin
     widget_control, state.lineplot_base_id, /clear_events
     kctv_resetwindow
 endif
@@ -8243,25 +8285,25 @@ if (not (keyword_set(ps))) then begin
         kctv_lineplot_init
         newplot = 1
     endif
-    
+
     widget_control, state.histbutton_base_id, map=0
     widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=0
-    
+
     if (keyword_set(newcoord)) then begin
-        
+
         plotsize = $
           fix(min([50, state.image_size[0]/4., state.image_size[1]/4.]))
-        center = plotsize > state.coord < (state.image_size[0:1] - plotsize) 
-        
+        center = plotsize > state.coord < (state.image_size[0:1] - plotsize)
+
         contour_image =  main_image[center[0]-plotsize:center[0]+plotsize-1, $
                                     center[1]-plotsize:center[1]+plotsize-1]
-        
+
         state.lineplot_xmin = center[0]-plotsize
         state.lineplot_xmax = center[0]+plotsize-1
         state.lineplot_ymin = center[1]-plotsize
         state.lineplot_ymax = center[1]+plotsize-1
-                
+
         state.plot_coord = state.coord
 
         widget_control,state.lineplot_xmin_id, $
@@ -8273,7 +8315,7 @@ if (not (keyword_set(ps))) then begin
         widget_control,state.lineplot_ymax_id, $
           set_value=state.lineplot_ymax
     endif
-    
+
     if (keyword_set(fullrange)) then begin
         widget_control, state.lineplot_xmin_id, set_value = 0
         widget_control, state.lineplot_xmax_id, $
@@ -8286,17 +8328,17 @@ if (not (keyword_set(ps))) then begin
     state.plot_type = 'contourplot'
     kctv_setwindow, state.lineplot_window_id
     erase
-    
-; now get plot coords from the widget box   
+
+; now get plot coords from the widget box
     widget_control,state.lineplot_xmin_id, get_value=xmin
     widget_control,state.lineplot_xmax_id, get_value=xmax
     widget_control,state.lineplot_ymin_id, get_value=ymin
-    widget_control,state.lineplot_ymax_id, get_value=ymax  
+    widget_control,state.lineplot_ymax_id, get_value=ymax
 
     state.lineplot_xmin = xmin
     state.lineplot_xmax = xmax
     state.lineplot_ymin = ymin
-    state.lineplot_ymax = ymax   
+    state.lineplot_ymax = ymax
 endif
 
 contour_image =  main_image[state.lineplot_xmin:state.lineplot_xmax, $
@@ -8339,7 +8381,7 @@ state.lineplot_y_vsize = !d.y_vsize
 state.lineplot_x_s = !x.s
 state.lineplot_y_s = !y.s
 
-if (not (keyword_set(ps))) then begin 
+if (not (keyword_set(ps))) then begin
   widget_control, state.lineplot_base_id, /clear_events
   kctv_resetwindow
 endif
@@ -8370,25 +8412,25 @@ if (not (keyword_set(ps))) then begin
         kctv_lineplot_init
         newplot = 1
     endif
-    
+
     widget_control, state.histbutton_base_id, map=1
     widget_control, state.lineplot_location_id, map=1
     widget_control, state.holdrange_button_id, sensitive=0
-    
+
     if (keyword_set(newcoord)) then begin
-        
+
         state.plot_coord = state.coord
         plotsize_x = $
           fix(min([20, state.image_size[0]/2.]))
         plotsize_y = $
           fix(min([20, state.image_size[1]/2.]))
-        
+
 ; Establish pixel boundaries to histogram
         x1 = (state.plot_coord[0]-plotsize_x) > 0.
         x2 = (state.plot_coord[0]+plotsize_x) < (state.image_size[0]-1)
         y1 = (state.plot_coord[1]-plotsize_y) > 0.
         y2 = (state.plot_coord[1]+plotsize_y) < (state.image_size[1]-1)
-        
+
         widget_control, state.x1_pix_id, set_value=x1
         widget_control, state.x2_pix_id, set_value=x2
         widget_control, state.y1_pix_id, set_value=y1
@@ -8400,11 +8442,11 @@ if (not (keyword_set(ps))) then begin
     erase
 endif
 
-; get histogram region 
+; get histogram region
 widget_control, state.x1_pix_id, get_value=x1
 widget_control, state.x2_pix_id, get_value=x2
 widget_control, state.y1_pix_id, get_value=y1
-widget_control, state.y2_pix_id, get_value=y2        
+widget_control, state.y2_pix_id, get_value=y2
 hist_image = main_image[x1:x2, y1:y2]
 
 ; initialize the binsize if necessary
@@ -8418,7 +8460,7 @@ endif
 
 ; Call plothist to create histogram arrays
 plothist, hist_image, xhist, yhist, bin=state.binsize, /NaN, /noplot
-   
+
 ; Only initialize plot window and plot ranges to the min/max ranges
 ; when histplot window is not already present or plot window is present
 ; but last plot was not a histplot.  Otherwise, use the values
@@ -8469,7 +8511,7 @@ state.lineplot_y_vsize = !d.y_vsize
 state.lineplot_x_s = !x.s
 state.lineplot_y_s = !y.s
 
-if (not (keyword_set(ps))) then begin 
+if (not (keyword_set(ps))) then begin
     widget_control, state.lineplot_base_id, /clear_events
     kctv_resetwindow
 endif
@@ -8515,7 +8557,7 @@ case uvalue of
         if (state.holdrange_value eq 1) then state.holdrange_value = 0 $
         else state.holdrange_value = 1
     end
-    
+
     'lineplot_fullrange': begin
         case state.plot_type of
             'rowplot': kctv_rowplot, /fullrange
@@ -8553,13 +8595,13 @@ case uvalue of
                              /nocommon, papersize='Letter', $
                              filename = fname, $
                              button_names = ['Create PS File'])
-        
+
         state.ispsformon = 0
         if (canceled) then return
         if (lpforminfo.filename EQ '') then return
-        
+
         tmp_result = findfile(lpforminfo.filename, count = nfiles)
-        
+
         result = ''
         if (nfiles GT 0) then begin
             mesg = strarr(2)
@@ -8571,17 +8613,17 @@ case uvalue of
             result =  dialog_message(mesg, $
                                      /default_no, $
                                      dialog_parent = state.base_id, $
-                                     /question)                 
+                                     /question)
         endif
-        
+
         if (strupcase(result) EQ 'NO') then return
-        
+
         widget_control, /hourglass
-        
+
         screen_device = !d.name
         set_plot, 'ps'
         device, _extra = lpforminfo
-        
+
         case (state.plot_type) of
             'rowplot': kctv_rowplot, /ps
             'colplot': kctv_colplot, /ps
@@ -8595,12 +8637,12 @@ case uvalue of
             'depthplot': kctv_depthplot, /ps
             else:
         endcase
-        
+
         device, /close
         set_plot, screen_device
-        
-    end    
-    
+
+    end
+
     'lineplot_charsize': begin
        widget_control, state.lineplot_charsize_id, get_value = newcharsize
        newcharsize = newcharsize > 0.2
@@ -8622,16 +8664,16 @@ case uvalue of
     end
 
     'lineplot_newrange': begin
-        
+
         widget_control, state.lineplot_xmin_id, get_value = xmin
         widget_control, state.lineplot_xmax_id, get_value = xmax
         widget_control, state.lineplot_ymin_id, get_value = ymin
         widget_control, state.lineplot_ymax_id, get_value = ymax
-        
+
         ; check plot ranges for validity
         if (state.plot_type EQ 'surfplot' OR $
             state.plot_type EQ 'contourplot') then begin
-            
+
             xmin = fix(round(0 > xmin < (state.image_size[0] - 2)))
             xmax = fix(round(1 > xmax < (state.image_size[0] - 1)))
             ymin = fix(round(0 > ymin < (state.image_size[1] - 2)))
@@ -8645,14 +8687,14 @@ case uvalue of
               if (ymin GT ymax) then ymin = ymax-1
             if (event.id EQ state.lineplot_xmax_id) then $
               if (ymax LT ymin) then ymax = ymin+1
-            
+
         endif
-        
+
         state.lineplot_xmin = xmin
         state.lineplot_xmax = xmax
         state.lineplot_ymin = ymin
         state.lineplot_ymax = ymax
-        
+
         widget_control, state.lineplot_xmin_id, set_value = xmin
         widget_control, state.lineplot_xmax_id, set_value = xmax
         widget_control, state.lineplot_ymin_id, set_value = ymin
@@ -8701,12 +8743,12 @@ case uvalue of
                 if (event.id EQ state.y2_pix_id) then begin
                     widget_control, state.y1_pix_id, get_value=y1
                     widget_control, state.y2_pix_id, get_value=y2
-                    if (y1 GT y2) then y2 = y1 + 1 
+                    if (y1 GT y2) then y2 = y1 + 1
                     if (y2 GT state.image_size[1]-1) then $
                       y2 = state.image_size[1]-1
                     widget_control, state.y2_pix_id, set_value=y2
                 endif
-                
+
                 if (event.id EQ state.histplot_binsize_id) then begin
                     b = event.value
                     if (event.value LE 0) then begin
@@ -8716,14 +8758,14 @@ case uvalue of
                           set_value = 1.0
                     endif
                 endif
-                
+
                 kctv_histplot
-            end 
-             
+            end
+
             else:
-        endcase 
-    end 
-    
+        endcase
+    end
+
 else:
 endcase
 
@@ -8750,7 +8792,7 @@ h[i] =  'File->WritePS:          Write a PostScript file of the current display'
 i = i + 1
 h[i] =  'File->WriteImage:       Write an output png, jpg, or tiff image of the current display'
 i = i + 1
-h[i] =  'File->GetImage:         Download an archival image based on object name or coordinates'  
+h[i] =  'File->GetImage:         Download an archival image based on object name or coordinates'
 i = i + 1
 h[i] =  'File->Quit:             Quits kctv'
 i = i + 1
@@ -8819,15 +8861,15 @@ i = i + 1
 h[i] = '                    Move vertically to change contrast, and'
 i = i + 1
 h[i] = '                         horizontally to change brightness.'
-i = i + 1 
+i = i + 1
 h[i] = '                    button 2 or 3: center on current position'
 i = i + 1
-h[i] = 'Zoom:           sets zoom mode:' 
-i = i + 1 
+h[i] = 'Zoom:           sets zoom mode:'
+i = i + 1
 h[i] = '                    button1: zoom in & center on current position'
 i = i + 1
 h[i] = '                    button2: center on current position'
-i = i + 1 
+i = i + 1
 h[i] = '                    button3: zoom out & center on current position'
 i = i + 1
 h[i] = 'Blink:           sets blink mode:'
@@ -8937,7 +8979,7 @@ h[i] = 'The options for kctvcontour, kctvxyouts, and kctvplot are essentially'
 i = i + 1
 h[i] =  'the same as those for the idl contour, xyouts, and plot commands,'
 i = i + 1
-h[i] = 'except that data coordinates are always used.' 
+h[i] = 'except that data coordinates are always used.'
 i = i + 1
 h[i] = 'The default color for overplots is red.'
 i = i + 2
@@ -8974,14 +9016,14 @@ helptitle = strcompress('kctv v' + state.version + ' help')
                             value = h, $
                             xsize = 85, $
                             ysize = 24)
-    
+
     help_done = widget_button(help_base, $
                               value = 'Done', $
                               uvalue = 'help_done')
 
     widget_control, help_base, /realize
     xmanager, 'kctv_help', help_base, /no_block
-    
+
 endif
 
 end
@@ -9127,7 +9169,7 @@ if (not (xregistered('kctv_stats', /noshow))) then begin
                   title = 'kctv image statistics', $
                   uvalue = 'stats_base')
     state.stats_base_id = stats_base
-    
+
     stats_nbase = widget_base(stats_base, /row, /base_align_center)
     stats_base1 = widget_base(stats_nbase, /column, frame=1)
     stats_base2 = widget_base(stats_nbase, /column)
@@ -9154,14 +9196,14 @@ if (not (xregistered('kctv_stats', /noshow))) then begin
                uvalue = 'statbox', $
                value = state.statboxsize, $
                xsize = 5)
-    
+
     state.statxcenter_id = $
       cw_field(stats_base1, $
                /long, $
                /return_events, $
                title = 'Box X Center:', $
                uvalue = 'statxcenter', $
-               value = state.cursorpos[0], $ 
+               value = state.cursorpos[0], $
                xsize = 5)
 
     state.statycenter_id = $
@@ -9170,7 +9212,7 @@ if (not (xregistered('kctv_stats', /noshow))) then begin
                /return_events, $
                title = 'Box Y Center:', $
                uvalue = 'statycenter', $
-               value = state.cursorpos[1], $ 
+               value = state.cursorpos[1], $
                xsize = 5)
 
     tmp_string = strcompress('# Pixels in Box: ' + string(10000000))
@@ -9185,7 +9227,7 @@ if (not (xregistered('kctv_stats', /noshow))) then begin
     state.statbox_median_id = widget_label(stats_base2a, value = tmp_string)
     tmp_string = strcompress('StdDev: ' + '0.00000000000000')
     state.statbox_stdev_id = widget_label(stats_base2a, value = tmp_string)
-    
+
     state.showstatzoom_id = widget_button(stats_base2, $
           value = 'Show Region', uvalue = 'showstatzoom')
 
@@ -9193,14 +9235,14 @@ if (not (xregistered('kctv_stats', /noshow))) then begin
       widget_button(stats_base2, $
                     value = 'Done', $
                     uvalue = 'stats_done')
-    
+
     state.statzoom_widget_id = widget_draw(stats_zoombase, $
        scr_xsize = 1, scr_ysize = 1)
 
     widget_control, stats_base, /realize
-    
+
     xmanager, 'kctv_stats', stats_base, /no_block
-    
+
     widget_control, state.statzoom_widget_id, get_value = tmp_val
     state.statzoom_window_id = tmp_val
 
@@ -9238,7 +9280,7 @@ ymin = (0 > (y - boxsize) )
 ymax = ((y + boxsize) < (state.image_size[1] - 1))
 
 startx = abs( (x - boxsize) < 0 )
-starty = abs( (y - boxsize) < 0 ) 
+starty = abs( (y - boxsize) < 0 )
 
 image[startx, starty] = scaled_image[xmin:xmax, ymin:ymax]
 
@@ -9302,10 +9344,10 @@ pro kctv_imcenterf, xcen, ycen
 ; ALGORITHM:
 ;   1. first finds max pixel value in
 ;         a 'bigbox' box around the cursor
-;   2. then calculates centroid around the object 
-;   3. iterates, recalculating the center of mass 
-;      around centroid until the shifts become smaller 
-;      than MINSHIFT (0.3 pixels) 
+;   2. then calculates centroid around the object
+;   3. iterates, recalculating the center of mass
+;      around centroid until the shifts become smaller
+;      than MINSHIFT (0.3 pixels)
 
 common kctv_images
 common kctv_state
@@ -9331,9 +9373,9 @@ xx = state.cursorpos[0]
 yy = state.cursorpos[1]
 
 ; make sure there aren't NaN values in the apertures.
-minx = 0 > (xx - state.outersky)  
+minx = 0 > (xx - state.outersky)
 maxx = (xx + state.outersky) < (state.image_size[0] - 1)
-miny = 0 > (yy - state.outersky)  
+miny = 0 > (yy - state.outersky)
 maxy = (yy + state.outersky) < (state.image_size[1] - 1)
 
 subimg = main_image[minx:maxx, miny:maxy]
@@ -9357,19 +9399,19 @@ my = (floor(w/cutsize[1]))[0]
 mx = (w - my*cutsize[1])[0]
 
 xx = mx + x0
-yy = my + y0 
+yy = my + y0
 xcen = xx
 ycen = yy
 
-; then find centroid 
+; then find centroid
 if  (n_elements(xcen) gt 1) then begin
-    xx = round(total(xcen)/n_elements(xcen)) 
-    yy = round(total(ycen)/n_elements(ycen)) 
+    xx = round(total(xcen)/n_elements(xcen))
+    yy = round(total(ycen)/n_elements(ycen))
 endif
 
 done = 0
 niter = 1
-    
+
 ; cut out relevant portion
 sz = size(main_image)
 x0 = round((xx-dc) > 0)         ; need the ()'s
@@ -9469,10 +9511,10 @@ end
 pro kctv_radplotf, x, y, fwhm
 
 ; Program to calculate radial profile of an image
-; given aperture location, range of sizes, and inner and 
+; given aperture location, range of sizes, and inner and
 ; outer radius for sky subtraction annulus.  Calculates sky by
 ; median.
-; 
+;
 ; original version by M. Liu, adapted for inclusion in ATV by AJB
 
 common kctv_state
@@ -9499,9 +9541,9 @@ out = fltarr(nrad,12)
 ;   bounded by edges of image
 ;   (there must be a cute IDL way to do this neater)
 sz = size(main_image)
-x0 = floor(x-outsky) 
+x0 = floor(x-outsky)
 x1 = ceil(x+outsky)   ; one pixel too many?
-y0 = floor(y-outsky) 
+y0 = floor(y-outsky)
 y1 = ceil(y+outsky)
 x0 = x0 > 0.0
 x1 = x1 < (sz[1]-1)
@@ -9542,7 +9584,7 @@ in2 = insky^(2.0)
 out2 = outsky^(2.0)
 if (in2 LT max(distsq)) then begin
     w = where((distsq gt in2) and (distsq le out2),ns)
-    skyann = img[w] 
+    skyann = img[w]
 endif else begin
     w = where(distsq EQ distsq)
     skyann = img[w]
@@ -9564,7 +9606,7 @@ out[*,10]= errsky
 ; flux, and differential average pixel value along with 1 sigma scatter
 ; relies on the fact the output array is full of zeroes
 for i = 0,nrad-1 do begin
-    
+
     dr = drad
     if i eq 0 then begin
         rin =  0.0
@@ -9576,13 +9618,13 @@ for i = 0,nrad-1 do begin
         rin2 = rin*rin
     endelse
     rout2 = rout*rout
-    
+
 ; get flux and pixel stats in annulus, wary of counting pixels twice
 ; checking if necessary if there are pixels in the sector
     w = where(distsq gt rin2 and distsq le rout2,np)
-    
+
     pfrac = 1.0                 ; fraction of pixels in each annulus used
-    
+
     if np gt 0 then begin
         ann = img[w]
         dflux = total(ann) * 1./pfrac
@@ -9590,12 +9632,12 @@ for i = 0,nrad-1 do begin
         dnet = dflux - (dnpix * msky) * 1./pfrac
         davg = dnet / (dnpix * 1./pfrac)
         if np gt 1 then dsig = stddev(ann) else dsig = 0.00
-        
+
 ;       std dev in each annulus including sky sub error
         derr = sqrt(dsig*dsig + errsky2)
-        
+
         photimg[w] = rout2
-        
+
         out[i,0] = (rout+rin)/2.0
         out[i,1] = out[i-1>0,1] + dflux
         out[i,2] = out[i-1>0,2] + dnet
@@ -9613,7 +9655,7 @@ for i = 0,nrad-1 do begin
     endif else begin
         out[i, 0] = rout
     endelse
-    
+
 endfor
 
 ; fill radpts array after done with differential photometry
@@ -9690,9 +9732,9 @@ if (x LT state.aprad) OR $
 endif
 
 ; make sure there aren't NaN values in the apertures.
-minx = 0 > (x - state.outersky)  
+minx = 0 > (x - state.outersky)
 maxx = (x + state.outersky) < (state.image_size[0] - 1)
-miny = 0 > (y - state.outersky)  
+miny = 0 > (y - state.outersky)
 maxy = (y + state.outersky) < (state.image_size[1] - 1)
 
 subimg = main_image[minx:maxx, miny:maxy]
@@ -9707,7 +9749,7 @@ phpadu = state.ccdgain
 apr = [state.aprad]
 skyrad = [state.innersky, state.outersky]
 ; Assume that all pixel values are good data
-badpix = [state.image_min-1, state.image_max+1]  
+badpix = [state.image_min-1, state.image_max+1]
 
 if (state.skytype EQ 1) then begin    ; calculate median sky value
 
@@ -9715,7 +9757,7 @@ if (state.skytype EQ 1) then begin    ; calculate median sky value
     xmax = (xmin + (2 * state.outersky + 1)) < (state.image_size[0] - 1)
     ymin = (y - state.outersky) > 0
     ymax = (ymin + (2 * state.outersky + 1)) < (state.image_size[1] - 1)
-    
+
     small_image = main_image[xmin:xmax, ymin:ymax]
     nx = (size(small_image))[1]
     ny = (size(small_image))[2]
@@ -9723,18 +9765,18 @@ if (state.skytype EQ 1) then begin    ; calculate median sky value
     j = (lonarr(nx)+1)#lindgen(ny)
     xc = x - xmin
     yc = y - ymin
-    
+
     w = where( (((i - xc)^2 + (j - yc)^2) GE state.innersky^2) AND $
                (((i - xc)^2 + (j - yc)^2) LE state.outersky^2),  nw)
-    
+
     if ((x - state.outersky) LT 0) OR $
       ((x + state.outersky) GT (state.image_size[0] - 1)) OR $
       ((y - state.outersky) LT 0) OR $
       ((y + state.outersky) GT (state.image_size[1] - 1)) then $
       state.photwarning = 'Warning: Sky apertures fall outside image!'
-    
+
     if (nw GT 0) then  begin
-        skyval = median(small_image(w)) 
+        skyval = median(small_image(w))
     endif else begin
         skyval = -1
         state.photwarning = 'Warning: No pixels in sky!'
@@ -9814,7 +9856,7 @@ kctv_plot1region, iplot
 
 kctv_resetwindow
 
-; write results to file if requested  
+; write results to file if requested
 if (state.photprint EQ 1) then begin
    openw, state.photfile, state.photfilename, /append
    if (state.photerrors EQ 0) then errap = 0.0
@@ -9860,7 +9902,7 @@ endelse
 widget_control, state.centerbox_id, set_value = state.centerboxsize
 widget_control, state.cursorpos_id, set_value = tmp_string
 widget_control, state.centerpos_id, set_value = tmp_string1
-widget_control, state.radius_id, set_value = state.aprad 
+widget_control, state.radius_id, set_value = state.aprad
 widget_control, state.outersky_id, set_value = state.outersky
 widget_control, state.innersky_id, set_value = state.innersky
 widget_control, state.skyresult_id, set_value = tmp_string3
@@ -9869,7 +9911,7 @@ widget_control, state.fwhm_id, set_value = tmp_string4
 widget_control, state.photwarning_id, set_value=state.photwarning
 widget_control, state.photerror_id, set_value = errstring
 
-; Uncomment next lines if you want kctv to output the WCS coords of 
+; Uncomment next lines if you want kctv to output the WCS coords of
 ; the centroid for the photometry object:
 if (state.wcstype EQ 'angle') then begin
     xy2ad, state.centerpos[0], state.centerpos[1], *(state.astr_ptr), $
@@ -9918,7 +9960,7 @@ ymin = (0 > (y - boxsize) )
 ymax = ((y + boxsize) < (state.image_size[1] - 1))
 
 startx = abs( (x - boxsize) < 0 )
-starty = abs( (y - boxsize) < 0 ) 
+starty = abs( (y - boxsize) < 0 )
 
 image[startx, starty] = scaled_image[xmin:xmax, ymin:ymax]
 image1 = image
@@ -10001,7 +10043,7 @@ case uvalue of
         endelse
         kctv_apphot_refresh
     end
-        
+
     'radius': begin
         state.aprad = 1.0 > event.value < state.innersky
         kctv_apphot_refresh
@@ -10043,13 +10085,13 @@ case uvalue of
 
     'photprint': begin
        if (state.photprint EQ 0) then begin
-          
+
           photfilename = dialog_pickfile(file = state.photfilename, $
                                          dialog_parent =  state.base_id, $
                                          path = state.current_dir, $
                                          get_path = tmp_dir, $
                                          /write)
-          
+
           if (photfilename EQ '') then return
 
           ; write header to output file
@@ -10077,9 +10119,9 @@ case uvalue of
           free_lun, state.photfile
           state.photprint = 0
           widget_control, state.photprint_id, $
-                          set_value = 'Write results to file...'   
+                          set_value = 'Write results to file...'
        endelse
-    end 
+    end
 
 ;    'magunits': begin
 ;        state.magunits = event.value
@@ -10191,7 +10233,7 @@ if (not (xregistered('kctv_apphot', /noshow))) then begin
                   /column, $
                   title = 'kctv aperture photometry', $
                   uvalue = 'apphot_base')
-    
+
     apphot_top_base = widget_base(apphot_base, /row, /base_align_center)
 
     apphot_data_base1 = widget_base( $
@@ -10221,16 +10263,16 @@ if (not (xregistered('kctv_apphot', /noshow))) then begin
                uvalue = 'centerbox', $
                value = state.centerboxsize, $
                xsize = 5)
-    
+
     tmp_string1 = $
       string(99999.0, 99999.0, $
              format = '("Centroid:   x=",f7.1," y=",f7.1)' )
-    
+
     state.centerpos_id = $
       widget_label(apphot_data_base1a, $
                    value = tmp_string1, $
                    uvalue = 'centerpos')
-    
+
     state.radius_id = $
       cw_field(apphot_data_base1a, $
                /floating, $
@@ -10239,7 +10281,7 @@ if (not (xregistered('kctv_apphot', /noshow))) then begin
                uvalue = 'radius', $
                value = state.aprad, $
                xsize = 8)
-    
+
     state.innersky_id = $
       cw_field(apphot_data_base1a, $
                /floating, $
@@ -10248,7 +10290,7 @@ if (not (xregistered('kctv_apphot', /noshow))) then begin
                uvalue = 'innersky', $
                value = state.innersky, $
                xsize = 8)
-    
+
     state.outersky_id = $
       cw_field(apphot_data_base1a, $
                /floating, $
@@ -10257,7 +10299,7 @@ if (not (xregistered('kctv_apphot', /noshow))) then begin
                uvalue = 'outersky', $
                value = state.outersky, $
                xsize = 8)
-    
+
     photzoom_widget_id = widget_draw( $
          apphot_data_base2, $
          scr_xsize=state.photzoom_size, scr_ysize=state.photzoom_size)
@@ -10269,15 +10311,15 @@ if (not (xregistered('kctv_apphot', /noshow))) then begin
 
     tmp_string3 = string(10000000.00, $
                          format = '("Sky level: ",g12.6)' )
-    
+
     state.skyresult_id = $
       widget_label(apphot_data_base2, $
                    value = tmp_string3, $
                    uvalue = 'skyresult')
-    
+
     tmp_string2 = string(1000000000.00, $
                          format = '("Object counts: ",g12.6)' )
-    
+
     state.photresult_id = $
       widget_label(apphot_data_base2, $
                    value = tmp_string2, $
@@ -10308,7 +10350,7 @@ if (not (xregistered('kctv_apphot', /noshow))) then begin
     endif else begin
        photstring = 'Close photometry file'
     endelse
-    
+
     state.photprint_id = $
        widget_button(apphot_data_base1, $
                      value = photstring, $
@@ -10318,7 +10360,7 @@ if (not (xregistered('kctv_apphot', /noshow))) then begin
       widget_button(apphot_data_base1, $
                     value = 'Show radial profile', $
                     uvalue = 'showradplot')
-    
+
     state.radplot_widget_id = widget_draw( $
          apphot_draw_base, scr_xsize=1, scr_ysize=1)
 
@@ -10335,7 +10377,7 @@ if (not (xregistered('kctv_apphot', /noshow))) then begin
     state.radplot_window_id = tmp_value
 
     xmanager, 'kctv_apphot', apphot_base, /no_block
-    
+
     kctv_resetwindow
 endif
 
@@ -10363,7 +10405,7 @@ ycen = traceguess
 maxrep = 10
 ; convergence criterion for accepting centroid: change in pixels from
 ; previous iteration smaller than mindelta
-mindelta = 0.2    
+mindelta = 0.2
 
 repeat begin
    lastycen = ycen
@@ -10371,8 +10413,8 @@ repeat begin
 
    ylow = round(lastycen - (state.x_traceheight / 2.)) > 0
    yhigh = round(lastycen + (state.x_traceheight / 2.)) < (ysize-1)
-  
-   smallslice = yslice[ylow:yhigh]   
+
+   smallslice = yslice[ylow:yhigh]
    minyslice = min(smallslice)
    smallslice = smallslice - minyslice
 
@@ -10450,10 +10492,10 @@ if (count EQ 1) then traceguess = traceguess - (state.x_traceheight/2.) + w
 for i = midtracepoint, ntracepoints-1 do begin
    xtracestart = tracecenters[i] - twidth
    xtraceend = tracecenters[i] + twidth
-   
+
    tracecutout = main_image[*, xtracestart:xtraceend]
    yslice = total(tracecutout,2)
-   
+
    ; replace NaNs when tracing to avert disaster
    w = where(finite(yslice) EQ 0, count)
    if (count GT 0) then yslice[w] = 0
@@ -10466,7 +10508,7 @@ for i = midtracepoint, ntracepoints-1 do begin
       ycen = kctv_get_tracepoint(yslice, traceguess)
       tracepoints[i] = ycen
    endelse
-   
+
    ; set next guess, accounting for local slope of trace
    if (i EQ midtracepoint) then begin
       traceguess = ycen
@@ -10484,10 +10526,10 @@ traceguess = tracepoints[midtracepoint]
 for i = midtracepoint-1, 0, -1 do begin
    xtracestart = tracecenters[i] - twidth
    xtraceend = tracecenters[i] + twidth
-   
+
    tracecutout = main_image[*, xtracestart:xtraceend]
    yslice = total(tracecutout,2)
-   
+
    w = where(finite(yslice) EQ 0, count)
    if (count GT 0) then yslice[w] = 0
 
@@ -10498,7 +10540,7 @@ for i = midtracepoint-1, 0, -1 do begin
       ycen = kctv_get_tracepoint(yslice, traceguess)
       tracepoints[i] = ycen
    endelse
-   
+
    traceguess = 1 > (ycen - (tracepoints[i+1] - tracepoints[i])/2) < $
                 (ysize-1)
    if (finite(traceguess) EQ 0) then traceguess = tracepoints[i+1]
@@ -10509,7 +10551,7 @@ result = poly_fit(double(tracecenters), tracepoints, $
                   state.x_traceorder, yfit, /double)
 
 xspec = lindgen(xsize) + state.x_xregion[0]
-fulltrace = dblarr(xsize) 
+fulltrace = dblarr(xsize)
 for i = 0, state.x_traceorder do begin
     fulltrace = fulltrace + (result[i] * (double(xspec))^i)
 endfor
@@ -10544,7 +10586,7 @@ phpadu = state.ccdgain
 apr = [state.aprad]
 skyrad = [state.innersky, state.outersky]
 ; Assume that all pixel values are good data
-badpix = [state.image_min-1, state.image_max+1]  
+badpix = [state.image_min-1, state.image_max+1]
 
 for i = 0, zsize-1 do begin
 
@@ -10565,7 +10607,7 @@ for i = 0, zsize-1 do begin
    specsky[i] = sky
    specerr[i] = errap
    xspec[i] = state.wave0 + (j - state.crslice) * state.dwave
-      
+
 endfor
 
 kctv_drillplot, /newcoord
@@ -10612,14 +10654,14 @@ for i = xspec[0], max(xspec) do begin
    ; error check to see if spectrum runs off the top or bottom of image
    if (((fulltrace[j] + state.x_back1) LT 0) or $
        ((fulltrace[j] + state.x_back4) GT ysize)) then begin
-      
+
       spectrum[j] = 0
-      
+
    endif else begin
    ; extract the spectrum accounting for partial pixels at the
    ; aperture edges.  ybottom and ytop are the upper and lower limits
    ; for full pixels in the extraction aperture.
-      ytop = fix(fulltrace[j] + state.x_xupper - 0.5) 
+      ytop = fix(fulltrace[j] + state.x_xupper - 0.5)
       ybottom = fix(fulltrace[j] + state.x_xlower + 0.5) + 1
 
       ; these are the fractions of a pixel
@@ -10650,9 +10692,9 @@ for i = xspec[0], max(xspec) do begin
       endif
 
       spectrum[j] = signal
-      
+
    endelse
-   
+
 endfor
 
 kctvplot, fulltrace + state.x_xupper, xspec, color='yellow'
@@ -10696,7 +10738,7 @@ if (not (keyword_set(ps))) then begin
     if (not (xregistered('kctv_lineplot', /noshow))) then begin
         kctv_lineplot_init
         newplot = 1
-    endif 
+    endif
 
     widget_control, state.histbutton_base_id, map=0
     widget_control, state.lineplot_location_id, map=1
@@ -10713,9 +10755,9 @@ if (not (keyword_set(ps))) then begin
         xmin = min(xspec)
         xmax = max(xspec)
         ymin = min(spectrum)
-        ymax = max(spectrum) 
+        ymax = max(spectrum)
     endif
-   
+
     widget_control, state.lineplot_xmin_id, set_value=xmin
     widget_control, state.lineplot_xmax_id, set_value=xmax
     widget_control, state.lineplot_ymin_id, set_value=ymin
@@ -10729,13 +10771,13 @@ if (not (keyword_set(ps))) then begin
     state.plot_type = 'specplot'
     kctv_setwindow, state.lineplot_window_id
     erase
-    
+
 endif
 
 cgplot, xspec, spectrum, $
         xst = 3, yst = 3, psym = 10, $
         title = strcompress('Extracted Spectrum'), $
-        
+
         xtitle = 'Row', $
         ytitle = state.bunit, $
         xmargin=[10,3], $
@@ -10744,7 +10786,7 @@ cgplot, xspec, spectrum, $
         thick = thick, xthick = thick, ythick = thick, charthick = thick, $
         charsize = state.plotcharsize
 
-if (not (keyword_set(ps))) then begin 
+if (not (keyword_set(ps))) then begin
   widget_control, state.lineplot_base_id, /clear_events
   kctv_resetwindow
 endif
@@ -10778,7 +10820,7 @@ if (not (keyword_set(ps))) then begin
     if (not (xregistered('kctv_lineplot', /noshow))) then begin
         kctv_lineplot_init
         newplot = 1
-    endif 
+    endif
 
     widget_control, state.histbutton_base_id, map=0
     widget_control, state.lineplot_location_id, map=1
@@ -10795,9 +10837,9 @@ if (not (keyword_set(ps))) then begin
         xmin = min(xspec)
         xmax = max(xspec)
         ymin = min(spectrum)
-        ymax = max(spectrum) 
+        ymax = max(spectrum)
     endif
-   
+
     widget_control, state.lineplot_xmin_id, set_value=xmin
     widget_control, state.lineplot_xmax_id, set_value=xmax
     widget_control, state.lineplot_ymin_id, set_value=ymin
@@ -10811,7 +10853,7 @@ if (not (keyword_set(ps))) then begin
     state.plot_type = 'drillplot'
     kctv_setwindow, state.lineplot_window_id
     erase
-    
+
 endif
 
 ofname = sxpar(*state.head_ptr,'OFNAME',/silent,count=nof)
@@ -10842,7 +10884,7 @@ state.lineplot_y_vsize = !d.y_vsize
 state.lineplot_x_s = !x.s
 state.lineplot_y_s = !y.s
 
-if (not (keyword_set(ps))) then begin 
+if (not (keyword_set(ps))) then begin
   widget_control, state.lineplot_base_id, /clear_events
   kctv_resetwindow
 endif
@@ -10918,7 +10960,7 @@ drill_done = $
    widget_button(drill_base, $
                  value = 'Done', $
                  uvalue = 'drill_done')
-    
+
 
 widget_control, drill_base, /realize
 xmanager, 'kctv_drill', drill_base, /no_block
@@ -11047,7 +11089,7 @@ extract_done = $
    widget_button(extract_base, $
                  value = 'Done', $
                  uvalue = 'extract_done')
-    
+
 
 widget_control, extract_base, /realize
 xmanager, 'kctv_extract', extract_base, /no_block
@@ -11076,7 +11118,7 @@ case uvalue of
    end
 
    'zend': begin
-      state.drill_zregion[1] = (state.drill_zregion[0] + 50) > event.value < $ 
+      state.drill_zregion[1] = (state.drill_zregion[0] + 50) > event.value < $
                         (state.nslices - 1)
       widget_control, state.drill_zend_id, $
                       set_value = state.drill_zregion[1]
@@ -11096,19 +11138,19 @@ case uvalue of
 
    'waveend': begin
       state.drill_zregion[1] = (state.drill_zregion[0] + 50) > $
-             ( (event.value - state.wave0) / state.dwave + state.crslice ) < $ 
+             ( (event.value - state.wave0) / state.dwave + state.crslice ) < $
                (state.nslices - 1)
       widget_control, state.drill_zend_id, $
                       set_value = state.drill_zregion[1]
       kctvdrill
    end
-   
+
    'writespect': begin
       if (event.value EQ 'fits') then begin
          kctv_writespecfits
       endif else begin
          kctv_writespectext
-      endelse   
+      endelse
    end
 
    'drill_done': widget_control, event.top, /destroy
@@ -11126,16 +11168,16 @@ common kctv_state
 widget_control, event.id, get_uvalue = uvalue
 
 case uvalue of
-   
+
    'tracestep': begin
       state.x_tracestep = 1 > event.value < 101
-      if NOT(long(state.x_tracestep)/2 ne state.x_tracestep/2.0) then $ 
+      if NOT(long(state.x_tracestep)/2 ne state.x_tracestep/2.0) then $
          state.x_tracestep = state.x_tracestep + 1
       widget_control, state.x_tracestep_id, $
                       set_value = state.x_tracestep
       kctvextract
    end
-   
+
    'traceheight': begin
       state.x_traceheight = 3 > event.value < 101
       state.x_traceheight = state.x_traceheight < state.image_size[1]
@@ -11159,7 +11201,7 @@ case uvalue of
    end
 
    'xend': begin
-      state.x_xregion[1] = (state.x_xregion[0] + 50) > event.value < $ 
+      state.x_xregion[1] = (state.x_xregion[0] + 50) > event.value < $
                         (state.image_size[0] - 1)
       widget_control, state.x_xend_id, $
                       set_value = state.x_xregion[1]
@@ -11176,7 +11218,7 @@ case uvalue of
    end
 
    'upper': begin
-      state.x_xupper = (state.x_xlower + 2) > event.value 
+      state.x_xupper = (state.x_xlower + 2) > event.value
       if (state.x_xupper GT state.x_back3) then $
          state.x_xupper = state.x_back3 - 1
       widget_control, state.x_xupper_id, $
@@ -11189,7 +11231,7 @@ case uvalue of
       else state.x_backsub = 0
       kctvextract
    end
-   
+
    'back1': begin
       state.x_back1 = (-0.5 * state.image_size[1]) > event.value < $
                       (state.x_back2 - 1)
@@ -11255,7 +11297,7 @@ case uvalue of
          kctv_writespecfits
       endif else begin
          kctv_writespectext
-      endelse   
+      endelse
    end
 
    'extract_done': widget_control, event.top, /destroy
@@ -11295,7 +11337,7 @@ if (ptr_valid(state.head_ptr)) then begin
    crpix = double(sxpar(*state.head_ptr,'CRPIX1', /silent))
    crval = double(sxpar(*state.head_ptr,'CRVAL1', /silent))
    shifta = double(sxpar(*state.head_ptr, 'SHIFTA1', /silent))
-   
+
    sxdelpar, outheader, 'CD1_1'
    sxdelpar, outheader, 'CRPIX1'
    sxdelpar, outheader, 'CRVAL1'
@@ -11506,7 +11548,7 @@ xspec=0
 fulltrace=0
 spectrum=0
 
-return    
+return
 end
 
 ;--------------------------------------------------------------------
@@ -11572,12 +11614,12 @@ if (not (xregistered('kctv', /noshow))) then begin
    userwindow = !d.window
    kctv_startup
    align = 0B     ; align, stretch keywords make no sense if we are
-   stretch = 0B   ; just starting up. 
+   stretch = 0B   ; just starting up.
 
-; Startup message, if desired   
+; Startup message, if desired
    print
    msgstring = strcompress('KCTV ' + state.version + ' starting. ')
-   print, msgstring  
+   print, msgstring
    print
 
 endif
@@ -11617,13 +11659,13 @@ if ( (n_params() NE 0) AND (size(image, /tname) NE 'STRING') AND $
         ((size(image))[0] LT 2) OR $
         ((size(image))[1] EQ 1) OR $
         ((size(image))[2] EQ 1)  ) then begin
-      print, 'ERROR: Input data must be a 2-d array or 3-d data cube.'    
+      print, 'ERROR: Input data must be a 2-d array or 3-d data cube.'
    endif else begin
       main_image = image
       newimage = 1
       state.title_extras = ''
       kctv_setheader, header
-      
+
       ; check for cube
       if ((size(image))[0] EQ 3) then begin
          main_image_cube = main_image
@@ -11633,24 +11675,24 @@ if ( (n_params() NE 0) AND (size(image, /tname) NE 'STRING') AND $
       endif else begin   ; plain 2d image
          state.cube = 0
          main_image_cube = 0
-         kctv_killcube      
+         kctv_killcube
       endelse
 
       if (state.firstimage EQ 1) then begin
          align = 0
          stretch = 0
-      endif        
+      endif
    endelse
 endif
 
-;   Define default startup image 
+;   Define default startup image
 if (n_elements(main_image) LE 1) then begin
     gridsize = 512
     centerpix = 256
     x = ((findgen(gridsize) # replicate(1, gridsize)) - centerpix + 0.001)*0.03
     y = ((replicate(1, gridsize) # findgen(gridsize)) - centerpix + 0.001)*0.03
     r = sqrt(x^2 + y^2)
-    main_image = beselj(cos(r^3),2) * sin(2*x) * sin(2*y) * r^(-1.5) * cos(r)  
+    main_image = beselj(cos(r^3),2) * sin(2*x) * sin(2*y) * r^(-1.5) * cos(r)
     stretch = 1
     autoscale = 0
     imagename = ''
@@ -11659,54 +11701,54 @@ if (n_elements(main_image) LE 1) then begin
     state.title_extras = 'firstimage'
 endif
 
-if (newimage GE 1) then begin  
+if (newimage GE 1) then begin
 ; skip this part if new image is invalid or if user selected 'cancel'
 ; in dialog box
     kctv_getstats, align=align
-    
+
     display_image = 0
 
     if n_elements(minimum) GT 0 then begin
         state.min_value = minimum
     endif
-    
-    if n_elements(maximum) GT 0 then begin 
+
+    if n_elements(maximum) GT 0 then begin
         state.max_value = maximum
     endif
-    
+
     if state.min_value GE state.max_value then begin
         state.min_value = state.max_value - 1.
     endif
-    
+
     if (keyword_set(linear)) then state.scaling = 0
     if (keyword_set(log))    then state.scaling = 1
     if (keyword_set(histeq)) then state.scaling = 2
     if (keyword_set(asinh))  then state.scaling = 3
-    
+
 ; Perform autoscale if current stretch invalid or stretch keyword
 ; not set, or if this is the first image
-    IF (state.min_value EQ state.max_value) OR (stretch EQ 0) THEN BEGIN 
+    IF (state.min_value EQ state.max_value) OR (stretch EQ 0) THEN BEGIN
 
        if (keyword_set(autoscale) OR $
            ((state.default_autoscale EQ 1) AND (n_elements(minimum) EQ 0) $
             AND (n_elements(maximum) EQ 0)) ) $
          then kctv_autoscale
-    ENDIF 
+    ENDIF
 
 ;    if (state.firstimage EQ 1 AND newimage EQ 1) then kctv_autoscale
     if (state.firstimage EQ 1) then kctv_autoscale
     if (newimage EQ 1) then state.firstimage = 0  ; now have a real image
-        
+
     kctv_set_minmax
-    
-    IF ((NOT keyword_set(align)) AND state.default_align EQ 0) THEN BEGIN 
+
+    IF ((NOT keyword_set(align)) AND state.default_align EQ 0) THEN BEGIN
        state.zoom_level = 0
        state.zoom_factor = 1.0
-    ENDIF 
+    ENDIF
 
     kctv_displayall
     kctv_settitle
-    
+
     kctv_resetwindow
 endif
 
