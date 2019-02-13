@@ -81,6 +81,7 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	endfor
 ;
 ; process the derived property keys
+	imtype		= sxpar(hdr,'IMTYPE')
 	rastr		= sxpar(hdr,'RA')
 	decstr		= sxpar(hdr,'DEC')
 	if strlen(strtrim(cfg.object,2)) le 0 then $
@@ -146,8 +147,12 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 		cfg.obstype	= 'cal'
 	endif else if strcmp(caltype,'object') eq 1 then begin
 		if strpos(cfg.flimagin,'on') ge 0 or $
-		   strpos(cfg.flspectr,'on') ge 0 then begin
+		   strpos(cfg.flspectr,'on') ge 0 or $
+		   strpos(imtype,'DOMEFLAT') ge 0 then begin
 			cfg.imgtype	= 'dflat'
+			cfg.obstype	= 'cal'
+		endif else if strpos(imtype,'TWIFLAT') ge 0 then begin
+			cfg.imgtype	= 'tflat'
 			cfg.obstype	= 'cal'
 		endif else $
 			cfg.obstype	= 'obj'
