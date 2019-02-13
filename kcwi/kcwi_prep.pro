@@ -366,45 +366,6 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		kcwi_print_info,ppar,pre,'Image numbers out of time sequence', $
 					/warning
 	;
-	; check with user for info about sky and twilight flat observations
-	if not keyword_set(batch) then begin
-		print,'For image number ranges use:'
-		print,"(<cr>) for no images in the night,"
-		print,"image number range list (e.g. '12-15,26,27')."
-		;
-		; twilight flat observations
-		if keyword_set(external_flat) then begin
-			twirng=''
-			read,'Enter twilight flat observations image number range: ', $
-				twirng
-			twirng = strcompress(twirng,/remove_all)
-			if strlen(twirng) gt 0 then begin
-				kcwi_print_info,ppar,pre, $
-					'Input twilight flat image numbers', $
-					twirng,format='(a,a)'
-				rangepar,twirng,twino
-				ntwi = n_elements(twino)
-				for i=0,ntwi-1 do begin
-					t = where(kcfg.imgnum eq twino[i], nt)
-					if nt eq 1 then begin
-						kcfg[t].imgtype = 'tflat'
-						kcfg[t].obstype = 'cal'
-					endif else if nt eq 0 then begin
-						kcwi_print_info,ppar,pre, $
-						'Twilight image number not found: '+ $
-						strn(twino[i]),/warn
-					endif else begin
-						kcwi_print_info,ppar,pre, $
-						'Ambiguous twilight image number: '+ $
-						strn(twino[i]),/warn
-					endelse
-				endfor
-			endif	else	$	; strlen(twirng) gt 0
-			kcwi_print_info,ppar,pre, $
-				'No twilight flat image numbers input'
-		endif
-	endif	; not batch
-	;
 	; write out a complete listing
 	kcwi_print_cfgs,kcfg,/silent,/header,outfile=odir+'kcwi.imlog'
 	;
