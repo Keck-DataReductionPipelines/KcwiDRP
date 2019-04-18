@@ -177,7 +177,6 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 					; get wavelengths
 					w0 = sxpar(hdr,'crval3')
 					dw = sxpar(hdr,'cd3_3')
-					w1 = w0 + (sz[2]-1L) * dw
 					wl = w0 + findgen(sz[2]) * dw
 					wgoo0 = sxpar(hdr,'wavgood0')
 					wgoo1 = sxpar(hdr,'wavgood1')
@@ -369,7 +368,7 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 						;
 						; do correction
 						for j = 0,sz[2]-1 do begin
-							dcor = atm_disper(w1,wl[j],air)
+							dcor = atm_disper(wref,wl[j],air)
 							xsh = dcor * sin(projang) / xscl
 							ysh = dcor * cos(projang) / yscl
 							sky_out[*,*,j] = fshift(sky_out[*,*,j],xsh,ysh)
@@ -403,7 +402,7 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 						;
 						; do correction
 						for j = 0,sz[2]-1 do begin
-							dcor = atm_disper(w1,wl[j],air)
+							dcor = atm_disper(wref,wl[j],air)
 							xsh = dcor * sin(projang) / xscl
 							ysh = dcor * cos(projang) / yscl
 							obj_out[*,*,j] = fshift(obj_out[*,*,j],xsh,ysh)
