@@ -139,9 +139,6 @@ pro kcwi_make_bias,ppar
 		sxaddpar,hdr,'MASTBIAS','T', ' master bias image?'
 		sxaddpar,hdr,'BIASLST',ppar.biases, $
 			' range list of image numbers for stack'
-		if ppar.biasskip1 then $
-			sxaddpar,hdr,'BIASKP1','T', ' skip first bias image?' $
-		else	sxaddpar,hdr,'BIASKP1','F', ' skip first bias image?'
 		;
 		; write out image file
 		ofile = ppar.masterbias

@@ -35,7 +35,7 @@
 ; Switches
 ;	NOCRREJECT	- set to skip cosmic ray rejection
 ;	NONASSUB	- set to skip nod-and-shuffle subtraction
-;	CLEANCOEFFS	- set to override default clean of wave sol'n coeffs
+;	NOCLEANCOEFFS	- set to skip cleaning of wave sol'n coeffs
 ;	WAVEITER	- set to use iterative wavelength range expansion method
 ;	SAVEINTIMS	- set to save intermediate images (def: NO)
 ;	INCLUDETEST	- set to include test images in reduction (def: NO)
@@ -95,6 +95,7 @@
 ;	2017-MAY-04	Added waveiter keyword
 ;	2017-JUN-28	Added ALTCALDIR keyword
 ;	2017-NOV-21	Added FIRST keyword
+;	2019-MAY-10	Changed cleancoeffs keyword to nocleancoeffs
 ;-
 pro kcwi_prep,rawdir,reduceddir,datadir, $
 	froot=froot, $
@@ -107,7 +108,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	taperfrac=taperfrac, pkdel=pkdel, $
 	nocrreject=nocrreject, $
 	nonassub=nonassub, $
-	cleancoeffs=cleancoeffs, $
+	nocleancoeffs=nocleancoeffs, $
 	waveiter=waveiter, $
 	saveintims=saveintims, $
 	includetest=includetest, $
@@ -116,7 +117,6 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	verbose=verbose, $
 	display=display, $
 	saveplots=saveplots, $
-	batch=batch, $
 	help=help
 	;
 	; setup
@@ -130,7 +130,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, FIRST=N, MINGROUPBIAS=N, MINOSCANPIX=N, ALTCALDIR=<full_dir_spec>'
 		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
 		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /WAVEITER, /EXTERNAL_FLAT'
-		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /BATCH, /HELP'
+		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /HELP'
 		return
 	endif
 	;
@@ -293,8 +293,9 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		ppar.taperfrac = taperfrac
 	if keyword_set(pkdel) then $
 		ppar.pkdel = pkdel
-	if keyword_set(cleancoeffs) then $
-		ppar.cleancoeffs = cleancoeffs
+	if keyword_set(nocleancoeffs) then $
+		ppar.cleancoeffs = 0 $
+	else	ppar.cleancoeffs = 1
 	if keyword_set(waveiter) then $
 		ppar.waveiter = waveiter
 	if keyword_set(nocrreject) then $
@@ -355,8 +356,6 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	printf,ll,'Verbosity level   : ',verbose
 	printf,ll,'Plot display level: ',display
 	printf,ll,'Plot save level   : ',saveplots
-	if keyword_set(batch) then $
-		printf,ll,'Batch mode'
 	;
 	; gather configuration data on each observation in raw dir
 	kcfg = kcwi_read_cfgs(indir,filespec=fspec, redo_sort=jderr)

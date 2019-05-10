@@ -89,7 +89,6 @@ tmp = { kcwi_ppar, $
 	waveiter:0, $		; use iterative method to fit wavelengths?
 ;
 ; Bias processing
-	biasskip1:0, $		; skip first bias frame? (for CWI)
 	mingroupbias:5, $	; minimum number of bias frames per group
 	masterbias:'', $	; master bias filename
 	biases:'', $		; rangelist of bias image numbers
@@ -141,7 +140,6 @@ tmp = { kcwi_ppar, $
 	slicex0:30, $		; safe lower spatial limit for slices (unbin px)
 	slicex1:144, $		; safe upper spatial limit for slices (unbin px)
 	psfwid:30, $		; nominal window for point src. (unbin px)
-	masterprof:'', $	; master profile image filename
 ;
 ; Sky processing
 	knotspp:1.25, $		; knots per Y image pixel for sky modeling

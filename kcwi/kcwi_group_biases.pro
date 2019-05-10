@@ -140,12 +140,6 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 			blist = blist[good]
 			nims = n_elements(blist)
 			;
-			; check if skip1 set
-			if pp.biasskip1 ne 0 and nims gt 1 then begin
-				blist = blist[1:*]
-				nims = n_elements(blist)
-			endif
-			;
 			; do we have enough for a group?
 			if nims ge pp.mingroupbias then begin
 				imnums = kcfg[blist].imgnum

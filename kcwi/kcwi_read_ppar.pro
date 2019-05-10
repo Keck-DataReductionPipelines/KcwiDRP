@@ -148,14 +148,8 @@ function kcwi_read_ppar,ppfname,verbose=verbose
 				endcase
 ;
 ; handle input key/struct key mis-match
-			endif else begin
-				print,pre+ ': Error - illegal keyword: ',ikey
-				free_lun,il
-;
-; warn that struc is not fully initialized
-				ppar.initialized = 0
-				return,ppar
-			endelse
+			endif else $
+				print,pre+ ': Warning - unknown keyword: ',ikey
 ;
 ; skip comments
 		endif else begin
