@@ -480,7 +480,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	printf,kp,'# R   = CCD Readout Speed : 0 - slow, 1 - fast'
 	printf,kp,'# G   = Gain Multiplier   : 10, 5, 2, 1'
 	printf,kp,'# SSM = Sky, Shuffle, Mask: 0 - no, 1 - yes'
-	printf,kp,'#  Img Bin AMPS R  G SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA      Air  Object'
+	printf,kp,'# Imno Bin AMPS R  G SSM IFU GRAT FILT    Cwave JDobs         Expt Type          Imno   RA          Dec             PA      Air  Object'
 	;
 	; loop over images
 	for i=0,nproc-1 do begin
