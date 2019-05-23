@@ -2,7 +2,7 @@ function kcwi_drp_version, short=short
 	cd,current=cwd
 	cd,!KCWI_DATA
 	cd,'..'
-	verstring = 'KCWI DERP Version: 1.1.0 REL 2018/06/11'
+	verstring = 'KCWI DERP Version: 1.1.0 DEV 2019/05/23'
 	spawn,'git describe --tags --long', gitver, errmsg
 	errlen = total(strlen(errmsg))
 	if errlen le 0 then begin
@@ -14,7 +14,7 @@ function kcwi_drp_version, short=short
 			if strlen(errmsg) le 0 then $
 				verstring += ' ' + gitdate
 		endelse
-	endif else print,errmsg
+	endif else print,'Warning: not a git repo'
 	cd,cwd
 	return, verstring
 end
