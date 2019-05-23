@@ -20,6 +20,7 @@
 ;	Ppar		- KCWI_PPAR struct for pipeline params
 ;
 ; KEYWORDS:
+;	EXT_FLAT	- set to indicate priority for exteranal flats
 ;
 ; OUTPUTS:
 ;	Full file specification of alternate calibration file.
@@ -34,7 +35,7 @@
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2018-JUN-27	Initial version
 ;-
-function kcwi_alt_cals, kcfg, adir, ppar, $
+function kcwi_alt_cals, kcfg, adir, ppar, ext_flat=ext_flat, $
 	bias=bias, dark=dark, flat=flat, geom=geom, dgeom=dgeom, afile=afile, $
 	drr=drr, std=std
 	;
@@ -137,12 +138,15 @@ function kcwi_alt_cals, kcfg, adir, ppar, $
 		; found some flats
 		if nf gt 0 then begin
 			;
+			; check for external flats
+			if ext_flat then ftype='tflat' else ftype='cflat'
+			;
 			; matching criteria
 			tlist = ['CCDMODE','AMPMODE','XBINSIZE','YBINSIZE', $
 				 'GAINMUL','GRATID','GRANGLE', 'FILTNUM', $
 				 'CAMANG','IFUNUM']
 			mcfg = kcwi_match_cfg(cfgs,kcfg,ppar,tlist, $
-						imgtype='cflat',count=nm)
+						imgtype=ftype,count=nm)
 			;
 			; found some matches
 			if nm gt 0 then begin

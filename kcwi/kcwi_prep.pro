@@ -348,9 +348,13 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		printf,ll,'Saving intermediate images'
 	if keyword_set(includetest) then $
 		printf,ll,'Including test images in processing'
-	if keyword_set(external_flat) then $
-		printf,ll,'External flats have priority for illumination correction' $
-	else	printf,ll,'Internal flats have priority for illumination correction'
+	if keyword_set(external_flat) then begin
+		ext_flat = (1 eq 1)
+		printf,ll,'External flats have priority for illumination correction'
+	endif else begin
+		ext_flat = (1 eq 0)
+		printf,ll,'Internal flats have priority for illumination correction'
+	endelse
 	if keyword_set(clobber) then $
 		printf,ll,'Clobbering existing images'
 	printf,ll,'Verbosity level   : ',verbose
@@ -744,7 +748,8 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 				;
 				; did we specify an alternative?
 				if keyword_set(altcaldir) and not sile then begin
-					mffile = kcwi_alt_cals(kcfg[p],adir,ppar,/flat)
+					mffile = kcwi_alt_cals(kcfg[p],adir,ppar, $
+						ext_flat=ext_flat, /flat)
 					;
 					; log if matched
 					if mffile ne '' then $
