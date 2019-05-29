@@ -322,6 +322,15 @@ pro kcwi_make_std,kcfg,ppar,invsen
 		return
 	endif
 	kcwi_print_info,ppar,pre,'Number of standard points',nsroi
+	;
+	; how many points?
+	if nsroi gt 20 then begin
+		stdpsym = -3
+		stdsymsi = 1
+	endif else begin
+		stdpsym = 4
+		stdsymsi = 3.0
+	endelse
 	swl = swl[sroi]
 	sflx = sflx[sroi]
 	sfw = sfw[sroi]
@@ -476,7 +485,9 @@ pro kcwi_make_std,kcfg,ppar,invsen
 					xran=[wall0,wall1],/xs,xtickformat='(a1)', $
 					ytitle='!3Flam (erg s!U-1!N cm!U-2!N A!U-1!N',yran=yrng,/ys, $
 					pos=[0.07,0.30,0.98,0.95]
-				oplot,w,rsflx,thick=3,color=colordex('red')
+				oplot,sdat.wavelength,sdat.flux,color=colordex('red'),psym=stdpsym, $
+					symsize=stdsymsi,thick=3
+				oplot,w,rsflx,color=colordex('blue')
 				oplot,[wlm0,wlm0],!y.crange,color=colordex('orange'),linesty=2
 				oplot,[wlm1,wlm1],!y.crange,color=colordex('orange'),linesty=2
 				oplot,[wgoo0,wgoo0],!y.crange,color=colordex('green'),thick=3

@@ -145,6 +145,15 @@ pro kcwi_make_flat,ppar,gfile
 	;
 	; get type of flat
 	internal = (strpos(sxpar(hdr,'CALTYPE'),'cflat') ge 0)
+	twiflat = (strpos(sxpar(hdr,'IMTYPE'),'TWIFLAT') ge 0)
+	if twiflat then $
+		kcwi_print_info,ppar,pre, $
+			'Increasing knots for twilight flat handling'
+	;
+	; knots per pixel
+	if tag_exist(ppar,'KNOTSPP') then $
+		knotspp = ppar.knotspp $
+	else	knotspp = 1.25
 	;
 	; get size
 	sz = size(im,/dim)
@@ -532,9 +541,14 @@ pro kcwi_make_flat,ppar,gfile
         endif	; if handling ledge in BM data
         ;; 
 	invvar=1/(1+abs(yfr))
-	n=100.0
-	bkpt = min(wavemap[qref])+findgen(n+1) * $
-	      (max(wavemap[qref])-min(wavemap[qref]))/n
+	;
+	; if we are fitting a twilight flat, treat it
+	; like a sky image with a larger number of knots
+	if twiflat then $
+		knots = fix(ny * knotspp) $
+	else	knots = 100
+	bkpt = min(wavemap[qref]) + findgen(knots+1) * $
+	      (max(wavemap[qref]) - min(wavemap[qref])) / knots
 	sftr = bspline_iterfit(xfr,yfr,fullbkpt=bkpt,yfit=yfitr)
 	; Generate a blue slice spectrum bspline fit 
 	blueslice=12
@@ -547,9 +561,8 @@ pro kcwi_make_flat,ppar,gfile
 	xfb=xfb[s]
 	yfb=yfb[s]
 	invvar=1/(1+abs(yfb))
-	n=100.0
-	bkpt = min(wavemap[qblue]) + findgen(n+1) * (max(wavemap[qblue]) - $
-	       min(wavemap[qblue])) / n
+	bkpt = min(wavemap[qblue]) + findgen(knots+1) * $
+	      (max(wavemap[qblue]) - min(wavemap[qblue])) / knots
 	sftb = bspline_iterfit(xfb,yfb,fullbkpt=bkpt,yfit=yfitb)
 	; 
 
@@ -564,16 +577,18 @@ pro kcwi_make_flat,ppar,gfile
 	xfd=xfd[s]
 	yfd=yfd[s]
 	invvar=1/(1+abs(yfd))
-	n=100.0
-	bkpt = min(wavemap[qred]) + findgen(n+1) * (max(wavemap[qred]) - $
-	       min(wavemap[qred])) / n
+	bkpt = min(wavemap[qred]) + findgen(knots+1) * $
+	      (max(wavemap[qred]) - min(wavemap[qred])) / knots
 	sftd = bspline_iterfit(xfd,yfd,fullbkpt=bkpt,yfit=yfitd)
 	
 	; waves.
 	minwave=min(xfb)
 	maxwave=max(xfd)
-	nwaves=1000.0
-	waves=minwave+(maxwave-minwave)*findgen(nwaves+1)/nwaves
+	; are we a twilight flat?
+	if twiflat then $
+		nwaves = fix(ny * knotspp) $
+	else	nwaves = 1000
+	waves = minwave + (maxwave - minwave) * findgen(nwaves+1) / nwaves
 
 	if do_plots then begin
 		yrng = get_plotlims([yfitr,yfitb,yfitd])
@@ -597,10 +612,10 @@ pro kcwi_make_flat,ppar,gfile
 		if ppar.display ge 2 then read,'next: ',ask
 	endif
 
-	wavebuffer=0.1
-	minrwave=min(xfr)
-	maxrwave=max(xfr)
-	wavebuffer2=0.05
+	wavebuffer = 0.1
+	minrwave = min(xfr)
+	maxrwave = max(xfr)
+	wavebuffer2 = 0.05
 
 	qbluefit = where(waves lt minrwave+(maxrwave-minrwave)*wavebuffer and $
 		         waves gt minrwave+(maxrwave-minrwave)*wavebuffer2, $
@@ -697,8 +712,8 @@ pro kcwi_make_flat,ppar,gfile
 	endif
 
 	;; at this point we are going to try to merge the points
-	qselred=where(xfd ge maxrwave, nqsr)
-	qselblue=where(xfb le minrwave, nqsb)
+	qselred = where(xfd ge maxrwave, nqsr)
+	qselblue = where(xfb le minrwave, nqsb)
 	
 	if nqsr gt 0 then $
 		redfluxes=yfd[qselred]*(redlinfit[0]+redlinfit[1]*xfd[qselred])
@@ -715,15 +730,14 @@ pro kcwi_make_flat,ppar,gfile
 		ally = [ally, redfluxes]
 	endif
 	
-	s=sort(allx)
-	allx=allx[s]
-	ally=ally[s]
+	s = sort(allx)
+	allx = allx[s]
+	ally = ally[s]
 	
 	
-	invvar=1/(1+abs(yfb))
-	n=100.0
-	bkpt=min(allx)+findgen(n+1)*(max(allx)-min(allx))/n
-	sftall=bspline_iterfit(allx,ally,fullbkpt=bkpt,yfit=yfitall)
+	invvar = 1 / (1 + abs(yfb))
+	bkpt = min(allx) + findgen(knots+1) * (max(allx) - min(allx)) / knots
+	sftall = bspline_iterfit(allx,ally,fullbkpt=bkpt,yfit=yfitall)
 	fdecomp,ppar.masterflat,disk,dir,flrute,ext
 	
 	if do_plots then begin
