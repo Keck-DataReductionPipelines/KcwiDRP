@@ -618,14 +618,14 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 							;
 							; get median of the +- del pixels straddling baddies
 							vals = [img[bcx0[j]-bcdel:bcx0[j]-1,by], $
-								img[bcx0[j]+1:bcx0[j]+bcdel,by]]
+								img[bcx1[j]+1:bcx1[j]+bcdel,by]]
 							gval = median(vals)
 							;
 							; substitute good value in and set mask
 							for bx = bcx0[j],bcx1[j] do begin
 								img[bx,by] = gval
 								msk[bx,by] += 2b
-								nbpix += nx
+								nbpix += 1
 							endfor
 						endfor
 						;
