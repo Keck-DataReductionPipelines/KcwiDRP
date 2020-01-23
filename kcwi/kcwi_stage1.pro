@@ -795,7 +795,48 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; BEGIN STAGE 1-H: NOD-AND-SHUFFLE SUBTRACTION
+			; BEGIN STAGE 1-H: IMAGE RECTIFICATION
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			;
+			; get ampmodes that require rectification
+			ampmode = strupcase(strtrim(kcfg.ampmode,2))
+			if ampmode eq '__D' or ampmode eq '__F' or ampmode eq '__B' or ampmode eq '__G' or $
+			   ampmode eq '__A' or ampmode eq '__H' or ampmode eq 'TUP' then begin
+				;
+			   	; Upper Right Amp
+			   	if ampmode eq '__B' or ampmode eq '__G' then begin
+					img = rotate(img, 2)
+					msk = rotate(msk, 2)
+					var = rotate(var, 2)
+				endif
+				;
+				;  Lower Right Amp
+				if ampmode eq '__D' or ampmode eq '__F' then begin
+					img = rotate(img, 5)
+					msk = rotate(msk, 5)
+					var = rotate(var, 5)
+				endif
+				;
+				; Upper Left Amp
+				if ampmode eq '__A' or ampmode eq '__H' then begin
+					img = rotate(img, 7)
+					msk = rotate(msk, 7)
+					var = rotate(var, 7)
+				endif
+				;
+				; Upper two Amps
+				if ampmode eq 'TUP' then begin
+					img = rotate(img, 7)
+					msk = rotate(msk, 7)
+					var = rotate(var, 7)
+				endif
+		   	endif 
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			; END   STAGE 1-H: IMAGE RECTIFICATION
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			;
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			; BEGIN STAGE 1-I: NOD-AND-SHUFFLE SUBTRACTION
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
 			; ONLY perform next step on OBJECT images
@@ -918,48 +959,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			endelse
 			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; END   STAGE 1-H: NOD-AND-SHUFFLE SUBTRACTION
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; BEGIN STAGE 1-I: IMAGE RECTIFICATION
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			;
-			; get ampmodes that require rectification
-			ampmode = strupcase(strtrim(kcfg.ampmode,2))
-			if ampmode eq '__D' or ampmode eq '__F' or ampmode eq '__B' or ampmode eq '__G' or $
-			   ampmode eq '__A' or ampmode eq '__H' or ampmode eq 'TUP' then begin
-				;
-			   	; Upper Right Amp
-			   	if ampmode eq '__B' or ampmode eq '__G' then begin
-					img = rotate(img, 2)
-					msk = rotate(msk, 2)
-					var = rotate(var, 2)
-				endif
-				;
-				;  Lower Right Amp
-				if ampmode eq '__D' or ampmode eq '__F' then begin
-					img = rotate(img, 5)
-					msk = rotate(msk, 5)
-					var = rotate(var, 5)
-				endif
-				;
-				; Upper Left Amp
-				if ampmode eq '__A' or ampmode eq '__H' then begin
-					img = rotate(img, 7)
-					msk = rotate(msk, 7)
-					var = rotate(var, 7)
-				endif
-				;
-				; Upper two Amps
-				if ampmode eq 'TUP' then begin
-					img = rotate(img, 7)
-					msk = rotate(msk, 7)
-					var = rotate(var, 7)
-				endif
-		   	endif 
-			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-			; END   STAGE 1-I: IMAGE RECTIFICATION
+			; END   STAGE 1-I: NOD-AND-SHUFFLE SUBTRACTION
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			;
 			; write out mask image
