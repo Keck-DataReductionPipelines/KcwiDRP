@@ -856,9 +856,11 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				; check limits
 				if (skyrow1-skyrow0) eq (objrow1-objrow0) then begin
 					;
-					; create intermediate images
+					; create intermediate images and headers
 					sky = img
 					obj = img
+					skyhdr = hdr
+					objhdr = hdr
 					;
 					; sky in the bottom third (normal nod-and-shuffle config)
 					if skyrow0 lt 10 then begin
@@ -894,6 +896,9 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						;
 						; log non-standard reduction
 						kcwi_print_info,ppar,pre,'non-standard nod-and-shuffle configuration: sky in center third',/warning
+						skyscl = 1.0
+						if interact then $
+							read,'The sky probably needs scaling, enter scale factor (float): ',skyscl
 						;
 						; get variance and mask images
 						objvar = var
@@ -905,7 +910,8 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						objmsk[*,skyrow0:skyrow1] = msk[*,objrow0:objrow1]
 						;
 						; do subtraction
-						img = obj - img
+						sky = sky * skyscl
+						img = obj - sky
 						var = var + objvar
 						msk = msk + objmsk
 						;
@@ -920,11 +926,16 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						sky[*,0:skyrow0-1] = 0.
 						obj[*,objrow0:objrow1] = 0.
 						obj[*,0:skyrow0-1] = 0.
+						;
+						; record non-standard subtraction
+						sxaddpar,objhdr, 'COMMENT', 'Aborted nod-and-shuffle observation'
+						sxaddpar,skyhdr, 'COMMENT', 'Aborted nod-and-shuffle observation'
+						sxaddpar,hdr, 'COMMENT', 'Aborted nod-and-shuffle observation'
+						sxaddpar,skyhdr,'NASSCL',skyscl, 'Scale factor applied to sky panel'
+						sxaddpar,hdr,'NASSCL',skyscl, 'Scale factor applied to sky panel'
 					endelse
 					;
 					; update headers
-					skyhdr = hdr
-					objhdr = hdr
 					sxaddpar,objhdr,'NASSUB','F',' Nod-and-shuffle subtraction done?'
 					sxaddpar,skyhdr,'NASSUB','F',' Nod-and-shuffle subtraction done?'
 					sxaddpar,skyhdr,'SKYOBS','T',' Sky observation?'
