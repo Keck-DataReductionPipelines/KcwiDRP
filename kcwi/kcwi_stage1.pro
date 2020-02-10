@@ -897,7 +897,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						; log non-standard reduction
 						kcwi_print_info,ppar,pre,'non-standard nod-and-shuffle configuration: sky in center third',/warning
 						skyscl = 1.0
-						if interact then $
+						if ppar.display ge 2 then $
 							read,'The sky probably needs scaling, enter scale factor (float): ',skyscl
 						;
 						; get variance and mask images
@@ -931,8 +931,8 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						sxaddpar,objhdr, 'COMMENT', 'Aborted nod-and-shuffle observation'
 						sxaddpar,skyhdr, 'COMMENT', 'Aborted nod-and-shuffle observation'
 						sxaddpar,hdr, 'COMMENT', 'Aborted nod-and-shuffle observation'
-						sxaddpar,skyhdr,'NASSCL',skyscl, 'Scale factor applied to sky panel'
-						sxaddpar,hdr,'NASSCL',skyscl, 'Scale factor applied to sky panel'
+						sxaddpar,skyhdr,'NASSCL',skyscl, ' Scale factor applied to sky panel'
+						sxaddpar,hdr,'NASSCL',skyscl, ' Scale factor applied to sky panel'
 					endelse
 					;
 					; update headers
