@@ -899,7 +899,8 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						skyscl = 1.0
 						if ppar.display ge 2 then begin
 							read,'The sky probably needs scaling, enter scale factor (float): ',skyscl
-							kcwi_print_info,ppar,pre,'scale factor applied to sky panel: ',skyscl,/info
+							kcwi_print_info,ppar,pre,'scale factor applied to sky panel: ', $
+								skyscl,/info,format='(a, f7.3)'
 						endif else begin
 							kcwi_print_info,ppar,pre,'non-standard nod-and-shuffle might require sky scaling, set display to 2 or greater to enter scale value',/warning
 						endelse
