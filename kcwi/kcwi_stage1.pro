@@ -897,8 +897,12 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 						; log non-standard reduction
 						kcwi_print_info,ppar,pre,'non-standard nod-and-shuffle configuration: sky in center third',/warning
 						skyscl = 1.0
-						if ppar.display ge 2 then $
+						if ppar.display ge 2 then begin
 							read,'The sky probably needs scaling, enter scale factor (float): ',skyscl
+							kcwi_print_info,ppar,pre,'scale factor applied to sky panel: ',skyscl,/info
+						endif else begin
+							kcwi_print_info,ppar,pre,'non-standard nod-and-shuffle might require sky scaling, set display to 2 or greater to enter scale value',/warning
+						endelse
 						;
 						; get variance and mask images
 						objvar = var
