@@ -98,6 +98,7 @@
 ;	2017-JUN-28	Added ALTCALDIR keyword
 ;	2017-NOV-21	Added FIRST keyword
 ;	2019-MAY-10	Changed cleancoeffs keyword to nocleancoeffs
+;	2020-FEB-11	Added BIASSKIP1 and SKIPOSCANSUB keyword switches
 ;-
 pro kcwi_prep,rawdir,reduceddir,datadir, $
 	froot=froot, $

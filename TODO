@@ -4,8 +4,8 @@ compression of all files?
 implement handling of dark current decay
 bad columns for N&S images
 implement nod-and-shuffle scattered light fitting/removal
-add option to re-scale the sky for aborted nod-and-shuffel obs
 use arcbars for direct geometry solution
+#11-FEB-2020 DONE add option to re-scale the sky for aborted nod-and-shuffel obs
 #05-MAR-2018 DONE implement saveplots option
 #22-JAN-2018 DONE postscript output of standard star results
 #08-JAN-2018 DONE bad columns for TUP 1x1 images

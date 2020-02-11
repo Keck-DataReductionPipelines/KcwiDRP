@@ -1,8 +1,28 @@
-# Copyright (c) 2013-2018, California Institute of Technology, all rights reserved
+# Copyright (c) 2013-2020, California Institute of Technology, all rights reserved
+
+2020-Feb-11: v1.2.0 - Second Minor release
+
+- many minor bug fixes and plot and output improvements
+
+- added ability to zoom line plots by dragging mouse in ktv.pro
+
+- improved handling of twilight and dome flats
+
+- fixed minor bug in bad column correction
+
+- fixed major bug in handling nod-and-shuffle subtraction in stage1
+
+- added capability to handle aborted nod-and-shuffle observations including
+	the ability to apply a scale factor to the sky panel
+
+- added /biasskip1 keyword to allow skipping of first bias in group
+
+- added /skiposcansub to allow skipping of overscan subtraction step
+
 
 2018-Jun-11: v1.1.0 - First Minor release
 
-- use delta wavelength map to calculated more accurate effective area curves.
+- use delta wavelength map to calculate more accurate effective area curves.
 
 - added delta wavelength 2-D map to keep track of the native wavelength bins.
 

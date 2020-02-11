@@ -1,11 +1,11 @@
 
-Copyright (c) 2018, California Institute of Technology.  All rights reserved.
+Copyright (c) 2020, California Institute of Technology.  All rights reserved.
 
 
         KCWI Data Extraction and Reduction Pipeline (KDERP) README
 
 
-First minor release; Version: 1.1.0 (REL) Date: 2018/06/11
+Second minor release; Version: 1.2.0 (REL) Date: 2020/02/11
 
 **CONTENTS**
 
@@ -193,13 +193,15 @@ DatDir		- Data directory, defaults to IDL system variable !KCWI_DATA
 
 These are the keywords:
 
+/BIASSKIP1	- skip the first bias in a group
+/SKIPOSCANSUB	- skip the overscan subtraction (only if bias subtracted)
 /NOCRREJECT	- turn off CR rejection (good for quick look)
 /NONASSUB	- turn off nod-and-shuffle subtraction (why?)
 /SAVEINTIMS	- save intermediate images (takes extra disk space)
 /INCLUDETEST	- includes images of type 'test' (focus images, etc.)
 /EXTERNAL_FLAT	- set to give priority to external (dome/twilight) flats (why?)
 /CLOBBER	- set to overwrite output files (default: it won't)
-/CLEANCOEFFS	- turn on cleaning the wavelength coefficients of errant bars
+/NOCLEANCOEFFS	- turn on to skip cleaning the wavelength coeffs of errant bars
 /WAVEITER	- use a wave solution method that starts with a central fit 
 			and iteratively expands the wavelength range (why?)
 /HELP		- print the command usage info
@@ -730,6 +732,22 @@ continuum subtraction.
 
 
 5. NEW FEATURES:
+
+BIASSKIP1 pipeline switch
+
+If the CCD controller has been power cycled less than two hours before taking
+biases, there will be an exponential decay of dark current that will be at
+it's highest level for the first bias.  Set this parameter when running
+kcwi_prep to skip this first bias.  Better yet, wait at least three hours
+after power cycling before taking biases or any science data.
+
+NB: changing binning will cycle the power on the controller.
+
+SKIPOSCANSUB pipeline switch
+
+In rare cases where there is extra flux in the overscan (again close to a
+power cycle event), one may want to skip using the overscan for bias correction.
+This is only implemented if the image has been bias subtracted.
 
 KNOTSPP pipeline parameter
 
