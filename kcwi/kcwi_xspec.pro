@@ -141,8 +141,15 @@ if keyword_set(central) then begin
 		; record the problem
 		status = 1
 		;
-		; just take peak cross-correlation value
-		value = sqrt(max(xcor,mi))
+		; indices in center
+		cind = indgen(nsp)
+		diff = abs(cind - (nsp/2.))
+		cpks = where(diff lt nsp/cent)
+		cind = cind[cpks]
+		;
+		; just take peak of central cross-correlation region
+		value = sqrt(max(xcor[cind],ci))
+		mi = cind[ci]
 	;
 	; got enough good peaks
 	endif else begin
@@ -157,8 +164,15 @@ if keyword_set(central) then begin
 			; record the problem
 			status = 1
 			;
-			; just take peak cross-correlation value
-			value = sqrt(max(xcor,mi))
+			; indices in center
+			cind = indgen(nsp)
+			diff = abs(cind - (nsp/2.))
+			cpks = where(diff lt nsp/cent)
+			cind = cind[cpks]
+			;
+			; just take peak of central cross-correlation region
+			value = sqrt(max(xcor[cind],ci))
+			mi = cind[ci]
 		;
 		; we have some central peaks
 		endif else begin
