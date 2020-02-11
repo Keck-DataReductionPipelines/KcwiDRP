@@ -345,7 +345,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			endif
 			;
 			; only allowed if bias was subtracted
-			if kpars[i].skiposcansub and not do_bias then begin
+			if kpars[i].skiposcansub and not do_bias then $
 				kcwi_print_info,ppar,pre,'cannot skip oscan subtraction unless bias is subtracted', $
 					/warning
 			;
