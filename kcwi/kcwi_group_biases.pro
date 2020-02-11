@@ -135,7 +135,11 @@ pro kcwi_group_biases, kcfg, ppar, bcfg
 			pp = ppar
 			;
 			; get image numbers for this group
-			blist = reform(groups[i,*])
+			;
+			; check if skip1 set
+			if ppar.biasskip1 ne 0 then $
+				blist = reform(groups[i, 1:*] $
+			else	blist = reform(groups[i, *])
 			good = where(blist ge 0, nmem)
 			blist = blist[good]
 			nims = n_elements(blist)

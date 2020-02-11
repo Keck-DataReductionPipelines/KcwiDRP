@@ -89,6 +89,7 @@ tmp = { kcwi_ppar, $
 	waveiter:0, $		; use iterative method to fit wavelengths?
 ;
 ; Bias processing
+	biasskip1:0, $		; skip first bias in group?
 	mingroupbias:5, $	; minimum number of bias frames per group
 	masterbias:'', $	; master bias filename
 	biases:'', $		; rangelist of bias image numbers
@@ -96,6 +97,7 @@ tmp = { kcwi_ppar, $
 	nbgrps:0, $		; number of bias groups
 ;
 ; Overscan subtraction
+	skiposcansub:0, $	; skip overscan subtraction?
 	minoscanpix:70,$	; minimum overscan pixels required
 	oscanbuf:20, $		; overscan edge buffer
 ;

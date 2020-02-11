@@ -327,8 +327,30 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			; number of overscan pixels in each row
 			oscan_pix = bsec[0,0,1] - bsec[0,0,0]
 			;
+			; Should we do the overscan subtraction?
+			do_oscan = (1 eq 1)		; default is yes
+			;
 			; do we have enough overscan to get good statistics?
-			if oscan_pix ge kpars[i].minoscanpix then begin
+			if oscan_pix lt kpars[i].minoscanpix then begin
+				do_oscan = (1 eq 0)
+				kcwi_print_info,ppar,pre,'not enough overscan pixels to subtract', $
+					oscan_pix,/warning
+			endif
+			;
+			; check user request for overscan subtraction
+			if kpars[i].skiposcansub and do_bias then begin
+				do_oscan = (1 eq 0)
+				kcwi_print_info,ppar,pre,'skipping overscan subtraction at user request', $
+					/warning
+			endif
+			;
+			; only allowed if bias was subtracted
+			if kpars[i].skiposcansub and not do_bias then begin
+				kcwi_print_info,ppar,pre,'cannot skip oscan subtraction unless bias is subtracted', $
+					/warning
+			;
+			; should we perform overscan subtraction?
+			if do_oscan then begin
 				;
 				; loop over amps
 				for ia = 0, namps-1 do begin
@@ -450,8 +472,6 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 					kcwi_write_image,img,hdr,ofil,kpars[i]
 				endif
 			endif else begin	; not doing oscan sub
-				kcwi_print_info,ppar,pre,'not enough overscan pixels to subtract', $
-					oscan_pix,/warning
 				kcwi_print_info,ppar,pre,'using default readnoise',kpars[i].readnoise,/warning
 				sxaddpar,hdr,'OSCANSUB','F',' overscan subtracted?'
 			endelse

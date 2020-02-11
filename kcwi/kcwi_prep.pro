@@ -33,6 +33,8 @@
 ;	TAPERFRAC	- taper fraction for cross-correlation (0.2)
 ;	PKDEL		- matching thresh in frac. of resolution (def: 0.75)
 ; Switches
+;	BIASSKIP1	- set to skip first bias in group
+;	SKIPOSCANSUB	- set to skip overscan subtraction
 ;	NOCRREJECT	- set to skip cosmic ray rejection
 ;	NONASSUB	- set to skip nod-and-shuffle subtraction
 ;	NOCLEANCOEFFS	- set to skip cleaning of wave sol'n coeffs
@@ -101,6 +103,8 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	froot=froot, $
 	fdigits=fdigits, $
 	first=first, $
+	biasskip1=biasskip1, $
+	skiposcansub=skiposcansub, $
 	mingroupbias=mingroupbias, $
 	mingroupdark=mingroupdark, $
 	minoscanpix=minoscanpix, $
@@ -129,7 +133,7 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 		print,pre+': Info - Usage: '+pre+', RawDir, ReducedDir, CalibDir, DataDir'
 		print,pre+': Info - Param  Keywords: FROOT=<img_file_root>, FDIGITS=N, FIRST=N, MINGROUPBIAS=N, MINOSCANPIX=N, ALTCALDIR=<full_dir_spec>'
 		print,pre+': Info - Wl Fit Keywords: TAPERFRAC=<taper_fraction>, PKDEL=<match_delta>'
-		print,pre+': Info - Switch Keywords: /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /WAVEITER, /EXTERNAL_FLAT'
+		print,pre+': Info - Switch Keywords: /BIASSKIP1, /SKIPOSCANSUB, /NOCRREJECT, /NONASSUB, /CLEANCOEFFS, /WAVEITER, /EXTERNAL_FLAT'
 		print,pre+': Info - Switch Keywords: /SAVEINTIMS, /INCLUDETEST, /CLOBBER, VERBOSE=, DISPLAY=, /SAVEPLOTS, /HELP'
 		return
 	endif
@@ -283,6 +287,10 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	if keyword_set(first) then $
 		first_imgnum = first $
 	else	first_imgnum = 1
+	if keyword_set(biasskip1) then $
+		ppar.biasskip1 = 1
+	if keyword_set(skiposcansub) then $
+		ppar.skiposcansub = 1
 	if keyword_set(mingroupbias) then $
 		ppar.mingroupbias = mingroupbias
 	if keyword_set(mingroupdark) then $
@@ -334,6 +342,10 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 	printf,ll,'Min Grp Dark: ',ppar.mingroupdark
 	printf,ll,'Wl TaperFrac: ',ppar.taperfrac
 	printf,ll,'Wl Fit PkDel: ',ppar.pkdel
+	if keyword_set(biasskip1) then $
+		printf,ll,'Skipping first bias in each group'
+	if keyword_set(skiposcansub) then $
+		printf,ll,'Skipping overscan subtraction'
 	if keyword_set(nocrreject) then $
 		printf,ll,'No cosmic ray rejection performed'
 	if keyword_set(nonassub) then $
