@@ -476,7 +476,7 @@ pro kcwi_make_flat,ppar,gfile
 	yfr=yfr[s]
 	;; correction for BM where we see a ledge.
         ;; added 171128
-        if strtrim(kgeom.gratid) eq 'BM' then begin
+        if strtrim(kgeom.gratid) eq 'BM' and internal then begin
            ledge_wave=kcwi_bm_ledge_position(kgeom.cwave)
 	   kcwi_print_info,ppar,pre,'BM ledge calculated wavelength for ref slice (A)',ledge_wave, $
 	   	format='(a,f10.2)'
@@ -508,7 +508,7 @@ pro kcwi_make_flat,ppar,gfile
               qhi=where(fpoints ge zlow and fpoints le zhi)
               hifit=linfit(fpoints[qhi],ylfit[qhi])
               ratio=(hifit[0]+hifit[1]*apk[1])/(lowfit[0]+lowfit[1]*apk[1])
-              print,ratio
+              kcwi_print_info,ppar,pre,'BM ledge ratio',ratio, format='(a,f10.3)'
               qcorrect=where(xledge ge apk[1])
               yledge[qcorrect]/=ratio
               qcorr=where(xfr ge apk[1])
