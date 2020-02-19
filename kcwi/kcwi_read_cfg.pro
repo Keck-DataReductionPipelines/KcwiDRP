@@ -113,26 +113,28 @@ function kcwi_read_cfg,obsfname,verbose=verbose
 	    strcmp(strtrim(strupcase(cfg.bnasnam),2),'MASK') eq 1 then begin
 			cfg.nasmask = 1
 	endif else	cfg.nasmask = 0
-	; Compare shuffles
-	nshfup = sxpar(hdr, 'NSHFUP')
-	nshfdn = sxpar(hdr, 'NSHFDN')
-	if nshfup gt 0 or nshfdn gt 0 then begin
-		cfg.shuffmod = 1
-		; Nominal conditions 
-		; (sky in bottom third, object above)
-		if nshfdn eq nshfup + 1 then begin
-			cfg.nsskyr0 = 1
-			cfg.nsskyr1 = cfg.shufrows
-			cfg.nsobjr0 = cfg.nsskyr1 + 1
-			cfg.nsobjr1 = cfg.nsobjr0 + cfg.shufrows - 1
-		; Aborted script = inverted panels 
-		; (sky in middle third, object above)
-		endif else begin
-			cfg.nsskyr0 = cfg.shufrows + 1
-			cfg.nsskyr1 = cfg.nsskyr0 + cfg.shufrows - 1
-			cfg.nsobjr0 = cfg.nsskyr1 + 1
-			cfg.nsobjr1 = cfg.nsobjr0 + cfg.shufrows - 1
-		endelse
+	; Nominal conditions 
+	; (sky in bottom third, object above, or just masked)
+	cfg.nsskyr0 = 1
+	cfg.nsskyr1 = cfg.shufrows
+	cfg.nsobjr0 = cfg.nsskyr1 + 1
+	cfg.nsobjr1 = cfg.nsobjr0 + cfg.shufrows - 1
+	; if masked
+	if cfg.nasmask eq 1 then begin
+		; Compare shuffles
+		nshfup = sxpar(hdr, 'NSHFUP')
+		nshfdn = sxpar(hdr, 'NSHFDN')
+		if nshfup gt 0 or nshfdn gt 0 then begin
+			cfg.shuffmod = 1
+			; Aborted script = inverted panels 
+			; (sky in middle third, object above)
+			if nshfdn ne nshfup + 1 then begin
+				cfg.nsskyr0 = cfg.shufrows + 1
+				cfg.nsskyr1 = cfg.nsskyr0 + cfg.shufrows - 1
+				cfg.nsobjr0 = cfg.nsskyr1 + 1
+				cfg.nsobjr1 = cfg.nsobjr0 + cfg.shufrows - 1
+			endif
+		endif
 	endif
 	cfg.obsfname	= root + '.' + ext
 	cfg.obsdir	= disk + dir
