@@ -1,5 +1,12 @@
 # Copyright (c) 2013-2020, California Institute of Technology, all rights reserved
 
+2020-Feb-19: v1.2.1 - Bug fix for Second Minor Release
+
+- fixed a fatal bug when using BM twilight flats (skips ledge correction)
+
+- fixed a fatal bug that set the wrong region in the geometry for masked data
+
+
 2020-Feb-11: v1.2.0 - Second Minor release
 
 - many minor bug fixes and plot and output improvements
