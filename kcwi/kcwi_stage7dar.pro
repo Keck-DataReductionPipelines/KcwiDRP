@@ -240,7 +240,7 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 					ydmax_px = ydmax_as / yscl
 					dmax_px = sqrt(xdmax_px^2 + ydmax_px^2)
 					kcwi_print_info,ppar,pre,'DAR over GOOD WL range: total, x, y (pix)', $
-						xdmax_px,ydmax_px, format='(a,3f9.2)'
+						dmax_px,xdmax_px,ydmax_px, format='(a,3f9.2)'
 					;
 					; read variance cube
 					vfil = repstr(obfil,'_icube','_vcube')
@@ -343,7 +343,7 @@ pro kcwi_stage7dar,procfname,ppfname,help=help,verbose=verbose,display=display
 					sxaddpar,delhdr,'DARPADY',pad_y,' DAR Y padding (pix)'
 					sxaddpar,delhdr,'DAREFWL',wref,' DAR reference wl (Ang)'
 					;
-					; write out dar corrected variance image
+					; write out dar corrected del image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_dcubed',/nodir)
 					kcwi_write_image,del_out,delhdr,ofil,kpars[i]
 					;
