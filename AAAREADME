@@ -7,6 +7,9 @@ Copyright (c) 2020, California Institute of Technology.  All rights reserved.
 
 Bug fix for Second minor release; Version: 1.2.1 (REL) Date: 2020/02/19
 
+NOTE: If using KOA archive, please select filenames assigned at telescope.
+      This pipeline will not work with KOA-assigned filenames.
+
 **CONTENTS**
 
 0. QUICK START
