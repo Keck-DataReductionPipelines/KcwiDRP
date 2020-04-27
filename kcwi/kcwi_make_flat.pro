@@ -719,7 +719,7 @@ pro kcwi_make_flat,ppar,gfile
 	comflat[qz]=comvals
 	ratio=newflat-newflat
 	qzer = where(newflat ne 0)
-	ratio[qzer]=comflat[qzer] / mflat[qzer]
+	ratio[qzer]=comflat[qzer] / newflat[qzer]
 	;
 	; set up mask image
 	mask = byte(ratio-ratio)
