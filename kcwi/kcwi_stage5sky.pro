@@ -282,9 +282,14 @@ pro kcwi_stage5sky,procfname,ppfname,help=help,verbose=verbose, display=display
 							endif else	skscl = obtime / sktime
 						endelse
 						;
-						; update variance in case where non-local sky used
-						; variance is summed with sky squared
-						var = var + (sky*skscl)^2
+						; are we using a bspline model or just another image?
+						skymodel = sxpar(skyhdr, 'SKYMODEL', count=nfnd)
+						if nfnd le 0 or not skymodel then begin
+							;
+							; update variance in case where non-model sky used
+							; variance is summed with sky squared
+							var = var + (sky*skscl)^2
+						endif
 					;
 					; sky model is from object image, so no scaling
 					; and variance is not affected by using sky model
