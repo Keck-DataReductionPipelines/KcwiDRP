@@ -130,7 +130,9 @@ pro kcwi_test_std,imno,ppar,instrument=instrument,ps=ps, $
 	;
 	; check BUNIT
 	bunit = strtrim(sxpar(hdr,'BUNIT'),2)
-	if bunit eq 'FLAM16' then icub = icub / 1.d16
+	if bunit eq 'FLAM16' or $
+	   bunit eq '1e+16 erg / (Angstrom cm2 s)' then $
+	   	icub = icub / 1.d16
 	;
 	; check standard
 	sname = kcwi_std_name(kcfg.targname)
