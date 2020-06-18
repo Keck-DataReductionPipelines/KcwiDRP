@@ -3,12 +3,41 @@
 ; 
 ; Simulate KCRM geometry files
 ;-
+pro hdr_blue2red, hdr, htl, hdl
+;
+; update header
+; transform blue to red
+for i=0,n_elements(htl)-1 do begin
+	bkey = htl[i]
+	rkey = 'R' + strmid(bkey,1)
+	val = sxpar(hdr, bkey, comment=bcom)
+	rcom = repstr(bcom, 'Blue', 'Red')
+	sxaddpar, hdr, rkey, val, rcom, before=bkey
+	sxdelpar, hdr, bkey
+	delvar, val
+endfor
+; delete unused keywords
+for i=0,n_elements(hdl)-1 do $
+	sxdelpar, hdr, hdl[i]
+return
+end
 
 pro KCWI_SIM_KCRM, new_cwave, ohsky=ohsky, rl=rl, rm1=rm1, rm2=rm2, $
 				rh1=rh1, rh2=rh2, rh3=rh3, rh4=rh4
 
 pre = "KCWI_SIM_KCRM"
 simdir = '/Users/neill/kcrm/wlcal/sim_inputs/'
+;
+; header transform list
+htl = ['BCWAVE','BPWAVE','BALPHA','BBETA','BGRATNAM','BGRATNUM', $
+	'BGRANGLE','BGROTNAM','BGROTNUM','BGRENC','BGPPOS', $
+	'BGPNAME','BARTANG','BARTENC','BNASNAM','BNASENC', $
+	'BFOCMM','BFOCHM','BGPRESS','BVPRESS','BVHVON', $
+	'BVCURR','BVVOLT','BCCDTMP','BFILTNAM']
+;
+; header delete list
+hdl = ['BGTPOS','BGTNAME','BFILTNUM','BFPPOS','BFPNAME', $
+	'BFTPOS','BFTNAME']
 
 ; get ppar
 ppar = kcwi_read_ppar()
@@ -22,6 +51,7 @@ if keyword_set(rl) then begin
 	geom_dir = simdir+'BL_Large_4500_2x2/'
 	geom_file = geom_dir+'BL_Large_4500_2x2_geom.fits'
 	arc_file = geom_dir+'kb180116_00038.fits'
+	bias_file = simdir+'bias_2x2/kb200617_00001.fits'
 	new_rho = 0.514
 endif
 if keyword_set(rm1) then begin
@@ -29,6 +59,7 @@ if keyword_set(rm1) then begin
 	geom_dir = simdir+'BM_Large_4000_2x2/'
 	geom_file = geom_dir+'BM_Large_4000_2x2_geom.fits'
 	arc_file = geom_dir+'kb180116_00054.fits'
+	bias_file = simdir+'bias_2x2/kb200617_00002.fits'
 	new_rho = 1.220
 endif
 if keyword_set(rm2) then begin
@@ -36,6 +67,7 @@ if keyword_set(rm2) then begin
 	geom_dir = simdir+'BM_Large_4900_2x2/'
 	geom_file = geom_dir+'BM_Large_4900_2x2_geom.fits'
 	arc_file = geom_dir+'kb180116_00070.fits'
+	bias_file = simdir+'bias_2x2/kb200617_00003.fits'
 	new_rho = 0.921
 endif
 if keyword_set(rh1) then begin
@@ -43,6 +75,7 @@ if keyword_set(rh1) then begin
 	geom_dir = simdir+'BH2_Large_4200_2x2/'
 	geom_file = geom_dir+'BH2_Large_4200_2x2_geom.fits'
 	arc_file = geom_dir+'kb170618_00043.fits'
+	bias_file = simdir+'bias_2x2/kb200617_00004.fits'
 	new_rho = 2.420
 endif
 if keyword_set(rh2) then begin
@@ -50,6 +83,7 @@ if keyword_set(rh2) then begin
 	geom_dir = simdir+'BH2_Small_4600_1x1/'
 	geom_file = geom_dir+'BH2_Small_4600_1x1_geom.fits'
 	arc_file = geom_dir+'kb170621_00067.fits'
+	bias_file = simdir+'bias_1x1/kb200617_00010.fits'
 	new_rho = 2.030
 endif
 if keyword_set(rh3) then begin
@@ -57,6 +91,7 @@ if keyword_set(rh3) then begin
 	geom_dir = simdir+'BH3_Medium_4900_2x2/'
 	geom_file = geom_dir+'BH3_Medium_4900_2x2_geom.fits'
 	arc_file = geom_dir+'kb170805_00027.fits'
+	bias_file = simdir+'bias_2x2/kb200617_00005.fits'
 	new_rho = 1.705
 endif
 if keyword_set(rh4) then begin
@@ -64,6 +99,7 @@ if keyword_set(rh4) then begin
 	geom_dir = simdir+'BH3_Large_5400_2x2/'
 	geom_file = geom_dir+'BH3_Large_5400_2x2_geom.fits'
 	arc_file = geom_dir+'kb170618_00037.fits'
+	bias_file = simdir+'bias_2x2/kb200617_00006.fits'
 	new_rho = 1.435
 endif
 ;
@@ -176,13 +212,14 @@ for il = 0,nx-1 do begin
 		linterp,refwvl,refspec,wvs[gw],sspec
 		;sss = gaussfold(refwvl,refspec,kgeom.atsig)
 		wvs[gw] = sspec
-		sim[il,*] = wvs
+		sim[il,*] = wvs + 100.
 	endif
 endfor
 
 ;
 ; get raw arc data
-rarc = mrdfits(arc_file, 0, hdr, /fscale)
+rarc = mrdfits(bias_file, 0, bhdr, /fscale)
+hdr = headfits(arc_file)
 ;
 ; read ccd limits
 kcwi_map_ccd, hdr, asec, bsec, dsec, tsec, direc
@@ -196,24 +233,18 @@ for ia = 0, sz[0]-1 do begin
 	xi1 = tsec[ia, 0, 1]
 	yi0 = tsec[ia, 1, 0]
 	yi1 = tsec[ia, 1, 1]
-	rarc[xo0:xo1, yo0:yo1] = sim[xi0:xi1, yi0:yi1]
+	rarc[xo0:xo1, yo0:yo1] += sim[xi0:xi1, yi0:yi1]
 endfor
-;
+; transform header
+hdr_blue2red, hdr, htl, hdl
 ; update header
 sxaddpar,hdr, 'CAMERA', 'RED', ' Camera (blue,red,fpc)'
 sxaddpar,hdr, 'RCWAVE',new_cwave, ' Red central wavelength (Ang,sim)'
 sxaddpar,hdr, 'RGRATNAM', outgrat, ' Red Grating name (sim)'
-sxaddpar,hdr, 'RGRATNUM', sxpar(hdr, 'BGRATNUM'), ' Red Grating number (1-7)'
-sxaddpar,hdr, 'RGRANGLE', sxpar(hdr, 'BGRANGLE'), ' Red Grating angle (deg)'
-sxaddpar,hdr, 'RARTANG', sxpar(hdr, 'BARTANG'), ' Red Articulation Stage Angle (deg)'
-sxdelpar,hdr, 'BCWAVE'
-sxdelpar,hdr, 'BGRATNAM'
-sxdelpar,hdr, 'BGRATNUM'
-sxdelpar,hdr, 'BGRANGLE'
-sxdelpar,hdr, 'BARTANG'
 if keyword_set(ohsky) then sxaddpar,hdr,'LMP1NAM','OHSky'
 
 ;
+inno = sxpar(hdr,'FRAMENO')
 outno = long(new_cwave)
 ;outarcf = kcwi_get_imname(ppar,outno)
 outarcf = 'kr200000_'+string(outno,form='(i05)')+'.fits'
@@ -221,7 +252,27 @@ sxaddpar,hdr,'FRAMENO',outno
 sxaddpar,hdr,'OFNAME',outarcf
 ; write the arc file
 kcwi_print_info,ppar,pre,"Writing",outarcf,/info,format='(a,1x,a)'
-mwrfits, float(rarc), outarcf, hdr,/create
+mwrfits, float(rarc), outarcf, hdr,/create,/iscale
+;
+; loop over other files in simdir
+flist = file_search(geom_dir+'kb*.fits', count=nf)
+for i=0, nf-1 do begin
+	img = mrdfits(flist[i], 0, hdr)
+	ino = sxpar(hdr,'FRAMENO')
+	if ino ne inno then begin
+		onno = outno + (ino - inno)
+		outfn = 'kr200000_'+string(onno, form='(i05)')+'.fits'
+		sxaddpar,hdr,'FRAMENO',onno
+		sxaddpar,hdr,'OFNAME',outfn
+		hdr_blue2red, hdr, htl, hdl
+		sxaddpar,hdr, 'CAMERA', 'RED', ' Camera (blue,red,fpc)'
+		sxaddpar,hdr, 'RCWAVE',new_cwave, ' Red central wavelength (Ang,sim)'
+		sxaddpar,hdr, 'RGRATNAM', outgrat, ' Red Grating name (sim)'
+		kcwi_print_info,ppar,pre,'Writing',outfn,/info,format='(a,1x,a)'
+		mwrfits, img, outfn, hdr, /create
+	endif
+endfor
+
 kcwi_print_info,ppar,pre,"Generated simulated images.",/info
 
 end
