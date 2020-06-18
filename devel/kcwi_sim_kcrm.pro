@@ -1,13 +1,14 @@
 ;+
-; KCWI_SIM_GEOM
+; KCWI_SIM_KCRM
 ; 
 ; Simulate KCRM geometry files
 ;-
 
-pro KCWI_SIM_GEOM, new_cwave, ohsky=ohsky, rl=rl, rm1=rm1, rm2=rm2, $
+pro KCWI_SIM_KCRM, new_cwave, ohsky=ohsky, rl=rl, rm1=rm1, rm2=rm2, $
 				rh1=rh1, rh2=rh2, rh3=rh3, rh4=rh4
 
-pre = "KCWI_SIM_GEOM"
+pre = "KCWI_SIM_KCRM"
+simdir = '/Users/neill/kcrm/wlcal/sim_inputs/'
 
 ; get ppar
 ppar = kcwi_read_ppar()
@@ -18,43 +19,53 @@ endif
 ; set output grating
 if keyword_set(rl) then begin
 	outgrat = 'RL'
-	geom_file = 'store/BL_Large_4500_2x2_geom.fits'
+	geom_dir = simdir+'BL_Large_4500_2x2/'
+	geom_file = geom_dir+'BL_Large_4500_2x2_geom.fits'
+	arc_file = geom_dir+'kb180116_00038.fits'
 	new_rho = 0.514
 endif
 if keyword_set(rm1) then begin
 	outgrat = 'RM1'
-	geom_file = 'store/BM_Large_4000_2x2_geom.fits'
+	geom_dir = simdir+'BM_Large_4000_2x2/'
+	geom_file = geom_dir+'BM_Large_4000_2x2_geom.fits'
+	arc_file = geom_dir+'kb180116_00054.fits'
 	new_rho = 1.220
 endif
 if keyword_set(rm2) then begin
 	outgrat = 'RM2'
-	geom_file = 'store/BM_Large_4900_2x2_geom.fits'
+	geom_dir = simdir+'BM_Large_4900_2x2/'
+	geom_file = geom_dir+'BM_Large_4900_2x2_geom.fits'
+	arc_file = geom_dir+'kb180116_00070.fits'
 	new_rho = 0.921
 endif
 if keyword_set(rh1) then begin
 	outgrat = 'RH1'
-	geom_file = 'store/BH2_Large_4200_2x2_geom.fits'
+	geom_dir = simdir+'BH2_Large_4200_2x2/'
+	geom_file = geom_dir+'BH2_Large_4200_2x2_geom.fits'
+	arc_file = geom_dir+'kb170618_00043.fits'
 	new_rho = 2.420
 endif
 if keyword_set(rh2) then begin
 	outgrat = 'RH2'
-	geom_file = 'store/BH2_Small_4600_1x1_geom.fits'
+	geom_dir = simdir+'BH2_Small_4600_1x1/'
+	geom_file = geom_dir+'BH2_Small_4600_1x1_geom.fits'
+	arc_file = geom_dir+'kb170621_00067.fits'
 	new_rho = 2.030
 endif
 if keyword_set(rh3) then begin
 	outgrat = 'RH3'
-	geom_file = 'store/BH3_Medium_4900_2x2_geom.fits'
+	geom_dir = simdir+'BH3_Medium_4900_2x2/'
+	geom_file = geom_dir+'BH3_Medium_4900_2x2_geom.fits'
+	arc_file = geom_dir+'kb170805_00027.fits'
 	new_rho = 1.705
 endif
 if keyword_set(rh4) then begin
 	outgrat = 'RH4'
-	geom_file = 'store/BH3_Large_5400_2x2_geom.fits'
+	geom_dir = simdir+'BH3_Large_5400_2x2/'
+	geom_file = geom_dir+'BH3_Large_5400_2x2_geom.fits'
+	arc_file = geom_dir+'kb170618_00037.fits'
 	new_rho = 1.435
 endif
-;
-; arc and bars proxies
-arc_file = repstr(geom_file,'_geom','_arc')
-cbars_file = repstr(geom_file,'_geom','_cbars')
 ;
 ; read in geometry
 kgeom = mrdfits(geom_file,1,ghdr)
@@ -95,7 +106,7 @@ wave0out = wave0out*disprat + waveoff
 
 x = dindgen(nx)
 y = dindgen(ny); ypad
-onex = x-x+1.00000d
+onex = x-x+1.000000d
 oney = y-y+1.000000d
   
 xx = x#oney
@@ -170,53 +181,47 @@ for il = 0,nx-1 do begin
 endfor
 
 ;
-; get header
-hdr = headfits(arc_file)
-sxaddpar,hdr, 'BCWAVE',new_cwave, ' Blue central wavelength (Ang,sim)'
-sxaddpar,hdr, 'BGRATNAM', outgrat, ' Blue Grating name (sim)'
+; get raw arc data
+rarc = mrdfits(arc_file, 0, hdr, /fscale)
+;
+; read ccd limits
+kcwi_map_ccd, hdr, asec, bsec, dsec, tsec, direc
+sz = size(dsec, /dim)
+for ia = 0, sz[0]-1 do begin
+	xo0 = dsec[ia, 0, 0]
+	xo1 = dsec[ia, 0, 1]
+	yo0 = dsec[ia, 1, 0]
+	yo1 = dsec[ia, 1, 1]
+	xi0 = tsec[ia, 0, 0]
+	xi1 = tsec[ia, 0, 1]
+	yi0 = tsec[ia, 1, 0]
+	yi1 = tsec[ia, 1, 1]
+	rarc[xo0:xo1, yo0:yo1] = sim[xi0:xi1, yi0:yi1]
+endfor
+;
+; update header
+sxaddpar,hdr, 'CAMERA', 'RED', ' Camera (blue,red,fpc)'
+sxaddpar,hdr, 'RCWAVE',new_cwave, ' Red central wavelength (Ang,sim)'
+sxaddpar,hdr, 'RGRATNAM', outgrat, ' Red Grating name (sim)'
+sxaddpar,hdr, 'RGRATNUM', sxpar(hdr, 'BGRATNUM'), ' Red Grating number (1-7)'
+sxaddpar,hdr, 'RGRANGLE', sxpar(hdr, 'BGRANGLE'), ' Red Grating angle (deg)'
+sxaddpar,hdr, 'RARTANG', sxpar(hdr, 'BARTANG'), ' Red Articulation Stage Angle (deg)'
+sxdelpar,hdr, 'BCWAVE'
+sxdelpar,hdr, 'BGRATNAM'
+sxdelpar,hdr, 'BGRATNUM'
+sxdelpar,hdr, 'BGRANGLE'
+sxdelpar,hdr, 'BARTANG'
 if keyword_set(ohsky) then sxaddpar,hdr,'LMP1NAM','OHSky'
 
 ;
 outno = long(new_cwave)
-outarcf = kcwi_get_imname(ppar,outno,"_int",/reduced)
-outcbaf = kcwi_get_imname(ppar,outno-1,"_int",/reduced)
+;outarcf = kcwi_get_imname(ppar,outno)
+outarcf = 'kr200000_'+string(outno,form='(i05)')+'.fits'
 sxaddpar,hdr,'FRAMENO',outno
-sxaddpar,hdr,'OFNAME','kb180000_'+string(outno,form='(i05)')+'.fits'
+sxaddpar,hdr,'OFNAME',outarcf
 ; write the arc file
 kcwi_print_info,ppar,pre,"Writing",outarcf,/info,format='(a,1x,a)'
-mwrfits, float(sim), outarcf, hdr,/create
-;
-; read in cbars image
-cbars = mrdfits(cbars_file,0,chdr)
-sxaddpar,chdr, 'BCWAVE',new_cwave, ' Blue central wavelength (Ang,sim)'
-sxaddpar,chdr, 'BGRATNAM', outgrat, ' Blue Grating name (sim)'
-if keyword_set(ohsky) then sxaddpar,chdr,'LMP1NAM','OHSky'
-sxaddpar,chdr,'FRAMENO',outno-1
-sxaddpar,chdr,'OFNAME','kb180000_'+string(outno-1,form='(i05)')+'.fits'
-; write the cbars file
-kcwi_print_info,ppar,pre,"Writing",outcbaf,/info,format='(a,1x,a)'
-mwrfits, cbars, outcbaf, chdr,/create
+mwrfits, float(rarc), outarcf, hdr,/create
 kcwi_print_info,ppar,pre,"Generated simulated images.",/info
-;
-; update proc file
-openw,ol,'kcwi.proc',/append,/get_lun
-;
-; read new cbars file
-kcfg = kcwi_read_cfg(outcbaf)
-kcwi_print_cfgs,kcfg,imsum,/silent
-for k=0,1 do junk = gettok(imsum,' ')
-printf,ol,imsum,format='(a)'
-printf,ol,'geomcbar='+outcbaf
-printf,ol,'geomarc='+outarcf
-;
-; read new arc file
-kcfg = kcwi_read_cfg(outarcf)
-kcwi_print_cfgs,kcfg,imsum,/silent
-for k=0,1 do junk=gettok(imsum,' ')
-printf,ol,imsum,format='(a)'
-printf,ol,'geomcbar='+outcbaf
-printf,ol,'geomarc='+outarcf
-;
-free_lun,ol
 
 end
