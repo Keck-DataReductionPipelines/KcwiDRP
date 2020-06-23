@@ -23,27 +23,34 @@ return
 end
 
 pro KCWI_SIM_KCRM, new_cwave, ohsky=ohsky, rl=rl, rm1=rm1, rm2=rm2, $
-				rh1=rh1, rh2=rh2, rh3=rh3, rh4=rh4
+				rh1=rh1, rh2=rh2, rh3=rh3, rh4=rh4, $
+				indate=indate
 
 pre = "KCWI_SIM_KCRM"
 simdir = '/Users/neill/kcrm/wlcal/sim_inputs/'
+;
+; date for outputs
+if keyword_set(indate) then $
+	odate = indate $
+else	odate = timestr()
 ;
 ; header transform list
 htl = ['BCWAVE','BPWAVE','BALPHA','BBETA','BGRATNAM','BGRATNUM', $
 	'BGRANGLE','BGROTNAM','BGROTNUM','BGRENC','BGPPOS', $
 	'BGPNAME','BARTANG','BARTENC','BNASNAM','BNASENC', $
 	'BFOCMM','BFOCHM','BGPRESS','BVPRESS','BVHVON', $
-	'BVCURR','BVVOLT','BCCDTMP','BFILTNAM']
+	'BVCURR','BVVOLT','BCCDTMP']
 ;
 ; header delete list
 hdl = ['BGTPOS','BGTNAME','BFILTNUM','BFPPOS','BFPNAME', $
-	'BFTPOS','BFTNAME']
+	'BFTPOS','BFTNAME','BFILTNAM']
 
 ; get ppar
 ppar = kcwi_read_ppar()
 if kcwi_verify_ppar(ppar) ne 0 then begin
 	ppar = {kcwi_ppar}
 endif
+ppar.initialized = 1
 
 ; set output grating
 if keyword_set(rl) then begin
@@ -218,7 +225,7 @@ endfor
 
 ;
 ; get raw arc data
-rarc = mrdfits(bias_file, 0, bhdr, /fscale)
+rarc = mrdfits(bias_file, 0, bhdr, /fscale, /silent)
 hdr = headfits(arc_file)
 ;
 ; read ccd limits
@@ -247,7 +254,7 @@ if keyword_set(ohsky) then sxaddpar,hdr,'LMP1NAM','OHSky'
 inno = sxpar(hdr,'FRAMENO')
 outno = long(new_cwave)
 ;outarcf = kcwi_get_imname(ppar,outno)
-outarcf = 'kr200000_'+string(outno,form='(i05)')+'.fits'
+outarcf = 'kr'+odate+'_'+string(outno,form='(i05)')+'.fits'
 sxaddpar,hdr,'FRAMENO',outno
 sxaddpar,hdr,'OFNAME',outarcf
 ; write the arc file
@@ -257,11 +264,11 @@ mwrfits, float(rarc), outarcf, hdr,/create,/iscale
 ; loop over other files in simdir
 flist = file_search(geom_dir+'kb*.fits', count=nf)
 for i=0, nf-1 do begin
-	img = mrdfits(flist[i], 0, hdr)
+	img = mrdfits(flist[i], 0, hdr, /silent)
 	ino = sxpar(hdr,'FRAMENO')
 	if ino ne inno then begin
 		onno = outno + (ino - inno)
-		outfn = 'kr200000_'+string(onno, form='(i05)')+'.fits'
+		outfn = 'kr'+odate+'_'+string(onno, form='(i05)')+'.fits'
 		sxaddpar,hdr,'FRAMENO',onno
 		sxaddpar,hdr,'OFNAME',outfn
 		hdr_blue2red, hdr, htl, hdl
