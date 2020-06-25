@@ -51,6 +51,7 @@ if kcwi_verify_ppar(ppar) ne 0 then begin
 	ppar = {kcwi_ppar}
 endif
 ppar.initialized = 1
+ppar.verbose = 2
 
 ; set output grating
 if keyword_set(rl) then begin
@@ -59,6 +60,7 @@ if keyword_set(rl) then begin
 	geom_file = geom_dir+'BL_Large_4500_2x2_geom.fits'
 	arc_file = geom_dir+'kb180116_00038.fits'
 	bias_file = simdir+'bias_2x2/kb200617_00001.fits'
+	rezrat = 1250. / 800.
 	new_rho = 0.514
 endif
 if keyword_set(rm1) then begin
@@ -67,6 +69,7 @@ if keyword_set(rm1) then begin
 	geom_file = geom_dir+'BM_Large_4000_2x2_geom.fits'
 	arc_file = geom_dir+'kb180116_00054.fits'
 	bias_file = simdir+'bias_2x2/kb200617_00002.fits'
+	rezrat = 2500. / 1900.
 	new_rho = 1.220
 endif
 if keyword_set(rm2) then begin
@@ -75,6 +78,7 @@ if keyword_set(rm2) then begin
 	geom_file = geom_dir+'BM_Large_4900_2x2_geom.fits'
 	arc_file = geom_dir+'kb180116_00070.fits'
 	bias_file = simdir+'bias_2x2/kb200617_00003.fits'
+	rezrat = 2500. / 1900.
 	new_rho = 0.921
 endif
 if keyword_set(rh1) then begin
@@ -83,6 +87,7 @@ if keyword_set(rh1) then begin
 	geom_file = geom_dir+'BH2_Large_4200_2x2_geom.fits'
 	arc_file = geom_dir+'kb170618_00043.fits'
 	bias_file = simdir+'bias_2x2/kb200617_00004.fits'
+	rezrat = 5000. / 4600.
 	new_rho = 2.420
 endif
 if keyword_set(rh2) then begin
@@ -91,6 +96,7 @@ if keyword_set(rh2) then begin
 	geom_file = geom_dir+'BH2_Small_4600_1x1_geom.fits'
 	arc_file = geom_dir+'kb170621_00067.fits'
 	bias_file = simdir+'bias_1x1/kb200617_00010.fits'
+	rezrat = 5000. / 4600.
 	new_rho = 2.030
 endif
 if keyword_set(rh3) then begin
@@ -99,6 +105,7 @@ if keyword_set(rh3) then begin
 	geom_file = geom_dir+'BH3_Medium_4900_2x2_geom.fits'
 	arc_file = geom_dir+'kb170805_00027.fits'
 	bias_file = simdir+'bias_2x2/kb200617_00005.fits'
+	rezrat = 5000. / 4600.
 	new_rho = 1.705
 endif
 if keyword_set(rh4) then begin
@@ -107,15 +114,19 @@ if keyword_set(rh4) then begin
 	geom_file = geom_dir+'BH3_Large_5400_2x2_geom.fits'
 	arc_file = geom_dir+'kb170618_00037.fits'
 	bias_file = simdir+'bias_2x2/kb200617_00006.fits'
+	rezrat = 5000. / 4600.
 	new_rho = 1.435
 endif
 ;
 ; read in geometry
-kgeom = mrdfits(geom_file,1,ghdr)
+kgeom = mrdfits(geom_file,1,ghdr,/silent)
 if kcwi_verify_geom(kgeom,/init) ne 0 then begin
 	kcwi_print_info,ppar,pre,'Bad geometry input',/error
 	return
 endif
+;
+; adjust resolution
+kgeom.atsig = kgeom.atsig * rezrat
 
 ; read in quantities from the geometry.
 ; trying to avoid using these inside of the code proper
@@ -141,7 +152,7 @@ xpad = 17/xbin
 disprat = kgeom.rho / new_rho
 waveoff = new_cwave - (kgeom.wavemid * disprat)
 kcwi_print_info,ppar,pre,'Disprat, WaveOff',disprat,waveoff, $
-	format='(a,2f9.3)'
+	format='(a,2f12.3)'
 ;
 ; apply
 yw *= disprat
