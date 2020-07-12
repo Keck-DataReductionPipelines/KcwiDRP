@@ -70,7 +70,7 @@ rdfits1dspec,kgeom.refspec,refwave,atlas, $
 refspec = atlas>0  
 ;
 ; we want to degrade this spectrum to the instrument resolution
-xx = findgen(99)-50.0d
+xx = findgen(99)-49.0d
 gaus = gaussian(xx,[1.0,0.0,sigma])
 gaus /= total(gaus)
 refspec = convolve(refspec,gaus)
