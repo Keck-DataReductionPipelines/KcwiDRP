@@ -92,9 +92,9 @@ if keyword_set(rh1) then begin
 endif
 if keyword_set(rh2) then begin
 	outgrat = 'RH2'
-	geom_dir = simdir+'BH2_Small_4600_1x1/'
-	geom_file = geom_dir+'BH2_Small_4600_1x1_geom.fits'
-	arc_file = geom_dir+'kb170621_00067.fits'
+	geom_dir = simdir+'BH2_Small_4850_1x1/'
+	geom_file = geom_dir+'BH2_Small_4850_1x1_geom.fits'
+	arc_file = geom_dir+'kb170620_00165.fits'
 	bias_file = simdir+'bias_1x1/kb200617_00010.fits'
 	rezrat = 5000. / 4600.
 	new_rho = 2.030
