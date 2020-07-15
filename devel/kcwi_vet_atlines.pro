@@ -4,8 +4,9 @@ pro kcwi_vet_atlines, atlfn, atsig, fwid
 ;-
 ; read in atlas line list
 readcol,atlfn, w, f, form='f,f'
-use = intarr(n_elements(w))
-ids = strarr(n_elements(w))
+nl = n_elements(w)
+use = intarr(nl)
+ids = strarr(nl)
 ;
 ; read in atlas spectrum
 atspecfn = !KCWI_DATA + 'thar.fits'
@@ -18,19 +19,19 @@ gaus /= total(gaus)
 atspec_smooth = convolve(atspec, gaus)
 ;
 ; loop over lines
-print,'examining ',n_elements(w),' lines',format='(a,i,a)'
-for i=0,n_elements(w)-1 do begin
+print,'examining ',nl,' lines',format='(a,i,a)'
+for i=0,nl-1 do begin
 	;
 	; plot limits
 	w0 = w[i] - fwid
 	w1 = w[i] + fwid
 	plot,refwave,atspec,xran=[w0,w1],/xs,xtitle='Wave(A)', $
-		ytitle='Flux'
+		ytitle='Flux', title=atlfn+': Line '+strn(i)
 	oplot,refwave,atspec_smooth, linesty=2
 	oplot,[w[i], w[i]], !y.crange
 	q=''
 	print,''
-	print,': ',w[i],format='(a, f12.3)'
+	print,': ',i+1,'/',nl,w[i],format='(a, i3,a,i3, f12.3)'
 	read,'wave,id: ', q
 	if strlen(q) gt 0 then begin
 		wstr = gettok(q,' ')
