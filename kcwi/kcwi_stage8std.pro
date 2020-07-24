@@ -250,8 +250,9 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						kcwi_print_info,ppar,pre,'mask image not found for: '+obfil,/warning
 					endelse
 					;
-					; correct extinction
-					kcwi_correct_extin,img,hdr,kpars[i]
+					; correct calibration for extinction
+					kcwi_correct_extin,mscal,hdr,kpars[i]
+					avexcor = sxpar(hdr,'AVEXCOR')
 					;
 					; do calibration
 					for is=0,sz[0]-1 do begin
@@ -268,6 +269,8 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,mskhdr,'STDCOR','T',' std corrected?'
 					fxaddpar,mskhdr,'MSFILE',msfile,' master std file applied',after='STDCOR'
 					sxaddpar,mskhdr,'MSIMNO',msimgno,' master std image number'
+					sxaddpar,mskhdr,'EXTCOR','T',' extinction corrected?'
+					sxaddpar,mskhdr,'AVEXCOR',avexcor,' average extin. correction (flux ratio)'
 					;
 					; write out flux calibrated mask image
 					ofil = kcwi_get_imname(kpars[i],imgnum[i],'_mcubes',/nodir)
@@ -278,6 +281,8 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					sxaddpar,varhdr,'STDCOR','T',' std corrected?'
 					fxaddpar,varhdr,'MSFILE',msfile,' master std file applied',after='STDCOR'
 					sxaddpar,varhdr,'MSIMNO',msimgno,' master std image number'
+					sxaddpar,varhdr,'EXTCOR','T',' extinction corrected?'
+					sxaddpar,varhdr,'AVEXCOR',avexcor,' average extin. correction (flux ratio)'
 					sxaddpar,varhdr,'BUNIT','FLAM16**2',' brightness units (Flam*10^16)^2'
 					;
 					; write out flux calibrated variance image
@@ -300,9 +305,6 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					if file_test(sfil) then begin
 						sky = mrdfits(sfil,0,skyhdr,/fscale,/silent)
 						;
-						; correct extinction
-						kcwi_correct_extin,sky,skyhdr,kpars[i]
-						;
 						; do correction
 						for is=0,sz[0]-1 do for ix = 0, sz[1]-1 do $
 							sky[is,ix,*] = (sky[is,ix,*]/expt) * mscal * 1.d16
@@ -313,6 +315,8 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						fxaddpar,skyhdr,'MSFILE',msfile,' master std file applied',after='STDCOR'
 						sxaddpar,skyhdr,'MSIMNO',msimgno,' master std image number'
 						sxaddpar,skyhdr,'BUNIT','FLAM16',' brightness units (Flam*10^16)'
+						sxaddpar,skyhdr,'EXTCOR','T',' extinction corrected?'
+						sxaddpar,skyhdr,'AVEXCOR',avexcor,' average extin. correction (flux ratio)'
 						;
 						; write out flux calibrated sky panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_scubes',/nodir)
@@ -324,9 +328,6 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 					if file_test(nfil) then begin
 						obj = mrdfits(nfil,0,objhdr,/fscale,/silent)
 						;
-						; correct extinction
-						kcwi_correct_extin,obj,objhdr,kpars[i]
-						;
 						; do correction
 						for is=0,sz[0]-1 do for ix = 0, sz[1]-1 do $
 							obj[is,ix,*] = (obj[is,ix,*]/expt) * mscal * 1.d16
@@ -337,6 +338,8 @@ pro kcwi_stage8std,procfname,ppfname,help=help,verbose=verbose, display=display
 						fxaddpar,objhdr,'MSFILE',msfile,' master std file applied',after='STDCOR'
 						sxaddpar,objhdr,'MSIMNO',msimgno,' master std image number'
 						sxaddpar,objhdr,'BUNIT','FLAM16',' brightness units (Flam*10^16)'
+						sxaddpar,objhdr,'EXTCOR','T',' extinction corrected?'
+						sxaddpar,objhdr,'AVEXCOR',avexcor,' average extin. correction (flux ratio)'
 						;
 						; write out flux calibrated obj panel image
 						ofil = kcwi_get_imname(kpars[i],imgnum[i],'_ocubes',/nodir)
