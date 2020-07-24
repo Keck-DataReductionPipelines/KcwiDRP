@@ -25,7 +25,7 @@
 ;	None
 ;
 ; SIDE EFFECTS:
-;	Corrects the input data cube in place.
+;	Corrects the input data cube or calibration in place.
 ;
 ; PROCEDURE:
 ;	Reads airmass, telescope, and wavelength parameters from header.
@@ -37,6 +37,7 @@
 ; MODIFICATION HISTORY:
 ;	Written by:	Don Neill (neill@caltech.edu)
 ;	2014-SEP-23	Initial version
+;	2020-JUL-25	Now handles calibrations and cubes
 ;-
 pro kcwi_correct_extin,img,hdr,ppar
 ;
@@ -79,7 +80,12 @@ endelse
 ;
 ; get object wavelengths
 sz = size(img,/dim)
-owls = findgen(sz[2]) * sxpar(hdr,'cd3_3') + sxpar(hdr,'crval3')
+;
+; are we a cube?
+if n_elements(sz) eq 3 then $
+	nwaves = sz[2] $
+else	nwaves = sz[0]
+owls = findgen(nwaves) * sxpar(hdr,'cd3_3') + sxpar(hdr,'crval3')
 ;
 ; resample extinction curve
 linterp,exwl,exma,owls,oexma
@@ -87,9 +93,17 @@ linterp,exwl,exma,owls,oexma
 ; convert to flux ratio
 flxr = 10.^(oexma*air*0.4)
 ;
-; apply to data cube
-for ix=0,sz[0]-1l do for iy=0,sz[1]-1l do $
-	img[ix,iy,*] = img[ix,iy,*] * flxr
+; are we a cube?
+if n_elements(sz) eq 3 then begin
+	;
+	; apply to data cube
+	for ix=0,sz[0]-1l do for iy=0,sz[1]-1l do $
+		img[ix,iy,*] = img[ix,iy,*] * flxr
+endif else begin
+	;
+	; apply to vector
+	img = img * flxr
+endelse
 ;
 ; average flux ratio
 flrmo = moment(flxr)
