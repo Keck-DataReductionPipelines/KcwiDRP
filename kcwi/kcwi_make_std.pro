@@ -531,7 +531,8 @@ pro kcwi_make_std,kcfg,ppar,invsen
 				plot,w,invsen,title=sname+' Img #: '+strn(kcfg.imgnum), $
 					xtitle='Wave (A)',xran=[wall0,wall1],/xs, $
 					ytitle='Effective Inv. Sens. (erg/cm^2/A/e-)', $
-					yran=yrng,/ylog,/ys,xmargin=[11,3]
+					yran=yrng,/ylog,/ys,xmargin=[11,3], $
+					charsi=1.5
 				oplot,w,finvsen,color=colordex('red')
 				if nb gt 0 then $
 					oplot,wf[b],mf[b],psym=7
