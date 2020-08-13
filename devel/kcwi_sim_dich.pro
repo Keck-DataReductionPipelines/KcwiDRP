@@ -40,6 +40,11 @@ get_dich_data, diw, di25, di30, di35
 cubfile = 'redux/' + repstr(imfile, '.fits', '_icube.fits')
 cubhdr = headfits(cubfile)
 ;
+; get a raw bias frame
+mbfile = sxpar(cubhdr, 'mbfile')
+mbhdr = headfits(mbfile)
+rawb = mrdfits(sxpar(mbhdr, 'ofname'), 0, bhdr, /fscale)
+;
 ; get maps
 wmap = mrdfits(sxpar(cubhdr, 'wavmapf'), 0, whdr)
 smap = mrdfits(sxpar(cubhdr, 'slimapf'), 0, shdr)
@@ -101,7 +106,7 @@ for xi = 0, sz[0]-1 do begin
 				oplot,wvec,rsdi35, linesty=5
 				oplot,[5600., 5600.], !y.crange
 				q=''
-				read,'next: ',q
+				;read,'next: ',q
 			endif
 			;
 			; loop over wavelengths
@@ -114,10 +119,36 @@ for xi = 0, sz[0]-1 do begin
 	endif ; max(pvec) gt -50.
 endfor	; xi = 0, sz[0]-1
 ;
+; disect image
+;
+; first map CCD from raw bias
+kcwi_map_ccd, bhdr, asec, bsec, dsec, tsec, direc, namps=namps
+;
+; now process each amp region
+for ia = 0, namps-1 do begin
+	gain = sxpar(bhdr, 'GAIN'+strn(ia+1))
+	;
+	; dich sim ranges
+	xd0 = tsec[ia, 0, 0]
+	xd1 = tsec[ia, 0, 1]
+	yd0 = tsec[ia, 1, 0]
+	yd1 = tsec[ia, 1, 1]
+	;
+	; bias ranges
+	xb0 = dsec[ia, 0, 0]
+	xb1 = dsec[ia, 0, 1]
+	yb0 = dsec[ia, 1, 0]
+	yb1 = dsec[ia, 1, 1]
+	;
+	; transfer data
+	rawb[xb0:xb1, yb0:yb1] += fix(intimg[xd0:xd1, yd0:yd1] / gain)
+endfor
+;
 ; write out image
 sxaddpar, ihdr, 'HISTORY', '  '+pre+' '+systime(0)
-outfile = 'redux/' + repstr(imfile, '.fits', '_intDich.fits')
-mwrfits, intimg, outfile, ihdr, /create
+;outfile = 'redux/' + repstr(imfile, '.fits', '_intDich.fits')
+outfile = repstr(imfile, '.fits', 'Dich.fits')
+mwrfits, rawb, outfile, ihdr, /create,iscale=[1,32768]
 
 kcwi_print_info,ppar,pre,"Generated simulated image.",/info
 
