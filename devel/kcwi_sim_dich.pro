@@ -40,22 +40,18 @@ get_dich_data, diw, di25, di30, di35
 cubfile = 'redux/' + repstr(imfile, '.fits', '_icube.fits')
 cubhdr = headfits(cubfile)
 ;
-; get a raw bias frame
-mbfile = sxpar(cubhdr, 'mbfile')
-mbhdr = headfits(mbfile)
-rawb = mrdfits(sxpar(mbhdr, 'ofname'), 0, bhdr, /fscale)
-;
 ; get maps
-wmap = mrdfits(sxpar(cubhdr, 'wavmapf'), 0, whdr)
-smap = mrdfits(sxpar(cubhdr, 'slimapf'), 0, shdr)
-pmap = mrdfits(sxpar(cubhdr, 'posmapf'), 0, phdr)
+geomfl = sxpar(cubhdr, 'geomfl')
+wmap = mrdfits(repstr(geomfl, '_geom', '_wavemap'), 0, whdr, /silent)
+smap = mrdfits(repstr(geomfl, '_geom', '_slicemap'), 0, shdr, /silent)
+pmap = mrdfits(repstr(geomfl, '_geom', '_posmap'), 0, phdr, /silent)
 ;
-; read image
-img = mrdfits(imfile, 0, hdr)
+; read raw image
+rawimg = mrdfits(imfile, 0, rawhdr, /fscale, /silent)
 ;
 ; read int image
 intfile = 'redux/' + repstr(imfile, '.fits', '_int.fits')
-intimg = mrdfits(intfile, 0, ihdr)
+intimg = mrdfits(intfile, 0, ihdr, /silent)
 ;
 ; get image size
 sz = size(intimg, /dim)
@@ -66,6 +62,9 @@ yind = indgen(sz[1])
 ; program control
 old_slice = -1
 mid_slice = max(pmap) / 2.
+;
+; print header
+print,'     Xpx Slice    Xpos         AOI'
 ;
 ; loop over x pixels
 for xi = 0, sz[0]-1 do begin
@@ -122,11 +121,49 @@ endfor	; xi = 0, sz[0]-1
 ; disect image
 ;
 ; first map CCD from raw bias
-kcwi_map_ccd, bhdr, asec, bsec, dsec, tsec, direc, namps=namps
+kcwi_map_ccd, rawhdr, asec, bsec, dsec, tsec, direc, namps=namps
 ;
 ; now process each amp region
 for ia = 0, namps-1 do begin
-	gain = sxpar(bhdr, 'GAIN'+strn(ia+1))
+	;
+	; get oscan
+	;
+	; overscan x range - buffer avoids edge effects
+	osx0	= bsec[ia,0,0] + 20
+	osx1	= bsec[ia,0,1] - 20
+	;
+	; range in x to subtract overscan from
+	dsx0	= dsec[ia,0,0]
+	dsx1	= dsec[ia,0,1]
+	;
+	; row range (y)
+	osy0	= bsec[ia,1,0]
+	osy1	= bsec[ia,1,1]
+	;
+	; collapse each row
+	osvec = median(rawimg[osx0:osx1,osy0:osy1],dim=1)
+	nx = n_elements(osvec)
+	xx = findgen(nx) + osy0
+	;
+	; check order of fit
+	if namps lt 4 then $
+		order = 7 $
+	else	order = 2
+	;
+	; fit overscan vector
+	;
+	; don't let first read rows skew the fit (they can be high)
+	; are we reading out so that larger y-valued rows are read out first?
+	if direc[ia,1] lt 0 then begin
+		res = polyfit(xx[0:nx-50],osvec[0:nx-50],order)
+	;
+	; reading out so that smaller y-valued rows are read out first
+	endif else begin
+		res = polyfit(xx[49:*],osvec[49:*],order)
+	endelse
+	osfit = poly(xx,res)
+
+	gain = sxpar(rawhdr, 'GAIN'+strn(ia+1))
 	;
 	; dich sim ranges
 	xd0 = tsec[ia, 0, 0]
@@ -141,15 +178,29 @@ for ia = 0, namps-1 do begin
 	yb1 = dsec[ia, 1, 1]
 	;
 	; transfer data
-	rawb[xb0:xb1, yb0:yb1] += fix(intimg[xd0:xd1, yd0:yd1] / gain)
+	rawimg[xb0:xb1, yb0:yb1] = fix(intimg[xd0:xd1, yd0:yd1] / gain)
+	;
+	; add in overscan
+	for iy = osy0, osy1 do begin
+		;
+		; get oscan fit value at row iy
+		ip = where(xx eq iy, nip)
+		if nip eq 1 then begin
+			osval = osfit[ip[0]]
+		endif else osval = 0.
+		rawimg[dsx0:dsx1, iy] += osval
+	endfor
 endfor
 ;
+; check directory
+if not file_test('dich', /directory) then file_mkdir,'dich'
+;
 ; write out image
-sxaddpar, ihdr, 'HISTORY', '  '+pre+' '+systime(0)
+sxaddpar, rawhdr, 'HISTORY', '  '+pre+' '+systime(0)
 ;outfile = 'redux/' + repstr(imfile, '.fits', '_intDich.fits')
-outfile = repstr(imfile, '.fits', 'Dich.fits')
-mwrfits, rawb, outfile, ihdr, /create,iscale=[1,32768]
+outfile = 'dich/' + imfile
+mwrfits, rawimg, outfile, rawhdr, /create,iscale=[1,32768]
 
-kcwi_print_info,ppar,pre,"Generated simulated image.",/info
+kcwi_print_info,ppar,pre,"Generated simulated image: "+outfile,/info
 
 end
