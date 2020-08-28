@@ -118,6 +118,13 @@ for xi = 0, sz[0]-1 do begin
 	endif ; max(pvec) gt -50.
 endfor	; xi = 0, sz[0]-1
 ;
+; adjust based on ampmode
+ampmode = sxpar(ihdr, 'ampmode')
+if strpos(ampmode, 'UP') ge 0 then begin
+	print, "Adjusting image orientation for ampmode TUP"
+	intimg = rotate(intimg, 7)
+endif
+;
 ; disect image
 ;
 ; first map CCD from raw bias
@@ -180,7 +187,7 @@ for ia = 0, namps-1 do begin
 	; transfer data
 	rawimg[xb0:xb1, yb0:yb1] = fix(intimg[xd0:xd1, yd0:yd1] / gain)
 	;
-	; add in overscan
+; add in overscan
 	for iy = osy0, osy1 do begin
 		;
 		; get oscan fit value at row iy
@@ -197,6 +204,7 @@ if not file_test('dich', /directory) then file_mkdir,'dich'
 ;
 ; write out image
 sxaddpar, rawhdr, 'HISTORY', '  '+pre+' '+systime(0)
+sxaddpar, rawhdr, 'RCWAVE', 8888.88, ' Simulated red central wave'
 ;outfile = 'redux/' + repstr(imfile, '.fits', '_intDich.fits')
 outfile = 'dich/' + imfile
 mwrfits, rawimg, outfile, rawhdr, /create,iscale=[1,32768]
