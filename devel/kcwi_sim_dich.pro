@@ -3,15 +3,23 @@
 ; 
 ; Simulate KCRM dichroic edge
 ;-
-pro get_dich_data, dich_wave, dich_25, dich_30, dich_35
+pro get_dich_data, dich_wave, dich_A1, dich_A2, dich_A3, angles, theory=theory
 	ddir = '/Users/neill/kcrm/dichedge/'
-	readcol,ddir+'Theory25.csv',dich_wave,tp,tpp,tsp,dich_25, $
-		delim=',', comment='#', form='f,f,f,f,f',/silent
-	readcol,ddir+'Theory30.csv',dich_wave,tp,tpp,tsp,dich_30, $
-		delim=',', comment='#', form='f,f,f,f,f',/silent
-	readcol,ddir+'Theory35.csv',dich_wave,tp,tpp,tsp,dich_35, $
-		delim=',', comment='#', form='f,f,f,f,f',/silent
-	dich_wave += 20.
+	if keyword_set(theory) then begin
+		readcol,ddir+'Theory25.csv',dich_wave,tp,tpp,tsp,dich_A1, $
+			delim=',', comment='#', form='f,f,f,f,f',/silent
+		readcol,ddir+'Theory30.csv',dich_wave,tp,tpp,tsp,dich_A2, $
+			delim=',', comment='#', form='f,f,f,f,f',/silent
+		readcol,ddir+'Theory35.csv',dich_wave,tp,tpp,tsp,dich_A3, $
+			delim=',', comment='#', form='f,f,f,f,f',/silent
+		dich_wave += 20.
+		angles = [25., 30., 35.]
+	endif else begin
+		readcol,ddir+'Witness2Ref.csv',dich_wave,dich_A2,rpa,rppa, $
+			dich_A1,rpb,rppb,dich_A3, delim=',', comment='#', $
+			format='f,f,f,f,f,f,f,f',/silent
+		angles = [26., 30., 34.]
+	endelse
 	dich_wave *= 10.
 return
 end
@@ -34,7 +42,7 @@ hi_aoi_zero = 30.7
 aoi_slope = 0.425
 ;
 ; get dichroic reflectances
-get_dich_data, diw, di25, di30, di35
+get_dich_data, diw, dia1, dia2, dia3, angs
 ;
 ; get cube header
 cubfile = 'redux/' + repstr(imfile, '.fits', '_icube.fits')
@@ -86,9 +94,9 @@ for xi = 0, sz[0]-1 do begin
 			yvec = yind[good]
 			;
 			; get dich data on this wavelength scale
-			rsdi25 = interpol(di25, diw, wvec, /nan, /spline) / 100.
-			rsdi30 = interpol(di30, diw, wvec, /nan, /spline) / 100.
-			rsdi35 = interpol(di35, diw, wvec, /nan, /spline) / 100.
+			rsdia1 = interpol(dia1, diw, wvec, /nan, /spline) / 100.
+			rsdia2 = interpol(dia2, diw, wvec, /nan, /spline) / 100.
+			rsdia3 = interpol(dia3, diw, wvec, /nan, /spline) / 100.
 			;
 			; get AOI
 			slice = min(svec)
@@ -98,11 +106,11 @@ for xi = 0, sz[0]-1 do begin
 			if old_slice ne slice and max(pvec) gt mid_slice then begin
 				print,xi,slice,max(pvec),aoi
 				old_slice = slice
-				plot,wvec,rsdi25, linesty=2, /ys, $
+				plot,wvec,rsdia1, linesty=2, /ys, $
 					title='slice # '+strn(slice), $
 					xtitle='WAV(A)', ytitle='Reflect.'
-				oplot,wvec,rsdi30
-				oplot,wvec,rsdi35, linesty=5
+				oplot,wvec,rsdia2
+				oplot,wvec,rsdia3, linesty=5
 				oplot,[5600., 5600.], !y.crange
 				q=''
 				;read,'next: ',q
@@ -110,8 +118,8 @@ for xi = 0, sz[0]-1 do begin
 			;
 			; loop over wavelengths
 			for iw = 0, n_elements(wvec)-1 do begin
-				divec = [rsdi25[iw], rsdi30[iw], rsdi35[iw]]
-				rfac = interpol(divec, [25., 30., 35.], aoi) < 1. > 0.
+				divec = [rsdia1[iw], rsdia2[iw], rsdia3[iw]]
+				rfac = interpol(divec, angs, aoi) < 1. > 0.
 				intimg[xi, yvec[iw]] *= rfac
 			endfor	; iw = 0, n_elements(wvec)-1
 		endif ; ngood gt 5
@@ -185,7 +193,7 @@ for ia = 0, namps-1 do begin
 	yb1 = dsec[ia, 1, 1]
 	;
 	; transfer data
-	rawimg[xb0:xb1, yb0:yb1] = fix(intimg[xd0:xd1, yd0:yd1] / gain)
+	rawimg[xb0:xb1, yb0:yb1] = long(intimg[xd0:xd1, yd0:yd1] / gain)
 	;
 ; add in overscan
 	for iy = osy0, osy1 do begin
