@@ -64,6 +64,15 @@ intimg = mrdfits(intfile, 0, ihdr, /silent)
 ; get image size
 sz = size(intimg, /dim)
 ;
+; get middle region
+if sz[0] le 2060 then begin
+	midx0 = 900
+	midx1 = 1120
+endif else begin
+	midx0 = 1800
+	midx2 = 2240
+endelse
+;
 ; Y indices
 yind = indgen(sz[1])
 ;
@@ -114,6 +123,19 @@ for xi = 0, sz[0]-1 do begin
 				oplot,[5600., 5600.], !y.crange
 				q=''
 				;read,'next: ',q
+				; acquire rfactors for middle region
+				if slice eq 11 then begin
+					yvec_mid = yvec
+					rfac_mid = fltarr(n_elements(yvec))
+					for iw = 0, n_elements(yvec)-1 do begin
+						divec = [rsdia1[iw], $
+							 rsdia2[iw], $
+							 rsdia3[iw]]
+						rfac = interpol(divec, angs, $
+							aoi) < 1. > 0.
+						rfac_mid[iw] = rfac
+					endfor
+				endif
 			endif
 			;
 			; loop over wavelengths
@@ -123,7 +145,16 @@ for xi = 0, sz[0]-1 do begin
 				intimg[xi, yvec[iw]] *= rfac
 			endfor	; iw = 0, n_elements(wvec)-1
 		endif ; ngood gt 5
-	endif ; max(pvec) gt -50.
+	endif else begin	; max(pvec) gt -50.
+		; simulate scattered light through dichroic
+		if xi gt midx0 and xi le midx1 then begin
+			;
+			; loop over wavelengths
+			for iw = 0, n_elements(yvec_mid)-1 do begin
+				intimg[xi, yvec_mid[iw]] *= rfac_mid[iw]
+			endfor	; iw = 0, n_elements(wvec)-1
+		endif
+	endelse
 endfor	; xi = 0, sz[0]-1
 ;
 ; adjust based on ampmode
