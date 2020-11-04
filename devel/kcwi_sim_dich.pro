@@ -70,7 +70,7 @@ if sz[0] le 2060 then begin
 	midx1 = 1120
 endif else begin
 	midx0 = 1800
-	midx2 = 2240
+	midx1 = 2240
 endelse
 ;
 ; Y indices
