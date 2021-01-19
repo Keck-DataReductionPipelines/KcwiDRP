@@ -605,6 +605,8 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			; get defect list
 			bcfil = !KCWI_DATA + 'badcol_' + strtrim(kcfg.ampmode,2) + '_' + $
 				strn(kcfg.xbinsize) + 'x' + strn(kcfg.ybinsize) + '.dat'
+			if kcfg.nasmask eq 1 then $
+				bcfil = repstr(bcfil, '.dat', '_NAS.dat')
 			if file_test(bcfil) then begin
 				;
 				; report the bad col file
@@ -659,9 +661,7 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 				fxaddpar,hdr,'BPFILE',bcfil,' bad pixel map filename'
 			endif else begin
 				sxaddpar,hdr,'BPCLEAN','F',' cleaned bad pixels?'
-				kcwi_print_info,ppar,pre, 'no bad column file for ' + $
-					strtrim(kcfg.ampmode,2) + ' ' + $
-					strn(kcfg.xbinsize) + 'x' + strn(kcfg.ybinsize)
+				kcwi_print_info,ppar,pre, 'bad column file not found: ' + bcfil
 			endelse
 			;
 			; update header
@@ -669,6 +669,12 @@ pro kcwi_stage1,procfname,ppfname,help=help,verbose=verbose, display=display
 			;
 			; log
 			kcwi_print_info,ppar,pre,'number of bad pixels = '+strtrim(string(nbpix),2)
+			;
+			; output gain-corrected image
+			if kpars[i].saveintims eq 1 then begin
+				ofil = kcwi_get_imname(kpars[i],imgnum[i],'_d',/nodir)
+				kcwi_write_image,img,hdr,ofil,kpars[i]
+			endif
 			;
 			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 			; END   STAGE 1-E: IMAGE DEFECT CORRECTION AND MASKING
