@@ -1000,6 +1000,10 @@ pro kcwi_prep,rawdir,reduceddir,datadir, $
 			if nstds gt 0 then begin
 				mcfg = kcwi_match_cfg(stdcfg,kcfg[p],ppar,mtags, $
 						count=std,/time)
+				if std gt 1 then begin
+					std = 1
+					mcfg = mcfg[0]
+				endif
 			endif else begin
 				mcfg = -1
 				std = 0
