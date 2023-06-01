@@ -75,7 +75,7 @@ lastpix = long ( ( wave1 - wave0 ) / dwout )
 ;
 ; pad image to include full slices
 ;
-; mask regions outside of slices with 4
+; mask regions outside of slices with 64
 if keyword_set(mask) then $
 	pimg = bytarr(sz[0],sz[1]+pad+pad) + 64b $
 else	pimg = fltarr(sz[0],sz[1]+pad+pad)
